@@ -91,8 +91,11 @@ inputs; live routing consumes generated tokens with threshold 0.7 and depth 2–
 
 All model comparisons retain original Q1 FP32 final-logit atol 0.001/rtol 0.0001,
 exact actual top1/exit/history checks, finite selected hidden/gate boundaries and
-full populated-KV coverage. Intermediate/KV deltas remain diagnostics. Paired dumps
-are limited to L64-F2 and L256-F0. Per-native-dispatch evidence binds actual model
+full populated-KV coverage. Intermediate/KV deltas remain diagnostics. L64-F2 and
+L256-F0 are preselected for paired dumps; the frozen plan also permits up to two
+additional first-failure fixtures within the unchanged diagnostic caps. This
+wording was clarified after execution began; the committed plan and its budgets
+were unchanged. Per-native-dispatch evidence binds actual model
 inputs and request publications to the recorded logical schedule, verifies inactive
 finite zero outputs, and verifies B's stable tensor/staging pointers and generation
 lifetime. All ordinary real-model dispatches must use the supported padded shape.
