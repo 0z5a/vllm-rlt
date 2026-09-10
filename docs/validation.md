@@ -12,10 +12,8 @@ reproduction of the paper's measured speedups.
   Transformers 5.14.1, pytest 9.0.3; existing `/usr/local/bin/python` reused.
 - New project bootstrapped from empty signed commit
   `3c09e6d`; implementation was uncommitted during initial validation.
-  [Kernel source manifest](validation/kernel-validation-manifest.json) and
-  [BF16 source manifest](validation/checkpoint-bf16-manifest.json) and
-  [FP32 source manifest](validation/checkpoint-fp32-manifest.json)
-  record SHA-256 hashes of the exact Python sources and tests.
+  Kernel, BF16, and FP32 source manifests record SHA-256 hashes of the exact
+  Python sources and tests; see the archived validation artifacts below.
 - Ouro checkpoint and tokenizer:
   `ByteDance/Ouro-1.4B@574fa66cb8bf5abdc979642d01cf2b79b16bfab1`.
   All 269 parameter names/shapes match the published safetensors header:
@@ -55,14 +53,16 @@ and causal contexts spanning multiple online-softmax tiles. Each row uses its
 own request/depth page table. Separate tests exercise skipped-depth propagation
 and detect uninitialized cache reads after reuse.
 
-The [CPU real-checkpoint result](validation/checkpoint-cpu-probe.json) records
+The CPU real-checkpoint result records
 prompt token IDs `[504, 3575, 282, 4649, 314]`, output IDs `[7042, 30]`, and depths
 `[4, 4]`. Only the first generated token was compared against the independent
 dense oracle in this smoke. The second token exercised the incremental cache.
 
 Raw kernel logs, wheel artifacts, and full checkpoint-validation logs/results
-are retained in the worktree's ignored `artifacts/` directory. The manifests and
-small CPU result above are included in version control.
+are retained in the worktree's ignored `artifacts/` directory. The source
+manifests and JSON result snapshots are available in
+[Git history](https://github.com/hsliuustc0106/vllm-lt/tree/fa7a2ca5b833f2dd0f3e8db53ce111a7406496f7/docs/validation)
+instead of being tracked in the current source tree.
 
 ## Real-checkpoint GPU validation procedure
 
@@ -99,7 +99,7 @@ request (`38893bd0`) was cancelled before execution when GPU 5 became available.
 Both executed reservations automatically released on exit; no task-owned queue
 or GPU reservation remains.
 
-The first [BF16 run](validation/checkpoint-bf16.json) failed its declared logit
+The first BF16 run failed its declared logit
 tolerance at deeper loops. At depth four, maximum absolute differences were
 0.5625 (Torch vs dense), 0.625 (Triton vs dense), and 0.28125 (Triton vs Torch).
 All final-depth top-1 predictions and all six generation configurations agreed
@@ -114,7 +114,7 @@ corrected to record allocations after GC, clear only this process's cuBLAS
 workspaces, then check allocations again. This changes validation accounting;
 it does not change model execution or the original recorded BF16 failure.
 
-One [FP32 diagnostic](validation/checkpoint-fp32.json) followed to distinguish
+One FP32 diagnostic followed to distinguish
 an algorithmic mismatch from low-precision rounding. It used the same physical
 GPU, weights, inputs, scheduler settings, and reference implementation; dtype
 changed to FP32, and tighter tolerances `atol=0.001`, `rtol=0.0001` were declared
@@ -133,4 +133,5 @@ The default dtype and README GPU example use FP32. Further reduced-precision
 validation and performance work are separate follow-ups.
 
 Full stage traces are preserved in `artifacts/checkpoint-bf16.json` and
-`artifacts/checkpoint-fp32.json`; the versioned copies omit only stage traces.
+`artifacts/checkpoint-fp32.json`; the historical JSON snapshots omit only stage
+traces.
