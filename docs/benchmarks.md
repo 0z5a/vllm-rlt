@@ -3,6 +3,8 @@
 The M1 harness measures the synchronous FP32 Ouro engine on one reserved GPU.
 It follows [issue #3](https://github.com/hsliuustc0106/vllm-lt/issues/3).
 A completed baseline is a measurement milestone; it does not require a speedup.
+The [2026-09-10 baseline report](benchmarks/m1-20260910.md) records the first
+completed matrix, acceptance checks, measured variability, and next target.
 
 Prepare the pinned `ByteDance/Ouro-1.4B` checkpoint at revision
 `574fa66cb8bf5abdc979642d01cf2b79b16bfab1` before running. Use a clean, committed
