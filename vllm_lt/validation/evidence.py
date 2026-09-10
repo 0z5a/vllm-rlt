@@ -220,6 +220,7 @@ class ComparisonStream:
             if tuple(selection.values()) not in (
                 ("bfloat16", "same_dtype_fidelity"),
                 ("float32", "implementation_exact"),
+                ("float32", "implementation_fidelity"),
             ):
                 raise ValueError("preselected dumps require a supported frozen comparison policy")
         if type(comparison.get("require_exact", False)) is not bool:

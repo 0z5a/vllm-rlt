@@ -245,7 +245,7 @@ def _restore_budget(folder, view, ledger):
             spool.close()
         expected_groups[case["spool_group"]] = size
     if ledger["diagnostic_dumps"] != {
-        "selected_fixture_ids": list(PRESELECTED),
+        "selected_fixture_ids": view["contract"]["diagnostics"]["preselected_dump_fixture_ids"],
         "written_bytes": 0,
         "fixture_written_bytes": {},
     } or any((folder / "dumps").rglob("*.bin")):
@@ -261,12 +261,22 @@ def _restore_budget(folder, view, ledger):
 
 def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadline_ns):
     """Run A once, then B once against its retained oracle/A evidence."""
+    return _run_numerical_view(
+        model, _view(parent_plan), implementation_id, output_dir, deadline_ns
+    )
+
+
+def _run_numerical_view(
+    model, view, implementation_id, output_dir, deadline_ns, *, execute=None, after_case=None
+):
+    """Shared execution for a caller-validated frozen A/B numerical view."""
     from .diagnostics import DiagnosticDump, SpoolBudget
     from .runner import execute_case
 
     if implementation_id not in ("A", "B"):
         raise ValueError("implementation_id must be A or B")
-    view = _view(parent_plan)
+    if execute is None:
+        execute = execute_case
     if (
         _digest(model.config.to_dict()) != _digest(view["model_config"])
         or str(next(model.parameters()).dtype) != "torch.float32"
@@ -283,8 +293,8 @@ def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadli
         budget = SpoolBudget(limits["cumulative_spool_written_bytes"], limits["group_spool_bytes"])
         ledger = {
             "schema_version": 1,
-            "artifact_type": "m2_numerical_ledger",
-            "plan_sha256": parent_plan["plan_sha256"],
+            "artifact_type": view["artifact_type"].replace("_plan", "_ledger"),
+            "plan_sha256": view["plan_sha256"],
             "numerical_plan_sha256": view["numerical_plan_sha256"],
             "completed_cases": [],
             "started_cases": [],
@@ -302,7 +312,7 @@ def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadli
     else:
         ledger = read_json(folder / "ledger.json")
         if (
-            ledger["plan_sha256"] != parent_plan["plan_sha256"]
+            ledger["plan_sha256"] != view["plan_sha256"]
             or ledger["numerical_plan_sha256"] != view["numerical_plan_sha256"]
             or set(ledger["workers"]) != {"A"}
             or not ledger["workers"]["A"]["passed"]
@@ -366,9 +376,7 @@ def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadli
             remaining = (case_deadline_ns - time.perf_counter_ns()) / 1e9
             if remaining <= 0:
                 raise TimeoutError("numerical case deadline exhausted before execution")
-            value = execute_case(
-                model, view, case, folder, budget, dumps, time.monotonic() + remaining
-            )
+            value = execute(model, view, case, folder, budget, dumps, time.monotonic() + remaining)
             if value["status"] != "complete":
                 raise RuntimeError("numerical case did not complete")
             for comparison_id in value["comparisons"]:
@@ -401,6 +409,8 @@ def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadli
             checkpoint()
             if result["errors"]:
                 break
+            if after_case is not None:
+                after_case(case, value)
         result["complete"] = result["completed_cases"] == [case["case_id"] for case in planned]
         result["passed"] = result["complete"] and not result["errors"]
     except (Exception, KeyboardInterrupt) as exc:
@@ -417,14 +427,18 @@ def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadli
 
 def audit_numerical(output_dir, parent_plan):
     """Offline audit using the same exact boundary/trace and typed-payload audits."""
+    return _audit_numerical_view(output_dir, _view(parent_plan))
+
+
+def _audit_numerical_view(output_dir, view):
+    """Audit a caller-validated A/B view without loading a checkpoint or device."""
     from .report import _audit_case, _audit_comparison, _audit_raw_evidence
 
-    view = _view(parent_plan)
     folder = Path(output_dir) / "numerical"
     result = {
         "schema_version": 1,
-        "artifact_type": "m2_numerical_report",
-        "plan_sha256": parent_plan["plan_sha256"],
+        "artifact_type": view["artifact_type"].replace("_plan", "_report"),
+        "plan_sha256": view["plan_sha256"],
         "complete": False,
         "passed": False,
         "completed_cases": [],
@@ -438,13 +452,13 @@ def audit_numerical(output_dir, parent_plan):
         expected_ids = [case["case_id"] for case in view["execution_order"]]
         result["ledger"] = ledger
         if (
-            ledger["plan_sha256"] == parent_plan["plan_sha256"]
+            ledger["plan_sha256"] == view["plan_sha256"]
             and ledger["numerical_plan_sha256"] == view["numerical_plan_sha256"]
             and ledger["completed_cases"] == expected_ids[: len(ledger["completed_cases"])]
         ):
             result["completed_cases"] = list(ledger["completed_cases"])
         if (
-            ledger["plan_sha256"] != parent_plan["plan_sha256"]
+            ledger["plan_sha256"] != view["plan_sha256"]
             or ledger["numerical_plan_sha256"] != view["numerical_plan_sha256"]
             or ledger["completed_cases"] != expected_ids
             or ledger["started_cases"] != expected_ids
@@ -453,7 +467,7 @@ def audit_numerical(output_dir, parent_plan):
             or ledger["active_case"] is not None
             or set(ledger["case_lifetimes"]) != set(expected_ids)
         ):
-            raise ValueError("numerical ledger lacks the complete ordered 27-case execution")
+            raise ValueError("numerical ledger lacks the complete ordered case execution")
         previous_end = 0
         for case_id in expected_ids:
             lifetime = ledger["case_lifetimes"][case_id]
@@ -553,9 +567,9 @@ def audit_numerical(output_dir, parent_plan):
         result["complete"] = result["passed"] = False
         result["errors"].append({"type": type(exc).__name__, "message": str(exc)})
     result["counts"] = {
-        "planned_cases": 27,
+        "planned_cases": len(view["execution_order"]),
         "verified_cases": verified_cases,
-        "planned_comparisons": 51,
+        "planned_comparisons": len(view["comparison_order"]),
         "verified_comparisons": len(result["comparisons"]),
     }
     return result

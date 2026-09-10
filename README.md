@@ -166,6 +166,10 @@ The [Q1 validation guide](docs/q1-validation.md) describes the independent
 incremental LAST-EXITED oracle, pinned official reference, FP32/BF16 numerical
 comparisons, bounded diagnostics, and separate qualification decision.
 
+The [M3 inactive-row guide](docs/m3-inactive-rows.md) describes the private masked
+KV/model boundary and compact-versus-padded correctness checks that precede CUDA
+graph work.
+
 ## License
 
 Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). The native model adapts

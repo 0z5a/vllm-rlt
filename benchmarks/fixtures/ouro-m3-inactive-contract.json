@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "artifact_type": "m3_inactive_contract",
+  "contract_id": "ouro-m3-inactive-correctness-v1",
+  "hypothesis": "Masked inactive recurrent rows preserve live numerical behavior and cannot access or mutate live state.",
+  "isolated_variable": "Compact M2 recurrence A versus padded eager decode B; physical dense row count is a necessary consequence.",
+  "inputs": {
+    "suite": "benchmarks/fixtures/ouro-q1.json",
+    "contract": "benchmarks/fixtures/ouro-q1-contract.json"
+  },
+  "production_diff_paths": [
+    "vllm_lt/core/kv_cache_manager.py",
+    "vllm_lt/kernels/paged_attention.py",
+    "vllm_lt/kernels/triton_attention.py",
+    "vllm_lt/models/ouro.py",
+    "vllm_lt/worker/model_runner.py"
+  ],
+  "controls": {
+    "gpu_ids": null,
+    "affinity": null,
+    "cpu_threads": 1,
+    "interop_threads": 1,
+    "seed": 0,
+    "dtype": "float32",
+    "numa_policy": "inherit-verified-parent-binding",
+    "residency_policy": "two-fresh-workers-one-model-each-one-pool-at-a-time",
+    "cache_policy": "fresh-case-state-preserve-worker-allocator",
+    "environment_policy": "same-prepared-Q1-environment"
+  },
+  "acceptance": {
+    "purpose": "inactive-row-correctness-only",
+    "passes_per_case": 1,
+    "full_model": "original-Q1-FP32-logits-and-actual-token-exit-gates",
+    "intermediates": "finite-required-numerical-deltas-diagnostic",
+    "held_input": "exact-active-results-and-whole-cache-guards-zero-inactive-attention",
+    "padding": {"mode": "odd_slots", "row_count": 8, "table_width": 32, "decode_only": true},
+    "sanitizer": "unavailable-no-executions-no-coverage-claim"
+  },
+  "limits": {
+    "total_timeout_s": 3600,
+    "case_timeout_s": 600,
+    "workers": 2,
+    "model_loads": 2,
+    "model_cases": 13,
+    "excluded_feasibility_cases": 2,
+    "qualification_cases": 11,
+    "comparison_streams": 28,
+    "qualification_comparison_streams": 27,
+    "kernel_evaluations": 52,
+    "sanitizer_evaluations": 0,
+    "kernel_evidence_bytes": 268435456,
+    "profile_total_bytes_max": 0,
+    "profile_trace_bytes_max": 0,
+    "artifact_bytes_max": 12884901888
+  },
+  "stop_conditions": [
+    "Any execution, address, nonfinite, isolation, required-logit or actual-decision failure stops further cases; no retry.",
+    "Any source, input, dependency, device, affinity, ownership or cleanup mismatch stops subsequent execution.",
+    "Stop at the first whole-case or global deadline, or evidence resource-cap violation.",
+    "Missing sanitizer coverage remains explicit; this run cannot qualify graph capture or performance."
+  ]
+}

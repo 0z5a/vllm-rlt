@@ -134,10 +134,11 @@ class ValidationEngine(LLMEngine):
 
 
 @contextmanager
-def observe_native(engine, sink, *, on_completed_kv=None):
+def observe_native(engine, sink, *, on_completed_kv=None, on_physical=None):
     """sink(metadata, tensor) receives selected query positions with borrowed values."""
     saved, handles = [], []
     context = []
+    physical = []
 
     def replace(obj, name, value):
         saved.append((obj, name, name in vars(obj), vars(obj).get(name)))
@@ -147,7 +148,8 @@ def observe_native(engine, sink, *, on_completed_kv=None):
         if not context:
             raise RuntimeError("native diagnostic boundary has no row context")
         rows = context[-1]
-        if len(rows) != values.shape[0]:
+        live_rows, row_count = physical[-1]
+        if row_count != values.shape[0] or len(rows) != len(live_rows):
             raise RuntimeError("native diagnostic tensor rows differ from scheduling metadata")
         for index, (request_id, position, depth) in enumerate(rows):
             fixture = engine.fixtures[request_id]
@@ -165,7 +167,7 @@ def observe_native(engine, sink, *, on_completed_kv=None):
                 "output_index": output_index,
                 "history_sha256": history_hash(prefix),
             }
-            row = values[index]
+            row = values[live_rows[index]]
             if operation == "gate_logits":
                 logit = float(row.float().item())
                 engine.gates[request_id, output_index, depth] = {
@@ -179,6 +181,7 @@ def observe_native(engine, sink, *, on_completed_kv=None):
             sink(metadata, row)
 
     recurrent = engine.model.recurrent
+    prepared_core = getattr(engine.model, "_recurrent_prepared", None)
     execute = engine.model_runner.execute
     cache = engine.cache_manager
     prepared = hasattr(cache, "_prepare_batch")
@@ -189,30 +192,72 @@ def observe_native(engine, sink, *, on_completed_kv=None):
     finish = engine.scheduler.finish
 
     def observed_recurrent(hidden, request_ids, depths, positions, cache):
-        context.append(
-            [
-                (key, int(position), int(depth) + 1)
-                for key, position, depth in zip(request_ids, positions, depths)
-            ]
-        )
+        rows = [
+            (key, int(position), int(depth) + 1)
+            for key, position, depth in zip(request_ids, positions, depths)
+        ]
+        if context and context[-1] != rows:
+            raise RuntimeError("recurrent inputs differ from scheduled native context")
+        context.append(rows)
+        physical.append((tuple(range(len(request_ids))), len(request_ids)))
         try:
             return recurrent(hidden, request_ids, depths, positions, cache)
         finally:
             context.pop()
+            physical.pop()
+
+    def observed_prepared_core(hidden, batch, actual_cache):
+        if actual_cache is not cache or batch.owner is not cache:
+            raise RuntimeError("prepared core uses another cache owner")
+        owners = {id(allocation): key for key, allocation in batch.allocations}
+        rows = [
+            (owners[id(allocation)], position, depth + 1)
+            for allocation, depth, position in batch.rows
+        ]
+        if not context or context[-1] != rows:
+            raise RuntimeError("prepared core logical rows differ from native context")
+        if (
+            len(batch.live_rows) != len(rows)
+            or len(set(batch.live_rows)) != len(rows)
+            or any(
+                type(row) is not int or not 0 <= row < batch.row_count for row in batch.live_rows
+            )
+            or hidden.shape[0] != batch.row_count
+        ):
+            raise RuntimeError("prepared core physical mapping is invalid")
+        for key, allocation in batch.allocations:
+            if cache._get_allocation(key) is not allocation:
+                raise RuntimeError("prepared core has stale request ownership")
+        context.append(rows)
+        physical.append((batch.live_rows, batch.row_count))
+        try:
+            result = prepared_core(hidden, batch, actual_cache)
+            if on_physical is not None:
+                on_physical(batch, result)
+            return result
+        finally:
+            context.pop()
+            physical.pop()
 
     def observed_execute(batch):
-        if batch.stage != Stage.CODA:
+        if batch.stage not in (Stage.CODA, Stage.RECURRENT):
             return execute(batch)
         context.append(
             [
-                (item.request.request_id, item.request.position, item.request.loops_done)
+                (
+                    item.request.request_id,
+                    item.request.position,
+                    item.request.loops_done + int(batch.stage == Stage.RECURRENT),
+                )
                 for item in batch.items
             ]
         )
+        physical.append((tuple(range(len(batch.items))), len(batch.items)))
         try:
             return execute(batch)
         finally:
             context.pop()
+            physical.pop()
 
     def observed_write(layer, request_ids, depths, positions, key, value):
         result = write(layer, request_ids, depths, positions, key, value)
@@ -227,6 +272,12 @@ def observe_native(engine, sink, *, on_completed_kv=None):
     def check_prepared_rows(batch):
         if not context or len(batch.rows) != len(context[-1]) or batch.owner is not cache:
             raise RuntimeError("prepared KV rows differ from native diagnostic context")
+        mapping = (
+            getattr(batch, "live_rows", tuple(range(len(batch.rows)))),
+            getattr(batch, "row_count", len(batch.rows)),
+        )
+        if mapping != physical[-1]:
+            raise RuntimeError("layer prepared physical rows differ from recurrent context")
         for (key, position, depth), (allocation, actual_depth, actual_position) in zip(
             context[-1], batch.rows
         ):
@@ -262,6 +313,8 @@ def observe_native(engine, sink, *, on_completed_kv=None):
 
     try:
         replace(engine.model, "recurrent", observed_recurrent)
+        if prepared_core is not None:
+            replace(engine.model, "_recurrent_prepared", observed_prepared_core)
         replace(engine.model_runner, "execute", observed_execute)
         replace(cache, write_name, observed_prepared_write if prepared else observed_write)
         replace(cache, attend_name, observed_prepared_attend if prepared else observed_attend)

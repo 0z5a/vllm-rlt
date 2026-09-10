@@ -230,12 +230,14 @@ def active_case_deadline(output_dir, worker):
     return min(candidates) if candidates else None
 
 
-def _launch_worker(plan, worker, output_dir, deadline_ns):
+def _launch_worker(
+    plan, worker, output_dir, deadline_ns, *, module="vllm_lt.benchmarks.ab", active_deadline=None
+):
     implementation = plan["implementations"][worker["implementation_id"]]
     command = [
         plan["interpreter"],
         "-m",
-        "vllm_lt.benchmarks.ab",
+        module,
         "worker",
         "--plan",
         str(output_dir / "plan.json"),
@@ -260,8 +262,8 @@ def _launch_worker(plan, worker, output_dir, deadline_ns):
         try:
             while True:
                 now = time.perf_counter_ns()
-                active_deadline = active_case_deadline(output_dir, worker)
-                if active_deadline is not None and now >= active_deadline:
+                case_limit = (active_deadline or active_case_deadline)(output_dir, worker)
+                if case_limit is not None and now >= case_limit:
                     raise TimeoutError("active case lifetime exceeded its 600-second cap")
                 remaining = (deadline_ns - now) / 1e9
                 if remaining <= 5:
