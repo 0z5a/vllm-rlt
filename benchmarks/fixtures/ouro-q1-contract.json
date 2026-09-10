@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "artifact_type": "validation_contract",
+  "contract_id": "ouro-q1-one-pass-v1",
+  "hypothesis": "A serial independent last-exited oracle can separate implementation/cache defects from arithmetic and decision sensitivity on identical fixed input histories.",
+  "isolated_variables": [
+    "Native attention backend: Torch versus Triton, with fixed supplied histories and dtype.",
+    "Native scheduling: serial, refill, no_refill, with the declared identical supplied histories.",
+    "BF16 versus FP32 oracle arithmetic sensitivity, diagnostic only.",
+    "Reviewed official eager fixed-depth equations versus the serial oracle, with matching supplied histories."
+  ],
+  "acceptance_criterion": "Every required numerical and behavioral gate must pass for qualification; conclusive negative diagnosis remains unqualified, and incomplete or unlocalized evidence is inconclusive. Candidate dumps begin at a preselected fixture or its first observed finite required failure and stop at fixed byte limits; no earlier tensor backfill or rerun is allowed. Canonical earliest-boundary diagnosis uses preserved statistics separately from dump selection.",
+  "stop_conditions": [
+    "Invalid input history or populated-cache invariant failure.",
+    "Any nonfinite value, device failure, or cleanup failure stops device work.",
+    "Per-case600s or outer7200s limit, outer limit wins.",
+    "Any declared transient, spool, disk, or dump cap exceeded; preserve missing-comparison records.",
+    "Finite tolerance failures retain planned diagnostic coverage; no replacement execution or silent source fixes."
+  ],
+  "dtypes": [
+    "float32",
+    "bfloat16"
+  ],
+  "engine": {
+    "cache": {
+      "num_blocks": 160,
+      "block_size": 16
+    },
+    "scheduler": {
+      "max_num_seqs": 4,
+      "max_num_batched_tokens": 64,
+      "min_coda_batch_size": 1
+    },
+    "sampling": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": -1,
+      "seed": 0,
+      "min_loops": 2,
+      "max_loops": 4,
+      "max_tokens": 9,
+      "ignore_eos": true
+    }
+  },
+  "arithmetic": {
+    "allow_tf32": false,
+    "cudnn_allow_tf32": false,
+    "allow_bf16_reduced_precision_reduction": false,
+    "allow_fp16_reduced_precision_reduction": false
+  },
+  "controls": {
+    "cpu_threads": 1,
+    "interop_threads": 1,
+    "seed": 0,
+    "gpu_ids": null,
+    "numa_policy": "inherit-and-record",
+    "cache_policy": "fresh-state-preserve-allocator",
+    "residency_policy": "reuse-immutable-weights-release-per-case-state",
+    "spool_dtype": "original-model-dtype"
+  },
+  "limits": {
+    "case_timeout_s": 600,
+    "total_timeout_s": 7200,
+    "implementation_executions": 168,
+    "passes_per_case": 1,
+    "feasibility_fixtures_per_dtype": 1,
+    "transient_matching_bytes": 67108864,
+    "group_spool_bytes": 2147483648,
+    "cumulative_spool_written_bytes": 8589934592,
+    "total_disk_bytes": 12884901888,
+    "persisted_dump_bytes": 268435456,
+    "dump_bytes_per_fixture": 67108864,
+    "dump_fixture_count": 4,
+    "spool_index_record_bytes": 1024,
+    "comparison_record_bytes": 2048
+  },
+  "diagnostics": {
+    "positions": "last-prompt-token-and-eight-continuation-inputs",
+    "operations": [
+      "attention_input",
+      "query",
+      "key",
+      "value",
+      "attention_output",
+      "layer_output",
+      "loop_hidden",
+      "gate_logits",
+      "logits"
+    ],
+    "kv_selection": "all-populated-final-positions-all-depths-and-layers",
+    "kv_chunk_positions": 4,
+    "preselected_dump_fixture_ids": [
+      "Q1-L16-F2",
+      "Q1-L256-F0"
+    ],
+    "additional_failure_fixtures": 2,
+    "failure_selection_order": "execution-order-then-observed-boundary-order",
+    "dump_selection": "candidate-observations-from-selection-point-forward-until-cap",
+    "reference_retention": "retain-fp32-oracle-until-same-fixture-bf16-sensitivity",
+    "preselected_dump_dtype": "bfloat16",
+    "preselected_dump_comparison_kind": "same_dtype_fidelity"
+  },
+  "comparison_policy": {
+    "policy_id": "ouro-q1-original-logit-bounds-v1",
+    "logits": {
+      "float32": {
+        "atol": 0.001,
+        "rtol": 0.0001
+      },
+      "bfloat16": {
+        "atol": 0.25,
+        "rtol": 0.02
+      }
+    },
+    "required": [
+      "finite",
+      "final_logits_allclose",
+      "actual_top1_equal",
+      "forced_depth_work",
+      "history_and_cleanup_invariants"
+    ],
+    "diagnostic_only": [
+      "attention_input",
+      "query",
+      "key",
+      "value",
+      "attention_output",
+      "layer_output",
+      "loop_hidden",
+      "gate_logits",
+      "populated_kv",
+      "bf16_fp32_sensitivity"
+    ],
+    "near_ties": "report-top-two-margins-no-retroactive-top1-exceptions",
+    "live_gate": "record-first-divergence-later-histories-incomparable",
+    "rationale": "Preserve original declared FP32/BF16 logit bounds. Hidden, populated-KV and gate differences have no independently justified acceptance margins and remain diagnostic-only. Exact state/copy/lifecycle invariants are checked separately; output/token-depth overrides never count as genuine prediction agreement.",
+    "live_decisions": "require-exact-token-and-exit-on-matched-prefix",
+    "original_top1_rule": "depth-four-only"
+  },
+  "official": {
+    "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+    "attention_backend": "eager",
+    "use_cache": false,
+    "exit_at_step": 3,
+    "logits_to_keep": 0,
+    "local_files_only": true,
+    "optional_hub_kernels": false,
+    "transformers_version": "4.55.0"
+  }
+}

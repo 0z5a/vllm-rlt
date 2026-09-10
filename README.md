@@ -162,6 +162,10 @@ or adaptive-depth language-task accuracy.
 The [M1 benchmark guide](docs/benchmarks.md) describes the frozen FP32 workloads,
 replay scheduling A/B comparison, reserved execution, and offline report commands.
 
+The [Q1 validation guide](docs/q1-validation.md) describes the independent
+incremental LAST-EXITED oracle, pinned official reference, FP32/BF16 numerical
+comparisons, bounded diagnostics, and separate qualification decision.
+
 ## License
 
 Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). The native model adapts

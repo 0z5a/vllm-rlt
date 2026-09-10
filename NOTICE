@@ -12,3 +12,8 @@ All rights reserved.
 vllm-lt modifies the execution structure, configuration handling, model loading,
 and attention integration for standalone loop-level scheduling and depth-aware
 paged KV caching. It does not include an upstream CDB runtime implementation.
+
+The validation/reference_code directory also retains byte-identical copies of
+modeling_ouro.py and configuration_ouro.py from that pinned ByteDance revision.
+Their original copyright and Apache-2.0 license notices are preserved. These
+files are used only by the fixed-depth diagnostic reference adapter.
