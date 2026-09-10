@@ -159,6 +159,9 @@ independence. [Validation notes](docs/validation.md) record the actual environme
 and checks performed. These correctness checks do not establish serving performance
 or adaptive-depth language-task accuracy.
 
+The [M1 benchmark guide](docs/benchmarks.md) describes the frozen FP32 workloads,
+replay scheduling A/B comparison, reserved execution, and offline report commands.
+
 ## License
 
 Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). The native model adapts

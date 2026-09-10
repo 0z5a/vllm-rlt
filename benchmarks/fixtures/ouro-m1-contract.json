@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "artifact_type": "run_contract",
+  "contract_id": "ouro-m1-v1",
+  "hypothesis": "The frozen suite reveals which costs dominate single-device Ouro inference; mixed-depth refill may improve utilization relative to no-refill.",
+  "isolated_variable": "Scheduling mode within each W4/W5 comparison; all other workloads are descriptive fixed-depth baselines.",
+  "primary_metrics": [
+    "generated_tokens_per_second",
+    "tpot_ns",
+    "ttft_ns",
+    "delivery_wall_ns"
+  ],
+  "acceptance_criterion": "Complete seven-cell evidence with valid accounting and two useful profiler captures; no speedup required. Differences within observed variation are inconclusive.",
+  "stop_conditions": [
+    "workload or overall deadline",
+    "fixture-derived step or event bound",
+    "nonfinite feasibility values",
+    "invalid replay or accounting",
+    "device or cleanup failure"
+  ],
+  "engine": {
+    "dtype": "float32",
+    "attention_backend": "triton",
+    "cache": {
+      "num_blocks": 1024,
+      "block_size": 16
+    },
+    "scheduler": {
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 128,
+      "min_coda_batch_size": 1
+    },
+    "sampling": {
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": -1,
+      "seed": 0,
+      "min_loops": 2,
+      "max_loops": 4,
+      "exit_threshold": 1.0,
+      "ignore_eos": true
+    }
+  },
+  "arithmetic": {
+    "allow_tf32": false,
+    "allow_bf16_reduced_precision_reduction": false,
+    "allow_fp16_reduced_precision_reduction": false
+  },
+  "controls": {
+    "cpu_threads": 1,
+    "interop_threads": 1,
+    "seed": 0,
+    "device_count": 1,
+    "numa_policy": "inherit-and-record",
+    "cache_policy": "fresh-engine-preserve-allocator",
+    "residency_policy": "one-model-one-engine"
+  },
+  "limits": {
+    "workload_timeout_s": 600,
+    "total_timeout_s": 7200,
+    "profile_decode_outputs": 16
+  },
+  "observer_policy": {
+    "timing": "lightweight-host-events",
+    "profile": "cpu-cuda-profiler",
+    "finite_checks": "feasibility-only"
+  }
+}
