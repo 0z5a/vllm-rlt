@@ -183,11 +183,18 @@ def completed_run(tmp_path_factory):
         def wait_stream(self, other):
             pass
 
+    class Pool:
+        def __init__(self, identifier):
+            self.id = (0, identifier)
+
     class Graph:
         def __init__(self, runtime):
             self.runtime, self.body = runtime, None
+            self.pool_id = None
 
-        def capture_begin(self, **kwargs):
+        def capture_begin(self, *, pool, capture_error_mode):
+            assert pool[0] == 0 and pool[1] > 0 and capture_error_mode == "global"
+            self.pool_id = pool
             self.runtime.capturing = self
 
         def capture_end(self):
@@ -198,7 +205,7 @@ def completed_run(tmp_path_factory):
             self.body()
 
         def pool(self):
-            return (id(self), 1)
+            return self.pool_id
 
         def raw_cuda_graph_exec(self):
             return id(self)
@@ -209,6 +216,7 @@ def completed_run(tmp_path_factory):
     class Runtime:
         def __init__(self):
             self.current, self.capturing = Stream(), None
+            self.pool_count = 0
 
         def current_stream(self):
             return self.current
@@ -226,6 +234,10 @@ def completed_run(tmp_path_factory):
 
         def new_graph(self):
             return Graph(self)
+
+        def new_pool(self):
+            self.pool_count += 1
+            return Pool(self.pool_count)
 
         def memory(self):
             return dict.fromkeys(
@@ -259,6 +271,8 @@ def completed_run(tmp_path_factory):
             "synchronize",
             "memory_allocated",
             "memory_reserved",
+            "MemPool",
+            "get_allocator_backend",
         ):
             patch.setattr(torch.cuda, name, forbidden)
         patch.setattr(graph_module, "_make_runtime", lambda device: Runtime())

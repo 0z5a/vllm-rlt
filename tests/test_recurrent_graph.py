@@ -39,6 +39,8 @@ def no_cuda(monkeypatch):
         "current_stream",
         "Stream",
         "CUDAGraph",
+        "MemPool",
+        "get_allocator_backend",
         "memory_allocated",
         "memory_reserved",
     ):
@@ -80,15 +82,35 @@ class FakeStream:
             raise self.failure
 
 
+class FakePool:
+    def __init__(self, runtime, index):
+        self.runtime, self.id = runtime, (0, index)
+        runtime.pool_reserved[self.id] = 0
+        runtime.events.append(("pool_create", self.id))
+
+    def __del__(self):
+        graphs = [g for g in self.runtime.graphs if g.pool_id == self.id]
+        ready = all(g.reset_done and all(ref() is None for ref in g.output_refs) for g in graphs)
+        self.runtime.pool_releases.append((self.id, ready))
+        self.runtime.events.append(("pool_release", self.id))
+        # Model targeted MemPool destruction: still-live graph/output references
+        # prevent reclaim. The default/shared allocator cache remains untouched.
+        if ready:
+            self.runtime.pool_reserved.pop(self.id)
+
+
 class FakeGraph:
     def __init__(self, runtime, index):
         self.runtime, self.index = runtime, index
         self.body = None
         self.reset_done = False
         self.replay_failure = self.end_failure = None
+        self.pool_id, self.output_refs = None, []
 
     def capture_begin(self, *, pool, capture_error_mode):
-        assert pool is None and capture_error_mode == "global"
+        assert pool in self.runtime.pool_reserved and capture_error_mode == "global"
+        self.pool_id = pool
+        self.runtime.pool_reserved[pool] = 19 * 1024**2
         assert self.runtime.current is self.runtime.side
         self.runtime.capture = self
         self.runtime.events.append(("capture_begin", self.index))
@@ -107,7 +129,7 @@ class FakeGraph:
         self.body()
 
     def pool(self):
-        return (0, self.index)
+        return self.pool_id
 
     def raw_cuda_graph_exec(self):
         return self.index + 100
@@ -125,6 +147,8 @@ class FakeRuntime:
         self.current, self.capture = self.main, None
         self.after_memory = None
         self.memory_calls = 0
+        self.pool_refs, self.pool_releases, self.pool_reserved = [], [], {}
+        self.default_reserved = 123 * 1024**2
 
     def current_stream(self):
         return self.current
@@ -144,6 +168,11 @@ class FakeRuntime:
         graph = FakeGraph(self, len(self.graphs) + 1)
         self.graphs.append(graph)
         return graph
+
+    def new_pool(self):
+        pool = FakePool(self, len(self.pool_refs) + 1)
+        self.pool_refs.append(weakref.ref(pool))
+        return pool
 
     def reset_peaks(self):
         self.events.append(("reset_peaks",))
@@ -177,7 +206,10 @@ def fake_runtime(monkeypatch, cache):
     def body(executor, bucket):
         if runtime.capture is not None:
             runtime.capture.body = lambda: original(executor, bucket)
-        return original(executor, bucket)
+        outputs = original(executor, bucket)
+        if runtime.capture is not None:
+            runtime.capture.output_refs = [weakref.ref(value) for value in outputs]
+        return outputs
 
     monkeypatch.setattr(RecurrentGraphExecutor, "_tensor_body", body)
     return runtime

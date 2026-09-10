@@ -1,0 +1,221 @@
+"""CPU allocator-lifetime model; no claim of measured CUDA allocator behavior."""
+
+from contextlib import contextmanager
+from dataclasses import asdict
+
+import pytest
+import test_recurrent_graph as fixtures
+import torch
+
+from vllm_lt.worker.model_runner import ModelRunner
+from vllm_lt.worker.recurrent_graph import GraphLimits, _CudaRuntime
+
+model = fixtures.model
+no_cuda = fixtures.no_cuda
+
+
+def enable(model, monkeypatch):
+    cache = fixtures.make_cache(model)
+    runtime = fixtures.fake_runtime(monkeypatch, cache)
+    runner = ModelRunner(model, cache)
+    runner._enable_recurrent_graph(use_graphs=True)
+    return cache, runtime, runner, runner._decode_executor
+
+
+def released(runtime):
+    assert all(ref() is None for ref in runtime.pool_refs)
+    assert runtime.pool_reserved == {}
+    assert len(runtime.pool_releases) == len(runtime.pool_refs)
+    assert all(ready for _, ready in runtime.pool_releases)
+    assert runtime.default_reserved == 123 * 1024**2
+
+
+def test_public_pool_factory_selects_device_and_rejects_unqualified_allocator(monkeypatch):
+    events, owner = [], object()
+
+    @contextmanager
+    def device(value):
+        events.append(("device", value))
+        yield
+        events.append(("restore", value))
+
+    def pool():
+        assert events == [("device", "cuda:0")]
+        events.append(("MemPool",))
+        return owner
+
+    monkeypatch.setattr(torch.cuda, "get_allocator_backend", lambda: "native")
+    monkeypatch.setattr(torch.cuda, "device", device)
+    monkeypatch.setattr(torch.cuda, "MemPool", pool)
+    monkeypatch.setattr(
+        torch.cuda, "empty_cache", lambda: pytest.fail("shared cache release is forbidden")
+    )
+    runtime = _CudaRuntime("cuda:0")
+    assert runtime.new_pool() is owner
+    assert events == [("device", "cuda:0"), ("MemPool",), ("restore", "cuda:0")]
+    events.clear()
+    monkeypatch.setattr(torch.cuda, "get_allocator_backend", lambda: "cudaMallocAsync")
+    with pytest.raises(RuntimeError, match="native CUDA allocator"):
+        runtime.new_pool()
+    assert events == []
+
+
+def test_independent_owners_release_after_both_resets_and_captured_outputs(model, monkeypatch):
+    _, runtime, runner, executor = enable(model, monkeypatch)
+    snapshot = executor.snapshot()
+    pool_ids = []
+    for key, bucket in snapshot["buckets"].items():
+        owner = bucket["pool_owner"]
+        assert owner == {
+            "kind": "torch.cuda.MemPool",
+            "id": bucket["pool_id"],
+            "release_policy": "synchronize-reset-drop-captured-outputs-owner-last",
+        }
+        assert list(executor.buckets[int(key)]["graph"].pool()) == owner["id"]
+        pool_ids.append(tuple(owner["id"]))
+    assert len(set(pool_ids)) == 2
+    assert all(ref() is not None for ref in runtime.pool_refs)
+    assert all(ref() is not None for graph in runtime.graphs for ref in graph.output_refs)
+    before_close = len(runtime.events)
+    runner._close_recurrent_graph()
+    events = runtime.events[before_close:]
+    assert events[:2] == [("synchronize", "setup"), ("synchronize", "main")]
+    resets = [i for i, event in enumerate(events) if event[0] == "reset"]
+    frees = [i for i, event in enumerate(events) if event[0] == "pool_release"]
+    assert len(resets) == len(frees) == 2 and max(resets) < min(frees)
+    released(runtime)
+    assert executor.snapshot()["buckets"] == {}
+
+
+@pytest.mark.parametrize("failure_site", ["synchronize", "second_reset"])
+def test_failed_close_retains_both_owners_and_outputs_until_confirmed_close(
+    model, monkeypatch, failure_site
+):
+    _, runtime, _, executor = enable(model, monkeypatch)
+    primary = RuntimeError("close completion/reset failed")
+    reset = runtime.graphs[1].reset
+
+    def fail():
+        raise primary
+
+    if failure_site == "synchronize":
+        runtime.main.failure = primary
+    else:
+        monkeypatch.setattr(runtime.graphs[1], "reset", fail)
+    with pytest.raises(RuntimeError) as caught:
+        executor.close()
+    assert caught.value is primary
+    assert all(ref() is not None for ref in runtime.pool_refs)
+    assert all(ref() is not None for graph in runtime.graphs for ref in graph.output_refs)
+    assert len(runtime.pool_reserved) == 2 and not runtime.pool_releases
+    assert len(executor.buckets) == 2 and executor.failure is not None
+    runtime.main.failure = None
+    monkeypatch.setattr(runtime.graphs[1], "reset", reset)
+    executor.close()
+    # The saved primary traceback still holds local graph/bucket references.
+    # Explicit owner/output assignments must nevertheless have released pools.
+    released(runtime)
+
+
+@pytest.mark.parametrize("failed_capture", [1, 2])
+def test_capture_failure_retains_pool_ownership_then_safe_close_releases(
+    model, monkeypatch, failed_capture
+):
+    cache = fixtures.make_cache(model)
+    original = cache.key_cache.clone(), cache.value_cache.clone(), tuple(cache._free_blocks)
+    runtime = fixtures.fake_runtime(monkeypatch, cache)
+    create = runtime.new_graph
+    primary = RuntimeError("capture end failed")
+
+    def graph():
+        value = create()
+        if value.index == failed_capture:
+            value.end_failure = primary
+        return value
+
+    monkeypatch.setattr(runtime, "new_graph", graph)
+    runner = ModelRunner(model, cache)
+    with pytest.raises(RuntimeError) as caught:
+        runner._enable_recurrent_graph(use_graphs=True)
+    assert caught.value is primary
+    executor = runner._decode_executor
+    assert executor.failure["completion_confirmed"]
+    assert executor.setup_record["scratch"]["restored"]
+    assert torch.equal(cache.key_cache, original[0])
+    assert torch.equal(cache.value_cache, original[1])
+    assert tuple(cache._free_blocks) == original[2]
+    assert len(runtime.pool_refs) == failed_capture
+    assert all(ref() is not None for ref in runtime.pool_refs)
+    runner._close_recurrent_graph()
+    released(runtime)
+
+
+def test_graph_creation_failure_releases_owner_without_a_completed_graph(model, monkeypatch):
+    cache = fixtures.make_cache(model)
+    runtime = fixtures.fake_runtime(monkeypatch, cache)
+
+    def fail():
+        raise RuntimeError("graph creation failed")
+
+    monkeypatch.setattr(runtime, "new_graph", fail)
+    runner = ModelRunner(model, cache)
+    with pytest.raises(RuntimeError, match="graph creation failed"):
+        runner._enable_recurrent_graph(use_graphs=True)
+    assert len(runtime.pool_refs) == 1 and runtime.pool_refs[0]() is not None
+    assert runtime.graphs == []
+    runner._close_recurrent_graph()
+    released(runtime)
+
+
+def test_budget_decline_releases_both_owned_pools_before_compact_fallback(model, monkeypatch):
+    cache = fixtures.make_cache(model)
+    runtime = fixtures.fake_runtime(monkeypatch, cache)
+    runtime.after_memory = {
+        "allocated_bytes": 2,
+        "reserved_bytes": 2,
+        "peak_allocated_bytes": 2,
+        "peak_reserved_bytes": 2,
+    }
+    runner = ModelRunner(model, cache)
+    runner._enable_recurrent_graph(
+        use_graphs=True,
+        limits={**asdict(GraphLimits()), "graph_retained_allocated_bytes": 1},
+    )
+    assert runner._decode_executor is None
+    assert runner._graph_snapshot()["budget_decline"]["completion_confirmed"]
+    assert len(runtime.pool_refs) == 2
+    released(runtime)
+    assert cache.allocate("request", 1)
+    result = runner._recurrent(torch.ones(1, model.config.hidden_size), ["request"], [0], [0])
+    assert result[0].shape == (1, model.config.hidden_size)
+    assert runner._graph_snapshot()["budget_decline"]["calls"] == 1
+
+
+def test_fourteen_safe_executor_lifetimes_do_not_accumulate_private_pool_cache(model, monkeypatch):
+    cache = fixtures.make_cache(model)
+    runtime = fixtures.fake_runtime(monkeypatch, cache)
+    for repetition in range(14):
+        runner = ModelRunner(model, cache)
+        runner._enable_recurrent_graph(use_graphs=True)
+        assert sum(runtime.pool_reserved.values()) == 38 * 1024**2
+        assert runner._graph_snapshot()["setup"]["captures"] == 2
+        runner._close_recurrent_graph()
+        released(runtime)
+        assert len(runtime.pool_releases) == 2 * (repetition + 1)
+    assert len(runtime.graphs) == 28 and all(g.reset_done for g in runtime.graphs)
+    assert runtime.events.count(("reset_peaks",)) == 14
+
+
+@pytest.mark.parametrize("backend", ["triton", "torch"])
+def test_eager_control_has_null_owner_and_allocates_no_graph_pool(model, monkeypatch, backend):
+    cache = fixtures.make_cache(model)
+    runtime = fixtures.fake_runtime(monkeypatch, cache)
+    cache.backend = backend
+    runner = ModelRunner(model, cache)
+    runner._enable_recurrent_graph(use_graphs=False)
+    assert all(
+        bucket["pool_owner"] is None for bucket in runner._graph_snapshot()["buckets"].values()
+    )
+    assert runtime.pool_refs == [] and runtime.graphs == []
+    runner._close_recurrent_graph()
+    released(runtime)

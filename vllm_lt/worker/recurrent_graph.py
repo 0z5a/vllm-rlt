@@ -100,6 +100,14 @@ class _CudaRuntime:
     def new_graph():
         return torch.cuda.CUDAGraph(keep_graph=False)
 
+    def new_pool(self):
+        # Public MemPool owns the user-created pool until its targeted teardown.
+        # A graph reset alone only makes an implicit graph pool freeable.
+        if torch.cuda.get_allocator_backend() != "native":
+            raise RuntimeError("owned recurrent graph pools require the native CUDA allocator")
+        with torch.cuda.device(self.device):
+            return torch.cuda.MemPool()
+
     def memory(self):
         return {
             "allocated_bytes": torch.cuda.memory_allocated(self.device),
@@ -246,6 +254,7 @@ class RecurrentGraphExecutor:
                     "tensors": tensors,
                     "view": None,
                     "graph": None,
+                    "pool_owner": None,
                     "pool_id": None,
                     "graph_exec_id": None,
                     "capture_outputs": None,
@@ -411,9 +420,11 @@ class RecurrentGraphExecutor:
         return hidden, gates
 
     def _capture(self, bucket):
+        bucket["pool_owner"] = self.runtime.new_pool()
+        bucket["pool_id"] = list(bucket["pool_owner"].id)
         graph = self.runtime.new_graph()
         bucket["graph"] = graph
-        graph.capture_begin(pool=None, capture_error_mode="global")
+        graph.capture_begin(pool=bucket["pool_owner"].id, capture_error_mode="global")
         try:
             bucket["capture_outputs"] = self._tensor_body(bucket)
         except BaseException:
@@ -424,7 +435,8 @@ class RecurrentGraphExecutor:
             raise
         else:
             graph.capture_end()
-        bucket["pool_id"] = list(graph.pool())
+        if list(graph.pool()) != bucket["pool_id"]:
+            raise RuntimeError("captured graph must use its independently owned pool")
         bucket["graph_exec_id"] = graph.raw_cuda_graph_exec()
         bucket["captured_inputs"], bucket["captured_outputs"] = (
             self._inputs(bucket),
@@ -745,6 +757,16 @@ class RecurrentGraphExecutor:
             # In particular, do not drop graph pools or borrowed inputs if a
             # synchronization or graph reset failed partway through close.
             raise
+        # Complete both resets before releasing either owner. Captured model
+        # outputs belong to the private pools, unlike the common output buffers.
+        # Drop every executor-owned output reference before MemPool destruction
+        # performs its pool-specific cache release. Explicit assignments also
+        # work when an exception traceback retains a local bucket dictionary.
+        for bucket in self.buckets.values():
+            bucket["capture_outputs"] = None
+            bucket["graph"] = None
+        for bucket in self.buckets.values():
+            bucket["pool_owner"] = None
         self.buckets.clear()
         self._weights = ()
         self.ticket = self.batch = self.active_bucket = None
@@ -770,6 +792,13 @@ class RecurrentGraphExecutor:
                 "graph_id": id(bucket["graph"]) if bucket["graph"] is not None else None,
                 "graph_exec_id": bucket["graph_exec_id"],
                 "pool_id": bucket["pool_id"],
+                "pool_owner": {
+                    "kind": "torch.cuda.MemPool",
+                    "id": list(bucket["pool_owner"].id),
+                    "release_policy": "synchronize-reset-drop-captured-outputs-owner-last",
+                }
+                if bucket["pool_owner"] is not None
+                else None,
                 "captured_inputs": bucket["captured_inputs"],
                 "captured_outputs": bucket["captured_outputs"],
                 "counters": bucket["counters"],

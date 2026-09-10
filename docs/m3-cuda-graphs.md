@@ -15,7 +15,7 @@ propagation remain outside capture.
 ```python
 engine._enable_recurrent_graph(use_graphs=True)  # before adding any request
 # Existing add_request(), step(), and output delivery interfaces are unchanged.
-engine.model_runner._close_recurrent_graph()   # after requests complete/abort
+engine.model_runner._close_recurrent_graph()  # after requests complete/abort
 ```
 
 `use_graphs=False` selects the same private tensor path and buffer shapes with
@@ -81,8 +81,23 @@ free-list order. Runtime generations are measured relative to the post-setup
 baseline. Allocation generations themselves are not rewound.
 
 The implementation uses raw `CUDAGraph.capture_begin`/`capture_end`, with one
-independent pool per bucket. It avoids helpers that add implicit warmups or
-allocator-cache clearing. Capture and all outputs stay alive until safe close.
+independent public `torch.cuda.MemPool` owner per bucket. Capture receives that
+owner's pool ID. The path requires the native CUDA caching allocator. It avoids
+helpers that add implicit warmups or clear unrelated allocator caches.
+
+Safe close confirms completion and resets both graphs before dropping any
+captured-output reference. It releases each pool owner last. A reset or
+synchronization failure retains both owners for later safe settlement. In the
+[pinned Torch implementation](https://github.com/pytorch/pytorch/blob/cf30153c4c131c8164ee7798e5022d810682e2cb/aten/src/ATen/cuda/MemPool.cpp#L42),
+the owner's destructor reclaims that private pool specifically. Graph reset
+alone marks its cache reclaimable but does not force its immediate release.
+The implementation never calls the global `torch.cuda.empty_cache()`.
+
+This ownership follows the [failed first attempt](benchmarks/m3-capture-stopped-20260911.md),
+where each fresh executor retained another 38 MiB of reserved memory and the
+first W5-no-refill pair exceeded its 512-MiB growth cap by 20 MiB. The changed
+owner lifecycle requires a separate frozen experiment with unchanged limits;
+the stopped attempt remains failed.
 
 | Resource | Limit |
 | --- | ---: |
