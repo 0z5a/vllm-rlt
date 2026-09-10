@@ -7,6 +7,8 @@ The [2026-09-10 baseline report](benchmarks/m1-20260910.md) records the first
 completed matrix, acceptance checks, measured variability, and next target.
 The [M2 metadata comparison](m2-metadata.md) reuses this executor with fresh
 baseline/candidate pairs and separate numerical, regression and resource gates.
+The [2026-09-11 M2 report](benchmarks/m2-20260911.md) records the completed
+comparison and acceptance decision for per-traversal KV metadata reuse.
 
 Prepare the pinned `ByteDance/Ouro-1.4B` checkpoint at revision
 `574fa66cb8bf5abdc979642d01cf2b79b16bfab1` before running. Use a clean, committed
