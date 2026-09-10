@@ -287,7 +287,10 @@ def audit_graph_profile(trace, capture):
     for event in events:
         _finite(event["ts"], "trace timestamp")
         _finite(event["dur"], "trace duration")
-    dispatches = [(e, _DISPATCH.fullmatch(e.get("name", ""))) for e in events]
+    # Kineto may mirror record_function scopes as gpu_user_annotation events.
+    # Only the original host scopes contain the Python/CUDA launch boundary.
+    host_scopes = [e for e in events if e.get("cat") == "user_annotation"]
+    dispatches = [(e, _DISPATCH.fullmatch(e.get("name", ""))) for e in host_scopes]
     dispatches = sorted(
         ((e, m) for e, m in dispatches if m is not None), key=lambda pair: pair[0]["ts"]
     )
@@ -305,7 +308,7 @@ def audit_graph_profile(trace, capture):
         and e.get("cat") in ("cuda_runtime", "cuda_driver")
     ]
     kernels = [e for e in events if e.get("cat") == "kernel"]
-    replay_scopes = [(e, _REPLAY.fullmatch(e.get("name", ""))) for e in events]
+    replay_scopes = [(e, _REPLAY.fullmatch(e.get("name", ""))) for e in host_scopes]
     replay_scopes = [(e, m) for e, m in replay_scopes if m is not None]
     used_launches, used_scopes, seen_dispatches = set(), set(), set()
     graph_buckets, rows = {}, []
@@ -415,11 +418,10 @@ def audit_graph_profile(trace, capture):
         args = kernel.get("args", {})
         if args.get("graph id", args.get("graphId", 0)):
             require(id(kernel) in linked_kernel_ids, "unassigned actual graph kernel")
-    require(
-        capture["use_graphs"] is False or bool(used_launches), "candidate profile has no replay"
-    )
+    replay_covered = capture["use_graphs"] is False or bool(used_launches)
     return {
-        "complete": True,
+        "complete": replay_covered,
+        "missing": [] if replay_covered else ["candidate profile has no replay"],
         "graph_launches": len(used_launches),
         "graph_kernel_count": sum(r["graph_kernel_count"] for r in rows),
         "graph_ids_by_bucket": {str(k): v for k, v in graph_buckets.items()},
@@ -1015,6 +1017,11 @@ def build_report(output_dir):
                 profile["stage_dispatches"].get("recurrent", 0),
                 "profile scheduled dispatch count",
             )
+            if not profile["graph_attribution"]["complete"]:
+                report["missing"].extend(
+                    f"profiles/{profile['capture_id']}: {reason}"
+                    for reason in profile["graph_attribution"]["missing"]
+                )
         except (OSError, ValueError, KeyError, TypeError) as error:
             report["errors"].append(
                 {"scope": f"profiles/{profile['capture_id']}", "message": str(error)}

@@ -245,6 +245,67 @@ def test_actual_graph_launches_correlate_to_buckets_and_do_not_supply_speedup():
     assert report.audit_graph_profile(trace, capture)["graph_launches"] == 0
 
 
+@pytest.mark.parametrize("replay", [False, True])
+def test_gpu_annotation_mirrors_do_not_duplicate_host_dispatch_or_replay_scopes(replay):
+    trace, capture = profile_fixture(replay=replay)
+    expected = report.audit_graph_profile(trace, capture)
+    mirrors = [
+        {**deepcopy(event), "cat": "gpu_user_annotation"}
+        for event in trace["traceEvents"]
+        if event["cat"] == "user_annotation"
+    ]
+    # Keep identical names, times and thread IDs: category identifies the host
+    # scope, not a heuristic about the mirror's clock or process attribution.
+    trace["traceEvents"].extend(mirrors)
+    assert report.audit_graph_profile(trace, capture) == expected
+
+
+@pytest.mark.parametrize("scope", ["graph_dispatch", "graph_replay"])
+def test_gpu_annotation_cannot_replace_missing_host_scope(scope):
+    trace, capture = profile_fixture()
+    for event in trace["traceEvents"]:
+        if f"::{scope}::" in event["name"]:
+            event["cat"] = "gpu_user_annotation"
+    with pytest.raises(ValueError):
+        report.audit_graph_profile(trace, capture)
+
+
+def compact_profile_fixture():
+    trace, capture = profile_fixture()
+    host = trace["traceEvents"][0]
+    host["name"] = "vllm_lt::graph_dispatch::1::bucket::0::compact"
+    trace["traceEvents"] = [host, {**deepcopy(host), "cat": "gpu_user_annotation"}]
+    capture["profile_dispatches"] = [
+        {
+            "dispatch_id": 1,
+            "bucket_id": None,
+            "kind": "compact",
+            "generation": None,
+            "graph_exec_id": None,
+        }
+    ]
+    return trace, capture
+
+
+def test_valid_candidate_compact_window_is_missing_replay_coverage():
+    trace, capture = compact_profile_fixture()
+    evidence = report.audit_graph_profile(trace, capture)
+    assert evidence["complete"] is False
+    assert evidence["missing"] == ["candidate profile has no replay"]
+    assert evidence["graph_launches"] == evidence["graph_kernel_count"] == 0
+    assert evidence["dispatches"][0]["kind"] == "compact"
+    capture["use_graphs"] = False
+    assert report.audit_graph_profile(trace, capture)["complete"] is True
+
+
+def test_compact_candidate_window_with_unassigned_graph_kernel_is_still_invalid():
+    trace, capture = compact_profile_fixture()
+    kernel = profile_fixture()[0]["traceEvents"][3]
+    trace["traceEvents"].append(kernel)
+    with pytest.raises(ValueError, match="unassigned actual graph kernel"):
+        report.audit_graph_profile(trace, capture)
+
+
 @pytest.mark.parametrize(
     "change",
     [
@@ -613,7 +674,9 @@ def synthetic_run(capture_plan, tmp_path, monkeypatch):
             [p for p in profiles if (root / "profiles" / p["capture_id"]).exists()]
         ),
     )
-    monkeypatch.setattr(report, "audit_graph_profile", lambda *args: {"dispatches": [{}]})
+    monkeypatch.setattr(
+        report, "audit_graph_profile", lambda *args: {"complete": True, "dispatches": [{}]}
+    )
     return root, plan, manifest, records
 
 
@@ -631,6 +694,36 @@ def test_combined101_row_report_checks_real_worker_order_controls_and_cleanup(sy
         "workers": 8,
     }
     assert value["milestone_status"] == "accepted_optional_path_pending_manual_evidence_review"
+
+
+def test_complete_run_with_valid_w4_fallback_profile_stays_incomplete(synthetic_run, monkeypatch):
+    root, _, _, records = synthetic_run
+    target = next(
+        r
+        for r in records.values()
+        if r["planned"]["phase"] == "profile"
+        and r["planned"]["implementation_id"] == "B"
+        and r["planned"]["workload_id"] == "W4"
+    )
+    target["result"]["capture"]["test_missing_replay"] = True
+
+    def attribution(trace, capture):
+        missing = capture.get("test_missing_replay", False)
+        return {
+            "complete": not missing,
+            "missing": ["candidate profile has no replay"] if missing else [],
+            "graph_launches": 0 if missing else 1,
+            "dispatches": [{"kind": "compact" if missing else "replay"}],
+        }
+
+    monkeypatch.setattr(report, "audit_graph_profile", attribution)
+    value = report.build_report(root)
+    assert value["errors"] == []
+    assert value["evidence_status"] == "incomplete" and value["decision"] == "inconclusive"
+    assert value["milestone_status"] == "unqualified_optional_path"
+    assert value["counts"]["eligible_timing_runs"] == 28
+    assert all(cell["status"] == "passed" for cell in value["cells"])
+    assert value["missing"] == [f"profiles/{target['run_id']}: candidate profile has no replay"]
 
 
 @pytest.mark.parametrize(
