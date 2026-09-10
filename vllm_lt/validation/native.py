@@ -180,8 +180,12 @@ def observe_native(engine, sink, *, on_completed_kv=None):
 
     recurrent = engine.model.recurrent
     execute = engine.model_runner.execute
-    write = engine.cache_manager.write
-    attend = engine.cache_manager.attend
+    cache = engine.cache_manager
+    prepared = hasattr(cache, "_prepare_batch")
+    write_name = "_write_prepared" if prepared else "write"
+    attend_name = "_attend_prepared" if prepared else "attend"
+    write = getattr(cache, write_name)
+    attend = getattr(cache, attend_name)
     finish = engine.scheduler.finish
 
     def observed_recurrent(hidden, request_ids, depths, positions, cache):
@@ -220,6 +224,31 @@ def observe_native(engine, sink, *, on_completed_kv=None):
         emit("query", query, layer=layer)
         return attend(layer, request_ids, depths, positions, query)
 
+    def check_prepared_rows(batch):
+        if not context or len(batch.rows) != len(context[-1]) or batch.owner is not cache:
+            raise RuntimeError("prepared KV rows differ from native diagnostic context")
+        for (key, position, depth), (allocation, actual_depth, actual_position) in zip(
+            context[-1], batch.rows
+        ):
+            if (
+                position != actual_position
+                or depth != actual_depth + 1
+                or cache._get_allocation(key) is not allocation
+            ):
+                raise RuntimeError("prepared KV ownership differs from native diagnostic context")
+
+    def observed_prepared_write(layer, batch, key, value):
+        check_prepared_rows(batch)
+        result = write(layer, batch, key, value)
+        emit("key", key, layer=layer)
+        emit("value", value, layer=layer)
+        return result
+
+    def observed_prepared_attend(layer, batch, query):
+        check_prepared_rows(batch)
+        emit("query", query, layer=layer)
+        return attend(layer, batch, query)
+
     def observed_finish(request, reason):
         if reason == "length" and on_completed_kv is not None:
             on_completed_kv(request.request_id, engine.cache_manager)
@@ -234,8 +263,8 @@ def observe_native(engine, sink, *, on_completed_kv=None):
     try:
         replace(engine.model, "recurrent", observed_recurrent)
         replace(engine.model_runner, "execute", observed_execute)
-        replace(engine.cache_manager, "write", observed_write)
-        replace(engine.cache_manager, "attend", observed_attend)
+        replace(cache, write_name, observed_prepared_write if prepared else observed_write)
+        replace(cache, attend_name, observed_prepared_attend if prepared else observed_attend)
         replace(engine.scheduler, "finish", observed_finish)
         for layer_id, layer in enumerate(engine.model.model.layers):
             for module, operation in (

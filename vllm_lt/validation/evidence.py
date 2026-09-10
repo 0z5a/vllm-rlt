@@ -30,9 +30,13 @@ def required_pass(record):
     if record["status"] == "incomparable":
         return record["stats"]["all_finite"]
     stats = record["stats"]
-    return stats["all_finite"] and (
-        not stats["numeric_required"]
-        or (stats["allclose"] and (not record["top1_required"] or stats["top1_equal"]))
+    return (
+        stats["all_finite"]
+        and (not record.get("require_exact", False) or stats["exact_equal"])
+        and (
+            not stats["numeric_required"]
+            or (stats["allclose"] and (not record["top1_required"] or stats["top1_equal"]))
+        )
     )
 
 
@@ -211,10 +215,15 @@ class ComparisonStream:
             "preselected_dump_dtype": "bfloat16",
             "preselected_dump_comparison_kind": "same_dtype_fidelity",
         }
-        if diagnostics is not None and any(
-            diagnostics.get(name) != value for name, value in selection.items()
-        ):
-            raise ValueError("preselected dumps require the frozen BF16 same-dtype policy")
+        if diagnostics is not None:
+            selection = {name: diagnostics.get(name) for name in selection}
+            if tuple(selection.values()) not in (
+                ("bfloat16", "same_dtype_fidelity"),
+                ("float32", "implementation_exact"),
+            ):
+                raise ValueError("preselected dumps require a supported frozen comparison policy")
+        if type(comparison.get("require_exact", False)) is not bool:
+            raise ValueError("require_exact must be a boolean")
         self.dump_selection = selection
         self.summary = empty_summary(comparison)
         self.summary.update(
@@ -333,6 +342,8 @@ class ComparisonStream:
                 self.comparison["family"] == "original" and metadata["depth"] < 4
             ),
         }
+        if "require_exact" in self.comparison:
+            record["require_exact"] = self.comparison["require_exact"]
         if reason:
             # Incomparable histories still must remain finite.
             record["stats"] = _candidate_finiteness(actual, metadata["operation"])
@@ -362,7 +373,7 @@ class ComparisonStream:
         if not required_pass(record):
             self.dumps.observe_failure(metadata["fixture_id"], finite=True)
         fixture_id = metadata["fixture_id"]
-        # Preserve the planned fixtures' quota for BF16 paired layer evidence.
+        # Preserve planned fixtures' quota for the frozen dtype/comparison pair.
         # Additional failure fixtures begin capture at their first finite failure
         # in execution order and keep that selection across later dtype passes.
         preselected = fixture_id in self.dumps.preselected_fixture_ids

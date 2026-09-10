@@ -20,7 +20,7 @@ import torch
 from vllm_lt.benchmarks.observe import RunCollector, instrument_engine
 from vllm_lt.benchmarks.profile import Capture, finite_checks
 from vllm_lt.benchmarks.replay import ReplayEngine
-from vllm_lt.benchmarks.schema import verify_plan
+from vllm_lt.benchmarks.schema import read_json, verify_plan
 from vllm_lt.config import CacheConfig, SchedulerConfig
 from vllm_lt.engine.llm_engine import LLMEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
@@ -133,8 +133,15 @@ def _execute(model, plan, run, workload, output_dir, deadline):
     engine_config = contract["engine"]
     run_dir = output_dir / "runs" / run["run_id"]
     run_dir.mkdir(parents=True, exist_ok=False)
+    started_ns = time.perf_counter_ns()
+    case_deadline = min(
+        deadline,
+        started_ns
+        + int(run.get("case_lifetime_timeout_s", contract["limits"]["workload_timeout_s"]) * 1e9),
+    )
     write_json(
-        run_dir / "started.json", {"schema_version": 1, **run, "started_ns": time.perf_counter_ns()}
+        run_dir / "started.json",
+        {"schema_version": 1, **run, "started_ns": started_ns, "deadline_ns": case_deadline},
     )
     setup = time.perf_counter_ns()
     arguments = {
@@ -194,7 +201,7 @@ def _execute(model, plan, run, workload, output_dir, deadline):
                 arrival_ns = time.perf_counter_ns()
                 collector.start(arrival_ns)
                 limit = min(
-                    deadline, arrival_ns + int(contract["limits"]["workload_timeout_s"] * 1e9)
+                    case_deadline, arrival_ns + int(contract["limits"]["workload_timeout_s"] * 1e9)
                 )
                 begin.record()
                 for item, params in submissions:
@@ -215,6 +222,8 @@ def _execute(model, plan, run, workload, output_dir, deadline):
                 end.record()
                 torch.cuda.synchronize()
                 synchronized_ns = time.perf_counter_ns()
+                if synchronized_ns >= limit:
+                    raise TimeoutError("case deadline exhausted during final step/synchronization")
                 gpu_elapsed_ms = begin.elapsed_time(end)
                 observation.validate_gate_probabilities()
                 collected = collector.finish(synchronized_ns=synchronized_ns)
@@ -333,16 +342,7 @@ def _execute(model, plan, run, workload, output_dir, deadline):
     return result
 
 
-def run_plan(plan: dict, *, output_dir: Path) -> dict:
-    """Run the exact declared sequence once; never retry or expand a failed experiment."""
-    start = time.perf_counter_ns()
-    verify_plan(plan)
-    verified_ns = time.perf_counter_ns()
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=False)
-    (output_dir / "inputs").mkdir()
-    write_json(output_dir / "inputs" / "plan.json", plan)
-    contract = plan["contract"]
+def configure_process(contract):
     controls = contract["controls"]
     torch.set_num_threads(controls["cpu_threads"])
     torch.set_num_interop_threads(controls["interop_threads"])
@@ -356,6 +356,113 @@ def run_plan(plan: dict, *, output_dir: Path) -> dict:
     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = arithmetic[
         "allow_fp16_reduced_precision_reduction"
     ]
+
+
+def load_model(plan, manifest):
+    """Shared one-model worker preparation; callers record preparation separately."""
+    manifest["capacity_preflight"] = capacity_check(plan)
+    loading = time.perf_counter_ns()
+    model = OuroForCausalLM.from_pretrained(plan["model_path"], device="cuda", dtype=torch.float32)
+    manifest["loading_ns"] = time.perf_counter_ns() - loading
+    manifest["post_load_memory"] = memory()
+    return model
+
+
+def release_device(manifest):
+    """Final process-local cleanup only, after callers release their model reference."""
+    errors = []
+    for label, action in (
+        ("gc", gc.collect),
+        ("synchronize", torch.cuda.synchronize),
+        ("before_release", lambda: manifest.update(teardown_after_gc=memory())),
+        ("workspace_release", lambda: torch._C._cuda_clearCublasWorkspaces()),
+        ("allocator_release", torch.cuda.empty_cache),
+        ("after_release", lambda: manifest.update(teardown_after_workspace_release=memory())),
+    ):
+        try:
+            action()
+        except Exception as exc:
+            errors.append({"stage": label, "type": type(exc).__name__, "message": str(exc)})
+    if errors:
+        manifest["cleanup_errors"] = errors
+        raise RuntimeError(f"task-owned CUDA cleanup failed: {errors}")
+    if any(manifest["teardown_after_workspace_release"].values()):
+        raise RuntimeError("task-owned tensor or allocator memory remains after teardown")
+
+
+def run_loaded_rows(model, plan, rows, *, output_dir, deadline, record_completed):
+    """Execute rows through the sole M1 inference loop; stop without retries."""
+    workloads = {row["workload_id"]: row for row in plan["suite"]["workloads"]}
+    for run in rows:
+        if time.perf_counter_ns() >= deadline:
+            raise TimeoutError("overall experiment budget exhausted")
+        try:
+            result = _execute(model, plan, run, workloads[run["workload_id"]], output_dir, deadline)
+        except (Exception, KeyboardInterrupt) as exc:
+            # An allocation/setup failure may precede the inner recovery boundary.
+            run_dir = output_dir / "runs" / run["run_id"]
+            run_dir.mkdir(parents=True, exist_ok=True)
+            result_path = run_dir / "result.json"
+            if not result_path.exists():
+                write_json(
+                    result_path,
+                    {
+                        "schema_version": 1,
+                        "artifact_type": "run_result",
+                        **run,
+                        "experiment_id": output_dir.name,
+                        "plan_sha256": plan["plan_sha256"],
+                        "status": "failed",
+                        "comparison_eligible": False,
+                        "requests": [],
+                        "metrics": None,
+                        "cleanup": None,
+                        "failures": [{"type": type(exc).__name__, "message": str(exc)}],
+                    },
+                )
+            raise
+        if result["status"] != "complete":
+            raise RuntimeError(f"stopping after {run['run_id']}: {result['failures']}")
+        gc.collect()
+        torch.cuda.synchronize()
+        result["memory"]["after_engine_release"] = memory()
+        marker = read_json(output_dir / "runs" / run["run_id"] / "started.json")
+        result["case_started_ns"] = marker["started_ns"]
+        result["case_completed_ns"] = time.perf_counter_ns()
+        if result["case_completed_ns"] >= marker["deadline_ns"]:
+            result["status"], result["comparison_eligible"] = "incomplete", False
+            result["failures"].append(
+                {"type": "deadline", "message": "case lifetime including cleanup exceeded"}
+            )
+            write_json(output_dir / "runs" / run["run_id"] / "result.json", result)
+            raise TimeoutError("case lifetime including cleanup exceeded")
+        write_json(output_dir / "runs" / run["run_id"] / "result.json", result)
+        record_completed(run["run_id"], result)
+        print(
+            json.dumps(
+                {
+                    "run_id": run["run_id"],
+                    "status": result["status"],
+                    "metrics": result["metrics"].get("generated_tokens_per_second"),
+                }
+            ),
+            flush=True,
+        )
+        if time.perf_counter_ns() >= deadline:
+            raise TimeoutError("overall experiment budget exhausted during artifact recording")
+
+
+def run_plan(plan: dict, *, output_dir: Path) -> dict:
+    """Run the exact declared sequence once; never retry or expand a failed experiment."""
+    start = time.perf_counter_ns()
+    verify_plan(plan)
+    verified_ns = time.perf_counter_ns()
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=False)
+    (output_dir / "inputs").mkdir()
+    write_json(output_dir / "inputs" / "plan.json", plan)
+    contract = plan["contract"]
+    configure_process(contract)
     manifest = {
         "schema_version": 1,
         "artifact_type": "experiment_manifest",
@@ -386,66 +493,21 @@ def run_plan(plan: dict, *, output_dir: Path) -> dict:
         manifest["environment"] = environment()
         manifest["preparation"]["environment_setup_ns"] = time.perf_counter_ns() - verified_ns
         device_ready = True
-        manifest["capacity_preflight"] = capacity_check(plan)
+        model = load_model(plan, manifest)
         write_json(output_dir / "manifest.json", manifest)
-        loading = time.perf_counter_ns()
-        model = OuroForCausalLM.from_pretrained(
-            plan["model_path"], device="cuda", dtype=torch.float32
-        )
-        manifest["loading_ns"] = time.perf_counter_ns() - loading
-        manifest["post_load_memory"] = memory()
-        write_json(output_dir / "manifest.json", manifest)
-        workloads = {row["workload_id"]: row for row in plan["suite"]["workloads"]}
-        for run in plan["execution_order"]:
-            if time.perf_counter_ns() >= deadline:
-                raise TimeoutError("overall experiment budget exhausted")
-            try:
-                result = _execute(
-                    model, plan, run, workloads[run["workload_id"]], output_dir, deadline
-                )
-            except (Exception, KeyboardInterrupt) as exc:
-                # An allocation/setup failure may precede the inner recovery boundary.
-                run_dir = output_dir / "runs" / run["run_id"]
-                run_dir.mkdir(parents=True, exist_ok=True)
-                result_path = run_dir / "result.json"
-                if not result_path.exists():
-                    write_json(
-                        result_path,
-                        {
-                            "schema_version": 1,
-                            "artifact_type": "run_result",
-                            **run,
-                            "experiment_id": output_dir.name,
-                            "plan_sha256": plan["plan_sha256"],
-                            "status": "failed",
-                            "comparison_eligible": False,
-                            "requests": [],
-                            "metrics": None,
-                            "cleanup": None,
-                            "failures": [{"type": type(exc).__name__, "message": str(exc)}],
-                        },
-                    )
-                raise
-            if result["status"] != "complete":
-                raise RuntimeError(f"stopping after {run['run_id']}: {result['failures']}")
-            gc.collect()
-            torch.cuda.synchronize()
-            result["memory"]["after_engine_release"] = memory()
-            write_json(output_dir / "runs" / run["run_id"] / "result.json", result)
-            manifest["completed_runs"].append(run["run_id"])
+
+        def completed(run_id, result):
+            manifest["completed_runs"].append(run_id)
             write_json(output_dir / "manifest.json", manifest)
-            print(
-                json.dumps(
-                    {
-                        "run_id": run["run_id"],
-                        "status": result["status"],
-                        "metrics": result["metrics"].get("generated_tokens_per_second"),
-                    }
-                ),
-                flush=True,
-            )
-            if time.perf_counter_ns() >= deadline:
-                raise TimeoutError("overall experiment budget exhausted during artifact recording")
+
+        run_loaded_rows(
+            model,
+            plan,
+            plan["execution_order"],
+            output_dir=output_dir,
+            deadline=deadline,
+            record_completed=completed,
+        )
         manifest["status"] = "complete"
     except (Exception, KeyboardInterrupt) as exc:
         manifest["status"] = (
@@ -456,15 +518,8 @@ def run_plan(plan: dict, *, output_dir: Path) -> dict:
         model = None
         gc.collect()
         try:
-            if device_ready:
-                torch.cuda.synchronize()
-                manifest["teardown_after_gc"] = memory()
-                # Process-local leak accounting only after all trials are finished.
-                torch._C._cuda_clearCublasWorkspaces()
-                torch.cuda.empty_cache()
-                manifest["teardown_after_workspace_release"] = memory()
-                if manifest["teardown_after_workspace_release"]["allocated_bytes"]:
-                    raise RuntimeError("task-owned tensor memory remains after teardown")
+            if device_ready or torch.cuda.is_initialized():
+                release_device(manifest)
         except Exception as exc:
             manifest["status"] = "failed"
             manifest["failures"].append({"type": "cleanup", "message": str(exc)})

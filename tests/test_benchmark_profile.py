@@ -100,6 +100,9 @@ def bindings(instance):
     ]
     if hasattr(instance.cache_manager, "attend"):
         targets.append((instance.cache_manager, "attend"))
+    for name in ("_prepare_batch", "_write_prepared", "_attend_prepared"):
+        if hasattr(instance.cache_manager, name):
+            targets.append((instance.cache_manager, name))
     return [(obj, name, name in vars(obj), vars(obj).get(name)) for obj, name in targets]
 
 
@@ -193,6 +196,61 @@ def test_capture_restores_partial_installation(tmp_path, fake_profiler):
         Capture(instance, tmp_path / "capture", limit=1, run=run_spec()),
     ):
         pytest.fail("missing interface should fail during instrumentation installation")
+    assert_restored(saved)
+
+
+@pytest.mark.parametrize("prepared", [False, True])
+def test_capture_follows_cache_consumers_once_including_public_adapters(
+    tmp_path, fake_profiler, prepared
+):
+    class PublicCache:
+        def write(self):
+            return "written"
+
+        def attend(self):
+            return "attended"
+
+        def finalize_token(self):
+            pass
+
+    class PreparedCache(PublicCache):
+        def _prepare_batch(self):
+            return "batch"
+
+        def _write_prepared(self, batch):
+            assert batch == "batch"
+            return "written"
+
+        def _attend_prepared(self, batch):
+            assert batch == "batch"
+            return "attended"
+
+        def write(self):
+            return self._write_prepared(self._prepare_batch())
+
+        def attend(self):
+            return self._attend_prepared(self._prepare_batch())
+
+    instance = engine()
+    cache = PreparedCache() if prepared else PublicCache()
+    instance.cache_manager = cache
+    saved = bindings(instance)
+    capture = Capture(instance, tmp_path / "capture", limit=1, run=run_spec())
+    with capture:
+        capture._start()
+        if prepared:
+            # Production consumes one descriptor directly, without public adapters.
+            batch = cache._prepare_batch()
+            assert cache._write_prepared(batch) == "written"
+            assert cache._attend_prepared(batch) == "attended"
+            assert "write" not in vars(cache) and "attend" not in vars(cache)
+        assert cache.write() == "written"
+        assert cache.attend() == "attended"
+    labels = fake_profiler[1]
+    assert labels.count("vllm_lt::kv_write") == (2 if prepared else 1)
+    assert labels.count("vllm_lt::attention") == (2 if prepared else 1)
+    assert labels.count("vllm_lt::kv_prepare") == (3 if prepared else 0)
+    assert capture.metadata["kv_metadata_path"] == ("prepared" if prepared else "public")
     assert_restored(saved)
 
 

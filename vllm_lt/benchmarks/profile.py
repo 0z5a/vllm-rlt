@@ -62,6 +62,20 @@ class Capture:
         setattr(obj, name, call)
 
     def __enter__(self):
+        cache = self.engine.cache_manager
+        self.kv_metadata_path = "prepared" if hasattr(cache, "_prepare_batch") else "public"
+        cache_wrappers = (
+            (
+                (cache, "_prepare_batch", "vllm_lt::kv_prepare"),
+                (cache, "_write_prepared", "vllm_lt::kv_write"),
+                (cache, "_attend_prepared", "vllm_lt::attention"),
+            )
+            if self.kv_metadata_path == "prepared"
+            else (
+                (cache, "write", "vllm_lt::kv_write"),
+                (cache, "attend", "vllm_lt::attention"),
+            )
+        )
         wrappers = (
             (self.engine.scheduler, "schedule", "vllm_lt::schedule"),
             (self.engine.model_runner, "execute", "vllm_lt::runner"),
@@ -70,9 +84,8 @@ class Capture:
             (self.engine.model, "recurrent", "vllm_lt::recurrent"),
             (self.engine.model, "coda", "vllm_lt::coda"),
             (self.engine.model_runner, "_sample", "vllm_lt::sampling"),
-            (self.engine.cache_manager, "write", "vllm_lt::kv_write"),
-            (self.engine.cache_manager, "attend", "vllm_lt::attention"),
-            (self.engine.cache_manager, "finalize_token", "vllm_lt::kv_finalize"),
+            *cache_wrappers,
+            (cache, "finalize_token", "vllm_lt::kv_finalize"),
         )
         try:
             for obj, name, label in wrappers:
@@ -136,6 +149,7 @@ class Capture:
             "controls_sha256": self.run["controls_sha256"],
             "workload_sha256": self.run["workload_sha256"],
             "coverage": "Decode-focused; naturally interleaved prefill is included and labeled.",
+            "kv_metadata_path": self.kv_metadata_path,
         }
         (self.output_dir / "metadata.json").write_text(
             json.dumps(self.metadata, indent=2, allow_nan=False) + "\n"

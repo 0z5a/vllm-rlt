@@ -25,8 +25,12 @@ from .schema import verify_plan, write_json
 
 def fixtures_for(plan):
     suite = plan["suite"]
-    fixtures = {row["fixture_id"]: row for row in suite["fixtures"] + suite["feasibility_fixtures"]}
-    for index, prompt in enumerate(suite["original_reproduction"]["prompt_token_ids"]):
+    fixtures = {
+        row["fixture_id"]: row for row in suite["fixtures"] + suite.get("feasibility_fixtures", [])
+    }
+    for index, prompt in enumerate(
+        suite.get("original_reproduction", {}).get("prompt_token_ids", [])
+    ):
         key = f"Q1-original-{index}"
         fixtures[key] = {"fixture_id": key, "prompt_token_ids": prompt}
     return fixtures
@@ -386,8 +390,10 @@ def execute_case(model, plan, case, output, budget, dumps, deadline):
                         diagnostics=plan["contract"]["diagnostics"],
                     )
                 )
-        retain = case["implementation"] in ("oracle", "legacy_dense") or (
-            case["implementation"] == "legacy_packed" and case["backend"] == "torch"
+        retain = (
+            case.get("retain_evidence", False)
+            or case["implementation"] in ("oracle", "legacy_dense")
+            or (case["implementation"] == "legacy_packed" and case["backend"] == "torch")
         )
         if retain:
             for fixture_id in case["fixture_ids"]:
@@ -396,7 +402,7 @@ def execute_case(model, plan, case, output, budget, dumps, deadline):
                     case["case_id"],
                     fixture_id,
                     budget,
-                    f"{case['family']}-{case['dtype']}-{case['group_id']}",
+                    case.get("spool_group", f"{case['family']}-{case['dtype']}-{case['group_id']}"),
                 )
 
         def sink(metadata, tensor):

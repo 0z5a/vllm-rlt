@@ -343,7 +343,11 @@ def _audit_stats(record, comparison, shape, policy):
         ("passed" if intrinsic_pass else "failed") if numeric else "diagnostic_only",
         "statistics status",
     )
-    return finite and (not numeric or (stats["allclose"] and (not raw_top1 or stats["top1_equal"])))
+    return (
+        finite
+        and (not comparison.get("require_exact", False) or stats["exact_equal"])
+        and (not numeric or (stats["allclose"] and (not raw_top1 or stats["top1_equal"])))
+    )
 
 
 def _first_live_divergence(actual, reference):
@@ -447,6 +451,11 @@ def _audit_comparison(folder, plan, comparison, cases, fixtures, observation_sin
             record["top1_required"],
             not (comparison["family"] == "original" and metadata["depth"] < 4),
             "effective top1 gate",
+        )
+        _equal(
+            record.get("require_exact", False),
+            comparison.get("require_exact", False),
+            "effective exact-comparison gate",
         )
         if incomparable:
             _require(
@@ -1027,8 +1036,10 @@ def _audit_raw_evidence(folder, plan, cases, fixtures, comparison_results, manif
     expected_pairs = set()
     limits = plan["contract"]["limits"]
     for case in plan["execution_order"]:
-        retain = case["implementation"] in ("oracle", "legacy_dense") or (
-            case["implementation"] == "legacy_packed" and case["backend"] == "torch"
+        retain = (
+            case.get("retain_evidence", False)
+            or case["implementation"] in ("oracle", "legacy_dense")
+            or (case["implementation"] == "legacy_packed" and case["backend"] == "torch")
         )
         if not retain:
             continue
@@ -1196,7 +1207,7 @@ def _audit_raw_evidence(folder, plan, cases, fixtures, comparison_results, manif
                         plan["contract"]["diagnostics"]["preselected_dump_dtype"],
                         plan["contract"]["diagnostics"]["preselected_dump_comparison_kind"],
                     ],
-                    "preselected dump BF16 fidelity eligibility",
+                    "preselected dump frozen comparison eligibility",
                 )
 
         artifact = _stream_spool(

@@ -1,6 +1,7 @@
 import hashlib
 import json
 import math
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -79,14 +80,18 @@ def digest(tokens):
 
 
 def hook_state(engine):
+    cache_methods = ["write", "attend"] + [
+        name
+        for name in ("_write_prepared", "_attend_prepared")
+        if hasattr(engine.cache_manager, name)
+    ]
     return (
         {
             (id(obj), name): (name in vars(obj), vars(obj).get(name))
             for obj, name in (
                 (engine.model, "recurrent"),
                 (engine.model_runner, "execute"),
-                (engine.cache_manager, "write"),
-                (engine.cache_manager, "attend"),
+                *((engine.cache_manager, name) for name in cache_methods),
                 (engine.scheduler, "finish"),
             )
         },
@@ -418,3 +423,54 @@ def test_caller_exception_restores_hooks_without_changing_another_model_instance
             raise RuntimeError("caller failure")
     assert hook_state(engine) == before
     assert hook_state(other) == untouched
+
+
+@pytest.mark.parametrize("corruption", [None, "owner", "allocation", "depth", "position"])
+def test_prepared_observer_checks_actual_row_identity_before_emitting(corruption):
+    row = fixture(prompt=[2])
+    engine = make_engine([row])
+    add_requests(engine, [row])
+    allocation = object()
+    events = []
+    key = torch.zeros(1, 2, 4)
+    value = torch.ones_like(key)
+    query = key + 2
+    cache = SimpleNamespace(
+        _prepare_batch=lambda: None,
+        _get_allocation=lambda request_id: allocation,
+        _write_prepared=lambda *args: events.append("write"),
+        _attend_prepared=lambda *args: events.append("attend"),
+    )
+    batch = SimpleNamespace(owner=cache, rows=((allocation, 0, 0),))
+    if corruption == "owner":
+        batch.owner = object()
+    if corruption == "allocation":
+        batch.rows = ((object(), 0, 0),)
+    if corruption == "depth":
+        batch.rows = ((allocation, 1, 0),)
+    if corruption == "position":
+        batch.rows = ((allocation, 0, 1),)
+
+    def recurrent(hidden, request_ids, depths, positions, current_cache):
+        current_cache._write_prepared(0, batch, key, value)
+        return current_cache._attend_prepared(0, batch, query)
+
+    def sink(metadata, tensor):
+        events.append(metadata["operation"])
+        assert metadata["fixture_id"] == "one"
+        assert metadata["positions"] == [0] and metadata["depth"] == 1
+        assert metadata["output_index"] == 0
+        assert metadata["history_sha256"] == digest([2])
+
+    engine.cache_manager = cache
+    engine.model.recurrent = recurrent
+    before = hook_state(engine)
+    with observe_native(engine, sink):
+        if corruption:
+            with pytest.raises(RuntimeError, match="native diagnostic context"):
+                engine.model.recurrent(torch.zeros(1, 16), ["one"], [0], [0], cache)
+            assert events == []  # Wrong identities cannot publish plausible evidence.
+        else:
+            engine.model.recurrent(torch.zeros(1, 16), ["one"], [0], [0], cache)
+            assert events == ["write", "key", "value", "query", "attend"]
+    assert hook_state(engine) == before
