@@ -1,0 +1,970 @@
+{
+  "validation_kind": "one correctness smoke, no speed or model-quality claim",
+  "expected_model_id": "ByteDance/Ouro-1.4B",
+  "expected_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "model_path": "/data/hsliu2/tmp/vllm-lt-models/ouro-1.4b",
+  "device": "cuda:0",
+  "device_name": "NVIDIA L20X",
+  "visible_device_count": 1,
+  "visibility_environment": {
+    "CUDA_VISIBLE_DEVICES": "5",
+    "HIP_VISIBLE_DEVICES": null,
+    "ROCR_VISIBLE_DEVICES": null
+  },
+  "torch_version": "2.13.0+cu130",
+  "dtype": "bfloat16",
+  "atol": 0.25,
+  "rtol": 0.02,
+  "tf32": false,
+  "bf16_reduced_precision_reduction": false,
+  "parameter_count": 1434652673,
+  "prompt_texts": [
+    "The capital of France is",
+    "2 + 2 =",
+    "The opposite of hot is"
+  ],
+  "prompt_token_ids": [
+    [
+      504,
+      3575,
+      282,
+      4649,
+      314
+    ],
+    [
+      34,
+      1232,
+      216,
+      34,
+      446
+    ],
+    [
+      504,
+      7011,
+      282,
+      3380,
+      314
+    ]
+  ],
+  "max_tokens": [
+    4,
+    8,
+    4
+  ],
+  "exit_thresholds": [
+    0.0,
+    0.7,
+    1.0
+  ],
+  "min_loops": 2,
+  "prefill_comparisons": [
+    {
+      "depth": 1,
+      "torch_vs_dense": {
+        "max_abs_error": 0.125,
+        "rms_error": 0.014212314039468765,
+        "reference_rms": 2.21110200881958,
+        "actual_top1": [
+          504,
+          282,
+          198,
+          28,
+          7042,
+          504,
+          504,
+          34,
+          104,
+          216,
+          504,
+          282,
+          198,
+          284,
+          260
+        ],
+        "reference_top1": [
+          504,
+          282,
+          198,
+          28,
+          7042,
+          504,
+          504,
+          34,
+          104,
+          216,
+          504,
+          282,
+          198,
+          284,
+          260
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": true
+      },
+      "triton_vs_dense": {
+        "max_abs_error": 0.125,
+        "rms_error": 0.013853083364665508,
+        "reference_rms": 2.21110200881958,
+        "actual_top1": [
+          504,
+          282,
+          198,
+          28,
+          7042,
+          504,
+          504,
+          34,
+          104,
+          216,
+          504,
+          282,
+          198,
+          284,
+          260
+        ],
+        "reference_top1": [
+          504,
+          282,
+          198,
+          28,
+          7042,
+          504,
+          504,
+          34,
+          104,
+          216,
+          504,
+          282,
+          198,
+          284,
+          260
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": true
+      },
+      "triton_vs_torch": {
+        "max_abs_error": 0.125,
+        "rms_error": 0.009816087782382965,
+        "reference_rms": 2.2095890045166016,
+        "actual_top1": [
+          504,
+          282,
+          198,
+          28,
+          7042,
+          504,
+          504,
+          34,
+          104,
+          216,
+          504,
+          282,
+          198,
+          284,
+          260
+        ],
+        "reference_top1": [
+          504,
+          282,
+          198,
+          28,
+          7042,
+          504,
+          504,
+          34,
+          104,
+          216,
+          504,
+          282,
+          198,
+          284,
+          260
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": true
+      }
+    },
+    {
+      "depth": 2,
+      "torch_vs_dense": {
+        "max_abs_error": 0.25,
+        "rms_error": 0.022152278572320938,
+        "reference_rms": 2.486036777496338,
+        "actual_top1": [
+          504,
+          282,
+          260,
+          314,
+          7042,
+          504,
+          216,
+          33,
+          76,
+          216,
+          504,
+          282,
+          216,
+          284,
+          4011
+        ],
+        "reference_top1": [
+          504,
+          282,
+          260,
+          314,
+          7042,
+          504,
+          216,
+          33,
+          76,
+          216,
+          504,
+          282,
+          216,
+          284,
+          4011
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": true
+      },
+      "triton_vs_dense": {
+        "max_abs_error": 0.375,
+        "rms_error": 0.024659674614667892,
+        "reference_rms": 2.486036777496338,
+        "actual_top1": [
+          504,
+          282,
+          260,
+          314,
+          7042,
+          504,
+          216,
+          33,
+          76,
+          216,
+          504,
+          282,
+          216,
+          284,
+          4011
+        ],
+        "reference_top1": [
+          504,
+          282,
+          260,
+          314,
+          7042,
+          504,
+          216,
+          33,
+          76,
+          216,
+          504,
+          282,
+          216,
+          284,
+          4011
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": true
+      },
+      "triton_vs_torch": {
+        "max_abs_error": 0.125,
+        "rms_error": 0.017482083290815353,
+        "reference_rms": 2.4860355854034424,
+        "actual_top1": [
+          504,
+          282,
+          260,
+          314,
+          7042,
+          504,
+          216,
+          33,
+          76,
+          216,
+          504,
+          282,
+          216,
+          284,
+          4011
+        ],
+        "reference_top1": [
+          504,
+          282,
+          260,
+          314,
+          7042,
+          504,
+          216,
+          33,
+          76,
+          216,
+          504,
+          282,
+          216,
+          284,
+          4011
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": true
+      }
+    },
+    {
+      "depth": 3,
+      "torch_vs_dense": {
+        "max_abs_error": 0.25,
+        "rms_error": 0.03392811492085457,
+        "reference_rms": 3.0259511470794678,
+        "actual_top1": [
+          4525,
+          282,
+          260,
+          314,
+          7042,
+          4525,
+          216,
+          33,
+          76,
+          216,
+          4525,
+          282,
+          260,
+          314,
+          4011
+        ],
+        "reference_top1": [
+          4525,
+          11370,
+          260,
+          314,
+          7042,
+          4525,
+          216,
+          33,
+          76,
+          216,
+          4525,
+          282,
+          260,
+          314,
+          4011
+        ],
+        "top1_equal": false,
+        "finite": true,
+        "allclose": true
+      },
+      "triton_vs_dense": {
+        "max_abs_error": 0.2734375,
+        "rms_error": 0.03440422937273979,
+        "reference_rms": 3.0259511470794678,
+        "actual_top1": [
+          4525,
+          11370,
+          260,
+          314,
+          7042,
+          4525,
+          216,
+          33,
+          76,
+          216,
+          4525,
+          282,
+          260,
+          314,
+          4011
+        ],
+        "reference_top1": [
+          4525,
+          11370,
+          260,
+          314,
+          7042,
+          4525,
+          216,
+          33,
+          76,
+          216,
+          4525,
+          282,
+          260,
+          314,
+          4011
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": false
+      },
+      "triton_vs_torch": {
+        "max_abs_error": 0.1875,
+        "rms_error": 0.027454059571027756,
+        "reference_rms": 3.0266499519348145,
+        "actual_top1": [
+          4525,
+          11370,
+          260,
+          314,
+          7042,
+          4525,
+          216,
+          33,
+          76,
+          216,
+          4525,
+          282,
+          260,
+          314,
+          4011
+        ],
+        "reference_top1": [
+          4525,
+          282,
+          260,
+          314,
+          7042,
+          4525,
+          216,
+          33,
+          76,
+          216,
+          4525,
+          282,
+          260,
+          314,
+          4011
+        ],
+        "top1_equal": false,
+        "finite": true,
+        "allclose": true
+      }
+    },
+    {
+      "depth": 4,
+      "torch_vs_dense": {
+        "max_abs_error": 0.5625,
+        "rms_error": 0.0445738211274147,
+        "reference_rms": 3.5230536460876465,
+        "actual_top1": [
+          253,
+          11370,
+          260,
+          314,
+          7042,
+          28,
+          216,
+          33,
+          76,
+          216,
+          253,
+          282,
+          253,
+          314,
+          4011
+        ],
+        "reference_top1": [
+          253,
+          11370,
+          260,
+          314,
+          7042,
+          28,
+          216,
+          33,
+          76,
+          216,
+          253,
+          282,
+          253,
+          314,
+          4011
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": false
+      },
+      "triton_vs_dense": {
+        "max_abs_error": 0.625,
+        "rms_error": 0.047858450561761856,
+        "reference_rms": 3.5230536460876465,
+        "actual_top1": [
+          253,
+          11370,
+          260,
+          314,
+          7042,
+          28,
+          216,
+          33,
+          76,
+          216,
+          253,
+          282,
+          253,
+          314,
+          4011
+        ],
+        "reference_top1": [
+          253,
+          11370,
+          260,
+          314,
+          7042,
+          28,
+          216,
+          33,
+          76,
+          216,
+          253,
+          282,
+          253,
+          314,
+          4011
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": false
+      },
+      "triton_vs_torch": {
+        "max_abs_error": 0.28125,
+        "rms_error": 0.03193681687116623,
+        "reference_rms": 3.5244688987731934,
+        "actual_top1": [
+          253,
+          11370,
+          260,
+          314,
+          7042,
+          28,
+          216,
+          33,
+          76,
+          216,
+          253,
+          282,
+          253,
+          314,
+          4011
+        ],
+        "reference_top1": [
+          253,
+          11370,
+          260,
+          314,
+          7042,
+          28,
+          216,
+          33,
+          76,
+          216,
+          253,
+          282,
+          253,
+          314,
+          4011
+        ],
+        "top1_equal": true,
+        "finite": true,
+        "allclose": false
+      }
+    }
+  ],
+  "generation": {
+    "torch_serial": {
+      "outputs": [
+        {
+          "token_ids": [
+            7042,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            2,
+            2,
+            2
+          ],
+          "text": " Paris.\n\n",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            216,
+            36,
+            3814,
+            25,
+            198,
+            198,
+            2931,
+            28
+          ],
+          "exit_depths": [
+            4,
+            3,
+            4,
+            4,
+            4,
+            3,
+            4,
+            4
+          ],
+          "text": " 4 \\)\n\nSo,",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            4011,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "text": " cold.\n\n",
+          "finish_reason": "length"
+        }
+      ],
+      "used_blocks_after_completion": 0,
+      "token_ids_match_torch_serial": true,
+      "exit_depths_match_torch_serial": true
+    },
+    "torch_refill": {
+      "outputs": [
+        {
+          "token_ids": [
+            7042,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            2,
+            2,
+            2
+          ],
+          "text": " Paris.\n\n",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            216,
+            36,
+            3814,
+            25,
+            198,
+            198,
+            2931,
+            28
+          ],
+          "exit_depths": [
+            4,
+            3,
+            4,
+            4,
+            4,
+            3,
+            4,
+            4
+          ],
+          "text": " 4 \\)\n\nSo,",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            4011,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "text": " cold.\n\n",
+          "finish_reason": "length"
+        }
+      ],
+      "used_blocks_after_completion": 0,
+      "token_ids_match_torch_serial": true,
+      "exit_depths_match_torch_serial": true
+    },
+    "torch_no_refill": {
+      "outputs": [
+        {
+          "token_ids": [
+            7042,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            2,
+            2,
+            2
+          ],
+          "text": " Paris.\n\n",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            216,
+            36,
+            3814,
+            25,
+            198,
+            198,
+            2931,
+            28
+          ],
+          "exit_depths": [
+            4,
+            3,
+            4,
+            4,
+            4,
+            3,
+            4,
+            4
+          ],
+          "text": " 4 \\)\n\nSo,",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            4011,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "text": " cold.\n\n",
+          "finish_reason": "length"
+        }
+      ],
+      "used_blocks_after_completion": 0,
+      "token_ids_match_torch_serial": true,
+      "exit_depths_match_torch_serial": true
+    },
+    "triton_serial": {
+      "outputs": [
+        {
+          "token_ids": [
+            7042,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            2,
+            2,
+            2
+          ],
+          "text": " Paris.\n\n",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            216,
+            36,
+            3814,
+            25,
+            198,
+            198,
+            2931,
+            28
+          ],
+          "exit_depths": [
+            4,
+            3,
+            4,
+            4,
+            4,
+            3,
+            4,
+            4
+          ],
+          "text": " 4 \\)\n\nSo,",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            4011,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "text": " cold.\n\n",
+          "finish_reason": "length"
+        }
+      ],
+      "used_blocks_after_completion": 0,
+      "token_ids_match_torch_serial": true,
+      "exit_depths_match_torch_serial": true
+    },
+    "triton_refill": {
+      "outputs": [
+        {
+          "token_ids": [
+            7042,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            2,
+            2,
+            2
+          ],
+          "text": " Paris.\n\n",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            216,
+            36,
+            3814,
+            25,
+            198,
+            198,
+            2931,
+            28
+          ],
+          "exit_depths": [
+            4,
+            3,
+            4,
+            4,
+            4,
+            3,
+            4,
+            4
+          ],
+          "text": " 4 \\)\n\nSo,",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            4011,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "text": " cold.\n\n",
+          "finish_reason": "length"
+        }
+      ],
+      "used_blocks_after_completion": 0,
+      "token_ids_match_torch_serial": true,
+      "exit_depths_match_torch_serial": true
+    },
+    "triton_no_refill": {
+      "outputs": [
+        {
+          "token_ids": [
+            7042,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            2,
+            2,
+            2
+          ],
+          "text": " Paris.\n\n",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            216,
+            36,
+            3814,
+            25,
+            198,
+            198,
+            2931,
+            28
+          ],
+          "exit_depths": [
+            4,
+            3,
+            4,
+            4,
+            4,
+            3,
+            4,
+            4
+          ],
+          "text": " 4 \\)\n\nSo,",
+          "finish_reason": "length"
+        },
+        {
+          "token_ids": [
+            4011,
+            30,
+            198,
+            198
+          ],
+          "exit_depths": [
+            4,
+            4,
+            4,
+            4
+          ],
+          "text": " cold.\n\n",
+          "finish_reason": "length"
+        }
+      ],
+      "used_blocks_after_completion": 0,
+      "token_ids_match_torch_serial": true,
+      "exit_depths_match_torch_serial": true
+    }
+  },
+  "failures": [
+    "depth 3: triton_vs_dense exceeds declared tolerance",
+    "depth 4: torch_vs_dense exceeds declared tolerance",
+    "depth 4: triton_vs_dense exceeds declared tolerance",
+    "depth 4: triton_vs_torch exceeds declared tolerance",
+    "task-owned model tensors remain allocated after cleanup"
+  ],
+  "peak_allocated_bytes": 2978696192,
+  "peak_reserved_bytes": 3242196992,
+  "passed": false,
+  "allocated_bytes_after_cleanup": 33554432,
+  "reserved_bytes_after_cleanup": 33554432
+}
