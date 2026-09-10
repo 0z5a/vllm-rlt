@@ -36,7 +36,7 @@ The parent embeds distinct `numerical` and `held` subplans. The held runner rece
 | P-A, P-B | Each: 2 diagnostic warmups and 2 profiles | 8 |
 | Total | Eight fresh workers, eight model loads | 139 |
 
-The first W1 feasibility is the first inference after loading. A prerequisites pass before N-B; both sides and their raw prerequisite audit pass before A1. Feasibility, warmup, load/setup, compilation and profiles are excluded from measured comparisons. No hidden additional inference, replacement row or extra sample is permitted.
+N-A and N-B begin inference with W1 feasibility. The four timing workers begin with W1 warmup, and profile workers with W1 diagnostic warmup. A prerequisites pass before N-B; both sides and their raw prerequisite audit pass before A1. Feasibility, warmup, load/setup, compilation and profiles are excluded from measured comparisons. No hidden additional inference, replacement row or extra sample is permitted.
 
 The 27 numerical cases contain five independent dense oracles and 11 native cases per source: four Torch serial, four Triton serial, refill/no-refill packed cases and one live-gate case. Fixtures are `Q1-L16-F0`, `Q1-L256-F0`, `Q1-L64-F2` and `Q1-L128-F3`, with nine predictions and unchanged forced histories or declared live routing. There are 34 oracle comparisons and 17 A/B comparisons, totaling 51 streams.
 
