@@ -1,6 +1,8 @@
 # Q1: incremental Ouro numerical validation
 
 This suite addresses [Q1 issue #4](https://github.com/hsliuustc0106/vllm-lt/issues/4).
+The [first complete run](q1-20260911.md) passes FP32 and fails BF16; causal
+diagnosis remains incomplete and Q1 stays open.
 It compares real checkpoint computations and gate decisions. It makes no latency,
 throughput, task-quality, or BF16 deployment claim. The original BF16 failure and
 its tolerances remain in [the preview validation record](validation.md).
