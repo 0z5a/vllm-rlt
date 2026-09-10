@@ -4,9 +4,15 @@ This protocol is committed before device execution. The separate clean execution
 checkouts below remain fixed; later documentation commits do not change their code.
 
 Resolved at `2026-09-10T19:10:20.188027+00:00`.
-Plan: `/data/hsliu2/tmp/vllm-lt-m3-inactive/artifacts/m3-plan-20260911/plan.json`.
-Canonical plan SHA-256: `39dec46e21eedb198738cdf2d3ca6483239eb7e44c00872c61feb06a40c0f282`.
-Plan file SHA-256: `ca959522ec6621db2b6bdae70bd8f95abf21ad79ef4ce2f80866a228c3b23c7d`.
+Plan: `/data/hsliu2/tmp/vllm-lt-m3-inactive/artifacts/m3-plan-gpu0-20260911/plan.json`.
+Canonical plan SHA-256: `695dd6b4ac5b2207f2190c8398712c8f0baf428e64900655aabbc0e3925db060`.
+Plan file SHA-256: `ee8bd77c1b4a77a09e0ed943f90d9eb1eb61d212355b0c6b7a07079386c7b2fd`.
+
+GPU selection was amended before any device execution: GPU 7 became occupied
+by another reservation, so both sides now use available GPU 0. The original
+unexecuted GPU-7 plan is preserved in the raw evidence and prior protocol commit
+`f8e71a8`. The case matrix, source snapshots and all other controls remain fixed.
+This comparison makes no timing or cross-milestone performance claim.
 
 ## Hypothesis and source controls
 
@@ -48,8 +54,8 @@ Transformers 4.55.0 and the prepared Q1 environment; optional `kernels` is absen
 Exact dependency versions and file identities are retained in the plan.
 
 Host: `dedicated-developjob-8gpu2-a029z-64896bc8cf-8p2lw`; account: `hsliu2`.
-Physical GPU 7 is an NVIDIA L20X. Its previously verified UUID is
-`0e488755-d8ed-b688-81e7-8e377dc10fd5`; recheck the recorded runtime UUID against
+Physical GPU 0 is an NVIDIA L20X. Its management-query UUID is
+`006eb78c-23cb-f37d-eb7c-0ccb578b8f11`; recheck the recorded runtime UUID against
 it before accepting the result. The scheduler owns device visibility. CPU cores
 56–63 and active NUMA memory policy `bind` to node 1 are fixed. The allowed
 memory mask remains 0–1; active binding is independently checked with `numactl`.
@@ -183,9 +189,9 @@ and performance gates stay open. See [interfaces and commands](../m3-inactive-ro
 Run from the frozen candidate checkout with the exact controls used for probing:
 
 ```bash
-gpu run --gpu-ids 7 --nonblock --timeout 1h --note 'vllm-lt M3 inactive A/B 1583e1d' -- \
+gpu run --gpu-ids 0 --nonblock --timeout 1h --note 'vllm-lt M3 inactive A/B 1583e1d' -- \
   numactl --physcpubind=56-63 --membind=1 -- env OMP_NUM_THREADS=1 \
   /home/hsliu2/tmp/venvs/vllm-lt-q1/bin/python -m vllm_lt.validation.m3_inactive_run run \
-  --plan /home/hsliu2/tmp/vllm-lt-m3-inactive/artifacts/m3-plan-20260911/plan.json \
+  --plan /home/hsliu2/tmp/vllm-lt-m3-inactive/artifacts/m3-plan-gpu0-20260911/plan.json \
   --output /home/hsliu2/tmp/vllm-lt-m3-inactive/artifacts/m3-run-20260911
 ```
