@@ -189,3 +189,33 @@ def test_actual_shared_launcher_cleans_only_its_child_group(
     assert killed == [(123456, signal.SIGTERM)] and process.done
     assert starts[0]["start_new_session"] is True
     assert starts[0]["cwd"] == capture_plan["implementations"]["A"]["root"]
+
+
+def test_controller_io_failure_keeps_bounded_context_without_retry(
+    capture_plan, monkeypatch, tmp_path
+):
+    from vllm_lt.benchmarks.schema import read_json
+
+    monkeypatch.setattr(capture, "verify_plan", lambda *args: None)
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    launches = []
+    original_handler = signal.getsignal(signal.SIGTERM)
+    filename = "/owned/run/" + "x" * 2000
+
+    def launch(plan, worker, output, deadline, **kwargs):
+        launches.append(worker["worker_id"])
+        raise OSError(5, "Input/output error " + "y" * 10000, filename)
+
+    monkeypatch.setattr(ab, "_launch_worker", launch)
+    folder = tmp_path / "controller-io"
+    result = capture.run_ab(capture_plan, output_dir=folder)
+    assert launches == ["N-A"]
+    assert result["status"] == "failed" and result["completed_workers"] == []
+    assert result["workers"][0]["returned_ns"] is not None
+    failure = result["failures"][0]
+    assert failure["type"] == "OSError" and failure["errno"] == 5
+    assert failure["filename"] == filename[:1024] and failure["filename2"] is None
+    assert len(failure["message"]) <= 2048 and len(failure["traceback"]) <= 8192
+    assert "OSError" in failure["traceback"] and "Input/output error" in failure["traceback"]
+    assert read_json(folder / "manifest.json")["failures"] == result["failures"]
+    assert signal.getsignal(signal.SIGTERM) is original_handler

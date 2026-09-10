@@ -431,7 +431,7 @@ def _anchor(root, path, hashes):
     hashes[str(path.relative_to(root))] = _file_record(path)["sha256"]
 
 
-def _audit_workers(root, plan, manifest, report):
+def _audit_workers(root, plan, manifest, report, *, workers=None):
     from .capture import audit_worker_controls
 
     limits = plan["contract"]["limits"]
@@ -464,7 +464,8 @@ def _audit_workers(root, plan, manifest, report):
         equal(len(launches), 8, "eight actual launches")
     actual = {p.name for p in (root / "workers").glob("*") if p.is_dir()}
     require(actual <= {r["worker_id"] for r in launches}, "unplanned worker artifacts")
-    previous, workers, completed = None, {}, []
+    previous, completed = None, []
+    workers = {} if workers is None else workers
     for index, launch in enumerate(launches):
         worker = plan["workers"][index]
         path = root / "workers" / worker["worker_id"] / "manifest.json"
@@ -487,6 +488,51 @@ def _audit_workers(root, plan, manifest, report):
         done = child["completed_executions"]
         equal(done, worker["execution_ids"][: len(done)], "worker completed prefix")
         completed.extend(done)
+        if child["status"] == "running":
+            require(
+                index == len(launches) - 1
+                and manifest["status"] in ("failed", "incomplete")
+                and worker["worker_id"] not in manifest["completed_workers"],
+                "nonterminal worker is not the interrupted tail",
+            )
+            require(child["passed"] is False and child["failures"] == [], "running worker outcome")
+            require(
+                "ended_ns" not in child and "teardown_after_workspace_release" not in child,
+                "running worker contradicts terminal fields",
+            )
+            equal(child["deadline_ns"], manifest["deadline_ns"], "interrupted worker deadline")
+            require(
+                manifest["started_ns"]
+                <= launch["launched_ns"]
+                <= child["started_ns"]
+                <= launch["returned_ns"]
+                <= manifest["ended_ns"],
+                "interrupted worker launch lifetime",
+            )
+            if index:
+                require(
+                    launches[index - 1]["returned_ns"] <= launch["launched_ns"],
+                    "overlapping workers",
+                )
+            # Validate retained controls when setup reached them, but never supply
+            # a missing process-completion or CUDA-cleanup boundary from a result.
+            if child.get("environment") is not None:
+                audit_worker_controls(plan, child, previous, require_cleanup=False)
+            else:
+                report["missing"].append(f"workers/{worker['worker_id']}/runtime controls")
+            report["interrupted_workers"][worker["worker_id"]] = {
+                "status": child["status"],
+                "recorded_completed_executions": done,
+                "controller_returned_ns": launch["returned_ns"],
+                "terminal_cleanup_available": False,
+            }
+            report["missing"].extend(
+                [
+                    f"workers/{worker['worker_id']}/terminal manifest",
+                    f"workers/{worker['worker_id']}/final CUDA measurement",
+                ]
+            )
+            break
         require(child["status"] in ("complete", "failed", "incomplete"), "worker terminal status")
         require(
             type(child["passed"]) is bool and isinstance(child["failures"], list), "worker outcome"
@@ -775,6 +821,7 @@ def build_report(output_dir):
         "hashes": {},
         "hard_failures": [],
         "missing": [],
+        "interrupted_workers": {},
         "limitations": [
             "A is the common padded tensor body; this comparison does not measure gain over "
             "default compact execution.",
@@ -811,7 +858,7 @@ def build_report(output_dir):
         return report
     workers = {}
     try:
-        workers = _audit_workers(root, plan, manifest, report)
+        _audit_workers(root, plan, manifest, report, workers=workers)
         _audit_artifact_caps(root, plan["contract"]["limits"], report)
     except (OSError, ValueError, KeyError, TypeError) as error:
         report["errors"].append({"scope": "workers/controls", "message": str(error)})
@@ -824,7 +871,16 @@ def build_report(output_dir):
     for row in rows:
         record = _run_record(root, row, view, report["hashes"])
         result = record["result"]
+        interrupted = row["worker_id"] in report["interrupted_workers"]
+        if result is not None and interrupted:
+            record["status"] = "incomplete"
+            record["comparison_eligible"] = False
+            record["worker_completion_available"] = False
+            report["missing"].append(f"{row['run_id']}: no terminal worker completion/cleanup")
         if result is not None and result.get("status") in ("failed", "incomplete"):
+            if interrupted:
+                report["records"].append(record)
+                continue
             try:
                 _audit_failed_benchmark(root, row, result, report, workers)
                 record["valid_failed_execution"] = True
@@ -833,10 +889,12 @@ def build_report(output_dir):
                 report["errors"].append({"scope": row["run_id"], "message": str(error)})
         elif result is not None:
             try:
-                require(
-                    row["run_id"] in workers[row["worker_id"]]["completed_executions"],
-                    "complete run has no corresponding completed worker execution",
-                )
+                if not interrupted:
+                    require(
+                        row["worker_id"] in workers
+                        and row["run_id"] in workers[row["worker_id"]]["completed_executions"],
+                        "complete run has no corresponding audited terminal worker execution",
+                    )
                 for key, value in row.items():
                     equal(result.get(key), value, f"frozen benchmark row {key}")
                 equal(

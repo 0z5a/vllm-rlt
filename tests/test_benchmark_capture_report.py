@@ -786,3 +786,100 @@ def test_actual_graph_kernels_cannot_be_counted_twice_or_without_a_launch(change
         trace["traceEvents"].append(kernel)
     with pytest.raises(ValueError):
         report.audit_graph_profile(trace, capture)
+
+
+@pytest.fixture
+def interrupted_b2_run(synthetic_run):
+    """Four terminal workers, two B2 acknowledgments and one result-only tail."""
+    import shutil
+
+    from vllm_lt.benchmarks.schema import read_json
+
+    root, plan, manifest, records = synthetic_run
+    keep = {"N-A", "N-B", "A1", "B1", "B2"}
+    b2 = next(w for w in plan["workers"] if w["worker_id"] == "B2")
+    for worker in plan["workers"]:
+        if worker["worker_id"] not in keep:
+            shutil.rmtree(root / "workers" / worker["worker_id"])
+        for row in plan["execution_order"]:
+            if row["worker_id"] != worker["worker_id"] or row["kind"] != "benchmark":
+                continue
+            if worker["worker_id"] not in keep or (
+                worker["worker_id"] == "B2" and row["execution_id"] not in b2["execution_ids"][:3]
+            ):
+                shutil.rmtree(root / "runs" / row["run_id"])
+    shutil.rmtree(root / "profiles")
+    manifest.update(
+        status="failed",
+        failures=[{"type": "OSError", "message": "[Errno 5] Input/output error"}],
+        workers=manifest["workers"][:5],
+        completed_workers=manifest["completed_workers"][:4],
+    )
+    manifest["workers"][-1]["exit_code"] = None
+    manifest["completed_executions"] = [
+        r["execution_id"]
+        for r in plan["execution_order"]
+        if r["worker_id"] in {"N-A", "N-B", "A1", "B1"}
+    ]
+    manifest["ended_ns"] = manifest["workers"][-1]["returned_ns"] + 1000
+    write_json(root / "manifest.json", manifest)
+    path = root / "workers" / "B2" / "manifest.json"
+    child = read_json(path)
+    child.update(status="running", passed=False, completed_executions=b2["execution_ids"][:2])
+    del child["ended_ns"], child["teardown_after_workspace_release"]
+    write_json(path, child)
+    return root, plan, manifest, records
+
+
+@pytest.mark.parametrize("required_failure", [None, "throughput", "reserved_memory"])
+def test_interrupted_b2_keeps_trusted_pairs_without_inventing_completion(
+    interrupted_b2_run, required_failure
+):
+    root, plan, _, records = interrupted_b2_run
+    if required_failure == "throughput":
+        pick(list(records.values()))["recomputed_metrics"]["generated_tokens_per_second"] = 109
+    elif required_failure == "reserved_memory":
+        target = pick(list(records.values()), cell="W5-no_refill")
+        # The real stopped run's first-pair failure: +532MiB exceeds +512MiB.
+        target["result"]["memory"]["peak_reserved_bytes"] += 557842432
+    value = report.build_report(root)
+    assert value["errors"] == []
+    assert value["evidence_status"] == "incomplete"
+    assert value["decision"] == ("failed" if required_failure else "inconclusive")
+    assert value["counts"]["workers"] == 4
+    assert value["counts"]["completed_executions"] == 65
+    assert value["counts"]["eligible_timing_runs"] == 14
+    b2 = value["interrupted_workers"]["B2"]
+    assert len(b2["recorded_completed_executions"]) == 2
+    assert b2["terminal_cleanup_available"] is False
+    b2_records = [r for r in value["records"] if r["planned"]["worker_id"] == "B2"]
+    assert sum(r["result"] is not None for r in b2_records) == 3
+    assert all(not r["comparison_eligible"] for r in b2_records)
+    assert all(r["status"] == "incomplete" for r in b2_records)
+    assert all(cell["pairs"][1]["status"] == "invalid" for cell in value["cells"])
+    if required_failure == "reserved_memory":
+        cell = next(c for c in value["cells"] if c["cell_id"] == "W5-no_refill")
+        assert cell["pairs"][0]["status"] == "failed"
+        assert cell["pairs"][0]["peak_increases_bytes"]["peak_reserved_bytes"] == 557842432
+    assert value["milestone_status"] == "unqualified_optional_path"
+    assert any("B2/final CUDA measurement" in missing for missing in value["missing"])
+
+
+@pytest.mark.parametrize("change", ["terminal_source", "interrupted_source", "terminal_cleanup"])
+def test_interruption_does_not_excuse_corrupt_retained_worker_controls(interrupted_b2_run, change):
+    from vllm_lt.benchmarks.schema import read_json
+
+    root, _, _, _ = interrupted_b2_run
+    wid = "B2" if change == "interrupted_source" else "B1"
+    path = root / "workers" / wid / "manifest.json"
+    child = read_json(path)
+    if change == "terminal_cleanup":
+        child["teardown_after_workspace_release"]["allocated_bytes"] = -1
+    else:
+        child["source"]["commit"] = "0" * 40
+    write_json(path, child)
+    value = report.build_report(root)
+    assert value["evidence_status"] == "invalid" and value["decision"] == "inconclusive"
+    assert value["errors"]
+    # Completed earlier workers survive the audit exception for transparent reporting.
+    assert value["counts"]["workers"] >= 3

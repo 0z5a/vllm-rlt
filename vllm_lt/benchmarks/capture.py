@@ -6,6 +6,7 @@ import os
 import signal
 import sys
 import time
+import traceback
 from pathlib import Path
 
 from . import ab
@@ -309,7 +310,21 @@ def run_ab(plan, *, output_dir):
         manifest["status"] = (
             "incomplete" if isinstance(exc, (TimeoutError, KeyboardInterrupt)) else "failed"
         )
-        manifest["failures"].append({"type": type(exc).__name__, "message": str(exc)})
+        failure = {
+            "type": type(exc).__name__,
+            "message": str(exc)[:2048],
+            "traceback": (
+                "".join(traceback.format_tb(exc.__traceback__, limit=16))[-6000:]
+                + f"{type(exc).__name__}: {str(exc)[:2048]}"
+            )[:8192],
+        }
+        if isinstance(exc, OSError):
+            failure.update(
+                errno=exc.errno,
+                filename=None if exc.filename is None else str(exc.filename)[:1024],
+                filename2=None if exc.filename2 is None else str(exc.filename2)[:1024],
+            )
+        manifest["failures"].append(failure)
     finally:
         signal.signal(signal.SIGTERM, old_sigterm)
         manifest["ended_ns"] = time.perf_counter_ns()
