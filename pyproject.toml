@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vllm-lt"
+version = "0.1.0"
+description = "Loop-level continuous batching for Ouro language models"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = ["torch>=2.5", "safetensors>=0.4.3", "huggingface-hub>=0.25"]
+
+[project.optional-dependencies]
+text = ["transformers>=4.54"]
+triton = ["triton>=3.1; platform_system == 'Linux'"]
+dev = ["pytest>=8", "ruff>=0.9"]
+
+[project.scripts]
+vllm-lt = "vllm_lt.entrypoints.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["vllm_lt*"]
+
+[tool.setuptools]
+license-files = ["LICENSE", "NOTICE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["gpu: requires a scheduler-reserved CUDA device"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
