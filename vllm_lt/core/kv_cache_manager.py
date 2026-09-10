@@ -47,25 +47,6 @@ class _Allocation:
     written: list[list[_WrittenPositions]]
 
 
-@dataclass(frozen=True, eq=False)
-class _PreparedKVBatch:
-    """Borrowed metadata for one synchronous traversal, never a cross-step cache.
-
-    Host rows and allocation identities are captured independently of caller
-    lists. Device tensors are private, read-only inputs to the cache operations.
-    """
-
-    owner: "KVCacheManager"
-    rows: tuple[tuple[_Allocation, int, int], ...]
-    allocations: tuple[tuple[str, _Allocation], ...]
-    position_ids: torch.Tensor
-    write_blocks: torch.Tensor
-    write_offsets: torch.Tensor
-    block_tables: torch.Tensor
-    context_lengths: torch.Tensor
-    writable: bool
-
-
 class KVCacheManager:
     """Own a fixed physical page pool shared by request/depth allocations.
 
@@ -206,7 +187,8 @@ class KVCacheManager:
         ):
             raise ValueError(f"position must be in [0, {allocation.max_tokens})")
 
-    def _validate_rows(self, request_ids, depths, positions):
+    def _validate_rows(self, layer, request_ids, depths, positions):
+        self._validate_layer(layer)
         if isinstance(positions, torch.Tensor):
             if positions.ndim != 1 or positions.dtype not in {torch.int32, torch.int64}:
                 raise ValueError("positions must be a one-dimensional integer tensor")
@@ -220,62 +202,6 @@ class KVCacheManager:
             self._validate_position(allocation, position)
             rows.append((allocation, int(depth), int(position)))
         return rows
-
-    def _prepare_batch(
-        self,
-        request_ids: Sequence[str],
-        depths: Sequence[int],
-        positions: Sequence[int] | torch.Tensor,
-        *,
-        for_write: bool = True,
-    ) -> _PreparedKVBatch:
-        """Build layer-independent addresses once; do not initialize any KV slot."""
-        rows = tuple(self._validate_rows(request_ids, depths, positions))
-        addresses = [
-            (
-                allocation.block_tables[depth][position // self.block_size],
-                position % self.block_size,
-            )
-            for allocation, depth, position in rows
-        ]
-        if for_write and len(set(addresses)) != len(addresses):
-            raise ValueError(
-                "a write batch cannot contain duplicate request/depth/position addresses"
-            )
-        width = max((position // self.block_size + 1 for _, _, position in rows), default=0)
-        tables = []
-        for allocation, depth, _ in rows:
-            table = allocation.block_tables[depth][:width]
-            tables.append(list(table) + [-1] * (width - len(table)))
-        allocations = dict(zip(request_ids, (allocation for allocation, _, _ in rows)))
-        return _PreparedKVBatch(
-            owner=self,
-            rows=rows,
-            allocations=tuple(allocations.items()),
-            position_ids=torch.tensor(
-                [position for _, _, position in rows], device=self.device, dtype=torch.long
-            ),
-            write_blocks=torch.tensor(
-                [block for block, _ in addresses], device=self.device, dtype=torch.long
-            ),
-            write_offsets=torch.tensor(
-                [offset for _, offset in addresses], device=self.device, dtype=torch.long
-            ),
-            block_tables=torch.tensor(tables, device=self.device, dtype=torch.int32).reshape(
-                len(rows), width
-            ),
-            context_lengths=torch.tensor(
-                [position + 1 for _, _, position in rows], device=self.device, dtype=torch.int32
-            ),
-            writable=for_write,
-        )
-
-    def _require_live_batch(self, batch: _PreparedKVBatch) -> None:
-        if batch.owner is not self:
-            raise ValueError("prepared KV batch belongs to a different cache manager")
-        for request_id, allocation in batch.allocations:
-            if self._allocations.get(request_id) is not allocation:
-                raise RuntimeError(f"stale prepared KV batch for request {request_id!r}")
 
     def _validate_tensor(self, tensor, batch_size, name, *, query=False):
         if tensor.ndim != 3 or tensor.shape[0] != batch_size or tensor.shape[-1] != self.head_dim:
@@ -299,25 +225,28 @@ class KVCacheManager:
         v: torch.Tensor,
     ) -> None:
         """Write a packed batch before calling attend; future tokens stay masked."""
-        self._validate_layer(layer)
-        batch = self._prepare_batch(request_ids, depths, positions)
-        self._write_prepared(layer, batch, k, v)
-
-    @torch.no_grad()
-    def _write_prepared(
-        self, layer: int, batch: _PreparedKVBatch, k: torch.Tensor, v: torch.Tensor
-    ) -> None:
-        self._validate_layer(layer)
-        self._require_live_batch(batch)
-        if not batch.writable:
-            raise ValueError("a read-only prepared KV batch cannot be written")
-        self._validate_tensor(k, len(batch.rows), "k")
-        self._validate_tensor(v, len(batch.rows), "v")
-        if not batch.rows:
+        rows = self._validate_rows(layer, request_ids, depths, positions)
+        self._validate_tensor(k, len(rows), "k")
+        self._validate_tensor(v, len(rows), "v")
+        addresses = [
+            (
+                allocation.block_tables[depth][position // self.block_size],
+                position % self.block_size,
+            )
+            for allocation, depth, position in rows
+        ]
+        if len(set(addresses)) != len(addresses):
+            raise ValueError(
+                "a write batch cannot contain duplicate request/depth/position addresses"
+            )
+        if not rows:
             return
-        self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k
-        self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v
-        for allocation, depth, position in batch.rows:
+        blocks, offsets = zip(*addresses)
+        block_indices = torch.tensor(blocks, device=self.device, dtype=torch.long)
+        token_indices = torch.tensor(offsets, device=self.device, dtype=torch.long)
+        self.key_cache[block_indices, layer, token_indices] = k
+        self.value_cache[block_indices, layer, token_indices] = v
+        for allocation, depth, position in rows:
             allocation.written[depth][layer].add(position)
 
     def _require_prefix(self, allocation, layer, depth, length):
@@ -339,28 +268,24 @@ class KVCacheManager:
         q: torch.Tensor,
     ) -> torch.Tensor:
         """Apply causal GQA at each row's own position and recurrence depth."""
-        self._validate_layer(layer)
-        batch = self._prepare_batch(request_ids, depths, positions, for_write=False)
-        return self._attend_prepared(layer, batch, q)
-
-    @torch.no_grad()
-    def _attend_prepared(
-        self, layer: int, batch: _PreparedKVBatch, q: torch.Tensor
-    ) -> torch.Tensor:
-        self._validate_layer(layer)
-        self._require_live_batch(batch)
-        self._validate_tensor(q, len(batch.rows), "q", query=True)
-        if not batch.rows:
+        rows = self._validate_rows(layer, request_ids, depths, positions)
+        self._validate_tensor(q, len(rows), "q", query=True)
+        if not rows:
             return torch.empty_like(q)
-        for allocation, depth, position in batch.rows:
+        for allocation, depth, position in rows:
             self._require_prefix(allocation, layer, depth, position + 1)
+        width = max((position // self.block_size) + 1 for _, _, position in rows)
+        tables = []
+        for allocation, depth, _ in rows:
+            table = allocation.block_tables[depth][:width]
+            tables.append(list(table) + [-1] * (width - len(table)))
+        block_tables = torch.tensor(tables, device=self.device, dtype=torch.int32)
+        lengths = torch.tensor(
+            [position + 1 for _, _, position in rows], device=self.device, dtype=torch.int32
+        )
         attention = triton_paged_attention if self.backend == "triton" else torch_paged_attention
         return attention(
-            q,
-            self.key_cache[:, layer],
-            self.value_cache[:, layer],
-            batch.block_tables,
-            batch.context_lengths,
+            q, self.key_cache[:, layer], self.value_cache[:, layer], block_tables, lengths
         )
 
     @torch.no_grad()
