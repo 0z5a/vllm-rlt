@@ -98,8 +98,8 @@ python -m vllm_lt.validation.m3_inactive_run probe \
   --gpu-id 7 --output /absolute/path/m3-plan
 ```
 
-Resolve GPU IDs through the scheduler before planning; `7` is this experiment's
-selected device, not permission to use an occupied GPU. The probe records the
+Resolve GPU IDs through the scheduler before planning; `7` above is an example.
+Use the selected available exact ID for both sides. The probe records the
 actual CPU/NUMA binding and runtime variables. Reuse those exact controls for
 reserved execution. The resolved contract records the concrete interpreter,
 checkouts, source/input hashes and affinity command used for a run.
