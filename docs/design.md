@@ -55,10 +55,10 @@ When a token exits at depth `d`, the manager fills its slots at each skipped dee
 The initial allocator reserves enough blocks for every input position the request can execute, at every depth. The last sampled output token needs no forward pass or KV entry. Required physical blocks are:
 
 ```text
-max_loops * ceil((prompt_tokens + max_tokens - 1) / block_size)
+model.total_ut_steps * ceil((prompt_tokens + max_tokens - 1) / block_size)
 ```
 
-Admission waits until this full reservation fits. A request that cannot fit even in an empty cache must fail with an actionable capacity error. An admitted request can then reach completion without requesting additional blocks; this prevents admission from consuming space needed to finish existing requests. The cost is conservative memory use. Prefix sharing, eviction, swapping, and incremental reservation are outside this version.
+The depth factor is the model's full prefill depth, even when a request sets a lower decode loop limit. Admission waits until this full reservation fits. A request that cannot fit even in an empty cache must fail with an actionable capacity error. An admitted request can then reach completion without requesting additional blocks; this prevents admission from consuming space needed to finish existing requests. The cost is conservative memory use. Prefix sharing, eviction, swapping, and incremental reservation are outside this version.
 
 Unused reserved positions are not valid KV. Attention lengths and block metadata must exclude them. Release occurs only after task-owned execution no longer references a request's blocks; reusing a block must not expose a previous request's contents.
 
@@ -68,6 +68,6 @@ For the released BF16 Ouro configuration, each token at one depth requires `2 * 
 
 The validation boundary is numerical and behavioral correctness. Fixed-depth outputs should match a dense reference. Adaptive execution should match a serial implementation with the same last-exited policy. Scheduler tests should exercise mixed depths, requests completing at different times, exhausted admission capacity, and cancellation. Cache tests should cover partial blocks, copying skipped depths, isolation, and block reuse.
 
-PyTorch provides a portable attention reference. Triton attention must match that reference for mixed loop depths and context lengths, including self-attention and padded batch entries. GPU correctness remains unverified until those checks run on a reserved supported device; the presence of a kernel is not a performance result.
+PyTorch provides a portable attention reference. The reserved GPU kernel tests and real-checkpoint FP32 comparisons passed for the tested mixed depths and context lengths. BF16 generated matching tokens on the tested inputs but failed the declared logit tolerance. See the [validation record](validation.md) for scope and numerical results. Padded batch rows still need explicit handling before CUDA-graph execution is added. No performance improvement has been measured.
 
 Later work can add asynchronous execution, static buffers and CUDA graphs, less conservative reservation, and serving integrations. Asynchronous depth routing additionally requires an available and calibrated lookahead gate; it must not silently reinterpret the released Ouro gate.
