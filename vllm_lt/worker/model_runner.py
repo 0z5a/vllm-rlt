@@ -14,6 +14,8 @@ class ModelRunner:
         self.cache_manager = cache_manager
         self.device = next(model.parameters()).device
         self._persistent = None
+        self._decode_executor = None
+        self._graph_declined = None
         self._persistent_stream = None
         self._inside_execute = False
         self._persistent_lease = None
@@ -34,8 +36,14 @@ class ModelRunner:
     def _enable_persistent_decode(self):
         """Opt in to one fixed eager capacity; construction never changes request KV."""
         self.cache_manager._require_usable()
-        if self._persistent is not None:
-            raise RuntimeError("persistent decode is already enabled; replacement is forbidden")
+        if (
+            self._persistent is not None
+            or self._decode_executor is not None
+            or self._graph_declined is not None
+        ):
+            raise RuntimeError(
+                "a private decode executor is already enabled; replacement is forbidden"
+            )
         parameter = next(self.model.parameters())
         if parameter.dtype != torch.float32 or self.cache_manager.dtype != torch.float32:
             raise ValueError("persistent decode initially supports float32 only")
@@ -68,6 +76,88 @@ class ModelRunner:
             "last_publication": None,
             "failure": None,
         }
+
+    def _enable_recurrent_graph(self, *, use_graphs: bool, limits=None):
+        """Install the private eager/replay buckets before any request admission."""
+        from .recurrent_graph import CaptureBudgetExceeded, RecurrentGraphExecutor
+
+        self.cache_manager._require_usable()
+        if (
+            self._persistent is not None
+            or self._decode_executor is not None
+            or self._graph_declined is not None
+        ):
+            raise RuntimeError(
+                "a private decode executor is already enabled; replacement is forbidden"
+            )
+        executor = None
+        try:
+            executor = RecurrentGraphExecutor(
+                self.model, self.cache_manager, use_graphs=use_graphs, limits=limits
+            )
+            # Retain partial setup storage on failure until completion permits close.
+            self._decode_executor = executor
+            executor.setup()
+        except CaptureBudgetExceeded as error:
+            attempt_setup = attempt_failure = None
+            if executor is not None:
+                # setup() already settles its failure. Any secondary device or
+                # restoration error prevents decline, even if a later close might
+                # establish completion; that remains explicit recovery work.
+                failure = executor.failure
+                if failure is None or not failure["completion_confirmed"] or failure["secondary"]:
+                    error.add_note("capture budget decline refused: setup did not settle cleanly")
+                    raise
+                attempt_setup = deepcopy(executor.setup_record)
+                attempt_failure = deepcopy(failure)
+                try:
+                    executor.close()
+                    self.cache_manager._require_usable()
+                    if self.cache_manager._allocations:
+                        raise RuntimeError("capture budget decline retained scratch allocations")
+                except BaseException as secondary:
+                    self.cache_manager._quarantine("capture budget decline cleanup failed")
+                    error.add_note(f"capture budget decline cleanup failed: {secondary}")
+                    raise error from secondary
+            # Constructor declines happened before allocating/submitting anything.
+            # Otherwise the entire attempted executor was closed after confirmed
+            # completion, leaving the original pool available to ordinary eager.
+            self._graph_declined = {
+                "reason": "capture_budget",
+                "attempted_use_graphs": use_graphs,
+                "limits": dict(error.limits),
+                "error": error.record(),
+                "attempt_setup": attempt_setup,
+                "attempt_failure": attempt_failure,
+                "completion_confirmed": True,
+                "calls": 0,
+                "closed": False,
+            }
+            self._decode_executor = None
+
+    def _graph_snapshot(self):
+        if self._graph_declined is not None:
+            return {
+                "enabled": False,
+                "status": "closed" if self._graph_declined["closed"] else "budget_fallback",
+                "budget_decline": deepcopy(self._graph_declined),
+            }
+        return (
+            {"enabled": False}
+            if self._decode_executor is None
+            else self._decode_executor.snapshot()
+        )
+
+    def _close_recurrent_graph(self):
+        if self._decode_executor is not None:
+            self._decode_executor.close()
+        elif self._graph_declined is not None:
+            self._graph_declined["closed"] = True
+
+    def _settle_execution_failure(self, error):
+        if self._decode_executor is not None:
+            return self._decode_executor.settle_failure(error)
+        return self._settle_persistent_failure(error)
 
     def _persistent_snapshot(self):
         """Detached host metadata only; never read device tensor contents."""
@@ -106,6 +196,10 @@ class ModelRunner:
 
     def _require_execution_usable(self):
         self.cache_manager._require_usable()
+        if self._graph_declined is not None and self._graph_declined["closed"]:
+            raise RuntimeError("declined recurrent executor is closed")
+        if self._decode_executor is not None:
+            self._decode_executor.require_usable()
         if self._persistent is not None and self._persistent["metadata"].failed:
             raise RuntimeError("persistent executor failed; retry is forbidden")
 
@@ -155,6 +249,9 @@ class ModelRunner:
         return True
 
     def _record_cleanup_failure(self, error):
+        if self._decode_executor is not None:
+            self._decode_executor.record_cleanup_failure(error)
+            return
         if self._persistent is not None and self._persistent["failure"] is not None:
             self._persistent["failure"]["secondary"].append(self._error_description(error))
         self.cache_manager._quarantine("request cleanup failed after execution failure")
@@ -168,16 +265,19 @@ class ModelRunner:
     @torch.inference_mode()
     def execute(self, batch: SchedulerOutput):
         self._require_execution_usable()
-        if self._persistent is None:
+        if self._persistent is None and self._decode_executor is None:
             return self._execute_batch(batch)
         if self._inside_execute:
             raise RuntimeError("persistent execution cannot be reentered")
-        self._select_persistent_stream()
+        if self._decode_executor is not None:
+            self._decode_executor.select_stream()
+        else:
+            self._select_persistent_stream()
         self._inside_execute = True
         try:
             return self._execute_batch(batch)
         except BaseException as error:
-            self._settle_persistent_failure(error)
+            self._settle_execution_failure(error)
             raise
         finally:
             self._inside_execute = False
@@ -218,6 +318,12 @@ class ModelRunner:
                 [r.loops_done for r in requests],
                 [r.position for r in requests],
             )
+            if self._decode_executor is not None:
+                probabilities = gate_logits.float().sigmoid().cpu().tolist()
+                self._decode_executor.complete_after_gate()
+                for request, state in zip(requests, hidden):
+                    request.hidden_state = state
+                return probabilities
             for request, state in zip(requests, hidden):
                 request.hidden_state = state
             # This is explicitly synchronous. A stock gate cannot act as the paper's lookahead gate.
@@ -233,8 +339,15 @@ class ModelRunner:
 
     def _recurrent(self, hidden, request_ids, depths, positions):
         """Private decode seam; persistent storage requires explicit setup."""
+        if self._decode_executor is not None:
+            return self._decode_executor.recurrent(
+                hidden, request_ids, depths, positions, defer_completion=self._inside_execute
+            )
         if self._persistent is not None:
             return self._recurrent_persistent(hidden, request_ids, depths, positions)
+        if self._graph_declined is not None:
+            self._require_execution_usable()
+            self._graph_declined["calls"] += 1
         return self.model.recurrent(hidden, request_ids, depths, positions, self.cache_manager)
 
     @torch.inference_mode()

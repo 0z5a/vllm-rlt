@@ -34,6 +34,11 @@ class LLMEngine:
         self.model_runner = ModelRunner(model, self.cache_manager)
         self.last_schedule = None
 
+    def _enable_recurrent_graph(self, *, use_graphs: bool, limits=None):
+        if self.has_unfinished_requests():
+            raise RuntimeError("graph setup must precede request admission")
+        self.model_runner._enable_recurrent_graph(use_graphs=use_graphs, limits=limits)
+
     def add_request(
         self,
         request_id: str,
@@ -81,12 +86,16 @@ class LLMEngine:
             result = self.model_runner.execute(batch)
             return self._update(batch, result)
         except BaseException as error:
-            if not isinstance(error, Exception) and self.model_runner._persistent is None:
+            if (
+                not isinstance(error, Exception)
+                and self.model_runner._persistent is None
+                and self.model_runner._decode_executor is None
+            ):
                 # Preserve the compact engine's existing interrupt behavior.
                 raise
             # Finalization in _update can submit work after the runner's gate
             # readback. Settle that work too, before returning pages to the pool.
-            if self.model_runner._settle_persistent_failure(error):
+            if self.model_runner._settle_execution_failure(error):
                 for item in batch.items:
                     if item.request.request_id in self.scheduler.requests:
                         try:

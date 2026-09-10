@@ -1,114 +1,40 @@
-"""Frozen M2 controller and single-implementation workers; no alternative inference loop."""
+"""Frozen graph A/B controller; correctness precedes the bounded M1 timing cells."""
 
 import argparse
 import json
 import os
 import signal
-import subprocess
 import sys
 import time
 from pathlib import Path
 
-from .ab_schema import (
-    RUNTIME_VARIABLES,
-    affinity_snapshot,
-    equal,
+from . import ab
+from .ab_schema import RUNTIME_VARIABLES, affinity_snapshot, equal, require
+from .capture_schema import (
     execution_view,
-    make_ab_plan,
-    require,
+    make_plan,
     source_probe,
-    validate_ab_plan,
-    verify_ab_plan,
+    validate_plan,
+    verify_plan,
 )
 from .runner import write_json
 from .schema import read_json
 
-
-def artifact_usage(output_dir, limits):
-    total, traces = 0, 0
-    for path in Path(output_dir).rglob("*"):
-        require(not path.is_symlink(), "artifact directories cannot contain symbolic links")
-        if path.is_file():
-            size = path.stat().st_size
-            total += size
-            if path.name == "trace.json":
-                require(size <= limits["profile_trace_bytes_max"], "individual profile byte cap")
-                traces += size
-    require(traces <= limits["profile_total_bytes_max"], "total profile byte cap")
-    require(total <= limits["artifact_bytes_max"], "total artifact byte cap")
-    return {"total_bytes": total, "profile_trace_bytes": traces}
-
-
-def audit_worker_controls(plan, manifest, previous=None, *, require_cleanup=True):
-    """Device discovery happened in the worker; this check reads its recorded facts only."""
-    controls = plan["contract"]["controls"]
-    env = manifest["environment"]
-    equal(env["cuda_visible_devices"], str(controls["gpu_ids"][0]), "physical GPU visibility")
-    equal(env["logical_device"], "cuda:0", "logical GPU")
-    equal(env["cpu_affinity"], controls["affinity"]["cpu_ids"], "CPU affinity")
-    equal(env["numa_status"], controls["affinity"]["numa_status"], "NUMA affinity")
-    equal(manifest["affinity"], controls["affinity"], "active NUMA memory policy")
-    equal(env["actual_torch_threads"], {"intraop": 1, "interop": 1}, "actual thread counts")
-    equal(manifest["runtime_environment"], plan["runtime_environment"], "worker runtime variables")
-    equal(manifest["plan_sha256"], plan["plan_sha256"], "worker plan identity")
-    equal(manifest["harness_sha256"], plan["harness"]["sha256"], "worker harness")
-    equal(
-        manifest["source"],
-        plan["implementations"][manifest["implementation_id"]]["source"],
-        "worker source",
-    )
-    equal(env["python"], plan["dependencies"]["python"], "runtime Python")
-    equal(env["torch_cuda_version"], plan["dependencies"]["torch_cuda_build"], "CUDA build")
-    packages = {
-        row["name"].lower().replace("_", "-"): row["version"]
-        for row in plan["dependencies"]["distributions"]
-    }
-    for name, value in env["software"].items():
-        equal(value, packages[name], f"runtime {name}")
-    equal(
-        env["arithmetic"],
-        {**plan["benchmark_contract"]["arithmetic"], "cudnn_allow_tf32": False},
-        "actual arithmetic",
-    )
-    rows = env["scheduler"]
-    require(len(rows) == 1 and rows[0]["type"] == "RUN", "one scheduler RUN record required")
-    equal(str(rows[0]["gpu_id"]), str(controls["gpu_ids"][0]), "scheduler device")
-    equal(rows[0]["user"], env["account"], "reservation account")
-    if previous is not None:
-        previous = previous["environment"]
-        for name in (
-            "host",
-            "account",
-            "gpu_uuid",
-            "gpu_name",
-            "total_device_bytes",
-            "compute_capability",
-            "reservation_environment",
-            "cuda_visible_devices",
-            "cpu_affinity",
-            "numa_status",
-            "software",
-            "actual_torch_threads",
-        ):
-            equal(env[name], previous[name], f"cross-worker {name}")
-    if require_cleanup:
-        equal(
-            manifest["teardown_after_workspace_release"],
-            {"allocated_bytes": 0, "reserved_bytes": 0},
-            "worker final CUDA cleanup",
-        )
+artifact_usage = ab.artifact_usage
+audit_worker_controls = ab.audit_worker_controls
 
 
 def run_worker(plan, *, worker_id, output_dir, deadline_ns):
-    from vllm_lt.validation.m2 import run_numerical_rows
+    from vllm_lt.validation.m3_capture import run_model_rows
 
     from . import runner
+    from .capture_runtime import ExecutionAdapter
 
     start = time.perf_counter_ns()
-    validate_ab_plan(plan)
+    validate_plan(plan)
     worker = next(row for row in plan["workers"] if row["worker_id"] == worker_id)
     implementation = worker["implementation_id"]
-    verify_ab_plan(plan, implementation_id=implementation)
+    verify_plan(plan, implementation_id=implementation)
     require(time.perf_counter_ns() < deadline_ns, "worker deadline exhausted before device use")
     require(
         os.environ.get("CUDA_VISIBLE_DEVICES") == str(plan["contract"]["controls"]["gpu_ids"][0]),
@@ -120,7 +46,7 @@ def run_worker(plan, *, worker_id, output_dir, deadline_ns):
     manifest_path = folder / "manifest.json"
     manifest = {
         "schema_version": 1,
-        "artifact_type": "m2_worker_manifest",
+        "artifact_type": "m3_capture_worker_manifest",
         **worker,
         "plan_sha256": plan["plan_sha256"],
         "source": plan["implementations"][implementation]["source"],
@@ -170,6 +96,34 @@ def run_worker(plan, *, worker_id, output_dir, deadline_ns):
             manifest["artifact_usage"] = artifact_usage(output_dir, plan["contract"]["limits"])
             write_json(manifest_path, manifest)
 
+        if worker_id.startswith("N-"):
+
+            def after_case(case, value):
+                completed(case["case_id"], value)
+                if case["phase"] == "feasibility":
+                    for evaluation_id, result in run_held_checks(
+                        plan, implementation, output_dir, deadline_ns
+                    ):
+                        require(
+                            result["status"] == "complete" and result["passed"],
+                            "held-input correctness prerequisite failed",
+                        )
+                        completed(evaluation_id, result)
+
+            numerical = run_model_rows(
+                model, plan, implementation, output_dir, deadline_ns, after_case=after_case
+            )
+            manifest["numerical"] = numerical
+            # The shared validator retains a fully recorded failed case before
+            # stopping, without invoking the success-only after_case callback.
+            for execution_id in worker["execution_ids"][len(manifest["completed_executions"]) :]:
+                if execution_id not in numerical["completed_cases"]:
+                    break
+                completed(execution_id, None)
+            require(
+                numerical["complete"] and numerical["passed"],
+                f"numerical prerequisite failed: {numerical['errors']}",
+            )
         runner.run_loaded_rows(
             model,
             view,
@@ -177,20 +131,15 @@ def run_worker(plan, *, worker_id, output_dir, deadline_ns):
             output_dir=output_dir,
             deadline=deadline_ns,
             record_completed=completed,
+            execution_adapter=ExecutionAdapter(
+                implementation_id=implementation, graph_limits=plan["graph_limits"]
+            ),
         )
-        if worker_id.startswith("N-"):
-            numerical = run_numerical_rows(model, plan, implementation, output_dir, deadline_ns)
-            manifest["numerical"] = numerical
-            manifest["completed_executions"].extend(numerical["completed_cases"])
-            require(
-                numerical["complete"] and numerical["passed"],
-                f"numerical prerequisite failed: {numerical['errors']}",
-            )
         equal(
             manifest["completed_executions"], worker["execution_ids"], "complete worker row order"
         )
         manifest["status"], manifest["passed"] = "complete", True
-    except (Exception, KeyboardInterrupt) as exc:
+    except BaseException as exc:
         manifest["status"] = (
             "incomplete" if isinstance(exc, (TimeoutError, KeyboardInterrupt)) else "failed"
         )
@@ -213,81 +162,62 @@ def run_worker(plan, *, worker_id, output_dir, deadline_ns):
     return manifest
 
 
+def run_held_checks(plan, implementation, output_dir, deadline_ns):
+    from vllm_lt.validation.m3_capture_kernels import run_kernel_evaluation
+    from vllm_lt.validation.m3_capture_lifecycle import run_lifecycle_evaluation
+
+    for key, execute in (
+        ("kernels", run_kernel_evaluation),
+        ("lifecycle", run_lifecycle_evaluation),
+    ):
+        for row in plan[key]["execution_order"]:
+            if row["implementation_id"] == implementation:
+                yield (
+                    row["evaluation_id"],
+                    execute(
+                        plan[key],
+                        row["evaluation_id"],
+                        output_dir / key,
+                        device="cuda",
+                        deadline_ns=deadline_ns,
+                    ),
+                )
+
+
+def audit_correctness(output_dir, plan):
+    from vllm_lt.validation.m3_capture import audit_model_rows
+    from vllm_lt.validation.m3_capture_kernels import audit_kernel_outputs
+    from vllm_lt.validation.m3_capture_lifecycle import audit_lifecycle_outputs
+
+    audits = {
+        "numerical": audit_model_rows(output_dir, plan),
+        "kernels": audit_kernel_outputs(output_dir / "kernels", plan["kernels"]),
+        "lifecycle": audit_lifecycle_outputs(output_dir / "lifecycle", plan["lifecycle"]),
+    }
+    return {
+        "complete": all(row["complete"] for row in audits.values()),
+        "passed": all(row["passed"] for row in audits.values()),
+        **audits,
+    }
+
+
 def active_case_deadline(output_dir, worker):
-    """Read only task-owned active markers; no GPU polling or invented progress."""
-    candidates = []
-    for execution_id in worker["execution_ids"]:
-        folder = output_dir / "runs" / execution_id
-        marker = folder / "started.json"
-        if marker.exists():
-            result = folder / "result.json"
-            if not result.exists() or "case_completed_ns" not in read_json(result):
-                candidates.append(read_json(marker)["deadline_ns"])
-    ledger = output_dir / "numerical" / "ledger.json"
-    if worker["worker_id"].startswith("N-") and ledger.exists():
-        active = read_json(ledger).get("active_case")
-        if active:
-            candidates.append(active["deadline_ns"])
-    return min(candidates) if candidates else None
+    from vllm_lt.validation.m3_inactive_run import _active_deadline
 
-
-def _launch_worker(
-    plan, worker, output_dir, deadline_ns, *, module="vllm_lt.benchmarks.ab", active_deadline=None
-):
-    implementation = plan["implementations"][worker["implementation_id"]]
-    command = [
-        plan["interpreter"],
-        "-m",
-        module,
-        "worker",
-        "--plan",
-        str(output_dir / "plan.json"),
-        "--worker-id",
-        worker["worker_id"],
-        "--output",
-        str(output_dir),
-        "--deadline-ns",
-        str(deadline_ns),
-    ]
-    env = dict(os.environ, PYTHONPATH=implementation["root"])
-    console = output_dir / "workers" / (worker["worker_id"] + ".console.log")
-    with console.open("xb") as stream:
-        process = subprocess.Popen(
-            command,
-            cwd=implementation["root"],
-            env=env,
-            stdout=stream,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-        )
-        try:
-            while True:
-                now = time.perf_counter_ns()
-                case_limit = (active_deadline or active_case_deadline)(output_dir, worker)
-                if case_limit is not None and now >= case_limit:
-                    raise TimeoutError("active case lifetime exceeded its 600-second cap")
-                remaining = (deadline_ns - now) / 1e9
-                if remaining <= 5:
-                    raise TimeoutError("global deadline reached process-cleanup reserve")
-                try:
-                    return process.wait(timeout=min(1.0, remaining - 5))
-                except subprocess.TimeoutExpired:
-                    artifact_usage(output_dir, plan["contract"]["limits"])
-        finally:
-            if process.poll() is None:
-                os.killpg(process.pid, signal.SIGTERM)
-                try:
-                    process.wait(timeout=2)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
-                    process.wait()
+    candidates = [ab.active_case_deadline(output_dir, worker)]
+    for kind in ("kernels", "lifecycle"):
+        ids = []
+        for execution_id in worker["execution_ids"]:
+            folder = output_dir / kind / "evaluations" / execution_id
+            if (folder / "started.json").exists():
+                ids.append(execution_id)
+        candidates.append(_active_deadline(output_dir, worker, check_directory=kind, check_ids=ids))
+    return min((value for value in candidates if value is not None), default=None)
 
 
 def run_ab(plan, *, output_dir):
-    from vllm_lt.validation.m2 import audit_numerical
-
     start = time.perf_counter_ns()
-    verify_ab_plan(plan)
+    verify_plan(plan)
     require(
         os.environ.get("CUDA_VISIBLE_DEVICES") == str(plan["contract"]["controls"]["gpu_ids"][0]),
         "controller must run inside the frozen scheduler assignment",
@@ -299,7 +229,7 @@ def run_ab(plan, *, output_dir):
     deadline = start + plan["contract"]["limits"]["total_timeout_s"] * 1_000_000_000
     manifest = {
         "schema_version": 1,
-        "artifact_type": "m2_ab_manifest",
+        "artifact_type": "m3_capture_manifest",
         "plan_sha256": plan["plan_sha256"],
         "status": "running",
         "started_ns": start,
@@ -322,7 +252,7 @@ def run_ab(plan, *, output_dir):
         for worker in plan["workers"]:
             require(time.perf_counter_ns() < deadline, "global deadline exhausted")
             if worker["worker_id"] == "A1":
-                gate = audit_numerical(output_dir, plan)
+                gate = audit_correctness(output_dir, plan)
                 manifest["numerical_gate"] = gate
                 manifest["numerical_gate_ns"] = time.perf_counter_ns()
                 write_json(output_dir / "numerical-gate.json", gate)
@@ -339,7 +269,14 @@ def run_ab(plan, *, output_dir):
             manifest["workers"].append(launch)
             write_json(output_dir / "manifest.json", manifest)
             try:
-                exit_code = _launch_worker(plan, worker, output_dir, deadline)
+                exit_code = ab._launch_worker(
+                    plan,
+                    worker,
+                    output_dir,
+                    deadline,
+                    module="vllm_lt.benchmarks.capture",
+                    active_deadline=active_case_deadline,
+                )
                 launch["exit_code"] = exit_code
             finally:
                 launch["returned_ns"] = time.perf_counter_ns()
@@ -368,7 +305,7 @@ def run_ab(plan, *, output_dir):
             manifest["artifact_usage"] = artifact_usage(output_dir, plan["contract"]["limits"])
             write_json(output_dir / "manifest.json", manifest)
         manifest["status"] = "complete"
-    except (Exception, KeyboardInterrupt) as exc:
+    except BaseException as exc:
         manifest["status"] = (
             "incomplete" if isinstance(exc, (TimeoutError, KeyboardInterrupt)) else "failed"
         )
@@ -409,7 +346,7 @@ def main(argv=None):
             return 0
         if args.command == "probe":
             require(not args.output.exists(), "probe output already exists")
-            plan = make_ab_plan(
+            plan = make_plan(
                 baseline_root=args.baseline_root,
                 candidate_root=args.candidate_root,
                 contract_path=args.contract,
@@ -426,7 +363,7 @@ def main(argv=None):
             )
             return 0
         if args.command == "report":
-            from .ab_report import write_report
+            from .capture_report import write_report
 
             result = write_report(args.run_dir)
             print(json.dumps({key: result[key] for key in ("evidence_status", "decision")}))
