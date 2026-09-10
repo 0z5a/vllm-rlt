@@ -21,6 +21,10 @@ BF16 generated identical tokens across the tested scheduling modes, but its
 accumulated logit differences exceeded the declared numerical tolerances. Use
 FP32 for the validated numerical baseline; see [validation](docs/validation.md).
 
+The [roadmap](docs/roadmap.md) prioritizes faster Ouro inference: establish a
+performance baseline and qualify BF16, then use profiling to guide runtime,
+CUDA-graph, attention, and KV improvements.
+
 ## Install and run
 
 Python 3.10+ and PyTorch 2.5+ are required. Use an appropriate existing environment
