@@ -165,11 +165,17 @@ Separate implementation fidelity, adaptive KV semantics, and task quality:
    exit followed by deeper execution, chunk/block boundaries, mixed batches,
    cancellation, and reuse. Full-depth dense recomputation and the official
    model's adaptive output selection do not reproduce this cache history.
-3. **Quality screen.** Predeclare a pinned, deterministic 64-example GSM8K
-   subset, prompt template, exact answer parser, maximum 512 prompt tokens and
-   256 generated tokens, and disjoint feasibility examples. Record exclusions,
+3. **Quality screen.** Follow the original Ouro paper's GSM8K **3-shot CoT**,
+   strict-match, lm-eval-harness settings and pinned BF16 release. Freeze the
+   harness/task revision, demonstrations, formatting, parser, and generation
+   settings where the paper is silent. Predeclare a deterministic 64-example
+   paired native/official fixed-depth screen and disjoint feasibility examples;
+   a full-paper replication requires its full evaluation scope. Set context
+   and output budgets for the few-shot protocol, replacing the historical
+   zero-shot screen's 512/256 limits in a new contract. Record exclusions,
    truncation, paired answer accuracy, disagreements, realized depths, and
-   uncertainty. Use fixed-depth BF16 as the primary baseline, then compare it
+   uncertainty. See the [protocol/source comparison](paper-notes.md#accuracy-evidence-and-the-original-evaluation-protocol).
+   Use fixed-depth BF16 as the primary baseline, then compare it
    with adaptive BF16 at threshold 0.7 and minimum two loops. Add fixed-depth
    FP32 only for a separately stated sensitivity question. Data collection can
    proceed alongside numerical diagnosis; qualification must report both

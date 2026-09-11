@@ -7,6 +7,14 @@ historical records. This policy does not turn any previous failure into a pass.
 
 ## Inference precision
 
+Use original Ouro guidance first: an explicit prescription in the paper, then
+the pinned checkpoint configuration and released inference code. When those
+sources leave accumulation unspecified, record the chosen backend behavior
+and validate it. The [source audit](paper-notes.md#original-ouro-paper-and-precision-guidance)
+finds BF16 in the release configuration and explicit FP32 operations in the
+model code; the paper itself does not specify a per-kernel inference recipe.
+Project precision choices must be labeled separately from author guidance.
+
 BF16 is the primary GPU inference, kernel-validation, task-quality, and
 performance target for Ouro. Use BF16 weights, ordinary activations, and KV
 storage. Full-model FP32 is an optional diagnostic/reference configuration;
@@ -18,10 +26,10 @@ precision. BF16 inference can use FP32 inside selected operations:
 | Operation | Precision requirement |
 | --- | --- |
 | Projections and MLP matrix products | BF16 operands and outputs; record the backend's accumulation/reduction mode. FP32 accumulation is compatible with BF16 inference. |
-| Attention | BF16 Q/K/V and output; retain FP32 score reductions, online-softmax statistics, and weighted-value accumulation where needed for numerical stability. |
+| Attention | BF16 Q/K/V and output. The official eager path uses FP32 softmax cast back to query dtype; fused-kernel FP32 reductions/statistics/accumulation are explicit backend choices to validate. |
 | RMSNorm | Retain FP32 variance/reduction arithmetic, returning to the activation dtype at the defined boundary. |
 | RoPE | Retain FP32 frequencies and phase construction; cast the positional factors to the activation dtype as specified by the model. |
-| Gate and sampling probabilities | Retain the existing higher-precision probability/reduction path; record sigmoid, cumulative-hazard, softmax, and cast boundaries. |
+| Gate and sampling probabilities | Use the pinned release as the reference. Its exit-distribution code has no explicit FP32 promotion; the current runner's FP32 sigmoid/host cumulative update is a project difference to validate. Record the sampling implementation separately. |
 | Cache metadata and KV copies | Integer addresses/lengths; copy BF16 KV without changing its values. |
 
 Promote only the operations/intermediates justified by their numerical behavior.
@@ -86,8 +94,14 @@ back to FP32. Promotion requires the new comparison's numerical, behavioral,
 quality (when claimed), and performance gates.
 
 Q2 uses fixed-depth BF16 as the primary quality baseline and compares adaptive
-BF16 with it; full-model FP32 is an optional sensitivity control. External speed
-comparisons use matched BF16 execution and an explicit workload-equivalence
+BF16 with it; full-model FP32 is an optional sensitivity control. First establish
+native/official fixed-depth accuracy with the original paper's GSM8K 3-shot CoT,
+strict-match, lm-eval-harness protocol. Freeze unspecified task/version/template
+and generation settings explicitly, as detailed in the
+[accuracy source notes](paper-notes.md#accuracy-evidence-and-the-original-evaluation-protocol).
+The existing 4/64 FP32 screen is neither a BF16 accuracy pass nor a reproduction
+of the paper. External speed comparisons use matched BF16 execution and an
+explicit workload-equivalence
 contract: fixed prompt/output lengths, depth policy, cache behavior, and timed
 work. Report actual token differences under the numerical/decision policy;
 they do not automatically invalidate a matched-work timing comparison. A claim
