@@ -102,7 +102,11 @@ def _paged_attention_kernel(
 
 
 def paged_attention(q, key_cache, value_cache, block_tables, context_lengths, active=None):
-    """Launch over [batch row, query head]; inputs are validated by the manager."""
+    """Launch over [batch row, query head]; inputs are validated by the manager.
+
+    Enabled rows require context length >= 1 and initialized KV prefixes.
+    Only inactive rows may have zero length; masking supplies their finite zero.
+    """
     output = torch.empty_like(q)
     if q.shape[0] == 0:
         return output

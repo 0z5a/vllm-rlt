@@ -199,6 +199,8 @@ class OuroForCausalLM(nn.Module):
         count = hidden.shape[0]
         if count == 0 or not (len(request_ids) == len(depths) == len(positions) == count):
             raise ValueError("recurrent requires matching, nonempty packed metadata")
+        # Internal model/cache traversal contract: descriptor ownership and
+        # allocation identity are checked again by every prepared layer call.
         batch = cache._prepare_batch(request_ids, depths, positions)
         return self._recurrent_prepared(hidden, batch, cache)
 

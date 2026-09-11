@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import torch
 
+from vllm_lt.core.kv_cache_manager import _metadata_payload_bytes
 from vllm_lt.core.scheduler import SchedulerOutput
 from vllm_lt.request import Request, Stage
 
@@ -50,7 +51,7 @@ class ModelRunner:
         if parameter.device != self.cache_manager.device:
             raise ValueError("persistent model and KV cache must use the same device")
         width = self.model.config.hidden_size
-        payload_bytes = (2 * 8 * width + 8) * 4 + 1256 + 32
+        payload_bytes = (2 * 8 * width + 8) * 4 + _metadata_payload_bytes() + 4 * 8
         if payload_bytes > 256 * 1024:
             raise ValueError("persistent decode exceeds the 256 KiB tensor payload cap")
         setup_stream = (

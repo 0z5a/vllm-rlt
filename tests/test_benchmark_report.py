@@ -453,3 +453,18 @@ def test_invalid_result_json_is_preserved_as_failed_accounting(tmp_path):
     report = build_report(experiment, tmp_path / "report")
     assert "duplicate JSON field" in report["runs"][0]["validation_errors"][0]
     assert report["comparisons"][0]["complete_pairs"] == 1
+
+
+def test_failed_sync_keeps_boundary_error_and_excludes_pair(tmp_path):
+    experiment = tmp_path / "experiment"
+    plan = example_experiment(experiment)
+    change_result(
+        experiment,
+        plan["execution_order"][0]["run_id"],
+        lambda row: row.update(status="failed", synchronized_ns=None),
+    )
+    report = build_report(experiment, tmp_path / "report")
+    run = report["runs"][0]
+    assert run["validation_errors"] == ["final synchronization boundary is unavailable"]
+    assert not run["comparison_eligible"]
+    assert report["comparisons"][0]["complete_pairs"] == 1
