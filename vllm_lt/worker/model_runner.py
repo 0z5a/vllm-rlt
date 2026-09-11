@@ -107,7 +107,10 @@ class ModelRunner:
                 # establish completion; that remains explicit recovery work.
                 failure = executor.failure
                 if failure is None or not failure["completion_confirmed"] or failure["secondary"]:
-                    error.add_note("capture budget decline refused: setup did not settle cleanly")
+                    if hasattr(error, "add_note"):
+                        error.add_note(
+                            "capture budget decline refused: setup did not settle cleanly"
+                        )
                     raise
                 attempt_setup = deepcopy(executor.setup_record)
                 attempt_failure = deepcopy(failure)
@@ -118,7 +121,8 @@ class ModelRunner:
                         raise RuntimeError("capture budget decline retained scratch allocations")
                 except BaseException as secondary:
                     self.cache_manager._quarantine("capture budget decline cleanup failed")
-                    error.add_note(f"capture budget decline cleanup failed: {secondary}")
+                    if hasattr(error, "add_note"):
+                        error.add_note(f"capture budget decline cleanup failed: {secondary}")
                     raise error from secondary
             # Constructor declines happened before allocating/submitting anything.
             # Otherwise the entire attempted executor was closed after confirmed

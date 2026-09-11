@@ -395,6 +395,8 @@ class RecurrentGraphExecutor:
             raise RuntimeError("scratch bytes were not restored")
         # This is setup-only ownership, before any admission. Preserve quarantine
         # on failed setup while releasing only confirmed-complete scratch pages.
+        # Refactor tripwire: changes to free() side effects must update this exact
+        # rollback and its scratch-byte/allocator-order ownership tests together.
         del cache._allocations[scratch["request_id"]]
         cache._free_blocks[:] = scratch["free"]
         record["free_list_after"] = list(cache._free_blocks)
@@ -695,6 +697,9 @@ class RecurrentGraphExecutor:
 
     def settle_failure(self, error):
         if self.failure is not None:
+            # Preserve later settlement attempts without retaining exception
+            # tracebacks and their tensor references. Completion is not retried.
+            self.failure["secondary"].append(_error(error))
             return self.failure["completion_confirmed"]
         self.status = "failed"
         self.failure = {"primary": _error(error), "secondary": [], "completion_confirmed": False}

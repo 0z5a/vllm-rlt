@@ -413,7 +413,10 @@ def _execution(case, observations, lifecycle, limits):
                     lifecycle["close_error"] = {"type": type(error).__name__, "message": str(error)}
                     if primary is None:
                         raise
-                    primary.add_note(f"graph cleanup also failed: {type(error).__name__}: {error}")
+                    if hasattr(primary, "add_note"):
+                        primary.add_note(
+                            f"graph cleanup also failed: {type(error).__name__}: {error}"
+                        )
         finally:
             engines.clear()
 

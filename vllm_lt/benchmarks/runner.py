@@ -446,7 +446,8 @@ def run_loaded_rows(
                         },
                     )
             except BaseException as secondary:
-                exc.add_note(f"failed-result recovery also failed: {secondary}")
+                if hasattr(exc, "add_note"):
+                    exc.add_note(f"failed-result recovery also failed: {secondary}")
             raise
         if result["status"] != "complete":
             raise RuntimeError(f"stopping after {run['run_id']}: {result['failures']}")

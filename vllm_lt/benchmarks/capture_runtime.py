@@ -24,7 +24,8 @@ class GraphCapture(Capture):
             try:
                 self.__exit__(None, None, None)
             except BaseException as secondary:
-                primary.add_note(f"profile wrapper cleanup failed: {secondary}")
+                if hasattr(primary, "add_note"):
+                    primary.add_note(f"profile wrapper cleanup failed: {secondary}")
             raise
 
     def _install_graph_wrappers(self):
@@ -137,7 +138,8 @@ class ExecutionAdapter:
         try:
             write_json(path, evidence)
         except BaseException as secondary:
-            primary.add_note(f"failure evidence export failed at {path.name}: {secondary}")
+            if hasattr(primary, "add_note"):
+                primary.add_note(f"failure evidence export failed at {path.name}: {secondary}")
 
     def __init__(self, *, implementation_id, graph_limits):
         require(implementation_id in ("A", "B"), "unknown graph implementation")
@@ -178,7 +180,8 @@ class ExecutionAdapter:
                         "type": type(secondary).__name__,
                         "message": str(secondary),
                     }
-                    primary.add_note(f"graph setup cleanup failed: {secondary}")
+                    if hasattr(primary, "add_note"):
+                        primary.add_note(f"graph setup cleanup failed: {secondary}")
             self._failure_record(run_dir / "graph-setup-failure.json", evidence, primary)
             raise
 
@@ -228,6 +231,7 @@ class ExecutionAdapter:
                 "type": type(secondary).__name__,
                 "message": str(secondary),
             }
-            primary.add_note(f"graph execution cleanup failed: {secondary}")
+            if hasattr(primary, "add_note"):
+                primary.add_note(f"graph execution cleanup failed: {secondary}")
         finally:
             self._failure_record(run_dir / "graph-failure-cleanup.json", evidence, primary)

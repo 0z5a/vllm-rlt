@@ -191,3 +191,31 @@ Run only the frozen plan through the verified exact-ID GPU scheduler. Stop on
 the first execution/control/resource failure, preserve the failed prefix and
 do not expand the run budget to find a favorable outcome. A result report and
 raw evidence must identify every unmet acceptance criterion before adoption.
+
+## Review follow-up and requirements for another qualification
+
+Python 3.10 lacks exception notes. Failure paths now preserve the original
+capture-budget error and its chained cleanup error without requiring `add_note`;
+newer Python versions still receive notes. Repeated `settle_failure` calls append
+serialized secondary events while retaining the original completion decision.
+Repeated propagation is recorded too; no exception traceback is retained in the
+executor, and a repeated settlement does not retry device synchronization.
+
+The current owned-pool result remains unqualified. A separately frozen follow-up
+must first replay scheduler/shape metadata on CPU and prove that selected profile
+windows include physical buckets four/eight and the intended fallback transitions.
+Four/eight physical rows support only two/four live requests: eight live requests
+are compact fallback, not bucket eight. Live-gate feasibility must additionally
+confirm actual dispatch coverage before measured/profile rows are accepted.
+
+Keep padded-eager versus replay as the mechanism comparison. An adoption study
+must separately compare accepted compact execution, including setup/capture
+amortization, padding, bucket hits, fallback reasons and arrival-to-token latency.
+Freeze a supported executor lifetime and a measured memory-plateau criterion
+before testing replacement/churn; prefer one resident executor when that is the
+supported lifetime. Process-terminal zero memory does not prove a steady-state
+plateau. Do not hide retention by dropping shared caches. Global allocator
+counters measure the declared process-wide limits, not physical per-pool reclaim.
+CPU fake replay tests prove transaction/lifetime behavior; only reserved real
+replays prove CUDA graph execution. No historical fallback-only window is
+reclassified by these review fixes.

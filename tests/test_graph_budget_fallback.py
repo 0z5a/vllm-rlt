@@ -264,3 +264,53 @@ def test_setup_time_decline_after_submitted_warmup_restores_then_runs_compact(mo
     assert not cache._allocations and tuple(cache._free_blocks) == original[2]
     assert torch.equal(cache.key_cache, original[0]) and torch.equal(cache.value_cache, original[1])
     compact_matches(model, runner, reference)
+
+
+@pytest.mark.parametrize("cleanup_fails", [False, True])
+def test_budget_refusal_preserves_original_on_python_without_exception_notes(
+    model, monkeypatch, cleanup_fails
+):
+    class LegacyBudgetError(graph.CaptureBudgetExceeded):
+        def __getattribute__(self, name):
+            if name == "add_note":
+                raise AttributeError(name)
+            return super().__getattribute__(name)
+
+    primary = LegacyBudgetError(graph.GraphLimits(), "setup_timeout_s", 61)
+    secondary = RuntimeError("cleanup failed")
+
+    class FailedExecutor:
+        def __init__(self, *args, **kwargs):
+            self.failure = {"completion_confirmed": cleanup_fails, "secondary": []}
+            self.setup_record = {}
+
+        def setup(self):
+            raise primary
+
+        def close(self):
+            raise secondary
+
+    monkeypatch.setattr(graph, "CaptureBudgetExceeded", LegacyBudgetError)
+    monkeypatch.setattr(graph, "RecurrentGraphExecutor", FailedExecutor)
+    runner = ModelRunner(model, fixtures.make_cache(model))
+    with pytest.raises(LegacyBudgetError) as raised:
+        runner._enable_recurrent_graph(use_graphs=True)
+    assert raised.value is primary
+    if cleanup_fails:
+        assert raised.value.__cause__ is secondary
+        with pytest.raises(RuntimeError, match="quarantined"):
+            runner.cache_manager._require_usable()
+
+
+@pytest.mark.parametrize("confirmed", [False, True])
+def test_repeated_settlement_keeps_cascaded_failure_without_retrying_device(confirmed):
+    executor = object.__new__(graph.RecurrentGraphExecutor)
+    primary = {"type": "RuntimeError", "message": "first failure"}
+    executor.failure = {"primary": primary, "secondary": [], "completion_confirmed": confirmed}
+    result = executor.settle_failure(ValueError("later failure"))
+    assert result is confirmed
+    assert executor.failure == {
+        "primary": primary,
+        "secondary": [{"type": "ValueError", "message": "later failure"}],
+        "completion_confirmed": confirmed,
+    }
