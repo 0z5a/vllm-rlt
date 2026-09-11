@@ -2,7 +2,7 @@
 
 The candidate changes one production launch constant: Triton attention `BLOCK_T=32` on A becomes `BLOCK_T=64` on B; `num_warps=4` and all other attention arithmetic remain unchanged. The accepted [PR14](https://github.com/hsliuustc0106/vllm-lt/pull/14) runtime supplies the common baseline. Benchmark inference uses compact synchronous execution with the private persistent option disabled. The unqualified M3 capture implementation is outside this baseline.
 
-**Status: candidate unqualified; no M4 GPU experiment has run.** This document describes the implemented qualification protocol. A separate resolved contract must record reviewed source, input, environment, device, affinity and output-path identities before device execution.
+**Status: experiment complete; candidate failed performance acceptance.** The [result](m4-attention-20260911.md) records the unchanged protocol and actual failed W1 gate. The [operative pre-run contract](m4-attention-contract-20260911.md) froze source, input, environment, device, affinity and output-path identities before execution.
 
 ## Selection and scope
 
@@ -62,4 +62,4 @@ The total artifact cap is **12 GiB**, including at most 4 GiB of profiles (2 GiB
 
 Keep the same reserved device/UUID, prepared environment, NUMA/thread binding, arithmetic, workload and cache/admission controls across A/B. Fresh case engines preserve worker allocator state; load/setup are reported separately. Requests and KV ownership must be fully released, held cache/buffer references settled, and final worker CUDA allocated/reserved bytes zero after task-owned model/workspace cleanup. Shared caches are not dropped.
 
-Any source/control, numerical, guard, history, ownership, cleanup, deadline or artifact-cap failure stops later work. Preserve completed and partial evidence; an independently audited required failure remains a failure when the suffix is missing, while corruption is reported separately. There is no retry, extra tile or additional measured/profile sample. Adoption requires every applicable gate; the current candidate remains unqualified until the resolved experiment and offline audit establish those results.
+Any source/control, numerical, guard, history, ownership, cleanup, deadline or artifact-cap failure stops later work. Preserve completed and partial evidence; an independently audited required failure remains a failure when the suffix is missing, while corruption is reported separately. There is no retry, extra tile or additional measured/profile sample. Adoption requires every applicable gate; the completed experiment leaves this candidate unqualified because the required W1 performance gate failed.
