@@ -1,0 +1,26 @@
+{
+  "source_commit": "9ab45792bc327a2975385ee7b9c05525f1a5c059",
+  "source_dirty": false,
+  "command": [
+    "/home/hsliu2/tmp/vllm-lt-review-fixes-20260911/run_pr13_gpu.py"
+  ],
+  "producer_sha256": "35701ba94b289cca3134360553da57c0d6c20c67fd6b69ec97cc969a31319f8a",
+  "gpu_name": "NVIDIA L20X",
+  "gpu_uuid": "cbf66259-f4ab-0ede-1811-82037dde5924",
+  "cuda_visible_devices": "2",
+  "scope": "One reserved kernel correctness check; no throughput/latency claim.",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "pytest_exit_code": 0,
+  "elapsed_s": 16.702227712608874,
+  "final_allocated_bytes": 0,
+  "final_reserved_bytes": 0
+}
