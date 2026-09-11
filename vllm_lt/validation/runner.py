@@ -146,14 +146,38 @@ def _oracle(model, case, fixture, sink, deadline, *, progress=None):
             del snapshot
         return {fixture_id: traces}, 9, []
     finally:
+        _close_oracle(oracle, progress)
+
+
+def _close_oracle(oracle, progress):
+    """Observe ownership on both sides of close, including a failed close."""
+
+    def state():
+        return {
+            "closed": oracle._closed,
+            "retained_fields": [
+                name
+                for name in ("key_cache", "value_cache", "initialized", "_inv_freq")
+                if getattr(oracle, name) is not None
+            ],
+            "weight_references": len(oracle.weights),
+        }
+
+    before = state()
+    try:
         oracle.close()
+    finally:
+        after = state()
         if progress is not None:
+            progress["oracle_lifecycle"] = {"before_close": before, "after_close": after}
             progress["cleanup"] = {
-                "requests_remaining": int(not oracle._closed),
+                "requests_remaining": int(not after["closed"]),
                 "used_blocks": 0
                 if oracle.key_cache is None and oracle.value_cache is None
                 else None,
             }
+    if not after["closed"] or after["retained_fields"] or after["weight_references"]:
+        raise RuntimeError("oracle cleanup retained request state or weight references")
 
 
 def _native(model, plan, case, fixtures, sink, deadline, *, progress=None):

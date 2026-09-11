@@ -20,7 +20,12 @@ def history_hash(tokens):
 
 
 def snapshot_native(cache, request_id, positions):
-    """Use this manager's page tables; materialize only the requested position chunk."""
+    """Materialize selected positions using the manager's actual page tables.
+
+    Validation deliberately inspects private allocation/written-prefix state.
+    This is a refactor tripwire: cache ownership/layout changes must update this
+    adapter and its serial-oracle comparisons together, not infer initialization.
+    """
     positions = tuple(positions)
     if not positions or len(positions) != len(set(positions)):
         raise ValueError("snapshot requires unique positions")
