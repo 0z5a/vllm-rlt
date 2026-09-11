@@ -10,8 +10,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from vllm_lt.models.config import OuroConfig
-
-from .schema import (
+from vllm_lt.validation.schema import (
     _digest,
     _fixture_stats,
     _validate_contract,
@@ -230,7 +229,7 @@ def _save_ledger(folder, ledger):
 
 
 def _restore_budget(folder, view, ledger):
-    from .diagnostics import SpoolBudget, TensorSpool
+    from vllm_lt.validation.diagnostics import SpoolBudget, TensorSpool
 
     limits = view["contract"]["limits"]
     budget = SpoolBudget(limits["cumulative_spool_written_bytes"], limits["group_spool_bytes"])
@@ -261,8 +260,8 @@ def _restore_budget(folder, view, ledger):
 
 def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadline_ns):
     """Run A once, then B once against its retained oracle/A evidence."""
-    from .diagnostics import DiagnosticDump, SpoolBudget
-    from .runner import execute_case
+    from vllm_lt.validation.diagnostics import DiagnosticDump, SpoolBudget
+    from vllm_lt.validation.runner import execute_case
 
     if implementation_id not in ("A", "B"):
         raise ValueError("implementation_id must be A or B")
@@ -417,7 +416,7 @@ def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadli
 
 def audit_numerical(output_dir, parent_plan):
     """Offline audit using the same exact boundary/trace and typed-payload audits."""
-    from .report import _audit_case, _audit_comparison, _audit_raw_evidence
+    from vllm_lt.validation.report import _audit_case, _audit_comparison, _audit_raw_evidence
 
     view = _view(parent_plan)
     folder = Path(output_dir) / "numerical"

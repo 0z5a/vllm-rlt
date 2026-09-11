@@ -29,7 +29,9 @@ readback and fixed-depth gate-transfer removal are unselected, out of scope.
 ## Frozen comparison workflow
 
 The checked-in `benchmarks/fixtures/ouro-m2-contract.json` fixes the candidate,
-input references, exact run budget and numeric gates. A CPU probe resolves the
+input references, exact run budget and numeric gates. It is the single source
+for the A/B schema's limits, acceptance rules and fixed controls; it is an
+executable input, not a generated run artifact. A CPU probe resolves the
 actual A/B source commits, common harness bytes, local model/tokenizer contents,
 one physical GPU ID and CPU/NUMA policy before execution. Null template controls
 cannot produce an executable plan. Both execution checkouts must be clean;
@@ -104,6 +106,12 @@ automatically. The offline report preserves missing/invalid evidence.
 
 ## Commands
 
+Run the repository-only A/B tools from the checkout root with
+`python -m benchmarks.ab`. The controller, schema, report and M2 numerical
+subset live in `benchmarks/`; they are excluded from the installed package.
+Shared benchmark execution, validation and comparison utilities remain in
+`vllm_lt`.
+
 First verify scheduler status and choose an available exact physical ID. Run
 the CPU probe under the same explicit CPU/NUMA policy as the reservation's
 controller. The CPU/node values below were verified on the recorded host;
@@ -111,7 +119,7 @@ resolve suitable values before running on another host.
 
 ```bash
 numactl --physcpubind=56-63 --membind=1 -- env OMP_NUM_THREADS=1 \
-  python -m vllm_lt.benchmarks.ab probe \
+  python -m benchmarks.ab probe \
   --baseline-root /path/to/clean/A --candidate-root /path/to/clean/B \
   --contract benchmarks/fixtures/ouro-m2-contract.json \
   --model-path /path/to/prepared/ouro-1.4b \
@@ -120,13 +128,20 @@ numactl --physcpubind=56-63 --membind=1 -- env OMP_NUM_THREADS=1 \
 gpu run --gpu-ids <same-physical-id> --timeout 2h \
   --note 'vllm-lt M2 frozen metadata A/B' -- \
   numactl --physcpubind=56-63 --membind=1 -- env OMP_NUM_THREADS=1 \
-  python -m vllm_lt.benchmarks.ab run \
+  python -m benchmarks.ab run \
   --plan artifacts/m2-plan/plan.json --output artifacts/m2-run
 
-python -m vllm_lt.benchmarks.ab report --run-dir artifacts/m2-run
+python -m benchmarks.ab report --run-dir artifacts/m2-run
 ```
 
 Use new output directories and commit the resolved source/control contract
 before device execution. The report's performance result is separate from
 manual profile attribution and the criterion-by-criterion adoption decision.
 Numerical or structural completion alone cannot close M2.
+
+The published 2026-09-11 evidence records the original module paths and harness
+hashes. Audit that historical run with its frozen candidate commit
+`2ef43db91655f7f575a3cabee6609a35faadaf0a` and the release's reproduction
+instructions. New plans use the repository-only commands above and must freeze
+both execution checkouts with the same relocated harness. Resolved plans and
+host-specific run notes belong in the output directory, outside source docs.

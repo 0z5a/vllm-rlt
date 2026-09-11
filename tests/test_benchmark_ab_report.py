@@ -5,7 +5,7 @@ from copy import deepcopy
 import pytest
 import test_benchmark_ab_schema as schema_fixtures
 
-from vllm_lt.benchmarks import ab_report
+from benchmarks import ab_report
 
 ab_plan = schema_fixtures.ab_plan
 

@@ -9,6 +9,9 @@ import sys
 import time
 from pathlib import Path
 
+from vllm_lt.benchmarks.runner import write_json
+from vllm_lt.benchmarks.schema import read_json
+
 from .ab_schema import (
     RUNTIME_VARIABLES,
     affinity_snapshot,
@@ -20,8 +23,6 @@ from .ab_schema import (
     validate_ab_plan,
     verify_ab_plan,
 )
-from .runner import write_json
-from .schema import read_json
 
 
 def artifact_usage(output_dir, limits):
@@ -99,9 +100,8 @@ def audit_worker_controls(plan, manifest, previous=None):
 
 
 def run_worker(plan, *, worker_id, output_dir, deadline_ns):
-    from vllm_lt.validation.m2 import run_numerical_rows
-
-    from . import runner
+    from benchmarks.m2 import run_numerical_rows
+    from vllm_lt.benchmarks import runner
 
     start = time.perf_counter_ns()
     validate_ab_plan(plan)
@@ -235,7 +235,7 @@ def _launch_worker(plan, worker, output_dir, deadline_ns):
     command = [
         plan["interpreter"],
         "-m",
-        "vllm_lt.benchmarks.ab",
+        "benchmarks.ab",
         "worker",
         "--plan",
         str(output_dir / "plan.json"),
@@ -281,7 +281,7 @@ def _launch_worker(plan, worker, output_dir, deadline_ns):
 
 
 def run_ab(plan, *, output_dir):
-    from vllm_lt.validation.m2 import audit_numerical
+    from benchmarks.m2 import audit_numerical
 
     start = time.perf_counter_ns()
     verify_ab_plan(plan)
