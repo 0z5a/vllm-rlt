@@ -107,17 +107,18 @@ def test_native_step_budget_stops_without_an_extra_dispatch():
     assert native.steps == 2
 
 
-def test_actual_gpu_uuid_and_affinity_are_checked():
+@pytest.mark.parametrize("prefix", ["", "GPU-"])
+def test_actual_gpu_uuid_and_affinity_are_checked(prefix):
     controls = {
         "gpu_ids": [0],
-        "gpu_uuid": "GPU-test",
+        "gpu_uuid": "GPU-cbf66259-f4ab-0ede-1811-82037dde5924",
         "cpu_threads": 1,
         "interop_threads": 1,
         "affinity": {"cpu_ids": [56, 57]},
     }
     observed = {
         "cuda_visible_devices": "0",
-        "gpu_uuid": "GPU-test",
+        "gpu_uuid": prefix + "cbf66259-f4ab-0ede-1811-82037dde5924",
         "actual_torch_threads": {"intraop": 1, "interop": 1},
         "cpu_affinity": [56, 57],
     }
@@ -125,6 +126,11 @@ def test_actual_gpu_uuid_and_affinity_are_checked():
     with pytest.raises(ValueError, match="UUID"):
         controller.check_environment(
             {"contract": {"controls": controls}}, {**observed, "gpu_uuid": "GPU-other"}
+        )
+    with pytest.raises(ValueError, match="UUID"):
+        controller.check_environment(
+            {"contract": {"controls": controls}},
+            {**observed, "gpu_uuid": "cbf66259-f4ab-0ede-1811-82037dde5925"},
         )
     with pytest.raises(ValueError, match="affinity"):
         controller.check_environment(

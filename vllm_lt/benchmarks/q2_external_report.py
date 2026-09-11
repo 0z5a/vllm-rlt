@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .ab_schema import equal, require
 from .observe import summarize_records
-from .q2_external_schema import LIMITS, validate_plan
+from .q2_external_schema import LIMITS, canonical_gpu_uuid, validate_plan
 from .schema import _integer, _keys, read_json
 
 
@@ -133,7 +133,7 @@ def _controls(plan, worker):
     )
     env, controls = worker["environment"], plan["contract"]["controls"]
     equal(env["cuda_visible_devices"], str(controls["gpu_ids"][0]), "reserved physical GPU")
-    equal(env["gpu_uuid"], controls["gpu_uuid"], "reserved GPU UUID")
+    equal(canonical_gpu_uuid(env["gpu_uuid"]), controls["gpu_uuid"], "reserved GPU UUID")
     equal(env["logical_device"], "cuda:0", "logical device")
     equal(env["cpu_affinity"], controls["affinity"]["cpu_ids"], "CPU affinity")
     equal(env["numa_status"], controls["affinity"]["numa_status"], "allowed CPU/memory masks")

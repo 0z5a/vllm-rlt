@@ -361,6 +361,18 @@ def test_control_and_weight_ownership_mismatch_invalidates(external_run, field):
     assert report.build_report(external_run)["evidence_status"] == "invalid"
 
 
+def test_torch_bare_uuid_is_same_device_but_different_uuid_is_rejected(external_run):
+    path = external_run / "worker.json"
+    worker = read_json(path)
+    bare = worker["environment"]["gpu_uuid"].removeprefix("GPU-")
+    worker["environment"]["gpu_uuid"] = bare
+    write_json(path, worker)
+    assert report.build_report(external_run)["passed"]
+    worker["environment"]["gpu_uuid"] = bare[:-1] + ("0" if bare[-1] != "0" else "1")
+    write_json(path, worker)
+    assert report.build_report(external_run)["evidence_status"] == "invalid"
+
+
 def test_stopped_worker_retains_valid_prefix_without_invented_cleanup(external_run):
     path = external_run / "worker.json"
     worker = read_json(path)

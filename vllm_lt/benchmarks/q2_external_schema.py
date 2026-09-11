@@ -33,6 +33,18 @@ from .schema import (
 BASE_SHA = "630a8fdc0dd47b6da68a3d30db6b851fc08af5c5"
 W1_SHA256 = "c0b63b23dc8334e1572ff3e1155a756520a4751c9304100fd1fc6a224c79c8c7"
 INPUTS = {"suite": "benchmarks/fixtures/ouro-m1.json"}
+
+
+def canonical_gpu_uuid(value):
+    """Match NVIDIA's prefixed UUID and PyTorch's bare UUID without losing identity."""
+    if not isinstance(value, str) or not re.fullmatch(
+        r"(?:GPU-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        value,
+    ):
+        raise ValueError("malformed GPU UUID")
+    return "GPU-" + value.removeprefix("GPU-")
+
+
 IMPORT_MODULES = (
     "vllm_lt.benchmarks.q2_external_schema",
     "vllm_lt.benchmarks.q2_external",

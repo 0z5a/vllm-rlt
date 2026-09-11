@@ -202,3 +202,11 @@ def test_reader_rejects_duplicate_and_nonfinite_json(tmp_path):
         file.write_text(data)
         with pytest.raises(ValueError):
             read_json(file)
+
+
+@pytest.mark.parametrize(
+    "value", [None, 2, "GPU-0", "GPU-GPU-cbf66259-f4ab-0ede-1811-82037dde5924"]
+)
+def test_uuid_format_rejects_malformed_identity(value):
+    with pytest.raises(ValueError, match="UUID"):
+        schema.canonical_gpu_uuid(value)

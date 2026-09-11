@@ -20,6 +20,7 @@ from vllm_lt.benchmarks.q2_external_driver import (
 )
 from vllm_lt.benchmarks.q2_external_schema import (
     LIMITS,
+    canonical_gpu_uuid,
     make_plan,
     source_probe,
     validate_plan,
@@ -65,7 +66,7 @@ def check_environment(plan, observed):
     expected = str(controls["gpu_ids"][0])
     if observed["cuda_visible_devices"] != expected:
         raise ValueError("reserved GPU ID differs from the frozen Q2 plan")
-    if observed["gpu_uuid"] != controls["gpu_uuid"]:
+    if canonical_gpu_uuid(observed["gpu_uuid"]) != controls["gpu_uuid"]:
         raise ValueError("reserved GPU UUID differs from frozen Q2 plan")
     if observed["actual_torch_threads"] != {
         "intraop": controls["cpu_threads"],
