@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "artifact_type": "q2_external_contract",
+  "contract_id": "ouro-q2-external-fp32-v1",
+  "hypothesis": "The native compact engine and the pinned official cached implementation generate the same fixed-depth W1 sequence; their measured timings support a bounded external comparison.",
+  "isolated_variable": "Implementation: native Triton paged compact engine versus published eager attention and depth-layer append cache; shared immutable FP32 weights and native pool remain resident.",
+  "base_sha": "630a8fdc0dd47b6da68a3d30db6b851fc08af5c5",
+  "production_files": [
+    {
+      "path": "vllm_lt/config.py",
+      "size_bytes": 1029,
+      "sha256": "b5e58126a39912f1eaff146034dac2e8d367d1fd60637befdaf82496b5375df2"
+    },
+    {
+      "path": "vllm_lt/core/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "vllm_lt/core/kv_cache_manager.py",
+      "size_bytes": 27780,
+      "sha256": "9f8c430871feede8981047be1a1ca3079dcaa7e59183342c884fec6a86371f1e"
+    },
+    {
+      "path": "vllm_lt/core/scheduler.py",
+      "size_bytes": 5028,
+      "sha256": "6d0e90d33ed169115137690c019a644bf9b4c2e363633f305f52f350ce4cc9e3"
+    },
+    {
+      "path": "vllm_lt/engine/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "vllm_lt/engine/llm_engine.py",
+      "size_bytes": 7335,
+      "sha256": "9d482c317d8685ecaa7c840edcb67f935968abebcca6fe7611f2bb5dac6ae166"
+    },
+    {
+      "path": "vllm_lt/entrypoints/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "vllm_lt/entrypoints/cli.py",
+      "size_bytes": 3018,
+      "sha256": "8871d91466f2d00f9c49e9069cf9d8ec2d3b82f909bfab3ead3352271f8c9e2f"
+    },
+    {
+      "path": "vllm_lt/entrypoints/llm.py",
+      "size_bytes": 3758,
+      "sha256": "14eb8ff20f793ada59410409934e1b92521b72ed072251491d8a7e479f7629a1"
+    },
+    {
+      "path": "vllm_lt/kernels/__init__.py",
+      "size_bytes": 76,
+      "sha256": "3ce880bacb0d2565857d13c161ab0831e40d95c0ab9bd307694a08a9bc6478a5"
+    },
+    {
+      "path": "vllm_lt/kernels/paged_attention.py",
+      "size_bytes": 2726,
+      "sha256": "2f8ff17f1abbb5bbd50960787d83fa318e41b1887cb014ed0921419e4e26d492"
+    },
+    {
+      "path": "vllm_lt/kernels/triton_attention.py",
+      "size_bytes": 4353,
+      "sha256": "0861c57c25d7e5b284cfe4c259ae324a2a420a42c72fa3d3124d0fd13e63098e"
+    },
+    {
+      "path": "vllm_lt/kernels/triton_kv_write.py",
+      "size_bytes": 2646,
+      "sha256": "e24fe4529ef80e9da8f8ad672e5e25169460f9b8ba5c63ab2a6a6a7d5cc2017b"
+    },
+    {
+      "path": "vllm_lt/models/__init__.py",
+      "size_bytes": 174,
+      "sha256": "f7c932f71d44df4844908d1128725812224ff8e89832fa941c3321c072a33487"
+    },
+    {
+      "path": "vllm_lt/models/config.py",
+      "size_bytes": 5997,
+      "sha256": "f20da90690a844bb0f5c3491cbc326e0961a9163aa945e0164e471f394744e55"
+    },
+    {
+      "path": "vllm_lt/models/ouro.py",
+      "size_bytes": 14742,
+      "sha256": "a928df915b3ff57b0fb8e041e89f0f141bce8a1cfc4c6f2616e7eb0b2ef620ec"
+    },
+    {
+      "path": "vllm_lt/models/reference.py",
+      "size_bytes": 3798,
+      "sha256": "230169fa484afc946426c44abb0c1e223c968e73fe2b6ff461c2dac3e082938c"
+    },
+    {
+      "path": "vllm_lt/models/serial_oracle.py",
+      "size_bytes": 17498,
+      "sha256": "0e08731b63256ebeb155c209b30edff286c736807c6fafcce9668927a117f5a0"
+    },
+    {
+      "path": "vllm_lt/request.py",
+      "size_bytes": 1702,
+      "sha256": "6252f8e1fdca72471df626f56850711fd2e7755df39c184fb6050312533d120d"
+    },
+    {
+      "path": "vllm_lt/sampling_params.py",
+      "size_bytes": 1435,
+      "sha256": "c2362c4ab7b5ea2170c12bf7b58912017cffd326770dc5b5305fc36dd95116fc"
+    },
+    {
+      "path": "vllm_lt/worker/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "vllm_lt/worker/model_runner.py",
+      "size_bytes": 16701,
+      "sha256": "efc7450d82ea9a3909debee77a27071214bc270cd88720fb20c74346d761bc81"
+    }
+  ],
+  "engine": {
+    "dtype": "float32",
+    "attention_backend": "triton",
+    "cache": {
+      "num_blocks": 1024,
+      "block_size": 16
+    },
+    "scheduler": {
+      "max_num_seqs": 8,
+      "max_num_batched_tokens": 128,
+      "min_coda_batch_size": 1,
+      "mode": "refill"
+    },
+    "sampling": {
+      "max_tokens": 64,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": -1,
+      "seed": 0,
+      "min_loops": 4,
+      "max_loops": 4,
+      "exit_threshold": 1.0,
+      "ignore_eos": true
+    },
+    "persistent_decode": false,
+    "cuda_graphs": false
+  },
+  "official": {
+    "attention_implementation": "eager",
+    "use_cache": true,
+    "exit_at_step": 3,
+    "logits_to_keep": 1,
+    "use_weighted_exit": false,
+    "cache_slots": 96,
+    "final_cache_length": 191,
+    "cache_policy": "distinct-depth-layer-published-append-with-versioned-mask-shim"
+  },
+  "arithmetic": {
+    "allow_tf32": false,
+    "allow_bf16_reduced_precision_reduction": false,
+    "allow_fp16_reduced_precision_reduction": false
+  },
+  "controls": {
+    "cpu_threads": 1,
+    "interop_threads": 1,
+    "seed": 0,
+    "numa_policy": "inherit-verified-parent-binding",
+    "residency_policy": "one-native-model-shared-official-weights-native-pool-always-resident",
+    "cache_policy": "reuse-native-engine-reset-request-preserve-allocator",
+    "environment_policy": "one-prepared-environment-one-worker",
+    "gpu_ids": null,
+    "affinity": null,
+    "gpu_uuid": null
+  },
+  "limits": {
+    "total_timeout_s": 3600,
+    "case_timeout_s": 600,
+    "executions": 8,
+    "workers": 1,
+    "model_loads": 1,
+    "feasibility_executions": 2,
+    "warmup_executions": 2,
+    "measured_executions": 4,
+    "native_steps_max": 380,
+    "official_calls_max": 64,
+    "token_events_max": 64,
+    "case_bytes_max": 2097152,
+    "artifact_bytes_max": 33554432,
+    "profile_executions": 0,
+    "tensor_dump_bytes_max": 0,
+    "events_max": 128
+  },
+  "acceptance": {
+    "equivalence": "all-64-actual-greedy-ids-depth-four-before-warmup",
+    "measured_outputs": "all-four-runs-match-feasibility",
+    "timing": "two-complete-pairs-no-speed-minimum",
+    "variation": "report-raw-values-and-ranges-no-winner-when-overlapping",
+    "scope": "FP32-fixed-depth-W1-only-no-task-quality-or-adaptive-claim"
+  },
+  "observer_policy": {
+    "timing": "common-host-token-delivery-no-stage-hooks-or-page-scans",
+    "finite_checks": "feasibility-only",
+    "cache_detail": "feasibility-or-outside-delivery-timing",
+    "clock": "perf_counter_ns-after-actual-selection-readback"
+  },
+  "stop_conditions": [
+    "total-or-complete-case-deadline-or-byte-budget",
+    "native-step-or-official-call-bound",
+    "nonfinite-feasibility-or-actual-output-equivalence-failure",
+    "source-input-control-invariant-device-or-cleanup-failure",
+    "no-retry-no-replacement-no-extra-profile-or-equivalence-execution"
+  ]
+}
