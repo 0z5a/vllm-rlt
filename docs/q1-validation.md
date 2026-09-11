@@ -1,5 +1,24 @@
 # Q1: incremental Ouro numerical validation
 
+## Current requirements — 2026-09-12
+
+New work follows the [BF16 mixed-precision policy](precision-policy.md).
+BF16 operands/storage are the primary target, with FP32 accumulation and
+sensitive intermediates where justified. Full-model FP32 is an optional
+diagnostic control. BF16 performance and quality data collection can proceed
+alongside reference diagnosis; collection and qualification are separate.
+
+Successor comparisons must distinguish exact cache/data-movement invariants
+from floating-point fidelity and decision/quality criteria. Use independently
+justified, predeclared BF16 bounds and record both implementations' accumulation
+and rounding choices. Universal exact top-1 agreement across differing
+arithmetic paths is not the default requirement. Metadata-only A/B comparisons
+retain exact behavior and tensor requirements. Keep the pinned official checks
+and investigate significant discrepancies rather than assuming the oracle's
+rounding sequence is the only valid implementation.
+
+## Historical first-pass contract
+
 This suite addresses [Q1 issue #4](https://github.com/hsliuustc0106/vllm-lt/issues/4).
 The [first complete run](q1-20260911.md) passes FP32 and fails BF16; causal
 diagnosis remains incomplete and Q1 stays open.
@@ -177,7 +196,7 @@ inconclusive; BF16 remains unqualified until its declared gates pass.
 
 ## Review follow-up: independence and diagnostic scope
 
-The pinned official comparison remains mandatory in numerical follow-ups: the
+The pinned official comparison remains required in model-fidelity follow-ups: the
 serial oracle and dense in-repository reference could share an interpretation
 error. Official BF16 disagreement remains a separate unresolved result. The
 FP32 `0.001/0.0001` limits were deliberately tightened before Q1 execution; the
@@ -190,6 +209,7 @@ KV and probability state before comparing serial BF16, batched BF16 and FP32
 using the same checkpoint. Check max/RMS errors per boundary, gate depth and
 historical/new-computed/new-fallback KV bank, plus token margins and threshold
 distance. Preserve fallback and prior-prefix invariants. Do not import another
-project's error multiplier or use near ties to exempt a discrete mismatch.
-This is a diagnostic requirement, not an executed experiment or a revised
-qualification policy; AC-Q1-05 and BF16 deployment remain open.
+project's error multiplier or invent near-tie exceptions after seeing results.
+Use the new policy's predeclared decision criteria for successor experiments;
+keep every old mismatch under its original policy. The diagnosis has not been
+executed here, and the new policy has no passing result yet.

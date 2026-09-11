@@ -16,14 +16,20 @@ preemption, and an HTTP server are not implemented. No throughput or task-accura
 claims are made. The authors' CDB code and trained lookahead gate were not
 released at the revision inspected; see [paper notes](docs/paper-notes.md).
 
-FP32 real-checkpoint validation passes against an independent dense oracle.
-BF16 generated identical tokens across the tested scheduling modes, but its
-accumulated logit differences exceeded the declared numerical tolerances. Use
-FP32 for the validated numerical baseline; see [validation](docs/validation.md).
+BF16 is the primary GPU inference and performance target, with FP32
+accumulation/reductions in numerically sensitive operations. Full-model FP32
+is a diagnostic/reference configuration. The [precision policy](docs/precision-policy.md)
+separates BF16 storage/compute from accumulation precision and defines the
+requirements for new validation and benchmark work.
 
-The [roadmap](docs/roadmap.md) prioritizes faster Ouro inference: establish a
-performance baseline and qualify BF16, then use profiling to guide runtime,
-CUDA-graph, attention, and KV improvements.
+The historical [Q1 run](docs/q1-20260911.md) passed its FP32 comparisons and
+failed its original BF16 contract; the reference discrepancy remains unresolved.
+Those results are retained while BF16 evaluation proceeds under an explicit
+mixed-precision contract. They do not establish BF16 quality or performance.
+
+The [roadmap](docs/roadmap.md) prioritizes faster Ouro inference.
+BF16 performance and numerical validation proceed together, with profiling
+guiding runtime, CUDA-graph, attention, and KV improvements.
 
 ## Install and run
 
@@ -47,7 +53,7 @@ Choose an available exact device ID from its status output:
 gpu status
 gpu run --gpu-ids <available-id> --timeout 20m --note "vllm-lt Ouro inference" -- \
   python -m vllm_lt.entrypoints.cli \
-  --model ByteDance/Ouro-1.4B --device cuda --dtype float32 \
+  --model ByteDance/Ouro-1.4B --device cuda --dtype bfloat16 \
   --attention-backend triton --prompt 'The capital of France is' \
   --prompt '2 + 2 =' --max-tokens 32 --exit-threshold 0.7
 ```
@@ -57,6 +63,9 @@ system. The engine leaves device visibility to the caller. The official model
 and tokenizer default to immutable revision
 `574fa66cb8bf5abdc979642d01cf2b79b16bfab1`; `--model` also accepts a local checkpoint
 directory. Loading uses native code and safetensors, without `trust_remote_code`.
+
+Specify BF16 explicitly: the current API/CLI fallback default remains FP32.
+The BF16 workflow requirement does not silently change that runtime default.
 
 ## Python API
 
@@ -79,7 +88,7 @@ for output in outputs:
     print(output.token_ids, output.exit_depths, output.finish_reason)
 ```
 
-Use `LLM("ByteDance/Ouro-1.4B", device="cuda", dtype=torch.float32,
+Use `LLM("ByteDance/Ouro-1.4B", device="cuda", dtype=torch.bfloat16,
 attention_backend="triton")` inside a reservation for pretrained text prompts.
 The facade accepts a list of text prompts or a list of token-ID lists, and one
 `SamplingParams` object or one per prompt. Outputs preserve input order.
@@ -159,8 +168,10 @@ independence. [Validation notes](docs/validation.md) record the actual environme
 and checks performed. These correctness checks do not establish serving performance
 or adaptive-depth language-task accuracy.
 
-The [M1 benchmark guide](docs/benchmarks.md) describes the frozen FP32 workloads,
-replay scheduling A/B comparison, reserved execution, and offline report commands.
+The [M1 benchmark guide](docs/benchmarks.md) describes historical FP32 replay,
+reserved execution, and offline reports. New comparisons require the
+[BF16 workflow](docs/precision-policy.md#implementation-follow-up); the frozen
+FP32 benchmark contracts are retained for reproduction.
 
 The [Q1 validation guide](docs/q1-validation.md) describes the independent
 incremental LAST-EXITED oracle, pinned official reference, FP32/BF16 numerical

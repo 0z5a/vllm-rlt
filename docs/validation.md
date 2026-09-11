@@ -129,8 +129,10 @@ These results support the FP32 implementation's correctness on the tested
 inputs. Different reduction orders and BF16 rounding are consistent with the
 observed reduced-precision drift; this is an inference, not proof of BF16
 equivalence. The BF16 tolerance was not relaxed and its failure remains open.
-The default dtype and README GPU example use FP32. Further reduced-precision
-validation and performance work are separate follow-ups.
+At the time of this preview, the default dtype and README GPU example used
+FP32. New work and current GPU examples follow the
+[BF16 mixed-precision policy](precision-policy.md); the historical failures
+and the runtime default are unchanged by that documentation revision.
 
 Full stage traces are preserved in `artifacts/checkpoint-bf16.json` and
 `artifacts/checkpoint-fp32.json`; the historical JSON snapshots omit only stage
