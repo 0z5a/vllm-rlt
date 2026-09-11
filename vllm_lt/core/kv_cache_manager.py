@@ -363,7 +363,13 @@ class KVCacheManager:
         k: torch.Tensor,
         v: torch.Tensor,
     ) -> None:
-        """Write a packed batch before calling attend; future tokens stay masked."""
+        """Write a packed batch before calling attend; future tokens stay masked.
+
+        This compatibility adapter builds the full descriptor, including the
+        attention tensors. The model reuses one prepared descriptor per traversal;
+        standalone writes should not be substituted into its per-layer hot path.
+        Address/ownership validation intentionally precedes tensor validation.
+        """
         self._validate_layer(layer)
         batch = self._prepare_batch(request_ids, depths, positions)
         self._write_prepared(layer, batch, k, v)
