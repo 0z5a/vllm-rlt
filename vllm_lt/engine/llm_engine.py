@@ -104,13 +104,7 @@ class LLMEngine:
                 request.loops_done += 1
                 # Ouro learns a conditional hazard at each depth, not a direct exit CDF.
                 request.remaining_probability *= 1.0 - result[index]
-                max_loops = params.max_loops or self.model.config.total_ut_steps
-                reached_threshold = (
-                    params.exit_threshold < 1.0
-                    and request.loops_done >= params.min_loops
-                    and 1.0 - request.remaining_probability >= params.exit_threshold
-                )
-                if request.loops_done >= max_loops or reached_threshold:
+                if self._should_exit(request):
                     self.cache_manager.finalize_token(
                         request.request_id, request.position, request.loops_done - 1
                     )
@@ -131,3 +125,14 @@ class LLMEngine:
                     self.scheduler.enqueue(request, Stage.PRELUDE)
                 outputs.append(RequestOutput.from_request(request))
         return outputs
+
+    def _should_exit(self, request: Request) -> bool:
+        """Evaluate the policy after recording the completed loop's actual hazard."""
+        params = request.sampling_params
+        max_loops = params.max_loops or self.model.config.total_ut_steps
+        reached_threshold = (
+            params.exit_threshold < 1.0
+            and request.loops_done >= params.min_loops
+            and 1.0 - request.remaining_probability >= params.exit_threshold
+        )
+        return request.loops_done >= max_loops or reached_threshold
