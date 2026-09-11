@@ -1,6 +1,8 @@
 """Frozen quality source, input and protocol checks using synthetic CPU data."""
 
+import hashlib
 import json
+import subprocess
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
@@ -144,6 +146,17 @@ def quality_plan(tmp_path, monkeypatch):
     schema.write_json(prereq_path, prerequisite)
     source = _source_manifest()
     source["status"] = ""
+    # The synthetic probe models the historical PR14 engine named by the frozen
+    # quality contract, even after review fixes advance this checkout.
+    for record in source["files"]:
+        if record["path"].startswith(schema.PRODUCTION_PREFIXES) or record["path"] in (
+            schema.PRODUCTION_FILES
+        ):
+            raw_source = subprocess.check_output(
+                ["git", "show", f"630a8fdc0dd47b6da68a3d30db6b851fc08af5c5:{record['path']}"],
+                cwd=ROOT,
+            )
+            record.update(size_bytes=len(raw_source), sha256=hashlib.sha256(raw_source).hexdigest())
     probe = {
         "source": source,
         "imports": {n: n.replace(".", "/") + ".py" for n in schema.IMPORT_MODULES},
