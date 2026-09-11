@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from vllm_lt.config import CacheConfig, SchedulerConfig
-from vllm_lt.core.kv_cache_manager import KVCacheManager
+from vllm_lt.core.kv_cache_manager import KVCacheManager, _metadata_payload_bytes
 from vllm_lt.core.scheduler import ScheduledItem, SchedulerOutput
 from vllm_lt.engine.llm_engine import LLMEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
@@ -73,6 +73,7 @@ def test_fixed_storage_payload_and_snapshot_are_detached(model):
     assert snapshot["capacity"] == {"row_count": 8, "table_width": 32, "max_live_rows": 4}
     assert snapshot["device_payload_bytes"] == 64 * model.config.hidden_size + 1320
     assert snapshot["cpu_staging_bytes"] == 1256
+    assert snapshot["cpu_staging_bytes"] == _metadata_payload_bytes()
     assert snapshot["device_payload_bytes"] <= 256 * 1024
     assert snapshot["cpu_staging_bytes"] <= 16 * 1024
     metadata = runner._persistent["metadata"]

@@ -1,4 +1,8 @@
-"""Masked KV scatter for physical padding rows; compact writes retain their path."""
+"""Masked KV scatter for physical padding rows; compact writes retain their path.
+
+Strides are compilation constants: distinct layouts compile separate variants.
+Captured callers must hold layouts fixed within each declared bucket.
+"""
 
 import triton
 import triton.language as tl
