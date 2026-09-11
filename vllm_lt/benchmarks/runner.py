@@ -196,6 +196,7 @@ def _execute(model, plan, run, workload, output_dir, deadline):
                 limit = min(
                     deadline, arrival_ns + int(contract["limits"]["workload_timeout_s"] * 1e9)
                 )
+                # Stream span includes host submission gaps, not just GPU kernel time.
                 begin.record()
                 for item, params in submissions:
                     started = time.perf_counter_ns()
