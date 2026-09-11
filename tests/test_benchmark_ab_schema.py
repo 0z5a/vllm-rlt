@@ -184,7 +184,8 @@ def test_active_numa_policy_is_distinct_from_cpuset_allowance(monkeypatch):
             stderr="",
         ),
     )
-    monkeypatch.setattr(schema.os, "sched_getaffinity", lambda _: {56, 57})
+    # Model the Linux benchmark host even when the CPU suite runs on macOS.
+    monkeypatch.setattr(schema.os, "sched_getaffinity", lambda _: {56, 57}, raising=False)
     snapshot = schema.affinity_snapshot()
     assert snapshot["numactl_show"]["membind"] == "1"
     assert snapshot["numactl_show"]["policy"] == "bind"
