@@ -111,3 +111,40 @@ def test_reserved_masked_scatter_and_attention_preserve_strided_neighbors():
         actual[[0, 2]], torch.zeros_like(actual[[0, 2]])
     )
     assert not torch.signbit(actual[[0, 2]]).any()
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("head_dim", [7, 32, 64, 128, 256])
+@pytest.mark.parametrize("groups", [1, 3])
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
+def test_masked_dim_buckets_match_independent_dense_attention(head_dim, groups, dtype):
+    from torch.nn import functional as F
+
+    torch.manual_seed(271)
+    keys = torch.randn(4, 16, 2, head_dim, device="cuda", dtype=dtype)
+    values = torch.randn_like(keys)
+    before_k, before_v = keys.clone(), values.clone()
+    q = torch.randn(4, 2 * groups, head_dim, device="cuda", dtype=dtype)
+    q[[0, 2]] = float("nan")
+    tables = torch.tensor(
+        [[2**30, -1, -1], [1, 3, 0], [-1, 2**30, -1], [2, -1, -1]],
+        dtype=torch.int32,
+        device="cuda",
+    )
+    lengths = torch.tensor([0, 35, 0, 1], dtype=torch.int32, device="cuda")
+    active = torch.tensor([False, True, False, True], device="cuda")
+    actual = triton_paged_attention(q, keys, values, tables, lengths, active)
+    for row, blocks, count in [(1, [1, 3, 0], 35), (3, [2], 1)]:
+        k = keys[blocks].reshape(-1, 2, head_dim)[:count]
+        v = values[blocks].reshape(-1, 2, head_dim)[:count]
+        expected = F.scaled_dot_product_attention(
+            q[row].float()[None, :, None],
+            k.float().repeat_interleave(groups, dim=1).transpose(0, 1)[None],
+            v.float().repeat_interleave(groups, dim=1).transpose(0, 1)[None],
+        )[0, :, 0].to(dtype)
+        tolerance = 2e-2 if dtype == torch.bfloat16 else 2e-3 if dtype == torch.float16 else 2e-5
+        torch.testing.assert_close(actual[row], expected, atol=tolerance, rtol=tolerance)
+    assert torch.isfinite(actual).all()
+    assert torch.equal(actual[[0, 2]], torch.zeros_like(actual[[0, 2]]))
+    assert not torch.signbit(actual[[0, 2]]).any()
+    assert torch.equal(keys, before_k) and torch.equal(values, before_v)

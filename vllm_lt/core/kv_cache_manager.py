@@ -402,6 +402,8 @@ class KVCacheManager:
                 batch.active,
             )
         else:
+            # Diagnostic eager Torch padding only: Python indexing may transfer
+            # indices per layer. The production Triton path stays above.
             # Select live source rows before indexing addresses: -1 must never
             # alias a real page or token through advanced indexing.
             live = list(batch.live_rows)
