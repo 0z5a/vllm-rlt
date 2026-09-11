@@ -1,0 +1,32 @@
+{
+  "affected_run_ids": [
+    "N2"
+  ],
+  "artifact_type": "q2_external_final_qualification",
+  "chronology_evidence": {
+    "sha256": "8c949f6724cb1708305ae4ccdf0eff746464ff0380e9d60061afd8f648f84e64",
+    "size_bytes": 4741
+  },
+  "decision": "inconclusive",
+  "generation_equivalence": "passed",
+  "gpu_runs_added": 0,
+  "issue_closure": false,
+  "limitations": [
+    "File mtimes establish overlapping case activity, not a causal slowdown amount.",
+    "This consumes the frozen report and reviewed chronology; it is not a raw auditor.",
+    "Token equivalence or missing control errors cannot establish valid timing."
+  ],
+  "original_report": {
+    "sha256": "6fbece89e83e4726b9e3152d9898ddc4ce5bfee2cdc5b700c7e32fd38ca1a81d",
+    "size_bytes": 52521
+  },
+  "passed": false,
+  "performance_qualification": "inconclusive",
+  "performance_qualified": false,
+  "plan_sha256": "a80afaaaa707021eb84a79be02f54dc078574a5915a21243ae4ad5678eda84e8",
+  "reason": "The quality CPU preparation probe finalized its plan/log during the external N2 measured-case interval on the same CPU0\u20137 and memory-node0 binding. Background CPU preparation was not a fixed experimental control. Its causal effect on the raw timing ratios was not measured.",
+  "schema_version": 1,
+  "supersedes": "6fbece89e83e4726b9e3152d9898ddc4ce5bfee2cdc5b700c7e32fd38ca1a81d",
+  "supersedes_scope": "Final timing qualification only; original report bytes are preserved.",
+  "timing_controls": "invalid"
+}
