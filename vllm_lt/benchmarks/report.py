@@ -298,6 +298,8 @@ def _run_record(run_dir, specification, plan, hashes):
             record["validation_errors"].append("result plan_sha256 differs from the frozen plan")
         if not record["started"]:
             record["validation_errors"].append("run result has no started.json marker")
+        if result.get("synchronized_ns") is None:
+            raise ValueError("final synchronization boundary is unavailable")
         computed = summarize_records(
             result["requests"],
             arrival_ns=result["arrival_ns"],
@@ -618,11 +620,13 @@ def _next_action(profiles):
             continue
         largest = kernels[0]
         evidence = (
-            f"Capture {profile['capture_id']} records {largest['name']!r} as its largest "
+            f"Kernel-time ranking only: capture {profile['capture_id']} records "
+            f"{largest['name']!r} as its largest "
             f"GPU kernel group by aggregate duration ({largest['total_us']:.6g} microseconds). "
         )
         return evidence + (
-            "Next measurement: correlate this kernel group with the captured stage and nested "
+            "This ranking does not nominate the next optimization. Correlate this kernel "
+            "group with the captured stage and nested "
             "CPU operations to distinguish compute cost from dispatch/readback gaps before "
             "selecting a runtime change. Use a separately declared capture budget if the saved "
             "trace lacks that correlation; observer scans are excluded from production candidates."

@@ -174,3 +174,22 @@ Execution completion is separate from numerical qualification. Q1 closes only
 after all six issue acceptance criteria and a reviewed qualified or conclusive
 negative diagnosis. Incomplete coverage or unlocalized divergence remains
 inconclusive; BF16 remains unqualified until its declared gates pass.
+
+## Review follow-up: independence and diagnostic scope
+
+The pinned official comparison remains mandatory in numerical follow-ups: the
+serial oracle and dense in-repository reference could share an interpretation
+error. Official BF16 disagreement remains a separate unresolved result. The
+FP32 `0.001/0.0001` limits were deliberately tightened before Q1 execution; the
+original BF16 `0.25/0.02` limits and discrete failures remain unchanged.
+
+A successor BF16 diagnostic must separate identical-input, same-state local
+arithmetic replay from equal-token-history trajectories with independently
+accumulated hidden/KV states. Snapshot position, depth, hidden input, populated
+KV and probability state before comparing serial BF16, batched BF16 and FP32
+using the same checkpoint. Check max/RMS errors per boundary, gate depth and
+historical/new-computed/new-fallback KV bank, plus token margins and threshold
+distance. Preserve fallback and prior-prefix invariants. Do not import another
+project's error multiplier or use near ties to exempt a discrete mismatch.
+This is a diagnostic requirement, not an executed experiment or a revised
+qualification policy; AC-Q1-05 and BF16 deployment remain open.
