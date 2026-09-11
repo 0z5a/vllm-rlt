@@ -424,6 +424,39 @@ def test_cleanup_failure_records_observed_remaining_requests(
                 base.abort_request(engine, request_id)
 
 
+@pytest.mark.parametrize("mode", ["normal", "noop", "raises"])
+def test_oracle_close_records_before_and_after_even_on_failure(tiny_model, mode, monkeypatch):
+    oracle = runner.SerialOuroOracle(
+        tiny_model.config, dict(tiny_model.named_parameters()), capacity=4
+    )
+    close = oracle.close
+    progress = {}
+    if mode == "noop":
+        monkeypatch.setattr(oracle, "close", lambda: None)
+    elif mode == "raises":
+
+        def fail():
+            raise RuntimeError("injected oracle close failure")
+
+        monkeypatch.setattr(oracle, "close", fail)
+    try:
+        if mode == "normal":
+            runner._close_oracle(oracle, progress)
+        else:
+            with pytest.raises(RuntimeError, match="oracle"):
+                runner._close_oracle(oracle, progress)
+        lifecycle = progress["oracle_lifecycle"]
+        assert not lifecycle["before_close"]["closed"]
+        assert lifecycle["before_close"]["weight_references"] > 0
+        assert "key_cache" in lifecycle["before_close"]["retained_fields"]
+        assert lifecycle["after_close"]["closed"] is (mode == "normal")
+        if mode != "normal":
+            assert progress["cleanup"] == {"requests_remaining": 1, "used_blocks": None}
+            assert lifecycle["after_close"] == lifecycle["before_close"]
+    finally:
+        close()
+
+
 @pytest.fixture
 def mocked_outer(tiny_plan, tmp_path, monkeypatch):
     """Every driver/device operation below is a CPU-side mock, including discovery."""
