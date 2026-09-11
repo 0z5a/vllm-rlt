@@ -193,3 +193,28 @@ The offline report requires no checkpoint or GPU. Complete evidence must pass
 all numerical, storage, lifecycle, control and cleanup checks. A stopped
 failure remains failed with incomplete coverage; corrupt identity or order is
 invalid. Neither outcome qualifies this prerequisite.
+
+## Review clarifications: configuration and terminal failures
+
+The private executor supports four live rows in eight physical rows and at most
+32 block-table columns. `SchedulerConfig.max_num_seqs` is an admission/batching
+limit, not a promise of persistent dispatch: larger recurrent batches deliberately
+use compact execution. Callers enabling this experimental path should inspect
+`_persistent_snapshot()` capacity, `last_dispatch` and `fallback_counts`; an
+assertion tying scheduler capacity to four would incorrectly reject supported
+mixed persistent/compact workloads. A high scheduler limit may make every step
+fall back, so this configuration alone proves neither storage reuse nor speed.
+
+Every exception while the persistent executor is enabled disables it, including
+prefill errors and interrupts raised during engine update. This conservative
+policy is intentional: the executor is not restartable after partial request
+failure, even when the particular stage did not borrow persistent buffers.
+Successful gate readback and later coda/LAST-EXITED completion remain separate
+lifetime boundaries. Request-owned published tensors must outlive buffer refill.
+
+If stream completion cannot be confirmed, the cache is quarantined and ordinary
+abort/free cannot safely reclaim it. There is no in-process persistent-executor
+drain/recovery API in this scope; the owning worker must terminate and release
+its device context. Do not bypass quarantine or reuse its pages. A recoverable
+replacement protocol needs separate completion/ownership proofs; stable pointers
+alone do not establish those proofs.

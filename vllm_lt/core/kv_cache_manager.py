@@ -11,11 +11,31 @@ depths. It is conservative, but admitted requests cannot deadlock on KV growth.
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from math import prod
 from numbers import Integral
 
 import torch
 
 from vllm_lt.kernels.paged_attention import torch_paged_attention, triton_paged_attention
+
+
+def _metadata_specifications(row_count=8, table_width=32):
+    """One source for fixed-storage allocation and its preallocation byte cap."""
+    return {
+        "position_ids": ((row_count,), torch.long),
+        "write_blocks": ((row_count,), torch.long),
+        "write_offsets": ((row_count,), torch.long),
+        "block_tables": ((row_count, table_width), torch.int32),
+        "context_lengths": ((row_count,), torch.int32),
+        "active": ((row_count,), torch.bool),
+    }
+
+
+def _metadata_payload_bytes(row_count=8, table_width=32):
+    return sum(
+        prod(shape) * torch.empty((), dtype=dtype, device="cpu").element_size()
+        for shape, dtype in _metadata_specifications(row_count, table_width).values()
+    )
 
 
 @dataclass
@@ -389,14 +409,7 @@ class KVCacheManager:
     def _allocate_metadata_storage(self) -> _MetadataStorage:
         """Allocate the single private 8-row/32-column decode capacity."""
         self._require_usable()
-        specifications = {
-            "position_ids": ((8,), torch.long),
-            "write_blocks": ((8,), torch.long),
-            "write_offsets": ((8,), torch.long),
-            "block_tables": ((8, 32), torch.int32),
-            "context_lengths": ((8,), torch.int32),
-            "active": ((8,), torch.bool),
-        }
+        specifications = _metadata_specifications()
         staging = {
             name: torch.empty(shape, dtype=dtype, device="cpu", pin_memory=False)
             for name, (shape, dtype) in specifications.items()
