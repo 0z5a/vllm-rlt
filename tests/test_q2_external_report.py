@@ -28,6 +28,8 @@ def update_result(root, run_id, mutate):
     for filename in ("completed.json", "acknowledged.json"):
         record = read_json(path / filename)
         record["result"] = digest(path / "result.json")
+        if filename == "acknowledged.json":
+            record["completion"] = digest(path / "completed.json")
         write_json(path / filename, record)
 
 
@@ -242,7 +244,14 @@ def external_run(tmp_path, external_plan):
             "completed_ns": sync + 20,
         }
         write_json(path / "completed.json", completion)
-        write_json(path / "acknowledged.json", {**completion, "acknowledged_ns": sync + 30})
+        write_json(
+            path / "acknowledged.json",
+            {
+                **completion,
+                "completion": digest(path / "completed.json"),
+                "acknowledged_ns": sync + 30,
+            },
+        )
         worker["completed_runs"].append(row["run_id"])
         if row["run_id"] == "O-feas":
             worker["equivalence"] = {
@@ -274,7 +283,12 @@ def test_complete_portable_metric_reconstruction(external_run):
     value = report.build_report(external_run)
     assert value["errors"] == []
     assert value["passed"] and value["complete"]
-    assert value["counts"] == {"acknowledged_valid_runs": 8, "valid_measured_runs": 4}
+    assert value["counts"] == {
+        "acknowledged_valid_runs": 8,
+        "valid_measured_runs": 4,
+        "validated_generation_runs": 8,
+        "retained_failed_completed_runs": 0,
+    }
     assert [p["native_over_official"] for p in value["pairs"]] == [2.0, 2.0]
     assert value["runs"][4]["metrics"]["generated_tokens_per_second"] == 100000.0
     assert value["runs"][4]["metrics"]["synchronized_tokens_per_second"] < 100000.0
@@ -419,3 +433,78 @@ def test_hidden_extra_execution_beyond_ack_prefix_rejected(external_run):
     value = report.build_report(external_run)
     assert value["errors"]
     assert value["evidence_status"] == "invalid"
+
+
+def late_failure(root, *, missing_ack=False):
+    path = root / "runs" / "N2"
+    original = (path / "result.json").read_bytes()
+    marker = read_json(path / "started.json")
+    if missing_ack:
+        (path / "acknowledged.json").unlink()
+    occurred = marker["deadline_ns"] + 1
+    failure = {
+        "run": marker["run"],
+        "plan_sha256": marker["plan_sha256"],
+        "occurred_ns": occurred,
+        "failure": {"type": "TimeoutError", "message": "case export exceeded deadline"},
+    }
+    write_json(path / "failure.json", failure)
+    worker = read_json(root / "worker.json")
+    worker.update(status="failed", ended_ns=occurred + 5, failures=[failure["failure"]])
+    write_json(root / "worker.json", worker)
+    manifest = read_json(root / "manifest.json")
+    manifest.update(
+        status="failed",
+        ended_ns=occurred + 15,
+        failures=[{"type": "RuntimeError", "message": "worker failed"}],
+    )
+    manifest["launch"].update(ended_ns=occurred + 10, returncode=1)
+    write_json(root / "manifest.json", manifest)
+    return original
+
+
+@pytest.mark.parametrize("missing_ack", [False, True])
+def test_postcompletion_failure_preserves_generation_but_excludes_pair(external_run, missing_ack):
+    original = late_failure(external_run, missing_ack=missing_ack)
+    value = report.build_report(external_run)
+    assert value["errors"] == []
+    assert value["decision"] == "failed" and value["evidence_status"] == "incomplete"
+    assert value["counts"] == {
+        "acknowledged_valid_runs": 7,
+        "valid_measured_runs": 3,
+        "validated_generation_runs": 8,
+        "retained_failed_completed_runs": 1,
+    }
+    assert value["pairs"][0]["complete"] and not value["pairs"][1]["complete"]
+    tail = value["retained_failed_runs"][0]
+    assert tail["generation_valid"] and not tail["comparison_eligible"]
+    assert (tail["acknowledged_ns"] is None) == missing_ack
+    assert (external_run / "runs" / "N2" / "result.json").read_bytes() == original
+
+
+@pytest.mark.parametrize("field", ["plan", "row", "time", "payload"])
+def test_postcompletion_failure_requires_valid_raw_bindings(external_run, field):
+    late_failure(external_run)
+    path = external_run / "runs" / "N2" / "failure.json"
+    failure = read_json(path)
+    if field == "plan":
+        failure["plan_sha256"] = "b" * 64
+    elif field == "row":
+        failure["run"]["run_id"] = "N1"
+    elif field == "time":
+        failure["occurred_ns"] = 1
+    else:
+        update_result(external_run, "N2", lambda result: result["events"][0].update(token_id=999))
+    write_json(path, failure)
+    value = report.build_report(external_run)
+    assert value["errors"] and value["evidence_status"] == "invalid"
+    assert value["counts"]["retained_failed_completed_runs"] == 0
+
+
+def test_ack_completion_hash_is_independently_verified(external_run):
+    path = external_run / "runs" / "N1" / "acknowledged.json"
+    ack = read_json(path)
+    ack["completion"]["sha256"] = "f" * 64
+    write_json(path, ack)
+    value = report.build_report(external_run)
+    assert value["errors"] and value["evidence_status"] == "invalid"

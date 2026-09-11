@@ -222,10 +222,22 @@ def _cached(result):
     )
 
 
-def _record(plan, row, result, marker, completion, acknowledged, worker, previous_ns):
+def _record(
+    plan,
+    row,
+    result,
+    marker,
+    completion,
+    acknowledged,
+    worker,
+    previous_ns,
+    *,
+    failed_after_completion=False,
+):
     equal(result["schema_version"], 1, "result schema version")
     equal(result["artifact_type"], "q2_external_result", "result type")
-    for value in (result, marker, completion, acknowledged):
+    values = (result, marker, completion) + (() if acknowledged is None else (acknowledged,))
+    for value in values:
         equal(value["plan_sha256"], plan["plan_sha256"], "case plan hash")
         equal(value["run"], row, "case planned row")
         equal(value["started_ns"], marker["started_ns"], "case start marker")
@@ -240,10 +252,19 @@ def _record(plan, row, result, marker, completion, acknowledged, worker, previou
     arrival = _clock(result["arrival_ns"], "arrival", start, deadline)
     sync = _clock(result["synchronized_ns"], "synchronization", arrival + 1, deadline)
     ended = _clock(result["ended_ns"], "case export start", sync, deadline)
-    completed = _clock(completion["completed_ns"], "completed serialization", ended, deadline)
-    ack = _clock(acknowledged["acknowledged_ns"], "case acknowledgment", completed, deadline)
-    _clock(ack, "case within worker", upper=worker["ended_ns"])
-    require(ack < deadline, "acknowledgment exhausted case deadline")
+    # A separately recorded post-generation failure can cross the case deadline
+    # during serialization/ACK. Validate the original generation, but never make
+    # that case timing-eligible or invent a missing successful acknowledgment.
+    export_bound = worker["ended_ns"] if failed_after_completion else deadline
+    completed = _clock(completion["completed_ns"], "completed serialization", ended, export_bound)
+    ack = None
+    if acknowledged is not None:
+        ack = _clock(
+            acknowledged["acknowledged_ns"], "case acknowledgment", completed, export_bound
+        )
+        _clock(ack, "case within worker", upper=worker["ended_ns"])
+    if not failed_after_completion:
+        require(ack is not None and ack < deadline, "acknowledgment exhausted case deadline")
     equal(result["status"], "complete", "complete acknowledged case")
     equal(completion["status"], "complete", "completion status")
     equal(result["failures"], [], "complete case failures")
@@ -426,6 +447,7 @@ def build_report(output_dir):
         "missing": [],
         "failures": [],
         "runs": [],
+        "retained_failed_runs": [],
         "pairs": [],
     }
     try:
@@ -502,6 +524,61 @@ def build_report(output_dir):
         for row in plan["execution_order"]:
             name = row["run_id"]
             path = root / "runs" / name
+            failure_path = path / "failure.json"
+            if failure_path.exists():
+                late = read_json(failure_path)
+                _keys(late, ("run", "plan_sha256", "failure", "occurred_ns"), name="case failure")
+                equal(late["run"], row, "failed case row")
+                equal(late["plan_sha256"], plan["plan_sha256"], "failed case plan")
+                _keys(late["failure"], ("type", "message"), name="case failure details")
+                require(
+                    all(isinstance(v, str) and v for v in late["failure"].values()),
+                    "failure type/message must be nonempty strings",
+                )
+                require(
+                    not any(
+                        expected.index(other) > expected.index(name)
+                        for other in inventory["case_bytes"]
+                    ),
+                    "execution continued after a recorded case failure",
+                )
+                result, marker, completion = (
+                    read_json(path / filename)
+                    for filename in ("result.json", "started.json", "completed.json")
+                )
+                ack_path = path / "acknowledged.json"
+                ack = read_json(ack_path) if ack_path.exists() else None
+                digest = inventory["json_files"][str((path / "result.json").relative_to(root))]
+                equal(completion["result"], digest, "failed-tail completed result bytes")
+                if ack is not None:
+                    equal(ack["result"], digest, "failed-tail acknowledged result bytes")
+                    equal(
+                        ack["completion"],
+                        inventory["json_files"][str((path / "completed.json").relative_to(root))],
+                        "ACK completion bytes",
+                    )
+                item = _record(
+                    plan,
+                    row,
+                    result,
+                    marker,
+                    completion,
+                    ack,
+                    worker,
+                    previous,
+                    failed_after_completion=True,
+                )
+                lower = max(
+                    item["ended_ns"], completion["completed_ns"], item["acknowledged_ns"] or 0
+                )
+                _clock(late["occurred_ns"], "post-completion failure", lower, worker["ended_ns"])
+                item.update(failure=late, comparison_eligible=False, generation_valid=True)
+                report["retained_failed_runs"].append(item)
+                report["failures"].append(late["failure"])
+                report["missing"].append(
+                    name + ": complete successful lifetime/ACK not established"
+                )
+                continue
             if name not in parent_prefix:
                 report["missing"].append(name)
                 if (path / "result.json").exists():
@@ -518,6 +595,11 @@ def build_report(output_dir):
             digest = inventory["json_files"][str((path / "result.json").relative_to(root))]
             equal(completion["result"], digest, "completed result bytes")
             equal(ack["result"], digest, "acknowledged result bytes")
+            equal(
+                ack["completion"],
+                inventory["json_files"][str((path / "completed.json").relative_to(root))],
+                "ACK completion bytes",
+            )
             item = _record(plan, row, result, marker, completion, ack, worker, previous)
             previous = item["acknowledged_ns"]
             report["runs"].append(item)
@@ -577,6 +659,8 @@ def _finish(report):
     report["counts"] = {
         "acknowledged_valid_runs": len(report["runs"]),
         "valid_measured_runs": sum(r["run"]["phase"] == "measured" for r in report["runs"]),
+        "validated_generation_runs": len(report["runs"]) + len(report["retained_failed_runs"]),
+        "retained_failed_completed_runs": len(report["retained_failed_runs"]),
     }
     if report["errors"]:
         report.update(
