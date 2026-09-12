@@ -9,6 +9,7 @@ import test_q2_external_schema as schema_tests
 
 from vllm_lt.benchmarks import q2_external_report as report
 from vllm_lt.benchmarks.observe import RunCollector
+from vllm_lt.benchmarks.q2_external_driver import cpu_control_result
 from vllm_lt.benchmarks.schema import read_json, write_json
 from vllm_lt.request import RequestOutput
 
@@ -63,7 +64,7 @@ def external_run(tmp_path, external_plan):
             "name": name,
             "shape": shape,
             "numel": math.prod(shape),
-            "dtype": "torch.float32",
+            "dtype": "torch." + plan["contract"]["engine"]["dtype"],
             "device": "cuda:0",
             "native_data_ptr": 1000 + j,
             "official_data_ptr": 1000 + j,
@@ -166,7 +167,7 @@ def external_run(tmp_path, external_plan):
                 "lengths": [191] * 96,
                 "key_shapes": [[1, 16, 191, 128]] * 96,
                 "value_shapes": [[1, 16, 191, 128]] * 96,
-                "dtype": "torch.float32",
+                "dtype": "torch." + plan["contract"]["engine"]["dtype"],
                 "device": "cuda:0",
                 "distinct_storage": True,
                 "all_finite": True if row["phase"] == "feasibility" else None,
@@ -235,6 +236,18 @@ def external_run(tmp_path, external_plan):
             },
             "failures": [],
         }
+        if plan["schema_version"] == 2:
+            before = {
+                "affinity": controls["affinity"]["cpu_ids"],
+                "busy_ticks": {"cpu56": 0, "cpu57": 0},
+                "process_ticks": 0,
+                "runtime_ns": 0,
+                "delay_ns": 0,
+                "clock_ticks_per_second": 100,
+                "time_ns": began + 5,
+            }
+            after = {**before, "runtime_ns": sync - began, "time_ns": sync + 2}
+            result["cpu_control"] = cpu_control_result(before, after)
         write_json(path / "started.json", marker)
         write_json(path / "result.json", result)
         completion = {
@@ -434,6 +447,61 @@ def test_report_write_keeps_raw_generations_unchanged(external_run):
     assert value["passed"]
     assert raw.read_bytes() == original
     assert (external_run / "q2-external-report.md").exists()
+
+
+def test_report_regeneration_is_byte_identical(external_run):
+    first = report.write_report(external_run)
+    payload = (external_run / "q2-external-report.json").read_bytes()
+    second = report.write_report(external_run)
+    assert first == second
+    assert (external_run / "q2-external-report.json").read_bytes() == payload
+    assert "q2-external-report.json" not in second["artifacts"]["json_files"]
+
+
+@pytest.mark.parametrize("external_plan", [2], indirect=True)
+def test_bf16_report_validates_actual_dtype_and_one_measured_pair(external_run):
+    value = report.build_report(external_run)
+    assert value["passed"], value
+    assert value["dtype"] == "bfloat16" and value["schema_version"] == 2
+    assert value["counts"]["valid_measured_runs"] == 2
+    assert len(value["pairs"]) == 1
+    assert value["variation"]["status"] == "single_observation"
+    update_result(
+        external_run,
+        "O1",
+        lambda r: r["official_cache"]["snapshot"]["final_summary"].update(dtype="torch.float32"),
+    )
+    assert not report.build_report(external_run)["passed"]
+
+
+@pytest.mark.parametrize("external_plan", [2], indirect=True)
+def test_bf16_cpu_contention_cannot_pass(external_run):
+    def contaminate(result):
+        control = result["cpu_control"]
+        control["after"]["busy_ticks"]["cpu56"] += 100
+        result["cpu_control"] = cpu_control_result(control["before"], control["after"])
+
+    update_result(external_run, "N1", contaminate)
+    value = report.build_report(external_run)
+    assert not value["passed"] and "CPU contention" in value["errors"][0]
+
+
+@pytest.mark.parametrize("external_plan", [2], indirect=True)
+def test_bf16_cross_backend_tokens_are_diagnostic_but_backend_drift_fails(external_run):
+    def change(result):
+        result["requests"][0]["token_ids"][0] = 100
+        result["events"][0]["token_id"] = 100
+
+    for name in ("N-feas", "N1"):
+        update_result(external_run, name, change)
+    path = external_run / "worker.json"
+    worker = read_json(path)
+    worker["equivalence"]["passed"] = False
+    write_json(path, worker)
+    value = report.build_report(external_run)
+    assert value["passed"] and value["equivalence"] == {"complete": True, "passed": False}
+    update_result(external_run, "N1", lambda r: r["requests"][0]["token_ids"].__setitem__(1, 101))
+    assert not report.build_report(external_run)["passed"]
 
 
 def test_hidden_extra_execution_beyond_ack_prefix_rejected(external_run):

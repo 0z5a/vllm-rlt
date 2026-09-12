@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .ab_schema import equal, require
 from .observe import summarize_records
+from .q2_external_driver import cpu_control_result
 from .q2_external_schema import LIMITS, canonical_gpu_uuid, validate_plan
 from .schema import _integer, _keys, read_json
 
@@ -30,6 +31,12 @@ def _inventory(root):
     for path in sorted(root.rglob("*")):
         require(not path.is_symlink() and (path.is_file() or path.is_dir()), "unsafe artifact path")
         if not path.is_file():
+            continue
+        # Derived outputs must not become inputs to their own next generation.
+        if path.parent == root and path.name in (
+            "q2-external-report.json",
+            "q2-external-report.md",
+        ):
             continue
         size = path.stat().st_size
         total += size
@@ -94,7 +101,11 @@ def _preparation(plan, worker):
     for record in records:
         equal(record["shape"], expected[record["name"]], "shared parameter shape")
         equal(record["numel"], math.prod(record["shape"]), "shared parameter numel")
-        equal(record["dtype"], "torch.float32", "shared parameter dtype")
+        equal(
+            record["dtype"],
+            "torch." + plan["contract"]["engine"]["dtype"],
+            "shared parameter dtype",
+        )
         equal(record["device"], "cuda:0", "shared parameter device")
         _integer(record["native_data_ptr"], "parameter pointer", minimum=1)
         equal(record["native_data_ptr"], record["official_data_ptr"], "parameter alias")
@@ -152,7 +163,7 @@ def _controls(plan, worker):
     )
 
 
-def _cached(result):
+def _cached(result, dtype="float32"):
     cached = result["official_cache"]
     ids = result["requests"][0]["token_ids"]
     expected_calls = [
@@ -213,7 +224,7 @@ def _cached(result):
             "lengths": [191] * 96,
             "key_shapes": [shape] * 96,
             "value_shapes": [shape] * 96,
-            "dtype": "torch.float32",
+            "dtype": "torch." + dtype,
             "device": "cuda:0",
             "distinct_storage": True,
             "all_finite": True if result["run"]["phase"] == "feasibility" else None,
@@ -268,6 +279,17 @@ def _record(
     equal(result["status"], "complete", "complete acknowledged case")
     equal(completion["status"], "complete", "completion status")
     equal(result["failures"], [], "complete case failures")
+    if plan["schema_version"] == 2 and row["phase"] == "measured":
+        cpu = result["cpu_control"]
+        equal(cpu, cpu_control_result(cpu["before"], cpu["after"]), "CPU contention reconstruction")
+        equal(cpu["passed"], True, "CPU contention screen")
+        equal(
+            cpu["before"]["affinity"],
+            plan["contract"]["controls"]["affinity"]["cpu_ids"],
+            "timed CPU affinity",
+        )
+        _clock(cpu["before"]["time_ns"], "CPU observation start", start, arrival)
+        _clock(cpu["after"]["time_ns"], "CPU observation end", sync, ended)
     empty = {"native_requests": 0, "native_used_blocks": 0, "official_cache_slots": 0}
     equal(result["before_request"], empty, "fresh request state")
     equal(result["cleanup"], empty, "request cleanup")
@@ -352,7 +374,7 @@ def _record(
             64 if row["phase"] == "feasibility" else 0,
             "official finite-check coverage",
         )
-        _cached(result)
+        _cached(result, plan["contract"]["engine"]["dtype"])
     if row["phase"] == "feasibility":
         equal(
             result["feasibility"],
@@ -392,10 +414,10 @@ def _record(
     }
 
 
-def _pairs(records):
+def _pairs(records, repetitions=2):
     by_id = {r["run_id"]: r for r in records}
     pairs = []
-    for number in (1, 2):
+    for number in range(1, repetitions + 1):
         n, o = by_id.get(f"N{number}"), by_id.get(f"O{number}")
         row = {"pair_id": f"pair-{number}", "complete": n is not None and o is not None}
         if row["complete"]:
@@ -419,6 +441,11 @@ def _pairs(records):
         return pairs, {"status": "incomplete"}
     native = [p["native_tokens_per_s"] for p in pairs]
     official = [p["official_tokens_per_s"] for p in pairs]
+    if repetitions == 1:
+        return pairs, {
+            "status": "single_observation",
+            "interpretation": "one measured request per backend; repeatability not established",
+        }
     status = (
         "native_faster"
         if min(native) > max(official)
@@ -456,6 +483,10 @@ def build_report(output_dir):
         plan = read_json(root / "plan.json")
         validate_plan(plan)
         report["plan_sha256"] = plan["plan_sha256"]
+        if plan["schema_version"] == 2:
+            report.update(
+                schema_version=2, dtype="bfloat16", expected_runs=4, expected_measured_runs=2
+            )
         manifest = read_json(root / "manifest.json")
         expected = [r["run_id"] for r in plan["execution_order"]]
         for value, label in ((manifest, "manifest"),):
@@ -608,13 +639,14 @@ def build_report(output_dir):
         if n is not None and o is not None:
             same = n["token_ids"] == o["token_ids"]
             report["equivalence"] = {"complete": True, "passed": same}
-            if not same:
+            if not same and plan["schema_version"] == 1:
                 report["failures"].append(
                     {"type": "EquivalenceFailure", "message": "feasibility IDs differ"}
                 )
-            else:
+            if same or plan["schema_version"] == 2:
                 for name, item in by_id.items():
-                    if item["token_ids"] != n["token_ids"]:
+                    reference = n if item["run"]["implementation_id"] == "native" else o
+                    if item["token_ids"] != reference["token_ids"]:
                         report["failures"].append(
                             {
                                 "type": "EquivalenceFailure",
@@ -624,14 +656,16 @@ def build_report(output_dir):
                 gate = worker["equivalence"]
                 equal(
                     [gate["passed"], gate["token_ids"], gate["exit_depths"]],
-                    [True, n["token_ids"], [4] * 64],
+                    [same, o["token_ids"], [4] * 64],
                     "recorded actual equivalence",
                 )
                 _clock(
                     gate["checked_ns"],
                     "equivalence gate",
                     lower=o["ended_ns"],
-                    upper=by_id.get("N-warm", {"started_ns": we})["started_ns"],
+                    upper=by_id.get(plan["execution_order"][2]["run_id"], {"started_ns": we})[
+                        "started_ns"
+                    ],
                 )
         else:
             report["missing"].append("two completed feasibility outputs")
@@ -648,8 +682,10 @@ def build_report(output_dir):
             equal(prefix, expected, "complete worker coverage")
             equal(parent_prefix, expected, "complete parent coverage")
             equal(launch["returncode"], 0, "successful worker return")
-        report["complete"] = len(report["runs"]) == 8 and not report["missing"]
-        report["pairs"], report["variation"] = _pairs(report["runs"])
+        report["complete"] = len(report["runs"]) == len(expected) and not report["missing"]
+        report["pairs"], report["variation"] = _pairs(
+            report["runs"], plan["contract"]["limits"]["measured_executions"] // 2
+        )
     except (OSError, ValueError, TypeError, KeyError, StopIteration) as error:
         report["errors"].append(str(error))
     return _finish(report)
@@ -677,7 +713,10 @@ def _finish(report):
     else:
         report.update(evidence_status="incomplete", decision="inconclusive", passed=False)
     report["scope"] = (
-        "FP32 fixed-four cached W1 only; no quality/adaptive claim, no required speedup"
+        "BF16 fixed-four cached W1 latency spot check; token agreement is diagnostic, "
+        "not an accuracy gate; no repeatability, quality or adaptive claim"
+        if report.get("dtype") == "bfloat16"
+        else "FP32 fixed-four cached W1 only; no quality/adaptive claim, no required speedup"
     )
     return report
 
@@ -687,14 +726,18 @@ def write_report(output_dir):
     root = Path(output_dir)
     result = build_report(root)
     lines = [
-        "# Q2 external FP32 W1 comparison",
+        "# Q2 external "
+        + ("BF16" if result.get("dtype") == "bfloat16" else "FP32")
+        + " W1 comparison",
         "",
         f"Evidence: **{result['evidence_status']}**; decision: **{result['decision']}**.",
         "",
         result["scope"],
         "",
-        f"Valid acknowledged executions: {result['counts']['acknowledged_valid_runs']}/8; "
-        f"measured: {result['counts']['valid_measured_runs']}/4.",
+        f"Valid acknowledged executions: {result['counts']['acknowledged_valid_runs']}/"
+        f"{result.get('expected_runs', 8)}; "
+        f"measured: {result['counts']['valid_measured_runs']}/"
+        f"{result.get('expected_measured_runs', 4)}.",
         "",
     ]
     if result.get("plan_sha256"):

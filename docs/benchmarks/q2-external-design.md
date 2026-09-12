@@ -1,5 +1,9 @@
 # Q2 cached external FP32 comparison
 
+This is the historical v1 design. The current default is the
+[BF16 single-request comparison](q2-external-bf16.md); the frozen FP32
+contracts and timing disposition below remain unchanged.
+
 This PR implements only the cached external deliverable of [Q2 #8](https://github.com/hsliuustc0106/vllm-lt/issues/8). It compares accepted PR14 compact native inference with the pinned official Ouro implementation on fixed-depth W1. No GPU result exists yet. The separate FP32 task-quality screen follows in another PR; BF16/adaptive comparisons remain blocked by Q1, so this PR cannot close Q2.
 
 ## Goal, constraints and non-goals

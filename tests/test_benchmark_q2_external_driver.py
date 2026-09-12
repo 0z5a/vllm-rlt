@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -170,6 +171,46 @@ def test_artifact_links_rejected(tmp_path):
         controller.artifact_usage(tmp_path)
 
 
+def test_polled_json_remains_readable_during_replacement(tmp_path, monkeypatch):
+    path = tmp_path / "worker.json"
+    controller.write_json(path, {"completed_runs": []})
+    write_text = Path.write_text
+    observed = []
+
+    def interrupted_write(target, text, *args, **kwargs):
+        write_text(target, text[:1], *args, **kwargs)
+        # Model a controller poll between truncation and the final write.
+        observed.append(controller.read_json(path))
+        return write_text(target, text, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", interrupted_write)
+    controller.write_json(path, {"completed_runs": ["N-feas"]})
+    assert observed == [{"completed_runs": []}]
+    assert controller.read_json(path) == {"completed_runs": ["N-feas"]}
+
+
+def test_bf16_worker_uses_one_pair_and_its_own_backend_history(tmp_path, monkeypatch, worker_stubs):
+    from copy import deepcopy
+
+    from vllm_lt.benchmarks.q2_external_schema import BF16_ENGINE, execution_order
+
+    plan = deepcopy(worker_stubs)
+    plan["contract"].update(schema_version=2, engine=BF16_ENGINE)
+    plan["execution_order"] = execution_order(2)
+    calls = []
+
+    def execute(plan, row, *args, **kwargs):
+        calls.append(row["run_id"])
+        token = 1 if row["implementation_id"] == "native" else 2
+        return {"requests": [{"token_ids": [token] * 64}], "status": "complete", "failures": []}
+
+    monkeypatch.setattr(controller, "execute_case", execute)
+    result = controller.run_worker(plan, tmp_path, 2**63)
+    assert result["status"] == "complete"
+    assert calls == ["N-feas", "O-feas", "N1", "O1"]
+    assert result["equivalence"]["passed"] is False
+
+
 @pytest.fixture
 def worker_stubs(monkeypatch):
     from vllm_lt.benchmarks.q2_external_schema import ARITHMETIC, ENGINE, execution_order
@@ -178,7 +219,7 @@ def worker_stubs(monkeypatch):
 
     plan = {
         "plan_sha256": "a" * 64,
-        "contract": {"engine": ENGINE, "arithmetic": ARITHMETIC},
+        "contract": {"schema_version": 1, "engine": ENGINE, "arithmetic": ARITHMETIC},
         "model_config": {},
         "resource_estimates": {"native_pool_bytes": 6442450944},
         "execution_order": execution_order(),
@@ -186,7 +227,7 @@ def worker_stubs(monkeypatch):
     engine = SimpleNamespace(scheduler=SimpleNamespace(requests={}), last_schedule=None)
     official = SimpleNamespace(close=lambda **kwargs: None)
     monkeypatch.setattr(controller, "verify_plan", lambda plan: None)
-    monkeypatch.setattr(controller, "source_probe", lambda: {})
+    monkeypatch.setattr(controller, "source_probe", lambda *args: {})
     monkeypatch.setattr(controller, "configure_process", lambda contract: None)
     monkeypatch.setattr(controller, "affinity_snapshot", lambda: {})
     monkeypatch.setattr(torch.backends.cuda.matmul, "allow_tf32", False)

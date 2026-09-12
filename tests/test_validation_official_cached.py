@@ -42,13 +42,13 @@ def no_device_or_network(monkeypatch):
 
 
 @pytest.fixture
-def model():
+def model(request):
     torch.manual_seed(17)
     return OuroForCausalLM(
         OuroConfig.tiny(
             hidden_size=16, intermediate_size=32, num_attention_heads=2, max_position_embeddings=256
         )
-    )
+    ).to(dtype=getattr(request, "param", torch.float32))
 
 
 @pytest.fixture
@@ -71,6 +71,7 @@ def test_cached_provenance_is_distinct_from_q1():
 
 
 @requires_official
+@pytest.mark.parametrize("model", [torch.float32, torch.bfloat16], indirect=True)
 def test_cached_greedy_matches_uncached_prefixes_and_preserves_shared_weights(model, reference):
     caller = dict(model.named_parameters())
     original = {name: value.detach().clone() for name, value in caller.items()}
@@ -79,12 +80,13 @@ def test_cached_greedy_matches_uncached_prefixes_and_preserves_shared_weights(mo
     assert reference.config.use_cache is True and uncached.config.use_cache is False
     for name, parameter in reference.model.named_parameters():
         assert parameter.data_ptr() == caller[name].data_ptr()
-        assert parameter.dtype == torch.float32 and not parameter.requires_grad
+        assert parameter.dtype == caller[name].dtype and not parameter.requires_grad
     prompt, generated = [1, 2, 3, 4], []
     for index in range(5):
         logits = reference.start(prompt, 5) if index == 0 else reference.advance(generated[-1])
         expected = uncached.predict(prompt + generated, [])[0]
         assert logits.shape == (model.config.vocab_size,)
+        assert logits.dtype == next(model.parameters()).dtype
         torch.testing.assert_close(logits, expected, atol=1e-6, rtol=1e-5)
         assert logits.argmax().item() == expected.argmax().item()
         generated.append(logits.argmax().item())
@@ -258,9 +260,9 @@ def test_partial_forward_failure_preserves_error_and_requires_confirmed_cleanup(
 
 
 @requires_official
-def test_rejects_bf16_and_sliding_before_cached_model_use(model):
+def test_rejects_fp16_and_sliding_before_cached_model_use(model):
     with pytest.raises(ValueError, match="supported reference dtype"):
-        OfficialOuroCachedReference(model.config.to_dict(), model.bfloat16().state_dict())
+        OfficialOuroCachedReference(model.config.to_dict(), model.half().state_dict())
     config = model.config.to_dict()
     config["layer_types"] = ["sliding_attention"] * config["num_hidden_layers"]
     with pytest.raises(ValueError, match="full attention"):

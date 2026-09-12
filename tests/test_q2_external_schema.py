@@ -35,7 +35,7 @@ def rehash(plan):
 
 
 @pytest.fixture
-def external_plan(tmp_path, monkeypatch):
+def external_plan(tmp_path, monkeypatch, request):
     def forbidden(*args, **kwargs):
         pytest.fail("CPU probe must not discover CUDA or deserialize checkpoint tensors")
 
@@ -52,7 +52,11 @@ def external_plan(tmp_path, monkeypatch):
     (model / "tokenizer_config.json").write_text("{}")
     (model / "model.safetensors").write_bytes(b"only hash these bytes")
     root = tmp_path / "source"
-    fixture = read_json(ROOT / "benchmarks/fixtures/ouro-q2-external-contract.json")
+    version = getattr(request, "param", 1)
+    filename = (
+        "ouro-q2-external-bf16-contract.json" if version == 2 else "ouro-q2-external-contract.json"
+    )
+    fixture = read_json(ROOT / "benchmarks/fixtures" / filename)
     for record in fixture["production_files"]:
         target = root / record["path"]
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -82,13 +86,13 @@ def external_plan(tmp_path, monkeypatch):
     deps["official"]["dependencies"]["kernels"] = None
     deps["official"]["optional_kernels_present"] = False
 
-    def probe():
+    def probe(dtype="float32"):
         files = [_file_record(p, relative_to=root) for p in sorted(root.rglob("*")) if p.is_file()]
         shim = next(r for r in files if r["path"] == "vllm_lt/validation/official_cached.py")
         cached = {
             **deps["official"],
             "use_cache": True,
-            "dtype": "torch.float32",
+            "dtype": "torch." + dtype,
             "logits_to_keep": 1,
             "use_weighted_exit": False,
             "cache_slots": 96,
@@ -139,6 +143,27 @@ def test_frozen_eight_runs_and_cpu_verification(external_plan):
     assert resources["official_final_cache_bytes"] == 300417024
     assert resources["artifact_bytes_upper_bound"] == 32 * 1024**2
     assert len(external_plan["contract"]["production_files"]) == 22
+
+
+@pytest.mark.parametrize("external_plan", [2], indirect=True)
+def test_bf16_plan_has_one_pair_and_half_size_storage(external_plan):
+    schema.verify_plan(external_plan)
+    assert external_plan["schema_version"] == 2
+    assert external_plan["contract"]["engine"]["dtype"] == "bfloat16"
+    assert external_plan["cached_official"]["dtype"] == "torch.bfloat16"
+    assert [r["run_id"] for r in external_plan["execution_order"]] == [
+        "N-feas",
+        "O-feas",
+        "N1",
+        "O1",
+    ]
+    assert external_plan["resource_estimates"]["native_pool_bytes"] == 3 * 1024**3
+    assert external_plan["resource_estimates"]["official_final_cache_bytes"] == 150208512
+    altered = deepcopy(external_plan)
+    altered["contract"]["engine"]["dtype"] = "float32"
+    rehash(altered)
+    with pytest.raises(ValueError):
+        schema.validate_plan(altered)
 
 
 @pytest.mark.parametrize(

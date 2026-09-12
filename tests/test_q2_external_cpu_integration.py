@@ -27,7 +27,10 @@ def _compatible():
 
 
 @pytest.mark.skipif(not _compatible(), reason="requires prepared Transformers 4.55.0 reference env")
-def test_real_cpu_native_and_official_execute_case_share_weights_and_release_requests(monkeypatch):
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_real_cpu_native_and_official_execute_case_share_weights_and_release_requests(
+    monkeypatch, dtype
+):
     started = time.perf_counter_ns()
     deadline = started + 120 * 10**9
 
@@ -60,7 +63,7 @@ def test_real_cpu_native_and_official_execute_case_share_weights_and_release_req
         head_dim=8,
         max_position_embeddings=256,
     )
-    model = OuroForCausalLM(config).eval()
+    model = OuroForCausalLM(config).to(dtype=dtype).eval()
     model.requires_grad_(False)
     engine = LLMEngine(
         model,
@@ -126,7 +129,11 @@ def test_real_cpu_native_and_official_execute_case_share_weights_and_release_req
             assert len([e for e in result["events"] if e["kind"] == "token_emitted"]) == 64
 
         native, external = results
-        assert native["requests"][0]["token_ids"] == external["requests"][0]["token_ids"]
+        # FP32 retains the historical exact-generation gate. BF16 may change
+        # argmax near ties; the v2 benchmark reports agreement separately.
+        if dtype == torch.float32:
+            assert native["requests"][0]["token_ids"] == external["requests"][0]["token_ids"]
+        assert all(value.dtype == dtype for value in model.parameters())
         assert native["counts"]["steps"] == 380
         assert native["counts"]["stage_counts"] == {
             "prefill": 1,
@@ -147,7 +154,7 @@ def test_real_cpu_native_and_official_execute_case_share_weights_and_release_req
         assert summary["lengths"] == [191] * 96
         assert summary["key_shapes"] == summary["value_shapes"] == [[1, 1, 191, 8]] * 96
         assert summary["distinct_storage"] is True and summary["all_finite"] is True
-        assert summary["device"] == "cpu" and summary["dtype"] == "torch.float32"
+        assert summary["device"] == "cpu" and summary["dtype"] == str(dtype)
         assert [r["position"] for r in snapshot["calls"]] == [0] + list(range(128, 191))
         assert [r["input_count"] for r in snapshot["calls"]] == [128] + [1] * 63
         assert [r["last_input_position"] for r in cached["calls"]] == list(range(127, 191))

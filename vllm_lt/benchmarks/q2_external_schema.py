@@ -1,4 +1,4 @@
-"""One fixed FP32 cached-official comparison; CPU-only preparation and readback."""
+"""BF16 single-pair protocol and readback of the frozen FP32 v1 experiment."""
 
 import importlib
 import os
@@ -152,6 +152,25 @@ PRODUCTION_PREFIXES = (
 PRODUCTION_FILES = ("vllm_lt/config.py", "vllm_lt/request.py", "vllm_lt/sampling_params.py")
 # Digest of all 22 production file records at accepted PR14, not the new harness commit.
 BASE_PRODUCTION_SHA256 = "58b93e0c79f8c402d7ab2910bc7aeb75634b21ccc0cafe200e44233a27d91e3f"
+BF16_BASE_SHA = "5aa3bf72044ed5de9ca8bc265ac74ef0b15b2c46"
+BF16_PRODUCTION_SHA256 = "c7bc0b74fd15d0437e51c2f0e93381c82419ce28aada6f8353b306698f42d10d"
+BF16_ENGINE = {
+    **ENGINE,
+    "dtype": "bfloat16",
+    "scheduler": {**ENGINE["scheduler"], "max_num_seqs": 1},
+}
+BF16_LIMITS = {**LIMITS, "executions": 4, "warmup_executions": 0, "measured_executions": 2}
+BF16_ACCEPTANCE = {
+    "equivalence": "record-cross-backend-token-agreement-separately",
+    "measured_outputs": "each-backend-matches-own-feasibility",
+    "timing": "one-complete-pair-no-speed-minimum",
+    "variation": "single-observation-no-repeatability-claim",
+    "scope": "BF16-fixed-depth-W1-latency-spot-check-no-accuracy-or-adaptive-claim",
+}
+BF16_CONTROLS = {
+    **CONTROLS,
+    "cpu_control_limits": {"background_cores_max": 0.1, "runnable_delay_fraction_max": 0.05},
+}
 
 
 def _production(source):
@@ -184,29 +203,35 @@ def validate_contract(contract, *, resolved=False):
         ),
         name="Q2 external contract",
     )
-    equal(
-        [contract["schema_version"], contract["artifact_type"]],
-        [1, "q2_external_contract"],
-        "contract version",
+    require(
+        type(contract["schema_version"]) is int and contract["schema_version"] in (1, 2),
+        "unsupported contract version",
     )
+    equal(contract["artifact_type"], "q2_external_contract", "contract type")
+    bf16 = contract["schema_version"] == 2
     for key in ("contract_id", "hypothesis", "isolated_variable"):
         _text(contract[key], key)
-    equal(contract["base_sha"], BASE_SHA, "accepted PR14 base")
+    equal(contract["base_sha"], BF16_BASE_SHA if bf16 else BASE_SHA, "PR14 base")
     _file_records(contract["production_files"], "PR14 production files")
-    equal(_digest(contract["production_files"]), BASE_PRODUCTION_SHA256, "PR14 production bytes")
+    equal(
+        _digest(contract["production_files"]),
+        BF16_PRODUCTION_SHA256 if bf16 else BASE_PRODUCTION_SHA256,
+        "PR14 production bytes",
+    )
     for key, value in (
-        ("engine", ENGINE),
+        ("engine", BF16_ENGINE if bf16 else ENGINE),
         ("official", OFFICIAL),
         ("arithmetic", ARITHMETIC),
-        ("limits", LIMITS),
-        ("acceptance", ACCEPTANCE),
+        ("limits", BF16_LIMITS if bf16 else LIMITS),
+        ("acceptance", BF16_ACCEPTANCE if bf16 else ACCEPTANCE),
         ("observer_policy", OBSERVER),
         ("stop_conditions", STOP_CONDITIONS),
     ):
         equal(contract[key], value, key)
     controls = contract["controls"]
-    _keys(controls, (*CONTROLS, "gpu_ids", "gpu_uuid", "affinity"), name="controls")
-    equal({k: controls[k] for k in CONTROLS}, CONTROLS, "fixed controls")
+    fixed_controls = BF16_CONTROLS if bf16 else CONTROLS
+    _keys(controls, (*fixed_controls, "gpu_ids", "gpu_uuid", "affinity"), name="controls")
+    equal({k: controls[k] for k in fixed_controls}, fixed_controls, "fixed controls")
     if resolved or controls["gpu_ids"] is not None:
         require(
             isinstance(controls["gpu_ids"], list) and len(controls["gpu_ids"]) == 1,
@@ -227,7 +252,7 @@ def validate_contract(contract, *, resolved=False):
         validate_affinity(controls["affinity"])
 
 
-def source_probe():
+def source_probe(dtype="float32"):
     source = _source_manifest()
     root = Path(source["root"]).resolve()
     imports = {}
@@ -241,11 +266,11 @@ def source_probe():
         "source": source,
         "imports": imports,
         "dependencies": dependency_manifest(),
-        "cached_official": cached_official_provenance(),
+        "cached_official": cached_official_provenance(dtype=dtype),
     }
 
 
-def execution_order():
+def execution_order(version=1):
     definitions = (
         ("N-feas", "native", "feasibility", 0, None),
         ("O-feas", "official", "feasibility", 0, None),
@@ -266,17 +291,19 @@ def execution_order():
             "max_steps": 380 if impl == "native" else 64,
         }
         for name, impl, phase, rep, pair in definitions
+        if version == 1 or name in ("N-feas", "O-feas", "N1", "O1")
     ]
 
 
-def _resources(config):
+def _resources(config, version=1):
+    element_bytes = 2 if version == 2 else 4
     page = (
         2
         * config["num_hidden_layers"]
         * 16
         * config["num_key_value_heads"]
         * config["head_dim"]
-        * 4
+        * element_bytes
     )
     return {
         "native_page_bytes": page,
@@ -287,8 +314,9 @@ def _resources(config):
         * config["num_key_value_heads"]
         * 191
         * config["head_dim"]
-        * 4,
-        "case_artifacts_bytes_upper_bound": 8 * LIMITS["case_bytes_max"],
+        * element_bytes,
+        "case_artifacts_bytes_upper_bound": len(execution_order(version))
+        * LIMITS["case_bytes_max"],
         "auxiliary_bytes_max": 16 * 1024**2,
         "artifact_bytes_upper_bound": LIMITS["artifact_bytes_max"],
         "weight_storage": "shared-once; actual unique bytes established before inference",
@@ -325,13 +353,13 @@ def make_plan(contract_path, model_path, *, gpu_ids, gpu_uuid, affinity=None):
         gpu_uuid=gpu_uuid,
         affinity=affinity if affinity is not None else affinity_snapshot(),
     )
-    probe = source_probe()
+    probe = source_probe(contract["engine"]["dtype"])
     root = Path(probe["source"]["root"])
     suite_path = root / INPUTS["suite"]
     suite = read_json(suite_path)
     config = OuroConfig.from_dict(read_json(model_path / "config.json")).to_dict()
     plan = {
-        "schema_version": 1,
+        "schema_version": contract["schema_version"],
         "artifact_type": "q2_external_plan",
         "contract": contract,
         "inputs": {
@@ -345,8 +373,8 @@ def make_plan(contract_path, model_path, *, gpu_ids, gpu_uuid, affinity=None):
         **probe,
         "interpreter": sys.executable,
         "runtime_environment": {k: os.environ.get(k) for k in RUNTIME_VARIABLES},
-        "execution_order": execution_order(),
-        "resource_estimates": _resources(config),
+        "execution_order": execution_order(contract["schema_version"]),
+        "resource_estimates": _resources(config, contract["schema_version"]),
     }
     plan["controls_sha256"] = _controls_hash(plan)
     plan["plan_sha256"] = _digest(plan)
@@ -379,7 +407,11 @@ def validate_plan(plan):
         ),
         name="Q2 external plan",
     )
-    equal([plan["schema_version"], plan["artifact_type"]], [1, "q2_external_plan"], "plan version")
+    equal(
+        [plan["schema_version"], plan["artifact_type"]],
+        [plan["contract"]["schema_version"], "q2_external_plan"],
+        "plan version",
+    )
     equal(
         plan["plan_sha256"],
         _digest({k: v for k, v in plan.items() if k != "plan_sha256"}),
@@ -449,7 +481,7 @@ def validate_plan(plan):
     expected_cached = {
         **official,
         "use_cache": True,
-        "dtype": "torch.float32",
+        "dtype": "torch." + plan["contract"]["engine"]["dtype"],
         "logits_to_keep": 1,
         "use_weighted_exit": False,
         "cache_slots": 96,
@@ -465,15 +497,21 @@ def validate_plan(plan):
     _keys(plan["runtime_environment"], RUNTIME_VARIABLES, name="runtime environment")
     for value in plan["runtime_environment"].values():
         require(value is None or isinstance(value, str), "environment values must be strings/null")
-    equal(plan["execution_order"], execution_order(), "exact eight-execution order")
-    equal(plan["resource_estimates"], _resources(plan["model_config"]), "derived resource budgets")
+    equal(
+        plan["execution_order"], execution_order(plan["schema_version"]), "declared execution order"
+    )
+    equal(
+        plan["resource_estimates"],
+        _resources(plan["model_config"], plan["schema_version"]),
+        "derived resource budgets",
+    )
     equal(plan["controls_sha256"], _controls_hash(plan), "controls digest")
 
 
 def verify_plan(plan):
     """Reject actual source/input/model/environment drift before any device use."""
     validate_plan(plan)
-    actual = source_probe()
+    actual = source_probe(plan["contract"]["engine"]["dtype"])
     for key in ("source", "imports", "dependencies", "cached_official"):
         equal(actual[key], plan[key], "actual " + key)
     equal(_model_files(Path(plan["model_path"])), plan["model_files"], "checkpoint files")

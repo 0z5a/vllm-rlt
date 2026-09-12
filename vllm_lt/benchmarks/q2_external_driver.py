@@ -5,9 +5,11 @@ stays resident for both implementations. Detailed feasibility checks and cache
 reset are outside measured delivery intervals; no profiler is installed.
 """
 
+import os
 import time
 from collections import Counter
 from contextlib import nullcontext
+from pathlib import Path
 
 import torch
 
@@ -16,6 +18,69 @@ from vllm_lt.benchmarks.profile import finite_checks
 from vllm_lt.benchmarks.runner import memory
 from vllm_lt.request import RequestOutput
 from vllm_lt.sampling_params import SamplingParams
+
+CPU_LIMITS = {"background_cores_max": 0.1, "runnable_delay_fraction_max": 0.05}
+
+
+def cpu_counters():
+    """Observe the worker cores and their SMT siblings, without device access."""
+    affinity = sorted(os.sched_getaffinity(0))
+    monitored = set(affinity)
+    for cpu in affinity:
+        siblings = Path(f"/sys/devices/system/cpu/cpu{cpu}/topology/thread_siblings_list")
+        for group in siblings.read_text().strip().split(","):
+            ends = list(map(int, group.split("-")))
+            monitored.update(range(ends[0], ends[-1] + 1))
+    busy = {}
+    for line in Path("/proc/stat").read_text().splitlines():
+        fields = line.split()
+        if fields[0] in {f"cpu{cpu}" for cpu in monitored}:
+            values = list(map(int, fields[1:9]))
+            busy[fields[0]] = sum(values) - values[3] - values[4]
+    stat = Path("/proc/self/stat").read_text().rsplit(")", 1)[1].split()
+    runtime, delay, _ = map(int, Path("/proc/self/schedstat").read_text().split())
+    return {
+        "affinity": affinity,
+        "busy_ticks": busy,
+        "process_ticks": int(stat[11]) + int(stat[12]),
+        "runtime_ns": runtime,
+        "delay_ns": delay,
+        "clock_ticks_per_second": os.sysconf("SC_CLK_TCK"),
+        "time_ns": time.perf_counter_ns(),
+    }
+
+
+def cpu_control_result(before, after):
+    """Recomputable contention screen; affinity alone does not establish isolation."""
+    if (
+        before["affinity"] != after["affinity"]
+        or before["busy_ticks"].keys() != after["busy_ticks"].keys()
+        or before["clock_ticks_per_second"] != after["clock_ticks_per_second"]
+    ):
+        raise ValueError("CPU control identity changed during generation")
+    fields = ("process_ticks", "runtime_ns", "delay_ns")
+    if any(after[key] < before[key] for key in fields) or any(
+        after["busy_ticks"][key] < value for key, value in before["busy_ticks"].items()
+    ):
+        raise ValueError("CPU counters moved backwards")
+    elapsed = (after["time_ns"] - before["time_ns"]) / 1e9
+    if elapsed <= 0 or before["clock_ticks_per_second"] <= 0:
+        raise ValueError("Invalid CPU observation interval")
+    busy = sum(after["busy_ticks"].values()) - sum(before["busy_ticks"].values())
+    own = after["process_ticks"] - before["process_ticks"]
+    background = max(0, busy - own) / before["clock_ticks_per_second"] / elapsed
+    runtime, delay = (after[key] - before[key] for key in ("runtime_ns", "delay_ns"))
+    fraction = delay / max(1, runtime + delay)
+    return {
+        "before": before,
+        "after": after,
+        "background_cores": background,
+        "runnable_delay_fraction": fraction,
+        "passed": (
+            background <= CPU_LIMITS["background_cores_max"]
+            and fraction <= CPU_LIMITS["runnable_delay_fraction_max"]
+        ),
+    }
 
 
 def check_deadline(deadline_ns):
@@ -52,7 +117,8 @@ def shared_weight_proof(model, official):
         same = (
             left.data_ptr() == right.data_ptr()
             and left.shape == right.shape
-            and left.dtype == right.dtype == torch.float32
+            and left.dtype == right.dtype
+            and left.dtype in (torch.float32, torch.bfloat16)
             and left.device == right.device
         )
         if not same:
@@ -182,6 +248,9 @@ def execute_case(plan, run, engine, official, *, started_ns, deadline_ns):
     counts = {}
     synchronized = None
     result = None
+    # Warmup can spawn task-owned compiler processes; only measured requests
+    # use this contention gate, after compilation and finite-check preparation.
+    cpu_before = cpu_counters() if plan.get("schema_version") == 2 and not feasibility else None
     try:
         with (
             finite_checks(engine.model, feasibility)
@@ -201,6 +270,9 @@ def execute_case(plan, run, engine, official, *, started_ns, deadline_ns):
                 official_cache = {"calls": calls}
             torch.cuda.synchronize()
             synchronized = time.perf_counter_ns()
+        cpu_control = cpu_control_result(cpu_before, cpu_counters()) if cpu_before else None
+        if cpu_control is not None and not cpu_control["passed"]:
+            raise RuntimeError(f"CPU contention invalidates this request: {cpu_control}")
         collected = collector.finish(synchronized_ns=synchronized)
         rows = collected["requests"]
         if (
@@ -265,6 +337,8 @@ def execute_case(plan, run, engine, official, *, started_ns, deadline_ns):
             "failures": [],
             "ended_ns": time.perf_counter_ns(),
         }
+        if cpu_control is not None:
+            result["cpu_control"] = cpu_control
         return result
     except BaseException as error:
         failures.append({"type": type(error).__name__, "message": str(error)[:2000]})

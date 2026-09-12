@@ -1,0 +1,216 @@
+{
+  "schema_version": 2,
+  "artifact_type": "q2_external_contract",
+  "contract_id": "ouro-q2-external-bf16-v2",
+  "hypothesis": "Measure batch-1 BF16 cached native versus pinned official Ouro latency on one fixed 128-input/64-output request. Record token agreement separately; this spot check does not establish accuracy or repeatability.",
+  "isolated_variable": "Generation implementation: native Triton versus published eager attention with depth-layer append cache; identical shared BF16 weights, resident native pool and fixed-four greedy workload.",
+  "base_sha": "5aa3bf72044ed5de9ca8bc265ac74ef0b15b2c46",
+  "production_files": [
+    {
+      "path": "vllm_lt/config.py",
+      "size_bytes": 1029,
+      "sha256": "b5e58126a39912f1eaff146034dac2e8d367d1fd60637befdaf82496b5375df2"
+    },
+    {
+      "path": "vllm_lt/core/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "vllm_lt/core/kv_cache_manager.py",
+      "size_bytes": 28743,
+      "sha256": "ff430a1dc91f3573148c0047e8a609b177b4e47b2db42f8f024d21388c85342a"
+    },
+    {
+      "path": "vllm_lt/core/scheduler.py",
+      "size_bytes": 5028,
+      "sha256": "6d0e90d33ed169115137690c019a644bf9b4c2e363633f305f52f350ce4cc9e3"
+    },
+    {
+      "path": "vllm_lt/engine/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "vllm_lt/engine/llm_engine.py",
+      "size_bytes": 7335,
+      "sha256": "9d482c317d8685ecaa7c840edcb67f935968abebcca6fe7611f2bb5dac6ae166"
+    },
+    {
+      "path": "vllm_lt/entrypoints/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "vllm_lt/entrypoints/cli.py",
+      "size_bytes": 3018,
+      "sha256": "8871d91466f2d00f9c49e9069cf9d8ec2d3b82f909bfab3ead3352271f8c9e2f"
+    },
+    {
+      "path": "vllm_lt/entrypoints/llm.py",
+      "size_bytes": 3758,
+      "sha256": "14eb8ff20f793ada59410409934e1b92521b72ed072251491d8a7e479f7629a1"
+    },
+    {
+      "path": "vllm_lt/kernels/__init__.py",
+      "size_bytes": 76,
+      "sha256": "3ce880bacb0d2565857d13c161ab0831e40d95c0ab9bd307694a08a9bc6478a5"
+    },
+    {
+      "path": "vllm_lt/kernels/paged_attention.py",
+      "size_bytes": 2726,
+      "sha256": "2f8ff17f1abbb5bbd50960787d83fa318e41b1887cb014ed0921419e4e26d492"
+    },
+    {
+      "path": "vllm_lt/kernels/triton_attention.py",
+      "size_bytes": 4514,
+      "sha256": "41bc85f265cba7c15ad8f423f696e1c33b305a16366bbe2b01140c0af3f21671"
+    },
+    {
+      "path": "vllm_lt/kernels/triton_kv_write.py",
+      "size_bytes": 2797,
+      "sha256": "1c2e6ce5b9588e5b3b9f048801e9a2c88bf8e57abff40dd735aed9e3f4674f85"
+    },
+    {
+      "path": "vllm_lt/models/__init__.py",
+      "size_bytes": 174,
+      "sha256": "f7c932f71d44df4844908d1128725812224ff8e89832fa941c3321c072a33487"
+    },
+    {
+      "path": "vllm_lt/models/config.py",
+      "size_bytes": 5997,
+      "sha256": "f20da90690a844bb0f5c3491cbc326e0961a9163aa945e0164e471f394744e55"
+    },
+    {
+      "path": "vllm_lt/models/ouro.py",
+      "size_bytes": 14896,
+      "sha256": "a9825679674ab33a6da0b808751748d81dfcfefa15297a24130ec2fb624df65b"
+    },
+    {
+      "path": "vllm_lt/models/reference.py",
+      "size_bytes": 3798,
+      "sha256": "230169fa484afc946426c44abb0c1e223c968e73fe2b6ff461c2dac3e082938c"
+    },
+    {
+      "path": "vllm_lt/models/serial_oracle.py",
+      "size_bytes": 17498,
+      "sha256": "0e08731b63256ebeb155c209b30edff286c736807c6fafcce9668927a117f5a0"
+    },
+    {
+      "path": "vllm_lt/request.py",
+      "size_bytes": 1702,
+      "sha256": "6252f8e1fdca72471df626f56850711fd2e7755df39c184fb6050312533d120d"
+    },
+    {
+      "path": "vllm_lt/sampling_params.py",
+      "size_bytes": 1435,
+      "sha256": "c2362c4ab7b5ea2170c12bf7b58912017cffd326770dc5b5305fc36dd95116fc"
+    },
+    {
+      "path": "vllm_lt/worker/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "vllm_lt/worker/model_runner.py",
+      "size_bytes": 16791,
+      "sha256": "959bc7b7501cdabf7c05a41242a0821024f3302c4b8dc57b3ef3a3b9a470b18a"
+    }
+  ],
+  "engine": {
+    "dtype": "bfloat16",
+    "attention_backend": "triton",
+    "cache": {
+      "num_blocks": 1024,
+      "block_size": 16
+    },
+    "scheduler": {
+      "max_num_seqs": 1,
+      "max_num_batched_tokens": 128,
+      "min_coda_batch_size": 1,
+      "mode": "refill"
+    },
+    "sampling": {
+      "max_tokens": 64,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "top_k": -1,
+      "seed": 0,
+      "min_loops": 4,
+      "max_loops": 4,
+      "exit_threshold": 1.0,
+      "ignore_eos": true
+    },
+    "persistent_decode": false,
+    "cuda_graphs": false
+  },
+  "official": {
+    "attention_implementation": "eager",
+    "use_cache": true,
+    "exit_at_step": 3,
+    "logits_to_keep": 1,
+    "use_weighted_exit": false,
+    "cache_slots": 96,
+    "final_cache_length": 191,
+    "cache_policy": "distinct-depth-layer-published-append-with-versioned-mask-shim"
+  },
+  "arithmetic": {
+    "allow_tf32": false,
+    "allow_bf16_reduced_precision_reduction": false,
+    "allow_fp16_reduced_precision_reduction": false
+  },
+  "controls": {
+    "cpu_threads": 1,
+    "interop_threads": 1,
+    "seed": 0,
+    "numa_policy": "inherit-verified-parent-binding",
+    "residency_policy": "one-native-model-shared-official-weights-native-pool-always-resident",
+    "cache_policy": "reuse-native-engine-reset-request-preserve-allocator",
+    "environment_policy": "one-prepared-environment-one-worker",
+    "gpu_ids": null,
+    "affinity": null,
+    "gpu_uuid": null,
+    "cpu_control_limits": {
+      "background_cores_max": 0.1,
+      "runnable_delay_fraction_max": 0.05
+    }
+  },
+  "limits": {
+    "total_timeout_s": 3600,
+    "case_timeout_s": 600,
+    "executions": 4,
+    "workers": 1,
+    "model_loads": 1,
+    "feasibility_executions": 2,
+    "warmup_executions": 0,
+    "measured_executions": 2,
+    "native_steps_max": 380,
+    "official_calls_max": 64,
+    "token_events_max": 64,
+    "case_bytes_max": 2097152,
+    "artifact_bytes_max": 33554432,
+    "profile_executions": 0,
+    "tensor_dump_bytes_max": 0,
+    "events_max": 128
+  },
+  "acceptance": {
+    "equivalence": "record-cross-backend-token-agreement-separately",
+    "measured_outputs": "each-backend-matches-own-feasibility",
+    "timing": "one-complete-pair-no-speed-minimum",
+    "variation": "single-observation-no-repeatability-claim",
+    "scope": "BF16-fixed-depth-W1-latency-spot-check-no-accuracy-or-adaptive-claim"
+  },
+  "observer_policy": {
+    "timing": "common-host-token-delivery-no-stage-hooks-or-page-scans",
+    "finite_checks": "feasibility-only",
+    "cache_detail": "feasibility-or-outside-delivery-timing",
+    "clock": "perf_counter_ns-after-actual-selection-readback"
+  },
+  "stop_conditions": [
+    "total-or-complete-case-deadline-or-byte-budget",
+    "native-step-or-official-call-bound",
+    "nonfinite-feasibility-or-actual-output-equivalence-failure",
+    "source-input-control-invariant-device-or-cleanup-failure",
+    "no-retry-no-replacement-no-extra-profile-or-equivalence-execution"
+  ]
+}

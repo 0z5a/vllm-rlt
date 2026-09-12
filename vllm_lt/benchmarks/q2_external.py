@@ -1,4 +1,4 @@
-"""Finite cached-native/official FP32 comparison and CPU-only preparation CLI."""
+"""BF16 cached-native/official spot check, with historical FP32 report support."""
 
 import argparse
 import hashlib
@@ -26,8 +26,14 @@ from vllm_lt.benchmarks.q2_external_schema import (
     validate_plan,
     verify_plan,
 )
-from vllm_lt.benchmarks.runner import configure_process, environment, load_model, release_device
-from vllm_lt.benchmarks.schema import read_json, write_json
+from vllm_lt.benchmarks.runner import (
+    configure_process,
+    environment,
+    load_model,
+    release_device,
+    write_json,
+)
+from vllm_lt.benchmarks.schema import read_json
 
 
 def artifact_usage(root):
@@ -78,7 +84,7 @@ def check_environment(plan, observed):
 
 
 def run_worker(plan, output_dir, deadline_ns):
-    """One weight load, one common resident native pool, and exactly eight rows."""
+    """One weight load and common resident pool for the declared execution order."""
     import torch
 
     from vllm_lt.config import CacheConfig, SchedulerConfig
@@ -103,7 +109,7 @@ def run_worker(plan, output_dir, deadline_ns):
     try:
         check_deadline(deadline_ns)
         verify_plan(plan)
-        worker["source_probe"] = source_probe()
+        worker["source_probe"] = source_probe(plan["contract"]["engine"]["dtype"])
         configure_process(plan["contract"])
         device_started = True
         worker["environment"] = environment()
@@ -182,18 +188,19 @@ def run_worker(plan, output_dir, deadline_ns):
                 if row["phase"] == "feasibility":
                     feasibility_ids[row["implementation_id"]] = ids
                     if row["implementation_id"] == "official":
-                        if feasibility_ids.get("native") != ids:
+                        same = feasibility_ids.get("native") == ids
+                        if not same and plan["contract"]["schema_version"] == 1:
                             raise ValueError(
                                 "native/official feasibility histories differ; timing blocked"
                             )
                         expected_ids = list(ids)
                         worker["equivalence"] = {
-                            "passed": True,
+                            "passed": same,
                             "token_ids": expected_ids,
                             "exit_depths": [4] * len(ids),
                             "checked_ns": time.perf_counter_ns(),
                         }
-                elif expected_ids is None or ids != expected_ids:
+                elif expected_ids is None or ids != feasibility_ids[row["implementation_id"]]:
                     raise ValueError("Q2 warmup/measured greedy history differs from feasibility")
                 write_json(run_dir / "result.json", active_result)
                 artifact_usage(root)
@@ -376,9 +383,9 @@ def run_plan(plan, output_dir):
             child.returncode != 0
             or worker is None
             or worker["status"] != "complete"
-            or len(manifest["completed_runs"]) != 8
+            or len(manifest["completed_runs"]) != len(plan["execution_order"])
         ):
-            raise RuntimeError("Q2 worker did not complete the frozen eight-row protocol")
+            raise RuntimeError("Q2 worker did not complete the declared execution order")
         if any(worker["teardown_after_workspace_release"].values()):
             raise RuntimeError("Q2 task-owned CUDA memory remains")
         check_deadline(deadline)
@@ -407,7 +414,13 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     probe = sub.add_parser("probe")
-    probe.add_argument("--contract", required=True)
+    probe.add_argument(
+        "--contract",
+        default=str(
+            Path(__file__).resolve().parents[2]
+            / "benchmarks/fixtures/ouro-q2-external-bf16-contract.json"
+        ),
+    )
     probe.add_argument("--model", required=True)
     probe.add_argument("--gpu-ids", type=int, nargs=1, required=True)
     probe.add_argument("--gpu-uuid", required=True)
@@ -426,7 +439,14 @@ def main(argv=None):
         args.output.mkdir(parents=True, exist_ok=False)
         write_json(args.output / "plan.json", plan)
         print(
-            json.dumps({"plan_sha256": plan["plan_sha256"], "executions": 8, "device_work": False})
+            json.dumps(
+                {
+                    "plan_sha256": plan["plan_sha256"],
+                    "executions": len(plan["execution_order"]),
+                    "dtype": plan["contract"]["engine"]["dtype"],
+                    "device_work": False,
+                }
+            )
         )
         return 0
     if args.command == "report":

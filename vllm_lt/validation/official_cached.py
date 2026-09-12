@@ -16,14 +16,18 @@ import torch
 from .official import _initialize_official, _verify_norms, official_provenance
 
 
-def cached_official_provenance(num_hidden_layers: int = 24) -> dict[str, Any]:
+def cached_official_provenance(
+    num_hidden_layers: int = 24, dtype: str = "float32"
+) -> dict[str, Any]:
     """Describe the cached policy separately from Q1's no-cache provenance."""
     if type(num_hidden_layers) is not int or num_hidden_layers <= 0:
         raise ValueError("num_hidden_layers must be a positive integer")
+    if dtype not in ("float32", "bfloat16"):
+        raise ValueError("Cached reference supports FP32 or BF16")
     return {
         **official_provenance(),
         "use_cache": True,
-        "dtype": "torch.float32",
+        "dtype": "torch." + dtype,
         "logits_to_keep": 1,
         "use_weighted_exit": False,
         "cache_slots": 4 * num_hidden_layers,
@@ -64,7 +68,7 @@ def _cache_class():
 
 
 class OfficialOuroCachedReference:
-    """Fixed-four FP32 generation with one prefill and single-token advances.
+    """Fixed-four FP32/BF16 generation with one prefill and single-token advances.
 
     Returned logits are unsampled ``[vocab]`` tensors. A successful last call
     awaits explicit host completion; it never forwards the final predicted ID.
@@ -93,7 +97,7 @@ class OfficialOuroCachedReference:
             self.dtype,
             self._norm_type,
             self._norm_forward,
-        ) = _initialize_official(config, weights, use_cache=True, allowed_dtypes=(torch.float32,))
+        ) = _initialize_official(config, weights, use_cache=True)
         self.slot_count = 4 * self.config.num_hidden_layers
         self._cache_type = _cache_class()
         self.cache = None
@@ -173,7 +177,7 @@ class OfficialOuroCachedReference:
                 raise RuntimeError("Official forward returned an unexpected cache length")
             if (
                 output.logits.shape != (1, 1, self.config.vocab_size)
-                or output.logits.dtype != torch.float32
+                or output.logits.dtype != self.dtype
                 or output.logits.device != self.device
             ):
                 raise RuntimeError("Official forward returned unexpected last-position logits")
