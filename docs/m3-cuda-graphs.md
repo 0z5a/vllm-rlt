@@ -11,6 +11,39 @@ gate on the host before routing and LAST-EXITED KV propagation. Prefill, prelude
 coda, sampling and scheduling are outside capture. This is not lookahead gating,
 and an observed roughly 2× result is not a theoretical speedup ceiling.
 
+## Module ownership
+
+The runtime graph implementation belongs in `vllm_lt/worker/`: its lifetime and
+transactions are owned by `ModelRunner`, and its captured body is the Ouro
+recurrent traversal. Keep these responsibilities together:
+
+| Module | Responsibility |
+| --- | --- |
+| [`model_runner.py`](../vllm_lt/worker/model_runner.py) | Execution selection, gate synchronization and executor lifetime |
+| [`recurrent_graph.py`](../vllm_lt/worker/recurrent_graph.py) | Recurrent capture/replay and KV transactions |
+| [`capture_resources.py`](../vllm_lt/worker/capture_resources.py) | CUDA stream leases and graph-pool ownership |
+| [`decode_buffers.py`](../vllm_lt/worker/decode_buffers.py) | Buffer layout and allocation shared by persistent eager and graph execution |
+| [`graph_diagnostics.py`](../vllm_lt/worker/graph_diagnostics.py) | Runtime budget limits, errors and executor snapshots |
+
+Experiment controllers, profiling adapters, validation and report generation
+belong in [`benchmarks/capture/`](../benchmarks/capture/README.md). They may inspect
+the worker's runtime state; worker modules must not import experiment tooling.
+In particular, `benchmarks/capture/runtime.py` is an experiment adapter, while
+`worker/recurrent_graph.py` implements inference execution.
+
+Upstream vLLM also separates reusable graph mechanisms from runner ownership.
+At revision `756794a9a7f08900c00fbfaa6d8332631503f528`, its general
+[`CUDAGraphWrapper`](https://github.com/vllm-project/vllm/blob/756794a9a7f08900c00fbfaa6d8332631503f528/vllm/compilation/cuda_graph.py)
+lives under `compilation/`, its V1
+[mode/batch dispatcher](https://github.com/vllm-project/vllm/blob/756794a9a7f08900c00fbfaa6d8332631503f528/vllm/v1/cudagraph_dispatcher.py)
+lives under `v1/`, and its newer
+[GPU-runner graph managers](https://github.com/vllm-project/vllm/blob/756794a9a7f08900c00fbfaa6d8332631503f528/vllm/v1/worker/gpu/cudagraph_utils.py)
+live under `v1/worker/gpu/`.
+
+For this repository, retain the runner-specific implementation under `worker/`.
+Extract a general capture/replay layer when another execution path needs to
+share it; the current executor does not require a separate `compilation/` package.
+
 ## Lifetime and bucket layout
 
 ```python

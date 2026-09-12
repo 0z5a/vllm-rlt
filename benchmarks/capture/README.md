@@ -5,6 +5,12 @@ reporter, and numerical, kernel and lifecycle validation. It runs from a source
 checkout and is excluded from the installed `vllm_lt` package. Shared benchmark
 and oracle utilities remain in `vllm_lt.benchmarks` and `vllm_lt.validation`.
 
+The inference graph executor, CUDA resources and persistent decode buffers stay
+under `vllm_lt/worker/`. This directory depends on those runtime modules, and the
+runtime must not depend on this experiment tooling. See
+[module ownership](../../docs/m3-cuda-graphs.md#module-ownership) for the boundary
+and the upstream vLLM comparison.
+
 | Module | Purpose |
 | --- | --- |
 | `runner.py` | Controller and reserved-device workers |
