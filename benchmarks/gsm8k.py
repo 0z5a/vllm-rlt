@@ -13,6 +13,7 @@ from pathlib import Path
 MODEL_REVISION = "574fa66cb8bf5abdc979642d01cf2b79b16bfab1"
 DATA_REVISION = "740312add88f781978c0658806c59bc2815b9866"
 PACKAGES = ("torch", "transformers", "lm-eval", "datasets", "tokenizers", "triton")
+DEFAULT_CASE = Path(__file__).parent / "fixtures/gsm8k-87.json"
 
 
 def digest(value):
@@ -73,8 +74,39 @@ def select_doc_ids(population, *, limit, seed, split):
     return sorted(ranked[:limit])
 
 
-def build_records(task, tokenizer, *, split, limit, seed, max_new_tokens, max_length):
-    ids = select_doc_ids(len(task.eval_docs), limit=limit, seed=seed, split=split)
+def baseline_fingerprint(protocol):
+    """Identify the exact questions, prompts, scoring, model and generation recipe."""
+    return digest(
+        {
+            **{
+                key: protocol[key]
+                for key in (
+                    "model_revision",
+                    "model_files",
+                    "task_config",
+                    "records",
+                    "max_new_tokens",
+                    "max_length",
+                    "dtype",
+                    "loops",
+                    "batch_size",
+                    "add_special_tokens",
+                    "apply_chat_template",
+                )
+            },
+            "packages": protocol["source"]["packages"],
+        }
+    )
+
+
+def build_records(task, tokenizer, *, split, limit, seed, max_new_tokens, max_length, doc_ids=None):
+    ids = (
+        select_doc_ids(len(task.eval_docs), limit=limit, seed=seed, split=split)
+        if doc_ids is None
+        else list(doc_ids)
+    )
+    if not ids or ids != sorted(set(ids)) or any(i < 0 or i >= len(task.eval_docs) for i in ids):
+        raise ValueError("Question IDs must be unique, sorted and present in the dataset")
     task.build_all_requests(samples=ids, rank=0, world_size=1)
     records = []
     for instance in task.instances:
@@ -96,8 +128,8 @@ def build_records(task, tokenizer, *, split, limit, seed, max_new_tokens, max_le
     if [row["id"] for row in records] != ids:
         raise ValueError("The task did not produce exactly one request per selected question")
     return records, {
-        "method": "sha256-ranked-source-ids-v1",
-        "seed": seed,
+        "method": "sha256-ranked-source-ids-v1" if doc_ids is None else "fixed-source-ids-v1",
+        "seed": seed if doc_ids is None else None,
         "split": split,
         "dataset_revision": DATA_REVISION,
         "population": len(task.eval_docs),
@@ -122,6 +154,15 @@ def prepare(args):
     if config.get("model_type") != "ouro" or config.get("total_ut_steps") != 4:
         raise ValueError("This evaluation requires the four-loop Ouro checkpoint")
     task = make_task(split=args.split)
+    case = None
+    if args.limit is None and not args.all:
+        if args.split != "test" or args.seed != 0:
+            raise ValueError(
+                "Use --limit or --all for a custom split/seed; the default case is fixed"
+            )
+        case = json.loads(DEFAULT_CASE.read_text())
+        if case["dataset_revision"] != DATA_REVISION or case["split"] != args.split:
+            raise ValueError("Default case does not match the pinned dataset")
     records, selection = build_records(
         task,
         tokenizer,
@@ -130,6 +171,7 @@ def prepare(args):
         seed=args.seed,
         max_new_tokens=args.max_new_tokens,
         max_length=args.max_length,
+        doc_ids=case["source_ids"] if case else None,
     )
     files = [
         p
@@ -172,6 +214,14 @@ def prepare(args):
         "min_reference_accuracy_pct": args.min_reference_accuracy_pct,
         "source": source(),
     }
+    if case:
+        if baseline_fingerprint(protocol) != case["baseline"]["protocol_fingerprint"]:
+            raise ValueError(
+                "Default case settings differ from its HF baseline; use --limit or --all "
+                "for a custom experiment"
+            )
+        protocol["selection"].update(case_id=case["case_id"], case_sha256=file_digest(DEFAULT_CASE))
+        protocol["baseline"] = case["baseline"]
     if torch.cuda.is_initialized():
         raise RuntimeError("Preparation unexpectedly initialized CUDA")
     write_json(args.output, protocol)
@@ -200,6 +250,33 @@ def score(task, row, text):
     return {"answer": answer, "correct": bool(correct), "unparseable": answer == "[invalid]"}
 
 
+def baseline_result(protocol, rows):
+    baseline = protocol["baseline"]
+    expected = protocol["records"]
+    if len(rows) != baseline["examples"] or [r["id"] for r in rows] != [r["id"] for r in expected]:
+        raise ValueError("Default accuracy case is incomplete or uses different questions")
+    if any(
+        row["prompt_sha256"] != digest(record["prompt_ids"]) for row, record in zip(rows, expected)
+    ):
+        raise ValueError("Default accuracy case prompts differ from the protocol")
+    delta = 100 * (sum(r["correct"] for r in rows) - baseline["correct"]) / len(rows)
+    reference_accuracy = 100 * baseline["correct"] / baseline["examples"]
+    floor = protocol["min_reference_accuracy_pct"]
+    return {
+        "backend": baseline["backend"],
+        "examples": baseline["examples"],
+        "reference_correct": baseline["correct"],
+        "reference_accuracy_pct": reference_accuracy,
+        "delta_pp": delta,
+        "max_regression_pp": protocol["max_regression_pp"],
+        "min_reference_accuracy_pct": floor,
+        "passes_observed_accuracy_gate": (
+            delta >= -protocol["max_regression_pp"]
+            and (floor is None or reference_accuracy >= floor)
+        ),
+    }
+
+
 def run(args):
     import torch
     from transformers import AutoTokenizer
@@ -207,6 +284,11 @@ def run(args):
     from benchmarks.gsm8k_backends import Generator
 
     protocol = json.loads(Path(args.protocol).read_text())
+    if (
+        "baseline" in protocol
+        and baseline_fingerprint(protocol) != protocol["baseline"]["protocol_fingerprint"]
+    ):
+        raise ValueError("Default case protocol changed after its HF baseline was frozen")
     if protocol["source"]["packages"] != source()["packages"]:
         raise ValueError("Evaluation package versions changed after preparation")
     model = Path(protocol["model"])
@@ -267,8 +349,11 @@ def run(args):
         "generation_and_scoring_seconds": sum(r["seconds"] for r in rows),
         "samples_sha256": file_digest(output / "samples.jsonl"),
     }
+    if args.backend == "native" and "baseline" in protocol:
+        summary["baseline_comparison"] = baseline_result(protocol, rows)
     write_json(output / "summary.json", summary)
     print(json.dumps(summary, indent=2))
+    return summary
 
 
 def compare(args):
@@ -346,8 +431,10 @@ def main():
     p.add_argument("--output", required=True)
     p.add_argument("--split", choices=["train", "test"], default="test")
     subset = p.add_mutually_exclusive_group()
-    subset.add_argument("--limit", type=int, default=100, help="Question count (default: 100)")
-    subset.add_argument("--all", dest="limit", action="store_const", const=None)
+    subset.add_argument(
+        "--limit", type=int, help="Custom sample size; default is the fixed 87-question case"
+    )
+    subset.add_argument("--all", action="store_true", help="Use the complete split")
     p.add_argument("--seed", type=int, default=0, help="Fixed subset selection seed (default: 0)")
     p.add_argument("--max-new-tokens", type=int, default=1024)
     p.add_argument("--max-length", type=int, default=2048)
@@ -368,6 +455,10 @@ def main():
     args = parser.parse_args()
     result = {"prepare": prepare, "run": run, "compare": compare}[args.command](args)
     if args.command == "compare" and not result["passes_observed_accuracy_gate"]:
+        raise SystemExit(1)
+    if args.command == "run" and not result.get("baseline_comparison", {}).get(
+        "passes_observed_accuracy_gate", True
+    ):
         raise SystemExit(1)
 
 

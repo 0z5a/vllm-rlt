@@ -1,11 +1,25 @@
 """CPU checks for the accuracy protocol and comparison failure modes."""
 
 import json
+import sys
+from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
 
-from benchmarks.gsm8k import build_records, compare, file_digest, make_task, score, select_doc_ids
+from benchmarks import gsm8k
+from benchmarks.gsm8k import (
+    DEFAULT_CASE,
+    baseline_fingerprint,
+    baseline_result,
+    build_records,
+    compare,
+    digest,
+    file_digest,
+    make_task,
+    score,
+    select_doc_ids,
+)
 
 
 @pytest.fixture
@@ -19,8 +33,8 @@ def task(monkeypatch):
             {
                 split: Dataset.from_dict(
                     {
-                        "question": [f"What is 6 times 3? Question #{i}" for i in range(150)],
-                        "answer": ["#### 18"] * 150,
+                        "question": [f"What is 6 times 3? Question #{i}" for i in range(1319)],
+                        "answer": ["#### 18"] * 1319,
                     }
                 )
                 for split in ("train", "test")
@@ -72,6 +86,132 @@ def test_sampled_requests_keep_original_dataset_ids(task):
         build_records(
             task, tokenizer, split="test", limit=100, seed=0, max_new_tokens=20, max_length=20
         )
+
+
+def test_default_case_preserves_the_87_observed_questions(task):
+    case = json.loads(DEFAULT_CASE.read_text())
+    ids = case["source_ids"]
+    assert len(ids) == case["baseline"]["examples"] == 87
+    assert case["baseline"]["correct"] == 59
+    assert ids == select_doc_ids(1319, limit=100, seed=0, split="test")[:87]
+    assert ids[-1] == 1136
+    assert ids != select_doc_ids(1319, limit=87, seed=0, split="test")
+    records, selection = build_records(
+        task,
+        SimpleNamespace(encode=lambda *a, **kw: [1, 2, 3]),
+        split="test",
+        limit=None,
+        seed=0,
+        max_new_tokens=10,
+        max_length=20,
+        doc_ids=ids,
+    )
+    assert selection["method"] == "fixed-source-ids-v1"
+    assert [row["id"] for row in records] == ids
+    for row in records:
+        assert row["doc"]["question"] == f"What is 6 times 3? Question #{row['id']}"
+
+
+@pytest.mark.parametrize("ids", [[], [5, 5], [11, 5], [-1], [1319]])
+def test_invalid_fixed_questions_rejected(task, ids):
+    with pytest.raises(ValueError, match="Question IDs"):
+        build_records(
+            task,
+            None,
+            split="test",
+            limit=None,
+            seed=0,
+            max_new_tokens=10,
+            max_length=20,
+            doc_ids=ids,
+        )
+
+
+def test_baseline_fingerprint_tracks_recipe_not_checkout():
+    protocol = {
+        "model_revision": "pinned",
+        "model_files": {"weights": "hash"},
+        "task_config": {"metric": "strict"},
+        "records": [{"id": 5, "prompt_ids": [1, 2, 3]}],
+        "max_new_tokens": 1024,
+        "max_length": 2048,
+        "dtype": "bfloat16",
+        "loops": 4,
+        "batch_size": 1,
+        "add_special_tokens": False,
+        "apply_chat_template": False,
+        "source": {"sha": "old", "packages": {"transformers": "4.55.0"}},
+    }
+    expected = baseline_fingerprint(protocol)
+    protocol["source"]["sha"] = "new"
+    protocol["model"] = "/another/checkpoint/path"
+    assert baseline_fingerprint(protocol) == expected
+    changed_prompt = deepcopy(protocol)
+    changed_prompt["records"][0]["prompt_ids"].append(4)
+    changed_length = {**protocol, "max_new_tokens": 512}
+    changed_packages = deepcopy(protocol)
+    changed_packages["source"]["packages"]["transformers"] = "different"
+    for changed in (changed_prompt, changed_length, changed_packages):
+        assert baseline_fingerprint(changed) != expected
+
+
+def baseline_fixture(correct=59):
+    case = json.loads(DEFAULT_CASE.read_text())
+    records = [{"id": i, "prompt_ids": [i]} for i in case["source_ids"]]
+    protocol = {
+        "baseline": case["baseline"],
+        "records": records,
+        "max_regression_pp": 1.0,
+        "min_reference_accuracy_pct": None,
+    }
+    rows = [
+        {"id": row["id"], "prompt_sha256": digest(row["prompt_ids"]), "correct": n < correct}
+        for n, row in enumerate(records)
+    ]
+    return protocol, rows
+
+
+@pytest.mark.parametrize("correct,passes", [(59, True), (58, False), (60, True)])
+def test_stored_hf_baseline_gate(correct, passes):
+    protocol, rows = baseline_fixture(correct)
+    result = baseline_result(protocol, rows)
+    assert result["reference_accuracy_pct"] == pytest.approx(100 * 59 / 87)
+    assert result["delta_pp"] == pytest.approx(100 * (correct - 59) / 87)
+    assert result["passes_observed_accuracy_gate"] is passes
+
+
+@pytest.mark.parametrize("change", ["partial", "wrong_id", "wrong_prompt", "floor"])
+def test_stored_baseline_rejects_invalid_run(change):
+    protocol, rows = baseline_fixture()
+    if change == "floor":
+        protocol["min_reference_accuracy_pct"] = 70
+        assert not baseline_result(protocol, rows)["passes_observed_accuracy_gate"]
+        return
+    if change == "partial":
+        rows.pop()
+    elif change == "wrong_id":
+        rows[0]["id"] = 0
+    else:
+        rows[0]["prompt_sha256"] = "different"
+    with pytest.raises(ValueError):
+        baseline_result(protocol, rows)
+
+
+@pytest.mark.parametrize("correct,exit_code", [(59, 0), (58, 1)])
+def test_native_cli_enforces_stored_baseline(monkeypatch, correct, exit_code):
+    protocol, rows = baseline_fixture(correct)
+    monkeypatch.setattr(
+        gsm8k, "run", lambda args: {"baseline_comparison": baseline_result(protocol, rows)}
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["gsm8k", "run", "--backend", "native", "--protocol", "p", "--output", "o"]
+    )
+    if exit_code:
+        with pytest.raises(SystemExit) as exc:
+            gsm8k.main()
+        assert exc.value.code == exit_code
+    else:
+        gsm8k.main()
 
 
 def comparison_fixture(tmp_path, native_correct=True):

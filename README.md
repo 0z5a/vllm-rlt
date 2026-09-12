@@ -165,7 +165,8 @@ reserved execution, and offline reporting, and the
 [baseline report](docs/benchmarks/m1-20260910.md) for results and downloadable evidence.
 
 For end-to-end accuracy, use the [GSM8K evaluation guide](docs/accuracy.md) to
-compare BF16 native inference with the pinned official Transformers model.
+run the fixed 87-question regression case. Its measured official Transformers
+baseline is **59/87 (67.82%)**, matched by BF16 native inference.
 
 ## License
 
