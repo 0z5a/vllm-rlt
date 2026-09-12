@@ -160,9 +160,11 @@ can deliver several events together. Its latency starts after the client
 concurrency semaphore and ends at the last choice event, excluding client-side
 queueing and the usage/`[DONE]` tail. The offline M1 harness instead timestamps
 engine enqueue/steps and excludes HTTP/tokenization; the values are not
-interchangeable.
+interchangeable. The scheduler fairness guard also changes offline
+prefill/recurrent interleaving; new runs need their own timing baseline rather
+than reusing frozen M1 timings.
 
-## Validation and retained evidence
+## Validation
 
 CPU tests use small models and real loopback sockets:
 
@@ -170,33 +172,12 @@ CPU tests use small models and real loopback sockets:
 OMP_NUM_THREADS=1 python -m pytest -q tests/test_serving.py tests/test_engine.py
 ```
 
-The bounded real-model validation script uses four fixed prompts, greedy
-8-token generations with fixed/adaptive loop policies, one first request after
-health becomes ready, then three overlapping requests. It requires matching
-text, usage and finish reasons against direct engine execution for those cases.
-This does not impose universal token equality across different BF16 arithmetic.
-It then runs the unchanged client once for each of three cells: concurrency 1
-and 8 at infinite request rate, and concurrency 4 at 2 requests/second. Each cell
-has 16 requests of 128 input / 16 output tokens. The client performs its own
-initial test request, outside its measured workload; no additional warmups are
-requested. All client cells reuse the same server.
+For real-model checks, validate the first inference after readiness and
+overlapping requests against direct engine execution for text, usage and finish
+reasons, including fixed/adaptive loop policies. Keep settings fixed; BF16
+arithmetic can differ across configurations. Then run the serial, concurrent
+and finite-rate client commands above against the same resident server.
 
-```bash
-gpu run --gpu-ids <available-id> --timeout 20m --note "Ouro serving compatibility" -- \
-  python scripts/validate_serving.py --model-path /path/to/prepared/ouro \
-  --client /path/to/client-env/bin/vllm --output artifacts/serving/run-1
-```
-
-Run from an installed, clean checkout. The output directory must be new. This
-is a functional compatibility pass with a fixed no-retry budget, not an A/B
-performance experiment. It saves source/environment identity, commands, direct
-and HTTP results/latencies, process-to-readiness, preparation, raw client
-results/logs, server logs and cleanup. Failed runs retain their records. For measured
-comparisons, freeze a separate hypothesis, variable, controls, success criteria
-and stop budget first; use the experiment policy's excluded feasibility and
-measured repetitions. Preserve all failures and variability.
-
-The [2026-09-12 validation report](benchmarks/serving-20260912.md) summarizes the
-first BF16 compatibility pass and cleanup. Keep generated logs, results and
-manifests under ignored `artifacts/`; commit concise reports and reproduction
-instructions.
+Keep commands, source/model revisions, environment details and raw results
+under ignored `artifacts/`. Record validation outcomes in the PR description.
+Separate preparation and startup from client timings, and preserve failed runs.
