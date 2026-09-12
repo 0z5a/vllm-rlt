@@ -18,8 +18,9 @@ gpu run --gpu-ids <available-id> --timeout 30m --note "Ouro HTTP serving" -- \
   --num-blocks 512 --max-num-seqs 8
 ```
 
-BF16 weights, ordinary activations and KV are the primary target under the
-[2026-09-12 precision policy](https://github.com/hsliuustc0106/vllm-lt/blob/c9e646ace2d8198a52e522ea4d71129f1b143c58/docs/precision-policy.md).
+BF16 weights, ordinary activations and KV are this frontend's primary target,
+consistent with the precision policy proposed in [PR #12](https://github.com/hsliuustc0106/vllm-lt/pull/12).
+That policy is pending and is not yet part of this branch.
 The current model uses FP32 RMSNorm/RoPE intermediates and gate/sampling
 probabilities; Triton attention uses FP32 internal accumulation. Record the
 matrix multiplication backend/reduction flags separately. `--dtype float32`
@@ -35,8 +36,11 @@ actual inference may include lazy library/kernel setup; validate it explicitly.
 
 ## Completions contract
 
-`POST /v1/completions` requires `model` and one string `prompt`. Streaming and
-ordinary JSON responses use the same generation and text contract.
+`POST /v1/completions` requires `Content-Type: application/json`, `model` and one
+string `prompt`. Requests with an `Origin` header are rejected with 403: this
+frontend supports command-line clients, not browser callers. Other content
+types return 415. Streaming and ordinary JSON responses use the same generation
+and text contract.
 
 ```bash
 curl http://127.0.0.1:8000/v1/completions \
@@ -58,6 +62,10 @@ curl http://127.0.0.1:8000/v1/completions \
 
 Unsupported fields/behaviors, invalid values, empty tokenized prompts, impossible
 KV reservations and context overflow return 400. An unknown model returns 404.
+Missing or invalid model identifiers return 400. Omit fields to use defaults;
+explicit null is accepted only for `max_loops`, `stream_options` and the four
+null-only fields above. Structured errors use the same value for `error.type`
+and `error.code`; admission messages include diagnostic context/KV limits.
 There is no chat endpoint, prompt-list batching, token-ID prompt API, stop-string
 matching, beam search or multi-completion support. Independent HTTP requests
 share continuous engine batching. Prompt prefill always runs full depth;
@@ -73,6 +81,8 @@ is appended. When requested, one `choices: []` usage event follows, then
 `data: [DONE]`. Ordinary responses always include usage. Counts come from
 actual prompt/generated IDs, including generated EOS or other hidden special
 tokens, rather than from re-tokenizing the displayed text.
+Decoding currently reprocesses the cumulative token list on the owner thread;
+its total work grows quadratically with output length, bounded by model context.
 
 ## Ownership, limits and errors
 
@@ -91,13 +101,14 @@ recurrent loop; the same progress guard applies to refill and no-refill modes.
 - `--request-timeout` (300 seconds) covers body reading through response
   completion. `--write-timeout` (10 seconds) bounds individual stream writes.
 - `--shutdown-timeout` (30 seconds) bounds the cooperative shutdown wait.
-  A device call that never returns requires the outer process supervisor;
-  Python cannot terminate a running engine thread safely.
+  Exceeding it logs a warning and allows HTTP teardown to continue. Owner-thread
+  cleanup still runs if the call returns. A call that never returns requires the
+  outer process supervisor; Python cannot terminate a running thread safely.
 
 Disconnects and deadlines enqueue cancellation through the owner. Request slots
 remain reserved until the owner acknowledges cancellation. Invalid requests,
-slow consumers and cancellation preserve unrelated engine work. Unexpected
-engine failures conservatively make the service unready, fail outstanding
+slow consumers, decode validation errors and cancellation preserve unrelated
+engine work. Unexpected engine failures conservatively make the service unready, fail outstanding
 requests and clean up all request state; automatic engine restart is not
 implemented. The engine itself invalidates a failed execution batch.
 
@@ -179,8 +190,8 @@ gpu run --gpu-ids <available-id> --timeout 20m --note "Ouro serving compatibilit
 Run from an installed, clean checkout. The output directory must be new. This
 is a functional compatibility pass with a fixed no-retry budget, not an A/B
 performance experiment. It saves source/environment identity, commands, direct
-and HTTP results, process-to-readiness, preparation, raw client results/logs,
-server logs and cleanup. Failed runs retain their records. For measured
+and HTTP results/latencies, process-to-readiness, preparation, raw client
+results/logs, server logs and cleanup. Failed runs retain their records. For measured
 comparisons, freeze a separate hypothesis, variable, controls, success criteria
 and stop budget first; use the experiment policy's excluded feasibility and
 measured repetitions. Preserve all failures and variability.

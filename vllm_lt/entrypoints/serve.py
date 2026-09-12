@@ -1,7 +1,6 @@
 """Launch one resident Ouro model behind an OpenAI completions endpoint."""
 
 import argparse
-import json
 import logging
 from functools import partial
 
@@ -14,6 +13,7 @@ from vllm_lt.models.ouro import OuroForCausalLM
 
 
 def load_engine(args):
+    from tokenizers.decoders import ByteLevel
     from transformers import AutoTokenizer
 
     revision = args.revision or (OURO_REVISION if args.model == OURO_MODEL_ID else None)
@@ -23,7 +23,7 @@ def load_engine(args):
         trust_remote_code=False,
     )
     decoder = tokenizer.backend_tokenizer.decoder
-    if decoder is None or json.loads(decoder.__getstate__()).get("type") != "ByteLevel":
+    if not isinstance(decoder, ByteLevel):
         raise ValueError("serving requires the Ouro byte-level tokenizer")
     model = OuroForCausalLM.from_pretrained(
         args.model, revision=revision, device=args.device, dtype=getattr(torch, args.dtype)

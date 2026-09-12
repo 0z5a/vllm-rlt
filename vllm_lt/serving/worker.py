@@ -104,8 +104,9 @@ class EngineWorker:
         try:
             if self.task is not None:
                 await asyncio.wait_for(asyncio.shield(self.task), timeout)
-        finally:
-            # A hung device call needs the documented outer process supervisor.
+        except asyncio.TimeoutError:
+            logger.warning("shutdown deadline exceeded; a hung engine requires an outer supervisor")
+        if self.task is None:
             self.executor.shutdown(wait=False, cancel_futures=True)
 
     async def _call(self, fn, *args):
@@ -133,7 +134,16 @@ class EngineWorker:
         events = []
         for output in self.engine.step():
             decoder = self.decoders[output.request_id]
-            delta = decoder.decode(output.token_ids, output.finished)
+            try:
+                delta = decoder.decode(output.token_ids, output.finished)
+            except ValueError as exc:
+                if not output.finished:
+                    self.engine.abort_request(output.request_id)
+                del self.decoders[output.request_id]
+                failures.append(
+                    (output.request_id, ServingError(str(exc), 400, "invalid_request_error"))
+                )
+                continue
             events.append(
                 (
                     output.request_id,
@@ -215,3 +225,6 @@ class EngineWorker:
                 self.channels.clear()
                 self.pending.clear()
                 self.cancellations.clear()
+                # Keep the executor available for owner-thread cleanup after
+                # a shutdown deadline, if the outstanding device call returns.
+                self.executor.shutdown(wait=False, cancel_futures=True)

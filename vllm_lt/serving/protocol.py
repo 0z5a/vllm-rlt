@@ -44,7 +44,9 @@ class CompletionRequest:
         allowed = params_keys | neutral.keys() | {"model", "prompt", "stream", "stream_options"}
         if unknown := body.keys() - allowed:
             raise ValueError(f"unsupported fields: {', '.join(sorted(unknown))}")
-        if body.get("model") != model:
+        if not isinstance(body.get("model"), str) or not body["model"]:
+            raise ValueError("model must be a nonempty string")
+        if body["model"] != model:
             raise ServingError(f"model must be {model!r}", 404, "model_not_found")
         if not isinstance(body.get("prompt"), str):
             raise ValueError("prompt must be one string")

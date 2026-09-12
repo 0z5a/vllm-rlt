@@ -11,6 +11,7 @@ import gc
 import hashlib
 import importlib.metadata
 import json
+import math
 import os
 import signal
 import subprocess
@@ -127,11 +128,17 @@ async def http_checks(port, process, started, expected, out):
 
         async def request(i):
             payload = {"model": MODEL, "prompt": PROMPTS[i], **params(POLICIES[i])}
+            request_started = time.monotonic()
             async with session.post(url + "/v1/completions", json=payload) as response:
                 result = await response.json()
                 save(
                     out / f"http-{i}.json",
-                    {"status": response.status, "request": payload, "response": result},
+                    {
+                        "status": response.status,
+                        "request": payload,
+                        "response": result,
+                        "latency_seconds": time.monotonic() - request_started,
+                    },
                 )
                 assert response.status == 200, result
                 assert result["choices"][0]["text"] == expected[i]["text"], (i, result, expected[i])
@@ -345,6 +352,9 @@ def main():
                 assert data["total_output_tokens"] == 256, data
                 assert data["output_lens"] == [16] * 16, data["output_lens"]
                 assert [len(intervals) for intervals in data["itls"]] == [15] * 16
+                assert len(data["ttfts"]) == 16
+                assert all(math.isfinite(t) and t >= 0 for t in data["ttfts"])
+                assert all(math.isfinite(t) and t >= 0 for row in data["itls"] for t in row)
                 assert not any(data.get("errors", [])), data.get("errors")
         finally:
             process.send_signal(signal.SIGTERM)
@@ -363,6 +373,7 @@ def main():
                     "parent_cuda_allocated": torch.cuda.memory_allocated(),
                 },
             )
+    assert process.returncode == 0, process.returncode
     assert "engine cleanup: requests=0 kv_blocks=0" in (out / "server.log").read_text()
     save(out / "result.json", {"passed": True, "http_direct_matches": 4, "benchmark_cells": 3})
 

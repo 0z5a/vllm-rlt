@@ -4,6 +4,7 @@ import asyncio
 import json
 import threading
 from contextlib import asynccontextmanager
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -140,6 +141,46 @@ def test_byte_decoder_unicode_special_tokens_and_final_flush():
     assert decoder.decode(ids, True) == tokenizer.decode(ids)
 
 
+@pytest.mark.parametrize("byte_level", [False, True])
+def test_load_engine_checks_decoder_before_loading_model(monkeypatch, byte_level):
+    tokenizers = pytest.importorskip("tokenizers")
+    transformers = pytest.importorskip("transformers")
+    from vllm_lt.entrypoints.serve import load_engine
+
+    decoder = tokenizers.decoders.ByteLevel() if byte_level else tokenizers.decoders.WordPiece()
+    tokenizer = SimpleNamespace(backend_tokenizer=SimpleNamespace(decoder=decoder))
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", lambda *a, **k: tokenizer)
+    loaded = []
+
+    def load_model(*args, **kwargs):
+        loaded.append(True)
+        return OuroForCausalLM(OuroConfig.tiny())
+
+    monkeypatch.setattr(OuroForCausalLM, "from_pretrained", load_model)
+    args = SimpleNamespace(
+        model="local-model",
+        tokenizer=None,
+        revision=None,
+        tokenizer_revision=None,
+        device="cpu",
+        dtype="float32",
+        num_blocks=16,
+        block_size=2,
+        max_num_seqs=1,
+        max_num_batched_tokens=3,
+        mode="refill",
+        attention_backend="torch",
+    )
+    if byte_level:
+        engine, actual = load_engine(args)
+        assert actual is tokenizer and loaded
+        assert not engine.has_unfinished_requests()
+    else:
+        with pytest.raises(ValueError, match="byte-level tokenizer"):
+            load_engine(args)
+        assert not loaded
+
+
 def test_startup_readiness_failure_and_shutdown_during_load():
     async def run():
         loading, release = threading.Event(), threading.Event()
@@ -223,9 +264,165 @@ def test_http_output_matches_direct_and_stream_has_exact_token_events():
             assert response.status == 400 and worker.ready
             response = await client.post("/v1/completions", json=body(model="missing"))
             assert response.status == 404
-            response = await client.post("/v1/completions", data="{bad")
+            response = await client.post(
+                "/v1/completions", data="{bad", headers={"Content-Type": "application/json"}
+            )
             assert response.status == 400
             await until(lambda: not worker.channels)
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("stream", [False, True])
+@pytest.mark.parametrize("max_tokens", [2, 4])
+def test_decode_anomaly_preserves_other_requests(monkeypatch, stream, max_tokens):
+    from vllm_lt.serving import worker as worker_module
+
+    blocked, release = threading.Event(), threading.Event()
+    engines = []
+
+    class UnstableTokenizer(TinyTokenizer):
+        def decode(self, ids, **kwargs):
+            return "a" if len(ids) == 1 else "b"
+
+    first = True
+
+    def decoder(tokenizer):
+        nonlocal first
+        result = IncrementalText(UnstableTokenizer() if first else tokenizer)
+        first = False
+        return result
+
+    monkeypatch.setattr(worker_module, "IncrementalText", decoder)
+
+    def hook(engine):
+        engines.append(engine)
+        execute = engine.model_runner.execute
+
+        def pause(batch):
+            if batch.stage == Stage.RECURRENT and not blocked.is_set():
+                blocked.set()
+                assert release.wait(5)
+            return execute(batch)
+
+        engine.model_runner.execute = pause
+
+    async def run():
+        async with client_for(lambda: factory(hook=hook)) as (client, worker):
+            await until(lambda: worker.ready)
+            bad = asyncio.create_task(
+                client.post("/v1/completions", json=body(stream=stream, max_tokens=max_tokens))
+            )
+            try:
+                await until(blocked.is_set)
+                if stream:
+                    response = await bad
+                    assert json.loads((await response.content.readline())[6:])["choices"]
+                good = asyncio.create_task(client.post("/v1/completions", json=body()))
+                await until(lambda: len(worker.channels) == 2)
+                release.set()
+                if stream:
+                    with pytest.raises(ClientPayloadError):
+                        await response.read()
+                else:
+                    response = await bad
+                    assert response.status == 400
+                    assert "rewrote" in (await response.json())["error"]["message"]
+                result = await good
+                assert result.status == 200
+                assert (await result.json())["usage"]["completion_tokens"] == 4
+                await until(lambda: not worker.channels)
+                assert (await client.get("/health")).status == 200
+                assert not worker.decoders and engines[0].cache_manager.num_used_blocks == 0
+            finally:
+                release.set()
+
+    asyncio.run(run())
+
+
+def test_shutdown_deadline_allows_http_cleanup(caplog):
+    async def run():
+        blocked, release = threading.Event(), threading.Event()
+        cleaned = asyncio.Event()
+        engines = []
+
+        def hook(engine):
+            engines.append(engine)
+            execute = engine.model_runner.execute
+
+            def pause(batch):
+                blocked.set()
+                assert release.wait(5)
+                return execute(batch)
+
+            engine.model_runner.execute = pause
+
+        app = create_app(lambda: factory(hook=hook), shutdown_timeout=0.01)
+
+        async def cleanup(app):
+            cleaned.set()
+
+        app.on_cleanup.append(cleanup)
+        client = TestClient(TestServer(app, handler_cancellation=True))
+        await client.start_server()
+        worker = app[WORKER]
+        try:
+            await until(lambda: worker.ready)
+            channel = worker.submit(CompletionRequest.parse(body(), body()["model"]))
+            await until(blocked.is_set)
+            await asyncio.wait_for(client.close(), 1)
+            assert cleaned.is_set() and not worker.ready and not worker.task.done()
+            assert "shutdown deadline exceeded" in caplog.text
+        finally:
+            release.set()
+            await asyncio.wait_for(worker.task, 5)
+            await client.close()
+        with pytest.raises(ServingError, match="shutting down"):
+            await channel.receive()
+        assert not worker.channels and engines[0].cache_manager.num_used_blocks == 0
+
+    asyncio.run(run())
+
+
+def test_cancel_before_first_tick_skips_admission():
+    async def run():
+        worker = EngineWorker(factory)
+        worker.start()
+        try:
+            await until(lambda: worker.ready)
+            channel = worker.submit(CompletionRequest.parse(body(), body()["model"]))
+            worker.release(channel)  # No yield: pending admission and cancellation share a tick.
+            await until(lambda: not worker.channels)
+            assert worker.engine.last_schedule is None
+            assert not worker.decoders and worker.engine.cache_manager.num_used_blocks == 0
+        finally:
+            await worker.close()
+
+    asyncio.run(run())
+
+
+def test_http_invalid_admission_and_browser_requests_preserve_readiness():
+    async def run():
+        async with client_for() as (client, worker):
+            await until(lambda: worker.ready)
+            missing_model = body()
+            del missing_model["model"]
+            for payload in [
+                missing_model,
+                body(max_tokens=worker.engine.model.config.max_position_embeddings + 1),
+                body(max_loops=worker.engine.model.config.total_ut_steps + 1),
+            ]:
+                assert (await client.post("/v1/completions", json=payload)).status == 400
+            for origin in ["https://example.com", "http://localhost:8000", "null"]:
+                response = await client.post(
+                    "/v1/completions", json=body(), headers={"Origin": origin}
+                )
+                assert response.status == 403
+            response = await client.post("/v1/completions", data=json.dumps(body()))
+            assert response.status == 415
+            assert (await client.post("/v1/completions", json=body())).status == 200
+            await until(lambda: not worker.channels)
+            assert worker.ready and worker.engine.cache_manager.num_used_blocks == 0
 
     asyncio.run(run())
 

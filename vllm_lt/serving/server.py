@@ -45,6 +45,14 @@ def create_app(
         nonlocal inflight
         if request.path != "/v1/completions":
             return await handler(request)
+        if "Origin" in request.headers:
+            return error_response(
+                ServingError("browser requests are not supported", 403, "forbidden")
+            )
+        if request.content_type != "application/json":
+            return error_response(
+                ServingError("Content-Type must be application/json", 415, "unsupported_media_type")
+            )
         if not worker.ready:
             return error_response(ServingError("engine is not ready", 503, "not_ready"))
         if inflight >= max_requests:
