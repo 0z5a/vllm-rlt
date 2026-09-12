@@ -1,0 +1,325 @@
+"""Prepare, run, and compare the paper-aligned Ouro GSM8K accuracy evaluation."""
+
+import argparse
+import hashlib
+import importlib.metadata
+import json
+import os
+import statistics
+import subprocess
+import time
+from pathlib import Path
+
+MODEL_REVISION = "574fa66cb8bf5abdc979642d01cf2b79b16bfab1"
+DATA_REVISION = "740312add88f781978c0658806c59bc2815b9866"
+PACKAGES = ("torch", "transformers", "lm-eval", "datasets", "tokenizers", "triton")
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+
+def file_digest(path):
+    h = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def write_json(path, data):
+    with Path(path).open("x") as stream:
+        json.dump(data, stream, indent=2)
+        stream.write("\n")
+
+
+def source():
+    return {
+        "sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        "diff": subprocess.check_output(["git", "diff", "HEAD"], text=True),
+        "packages": {name: importlib.metadata.version(name) for name in PACKAGES},
+    }
+
+
+def make_task(config=None, split="test"):
+    import lm_eval
+    import yaml
+    from lm_eval.api.task import ConfigurableTask
+
+    if config is None:
+        task_file = Path(lm_eval.__file__).parent / "tasks/gsm8k/gsm8k-cot.yaml"
+        config = yaml.safe_load(task_file.read_text())
+        config.update(
+            dataset_path="openai/gsm8k",
+            dataset_kwargs={"revision": DATA_REVISION},
+            num_fewshot=3,
+            test_split=split,
+        )
+    task = ConfigurableTask(config=config)
+    task.set_fewshot_seed(1234)
+    return task
+
+
+def prepare(args):
+    import torch
+    from huggingface_hub import get_hf_file_metadata, hf_hub_url
+    from transformers import AutoTokenizer
+
+    if importlib.metadata.version("lm-eval") != "0.4.9.2":
+        raise ValueError("Install the pinned evaluation dependencies first")
+    model = Path(args.model).resolve()
+    tokenizer = AutoTokenizer.from_pretrained(model, local_files_only=True)
+    if args.limit is not None and args.limit < 1:
+        raise ValueError("--limit must be positive")
+    if not 0 < args.max_new_tokens < args.max_length or args.max_regression_pp < 0:
+        raise ValueError("Invalid context/output budget or regression threshold")
+    config = json.loads((model / "config.json").read_text())
+    if config.get("model_type") != "ouro" or config.get("total_ut_steps") != 4:
+        raise ValueError("This evaluation requires the four-loop Ouro checkpoint")
+    task = make_task(split=args.split)
+    task.build_all_requests(limit=args.limit, rank=0, world_size=1)
+    records = []
+    for instance in task.instances:
+        prompt, kwargs = instance.args
+        ids = tokenizer.encode(prompt, add_special_tokens=False)
+        if len(ids) + args.max_new_tokens > args.max_length:
+            raise ValueError("Prompt would be truncated; increase --max-length")
+        records.append(
+            {
+                "id": instance.doc_id,
+                "doc": instance.doc,
+                "prompt": prompt,
+                "prompt_ids": ids,
+                "generation_kwargs": kwargs,
+            }
+        )
+    files = [
+        p
+        for p in model.iterdir()
+        if p.is_file() and p.suffix in (".json", ".py", ".safetensors", ".txt")
+    ]
+    hashes = {}
+    for path in sorted(files):
+        metadata = get_hf_file_metadata(
+            hf_hub_url(
+                "ByteDance/Ouro-1.4B",
+                path.name,
+                revision=MODEL_REVISION,
+            )
+        )
+        hashes[path.name] = file_digest(path)
+        if len(metadata.etag) == 64:
+            observed = hashes[path.name]
+        else:
+            data = path.read_bytes()
+            observed = hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
+        if observed != metadata.etag or metadata.commit_hash != MODEL_REVISION:
+            raise ValueError(f"File does not match the pinned HF release: {path.name}")
+    protocol = {
+        "format_version": 1,
+        "model": str(model),
+        "model_revision": MODEL_REVISION,
+        "model_files": hashes,
+        "task_config": task.dump_config(),
+        "records": records,
+        "max_new_tokens": args.max_new_tokens,
+        "max_length": args.max_length,
+        "dtype": "bfloat16",
+        "loops": 4,
+        "batch_size": 1,
+        "add_special_tokens": False,
+        "apply_chat_template": False,
+        "max_regression_pp": args.max_regression_pp,
+        "min_reference_accuracy_pct": args.min_reference_accuracy_pct,
+        "source": source(),
+    }
+    if torch.cuda.is_initialized():
+        raise RuntimeError("Preparation unexpectedly initialized CUDA")
+    write_json(args.output, protocol)
+    print(
+        json.dumps(
+            {
+                "examples": len(records),
+                "split": args.split,
+                "prompt_tokens_max": max(len(r["prompt_ids"]) for r in records),
+                "protocol_sha256": file_digest(args.output),
+                "cuda_initialized": False,
+            }
+        )
+    )
+
+
+def score(task, row, text):
+    from lm_eval.api.instance import Instance
+
+    instance = Instance(request_type="generate_until", doc=row["doc"], arguments=(), idx=0)
+    instance.resps = [text]
+    for pipeline in task._filters:
+        pipeline.apply([instance])
+    answer = instance.filtered_resps["strict-match"]
+    correct = task.process_results(row["doc"], [answer])["exact_match"]
+    return {"answer": answer, "correct": bool(correct), "unparseable": answer == "[invalid]"}
+
+
+def run(args):
+    import torch
+    from transformers import AutoTokenizer
+
+    from benchmarks.gsm8k_backends import Generator
+
+    protocol = json.loads(Path(args.protocol).read_text())
+    if protocol["source"]["packages"] != source()["packages"]:
+        raise ValueError("Evaluation package versions changed after preparation")
+    model = Path(protocol["model"])
+    for name, expected in protocol["model_files"].items():
+        if file_digest(model / name) != expected:
+            raise ValueError(f"Model file changed: {name}")
+    if not os.environ.get("CUDA_VISIBLE_DEVICES") or torch.cuda.device_count() != 1:
+        raise RuntimeError("Run with one scheduler-assigned GPU")
+    output = Path(args.output)
+    output.mkdir(parents=True, exist_ok=False)
+    metadata = {
+        "backend": args.backend,
+        "protocol_sha256": file_digest(args.protocol),
+        "source": source(),
+        "cuda_visible_devices": os.environ["CUDA_VISIBLE_DEVICES"],
+        "gpu": str(torch.cuda.get_device_properties(0)),
+        "cpu_affinity": sorted(os.sched_getaffinity(0)),
+        "torch_cuda": torch.version.cuda,
+        "split": protocol["task_config"]["test_split"],
+        "expected_examples": len(protocol["records"]),
+        "max_regression_pp": protocol["max_regression_pp"],
+        "min_reference_accuracy_pct": protocol["min_reference_accuracy_pct"],
+    }
+    write_json(output / "metadata.json", metadata)
+    tokenizer = AutoTokenizer.from_pretrained(model, local_files_only=True)
+    task = make_task(protocol["task_config"])
+    start = time.monotonic()
+    generator = Generator(args.backend, str(model), tokenizer, protocol["max_length"])
+    load_seconds = time.monotonic() - start
+    rows = []
+    with (output / "samples.jsonl").open("x", buffering=1) as stream:
+        for row in protocol["records"]:
+            stops = row["generation_kwargs"]["until"] + [tokenizer.eos_token]
+            start = time.monotonic()
+            result = generator.generate(row["prompt_ids"], protocol["max_new_tokens"], stops)
+            result.update(score(task, row, result["text"]))
+            result.update(
+                id=row["id"],
+                prompt_sha256=digest(row["prompt_ids"]),
+                seconds=time.monotonic() - start,
+            )
+            stream.write(json.dumps(result) + "\n")
+            rows.append(result)
+            print(
+                f"{args.backend} {len(rows)}/{len(protocol['records'])}: "
+                f"correct={sum(r['correct'] for r in rows)}",
+                flush=True,
+            )
+    summary = {
+        **metadata,
+        "complete": True,
+        "examples": len(rows),
+        "accuracy": statistics.mean(r["correct"] for r in rows),
+        "correct": sum(r["correct"] for r in rows),
+        "unparseable": sum(r["unparseable"] for r in rows),
+        "length_limited": sum(r["finish_reason"] == "length" for r in rows),
+        "load_seconds": load_seconds,
+        "generation_and_scoring_seconds": sum(r["seconds"] for r in rows),
+        "samples_sha256": file_digest(output / "samples.jsonl"),
+    }
+    write_json(output / "summary.json", summary)
+    print(json.dumps(summary, indent=2))
+
+
+def compare(args):
+    paths = [Path(args.transformers), Path(args.native)]
+    summaries = [json.loads((p / "summary.json").read_text()) for p in paths]
+    a, b = summaries
+    if (a["backend"], b["backend"]) != ("transformers", "native"):
+        raise ValueError("Expected Transformers reference and native candidate")
+    for key in (
+        "protocol_sha256",
+        "expected_examples",
+        "split",
+        "max_regression_pp",
+        "min_reference_accuracy_pct",
+    ):
+        if a[key] != b[key]:
+            raise ValueError(f"Unmatched comparison: {key}")
+    samples = []
+    for path, summary in zip(paths, summaries):
+        if not summary["complete"] or summary["examples"] != summary["expected_examples"]:
+            raise ValueError("Incomplete evaluation")
+        if file_digest(path / "samples.jsonl") != summary["samples_sha256"]:
+            raise ValueError("Samples changed after scoring")
+        rows = [json.loads(line) for line in (path / "samples.jsonl").read_text().splitlines()]
+        if len(rows) != summary["examples"] or len({r["id"] for r in rows}) != len(rows):
+            raise ValueError("Missing or duplicate examples")
+        if sum(r["correct"] for r in rows) != summary["correct"]:
+            raise ValueError("Summary score does not match samples")
+        if statistics.mean(r["correct"] for r in rows) != summary["accuracy"]:
+            raise ValueError("Summary accuracy does not match samples")
+        samples.append(rows)
+    pairs = list(zip(*samples))
+    if any((x["id"], x["prompt_sha256"]) != (y["id"], y["prompt_sha256"]) for x, y in pairs):
+        raise ValueError("Examples/prompts are not paired")
+    differences = [int(y["correct"]) - int(x["correct"]) for x, y in pairs]
+    delta = 100 * statistics.mean(differences)
+    result = {
+        "examples": a["examples"],
+        "split": a["split"],
+        "transformers_accuracy_pct": 100 * a["accuracy"],
+        "native_accuracy_pct": 100 * b["accuracy"],
+        "delta_pp": delta,
+        "paired_delta_stderr_pp": 100 * statistics.stdev(differences) / len(pairs) ** 0.5
+        if len(pairs) > 1
+        else None,
+        "reference_correct_native_wrong": sum(d == -1 for d in differences),
+        "reference_wrong_native_correct": sum(d == 1 for d in differences),
+        "answer_disagreements": [x["id"] for x, y in pairs if x["answer"] != y["answer"]],
+        "max_regression_pp": a["max_regression_pp"],
+        "passes_observed_accuracy_gate": (
+            delta >= -a["max_regression_pp"]
+            and 100 * a["accuracy"] >= a["min_reference_accuracy_pct"]
+        ),
+        "min_reference_accuracy_pct": a["min_reference_accuracy_pct"],
+        "paper_accuracy_pct": 78.92,
+    }
+    write_json(args.output, result)
+    print(json.dumps(result, indent=2))
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    p = commands.add_parser("prepare", help="Freeze data/prompts and hashes without using CUDA")
+    p.add_argument(
+        "--model",
+        required=True,
+        help="Local pinned Ouro checkpoint including official Python files",
+    )
+    p.add_argument("--output", required=True)
+    p.add_argument("--split", choices=["train", "test"], default="test")
+    p.add_argument("--limit", type=int)
+    p.add_argument("--max-new-tokens", type=int, default=1024)
+    p.add_argument("--max-length", type=int, default=2048)
+    p.add_argument("--max-regression-pp", type=float, default=1.0)
+    p.add_argument("--min-reference-accuracy-pct", type=float, default=75.92)
+    p = commands.add_parser("run")
+    p.add_argument("--backend", choices=["transformers", "native"], required=True)
+    p.add_argument("--protocol", required=True)
+    p.add_argument("--output", required=True)
+    p = commands.add_parser("compare")
+    p.add_argument("--transformers", required=True)
+    p.add_argument("--native", required=True)
+    p.add_argument("--output", required=True)
+    args = parser.parse_args()
+    result = {"prepare": prepare, "run": run, "compare": compare}[args.command](args)
+    if args.command == "compare" and not result["passes_observed_accuracy_gate"]:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

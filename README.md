@@ -164,6 +164,9 @@ See the [M1 benchmark guide](docs/benchmarks.md) for workloads, timing definitio
 reserved execution, and offline reporting, and the
 [baseline report](docs/benchmarks/m1-20260910.md) for results and downloadable evidence.
 
+For end-to-end accuracy, use the [GSM8K evaluation guide](docs/accuracy.md) to
+compare BF16 native inference with the pinned official Transformers model.
+
 ## License
 
 Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). The native model adapts
