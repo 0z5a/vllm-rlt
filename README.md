@@ -12,7 +12,8 @@ paged-attention backend. CPU execution provides a reference backend.
 
 It is a synchronous, single-device implementation. The paper's asynchronous
 lookahead scheduling, CUDA graphs, distributed execution, prefix sharing,
-preemption, and an HTTP server are not implemented. Performance measurements cover
+and preemption are not implemented. A bounded OpenAI completions frontend is
+available; see the [serving guide](docs/serving.md). Performance measurements cover
 the [frozen FP32 M1 workloads](docs/benchmarks/m1-20260910.md); adaptive-depth
 task accuracy has not been evaluated. The authors' CDB code and trained lookahead
 gate were not released at the revision inspected; see [paper notes](docs/paper-notes.md).
