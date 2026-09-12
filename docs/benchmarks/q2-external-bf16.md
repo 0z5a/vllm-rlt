@@ -77,6 +77,9 @@ replace failed rows. Only task-owned processes and memory are cleaned up.
 
 ## Results and historical evidence
 
+The [September 12 BF16 result](q2-external-bf16-20260912.md) includes one
+measured request per backend and the complete raw evidence archive.
+
 A successful v2 report means the four requests and required controls passed.
 Its single timing pair does not establish variability or a general speedup.
 `equivalence.passed` reports exact token agreement independently from that
