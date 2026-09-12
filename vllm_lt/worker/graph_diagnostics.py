@@ -6,6 +6,23 @@ from dataclasses import asdict, dataclass
 
 import torch
 
+_MEMORY_LIMITS = {
+    "retained_allocated_bytes": "graph_retained_allocated_bytes",
+    "retained_reserved_bytes": "graph_retained_reserved_bytes",
+    "peak_allocated_bytes": "setup_peak_allocated_bytes",
+    "peak_reserved_bytes": "setup_peak_reserved_bytes",
+}
+
+
+def _memory_deltas(before, after):
+    return {
+        f"{kind}_{memory}_bytes": max(
+            0, after[f"{prefix}{memory}_bytes"] - before[f"{memory}_bytes"]
+        )
+        for kind, prefix in (("retained", ""), ("peak", "peak_"))
+        for memory in ("allocated", "reserved")
+    }
+
 
 @dataclass(frozen=True)
 class GraphLimits:
@@ -68,37 +85,57 @@ def _error(error):
     return {"type": type(error).__name__, "message": str(error)[:512]}
 
 
+def _bucket_snapshot(bucket):
+    metadata = bucket["metadata"]
+    return {
+        "generation": metadata.generation,
+        "tensors": {name: _description(value) for name, value in bucket["tensors"].items()},
+        "staging_tensors": {name: _description(value) for name, value in metadata.staging.items()},
+    }
+
+
+def _storage_snapshot(buckets):
+    snapshots = {str(rows): _bucket_snapshot(bucket) for rows, bucket in buckets.items()}
+    return {
+        "buckets": snapshots,
+        **{
+            field: sum(t["size_bytes"] for b in snapshots.values() for t in b[key].values())
+            for field, key in (
+                ("device_payload_bytes", "tensors"),
+                ("cpu_staging_bytes", "staging_tensors"),
+            )
+        },
+    }
+
+
 def graph_snapshot(executor):
-    buckets = {}
+    storage = _storage_snapshot(executor.buckets)
     for rows, bucket in executor.buckets.items():
         metadata = bucket["metadata"]
-        buckets[str(rows)] = {
-            "row_count": rows,
-            "table_width": executor.layout.table_width,
-            "max_live_rows": rows // 2,
-            "generation": metadata.generation,
-            "setup_generation": bucket["setup_generation"],
-            "in_use": metadata.in_use,
-            "failed": metadata.failed,
-            "tensors": {name: _description(value) for name, value in bucket["tensors"].items()},
-            "staging_tensors": {
-                name: _description(value) for name, value in metadata.staging.items()
-            },
-            "graph_id": id(bucket["graph"]) if bucket["graph"] is not None else None,
-            "graph_exec_id": bucket["graph_exec_id"],
-            "pool_id": bucket["pool_id"],
-            "pool_owner": {
-                "kind": "torch.cuda.MemPool",
-                "id": list(bucket["pool_owner"].id),
-                "release_policy": "synchronize-reset-drop-captured-outputs-owner-last",
+        storage["buckets"][str(rows)].update(
+            {
+                "row_count": rows,
+                "table_width": executor.layout.table_width,
+                "max_live_rows": rows // 2,
+                "setup_generation": bucket["setup_generation"],
+                "in_use": metadata.in_use,
+                "failed": metadata.failed,
+                "graph_id": id(bucket["graph"]) if bucket["graph"] is not None else None,
+                "graph_exec_id": bucket["graph_exec_id"],
+                "pool_id": bucket["pool_id"],
+                "pool_owner": {
+                    "kind": "torch.cuda.MemPool",
+                    "id": list(executor.pool_owner.id),
+                    "release_policy": "synchronize-reset-drop-captured-outputs-owner-last",
+                }
+                if bucket["pool_id"] is not None
+                else None,
+                "captured_inputs": bucket["captured_inputs"],
+                "captured_outputs": bucket["captured_outputs"],
+                "counters": bucket["counters"],
+                "verification": bucket.get("verification"),
             }
-            if bucket["pool_owner"] is not None
-            else None,
-            "captured_inputs": bucket["captured_inputs"],
-            "captured_outputs": bucket["captured_outputs"],
-            "counters": bucket["counters"],
-            "verification": bucket.get("verification"),
-        }
+        )
     return deepcopy(
         {
             "enabled": True,
@@ -112,22 +149,12 @@ def graph_snapshot(executor):
                 "table_width": executor.layout.table_width,
                 "pool_scope": "executor",
             },
-            "device_payload_bytes": sum(
-                value.numel() * value.element_size()
-                for bucket in executor.buckets.values()
-                for value in bucket["tensors"].values()
-            ),
-            "cpu_staging_bytes": sum(
-                value.numel() * value.element_size()
-                for bucket in executor.buckets.values()
-                for value in bucket["metadata"].staging.values()
-            ),
+            **storage,
             "setup": executor.setup_record,
             "counters": executor.counters,
             "fallback_counts": executor.fallback_counts,
             "last_dispatch": executor.last_dispatch,
             "last_publication": executor.last_publication,
             "failure": executor.failure,
-            "buckets": buckets,
         }
     )

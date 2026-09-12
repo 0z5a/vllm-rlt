@@ -7,6 +7,12 @@ import torch
 from vllm_lt.core.scheduler import SchedulerOutput
 from vllm_lt.request import Request, Stage
 from vllm_lt.worker.decode_buffers import DecodeBucketLayout, allocate_bucket
+from vllm_lt.worker.graph_diagnostics import (
+    _bucket_snapshot,
+    _description,
+    _error,
+    _storage_snapshot,
+)
 
 
 class ModelRunner:
@@ -22,21 +28,7 @@ class ModelRunner:
         self._inside_execute = False
         self._persistent_lease = None
 
-    @staticmethod
-    def _tensor_description(tensor):
-        return {
-            "data_ptr": tensor.data_ptr(),
-            "storage_ptr": tensor.untyped_storage().data_ptr(),
-            "shape": list(tensor.shape),
-            "stride": list(tensor.stride()),
-            "dtype": str(tensor.dtype),
-            "device": str(tensor.device),
-            "size_bytes": tensor.numel() * tensor.element_size(),
-            "storage_bytes": tensor.untyped_storage().nbytes(),
-        }
-
-    def _enable_persistent_decode(self):
-        """Prepare the scheduler-sized eager bucket ladder before request admission."""
+    def _require_decode_unconfigured(self):
         self.cache_manager._require_usable()
         if (
             self._persistent is not None
@@ -46,6 +38,10 @@ class ModelRunner:
             raise RuntimeError(
                 "a private decode executor is already enabled; replacement is forbidden"
             )
+
+    def _enable_persistent_decode(self):
+        """Prepare the scheduler-sized eager bucket ladder before request admission."""
+        self._require_decode_unconfigured()
         parameter = next(self.model.parameters())
         if parameter.dtype != torch.float32 or self.cache_manager.dtype != torch.float32:
             raise ValueError("persistent decode initially supports float32 only")
@@ -79,15 +75,7 @@ class ModelRunner:
         """Install the private eager/replay buckets before any request admission."""
         from .recurrent_graph import CaptureBudgetExceeded, RecurrentGraphExecutor
 
-        self.cache_manager._require_usable()
-        if (
-            self._persistent is not None
-            or self._decode_executor is not None
-            or self._graph_declined is not None
-        ):
-            raise RuntimeError(
-                "a private decode executor is already enabled; replacement is forbidden"
-            )
+        self._require_decode_unconfigured()
         executor = None
         try:
             executor = RecurrentGraphExecutor(
@@ -174,39 +162,13 @@ class ModelRunner:
         return {
             "enabled": True,
             "status": "failed" if metadata.failed else "in_flight" if metadata.in_use else "ready",
-            "generation": metadata.generation,
             "capacity": {
                 "row_count": self._decode_layout.row_counts[-1],
                 "table_width": self._decode_layout.table_width,
                 "max_live_rows": self._decode_layout.max_num_seqs,
             },
-            "device_payload_bytes": sum(
-                t.numel() * t.element_size()
-                for bucket in bundle["buckets"].values()
-                for t in bucket["tensors"].values()
-            ),
-            "cpu_staging_bytes": sum(
-                t.numel() * t.element_size()
-                for bucket in bundle["buckets"].values()
-                for t in bucket["metadata"].staging.values()
-            ),
-            "buckets": {
-                str(rows): {
-                    "generation": bucket["metadata"].generation,
-                    "tensors": {
-                        k: self._tensor_description(v) for k, v in bucket["tensors"].items()
-                    },
-                    "staging_tensors": {
-                        k: self._tensor_description(v)
-                        for k, v in bucket["metadata"].staging.items()
-                    },
-                }
-                for rows, bucket in bundle["buckets"].items()
-            },
-            "tensors": {k: self._tensor_description(v) for k, v in bundle["tensors"].items()},
-            "staging_tensors": {
-                k: self._tensor_description(v) for k, v in metadata.staging.items()
-            },
+            **_storage_snapshot(bundle["buckets"]),
+            **_bucket_snapshot(bundle),
             **deepcopy(
                 {
                     k: bundle[k]
@@ -243,10 +205,6 @@ class ModelRunner:
         if self._persistent_stream is not None:
             self._persistent_stream.synchronize()
 
-    @staticmethod
-    def _error_description(error):
-        return {"type": type(error).__name__, "message": str(error)[:512]}
-
     def _settle_persistent_failure(self, error, *, completion_error=None):
         """Invalidate before cleanup; return whether pages are safe to release."""
         bundle = self._persistent
@@ -257,19 +215,19 @@ class ModelRunner:
         for bucket in bundle["buckets"].values():
             bucket["metadata"].failed = True
         failure = {
-            "primary": self._error_description(error),
+            "primary": _error(error),
             "secondary": [],
             "completion_confirmed": False,
         }
         bundle["failure"] = failure
         if completion_error is not None:
-            failure["secondary"].append(self._error_description(completion_error))
+            failure["secondary"].append(_error(completion_error))
             self.cache_manager._quarantine("persistent stream completion failed")
             return False
         try:
             self._synchronize_persistent()
         except BaseException as completion_error:
-            failure["secondary"].append(self._error_description(completion_error))
+            failure["secondary"].append(_error(completion_error))
             self.cache_manager._quarantine("persistent stream completion failed")
             return False
         failure["completion_confirmed"] = True
@@ -283,7 +241,7 @@ class ModelRunner:
             self._decode_executor.record_cleanup_failure(error)
             return
         if self._persistent is not None and self._persistent["failure"] is not None:
-            self._persistent["failure"]["secondary"].append(self._error_description(error))
+            self._persistent["failure"]["secondary"].append(_error(error))
         self.cache_manager._quarantine("request cleanup failed after execution failure")
 
     def _finish_persistent_lease(self):
@@ -440,8 +398,8 @@ class ModelRunner:
                     tensors["gate_out"].index_select(0, live),
                 )
             bundle["last_publication"] = {
-                "hidden": self._tensor_description(outputs[0]),
-                "gates": self._tensor_description(outputs[1]),
+                "hidden": _description(outputs[0]),
+                "gates": _description(outputs[1]),
             }
             if not self._inside_execute:
                 try:

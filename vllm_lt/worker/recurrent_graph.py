@@ -9,11 +9,13 @@ from .capture_resources import _CudaRuntime as _CudaRuntime
 from .capture_resources import _make_runtime
 from .decode_buffers import DecodeBucketLayout, allocate_bucket
 from .graph_diagnostics import (
+    _MEMORY_LIMITS,
     CaptureBudgetExceeded,
     GraphLimits,
     _description,
     _error,
     _hash,
+    _memory_deltas,
     graph_snapshot,
 )
 
@@ -78,7 +80,6 @@ class RecurrentGraphExecutor:
         self.buckets, self.stream, self.setup_stream = {}, None, None
         self.pool_owner = None
         self.ticket = self.batch = self.active_bucket = None
-        self.submitted = False
         self.counters = dict.fromkeys(
             ("calls", "empty", "prepared", "eager", "replays", "committed", "completed"), 0
         )
@@ -148,7 +149,6 @@ class RecurrentGraphExecutor:
                     {
                         "view": None,
                         "graph": None,
-                        "pool_owner": None,
                         "pool_id": None,
                         "graph_exec_id": None,
                         "capture_outputs": None,
@@ -177,17 +177,7 @@ class RecurrentGraphExecutor:
                 )
                 self.setup_record["memory_after"] = self.setup_record["memory_baseline"]
                 self.setup_record["memory_deltas"] = (
-                    dict.fromkeys(
-                        (
-                            "retained_allocated_bytes",
-                            "retained_reserved_bytes",
-                            "peak_allocated_bytes",
-                            "peak_reserved_bytes",
-                        ),
-                        0,
-                    )
-                    if self.runtime is not None
-                    else None
+                    dict.fromkeys(_MEMORY_LIMITS, 0) if self.runtime is not None else None
                 )
             for bucket in self.buckets.values():
                 bucket["setup_generation"] = bucket["metadata"].generation
@@ -319,11 +309,10 @@ class RecurrentGraphExecutor:
     def _capture(self, bucket):
         if self.pool_owner is None:
             self.pool_owner = self.runtime.new_pool()
-        bucket["pool_owner"] = self.pool_owner
-        bucket["pool_id"] = list(bucket["pool_owner"].id)
+        bucket["pool_id"] = list(self.pool_owner.id)
         graph = self.runtime.new_graph()
         bucket["graph"] = graph
-        graph.capture_begin(pool=bucket["pool_owner"].id, capture_error_mode="global")
+        graph.capture_begin(pool=self.pool_owner.id, capture_error_mode="global")
         try:
             bucket["capture_outputs"] = self._tensor_body(bucket)
         except BaseException:
@@ -346,98 +335,72 @@ class RecurrentGraphExecutor:
         self.runtime.reset_peaks()
         self.setup_stream = self.runtime.new_stream()
         self.setup_stream.wait_stream(self.stream)
-        try:
-            # An outer stream context restores the original even when capture_end fails.
-            with self.runtime.stream_context(self.setup_stream):
-                self._phase("scratch_save_and_seed", None, self._save_scratch)
-                for rows, bucket in self.buckets.items():
-                    host = self.cache._prepare_host_batch([self._scratch["request_id"]], [0], [1])
-                    self.ticket = self.cache._begin_decode_traversal(host)
-                    self.active_bucket = bucket
-                    self.batch = self.cache._prepare_into(bucket["metadata"], host)
-                    self.cache._bind_decode_traversal(self.ticket, self.batch)
-                    bucket["tensors"]["hidden_in"].zero_()
-                    values = torch.arange(
-                        self.model.config.hidden_size, device=self.device, dtype=torch.float32
-                    )
-                    bucket["tensors"]["hidden_in"][1].copy_((values.remainder(17) - 8) / 16)
-                    self.submitted = True
-                    for _ in range(3):
-                        self._phase("warmup", rows, lambda: self._tensor_body(bucket))
-                        self.setup_record["warmups"] += 1
-                    self.setup_stream.synchronize()
-                    warm = tuple(
-                        bucket["tensors"][name].to("cpu", copy=True)
-                        for name in ("hidden_out", "gate_out")
-                    )
-                    self._phase("capture", rows, lambda: self._capture(bucket))
-                    self.setup_record["captures"] += 1
-                    self._phase("verification_replay", rows, bucket["graph"].replay)
-                    self.setup_record["verification_replays"] += 1
-                    self.setup_stream.synchronize()
-                    actual = tuple(
-                        bucket["tensors"][name].to("cpu", copy=True)
-                        for name in ("hidden_out", "gate_out")
-                    )
-                    inactive = [index for index in range(rows) if index != 1]
-                    for value in actual:
-                        if (
-                            not bool(value.isfinite().all())
-                            or bool(value[inactive].count_nonzero())
-                            or bool(value[inactive].signbit().any())
-                        ):
-                            raise RuntimeError(
-                                "graph setup verification produced invalid physical output"
-                            )
-                    bucket["verification"] = {
-                        "finite": True,
-                        "inactive_positive_zero": True,
-                        "warmup_sha256": [_hash(value) for value in warm],
-                        "replay_sha256": [_hash(value) for value in actual],
-                        "max_abs_diff": [float((a - b).abs().max()) for a, b in zip(warm, actual)],
-                    }
-                    self.cache._commit_decode_traversal(self.ticket, completion_confirmed=True)
-                    self.cache._release_prepared(self.batch)
-                    self.ticket = self.batch = self.active_bucket = None
-                    self.submitted = False
-            if any(
-                bucket["pool_id"] != list(self.pool_owner.id) for bucket in self.buckets.values()
-            ):
-                raise RuntimeError("graph buckets must retain their executor's shared pool")
-            self.stream.wait_stream(self.setup_stream)
-            self.stream.synchronize()
-            self._phase("scratch_restore", None, self._restore_scratch)
-            for bucket in self.buckets.values():
-                self._clear(bucket)
-            self.stream.synchronize()
-            self.setup_record["memory_after"] = after = self.runtime.memory()
-            before = self.setup_record["memory_baseline"]
-            deltas = {
-                "retained_allocated_bytes": max(
-                    0, after["allocated_bytes"] - before["allocated_bytes"]
-                ),
-                "retained_reserved_bytes": max(
-                    0, after["reserved_bytes"] - before["reserved_bytes"]
-                ),
-                "peak_allocated_bytes": max(
-                    0, after["peak_allocated_bytes"] - before["allocated_bytes"]
-                ),
-                "peak_reserved_bytes": max(
-                    0, after["peak_reserved_bytes"] - before["reserved_bytes"]
-                ),
-            }
-            self.setup_record["memory_deltas"] = deltas
-            for field, name in (
-                ("retained_allocated_bytes", "graph_retained_allocated_bytes"),
-                ("retained_reserved_bytes", "graph_retained_reserved_bytes"),
-                ("peak_allocated_bytes", "setup_peak_allocated_bytes"),
-                ("peak_reserved_bytes", "setup_peak_reserved_bytes"),
-            ):
-                if deltas[field] > getattr(self.limits, name):
-                    raise CaptureBudgetExceeded(self.limits, name, deltas[field])
-        except BaseException:
-            # setup() owns settlement and preserves the original exception.
-            raise
+        # An outer stream context restores the original even when capture_end fails.
+        with self.runtime.stream_context(self.setup_stream):
+            self._phase("scratch_save_and_seed", None, self._save_scratch)
+            for rows, bucket in self.buckets.items():
+                host = self.cache._prepare_host_batch([self._scratch["request_id"]], [0], [1])
+                self.ticket = self.cache._begin_decode_traversal(host)
+                self.active_bucket = bucket
+                self.batch = self.cache._prepare_into(bucket["metadata"], host)
+                self.cache._bind_decode_traversal(self.ticket, self.batch)
+                bucket["tensors"]["hidden_in"].zero_()
+                values = torch.arange(
+                    self.model.config.hidden_size, device=self.device, dtype=torch.float32
+                )
+                bucket["tensors"]["hidden_in"][1].copy_((values.remainder(17) - 8) / 16)
+                for _ in range(3):
+                    self._phase("warmup", rows, lambda: self._tensor_body(bucket))
+                    self.setup_record["warmups"] += 1
+                self.setup_stream.synchronize()
+                warm = tuple(
+                    bucket["tensors"][name].to("cpu", copy=True)
+                    for name in ("hidden_out", "gate_out")
+                )
+                self._phase("capture", rows, lambda: self._capture(bucket))
+                self.setup_record["captures"] += 1
+                self._phase("verification_replay", rows, bucket["graph"].replay)
+                self.setup_record["verification_replays"] += 1
+                self.setup_stream.synchronize()
+                actual = tuple(
+                    bucket["tensors"][name].to("cpu", copy=True)
+                    for name in ("hidden_out", "gate_out")
+                )
+                inactive = [index for index in range(rows) if index != 1]
+                for value in actual:
+                    if (
+                        not bool(value.isfinite().all())
+                        or bool(value[inactive].count_nonzero())
+                        or bool(value[inactive].signbit().any())
+                    ):
+                        raise RuntimeError(
+                            "graph setup verification produced invalid physical output"
+                        )
+                bucket["verification"] = {
+                    "finite": True,
+                    "inactive_positive_zero": True,
+                    "warmup_sha256": [_hash(value) for value in warm],
+                    "replay_sha256": [_hash(value) for value in actual],
+                    "max_abs_diff": [float((a - b).abs().max()) for a, b in zip(warm, actual)],
+                }
+                self.cache._commit_decode_traversal(self.ticket, completion_confirmed=True)
+                self.cache._release_prepared(self.batch)
+                self.ticket = self.batch = self.active_bucket = None
+        if any(bucket["pool_id"] != list(self.pool_owner.id) for bucket in self.buckets.values()):
+            raise RuntimeError("graph buckets must retain their executor's shared pool")
+        self.stream.wait_stream(self.setup_stream)
+        self.stream.synchronize()
+        self._phase("scratch_restore", None, self._restore_scratch)
+        for bucket in self.buckets.values():
+            self._clear(bucket)
+        self.stream.synchronize()
+        self.setup_record["memory_after"] = after = self.runtime.memory()
+        before = self.setup_record["memory_baseline"]
+        deltas = _memory_deltas(before, after)
+        self.setup_record["memory_deltas"] = deltas
+        for field, name in _MEMORY_LIMITS.items():
+            if deltas[field] > getattr(self.limits, name):
+                raise CaptureBudgetExceeded(self.limits, name, deltas[field])
 
     def require_usable(self):
         if self.status not in ("ready", "in_flight"):
@@ -521,7 +484,7 @@ class RecurrentGraphExecutor:
                 self.ticket = None
                 self.last_dispatch["ticket_state"] = ticket.state
                 self.fallback_counts[reason] += 1
-                self.status, self.submitted = "in_flight", True
+                self.status = "in_flight"
                 outputs = self.model.recurrent(hidden, request_ids, depths, positions, self.cache)
             else:
                 bucket = self.buckets[rows]
@@ -539,7 +502,7 @@ class RecurrentGraphExecutor:
                 bucket["tensors"]["hidden_in"].index_copy_(0, live, hidden)
                 if self.record_dispatch_tensors:
                     self.last_dispatch["actual_inputs"] = self._inputs(bucket)
-                self.status, self.submitted = "in_flight", True
+                self.status = "in_flight"
                 if self.use_graphs:
                     bucket["graph"].replay()
                     self.counters["replays"] += 1
@@ -581,7 +544,7 @@ class RecurrentGraphExecutor:
                 self.active_bucket["counters"]["completed"] += 1
             self.counters["completed"] += 1
             self.ticket = self.batch = self.active_bucket = None
-            self.status, self.submitted = "ready", False
+            self.status = "ready"
         except BaseException as error:
             self.settle_failure(error)
             raise
@@ -661,8 +624,6 @@ class RecurrentGraphExecutor:
         for bucket in self.buckets.values():
             bucket["capture_outputs"] = None
             bucket["graph"] = None
-        for bucket in self.buckets.values():
-            bucket["pool_owner"] = None
         self.pool_owner = None
         self.buckets.clear()
         if self.setup_stream is not None:

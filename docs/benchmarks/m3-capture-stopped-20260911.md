@@ -2,7 +2,7 @@
 
 The candidate **failed a required memory gate**, and the shared-filesystem attempt is **incomplete**. It stopped on a controller `OSError: [Errno 5] Input/output error` during worker B2 after 314.510195961 seconds. No further GPU execution was started under this contract. The original reporter returned `evidence_status=invalid`, `decision=inconclusive` because of the prefix-audit bug described below. Independent validation recovered a completed-pair memory failure, so the warranted outcome is **failed with incomplete coverage**; issue #6 cannot pass on this attempt.
 
-The [pre-run contract](m3-capture-contract-20260911.md) was committed at `5a08fa86482719bc7291d6f498956acb5f0a6d2a` before reservation. Both execution checkouts used source `0d9284a849c3ecdc2bbb5fbc4103729c98ce998d`, plan `528e2665c0bf5588a4cb5ea100c7c46188f7fc3600b8b2c7eb54e5e46c5e78a6`.
+The [pre-run contract](https://github.com/hsliuustc0106/vllm-lt/blob/27f9e80c998a9658c6ffbad28431e8a1d211a8cc/docs/benchmarks/m3-capture-contract-20260911.md) was committed at `5a08fa86482719bc7291d6f498956acb5f0a6d2a` before reservation. Both execution checkouts used source `0d9284a849c3ecdc2bbb5fbc4103729c98ce998d`, plan `528e2665c0bf5588a4cb5ea100c7c46188f7fc3600b8b2c7eb54e5e46c5e78a6`.
 
 ## Retained coverage
 
