@@ -155,7 +155,12 @@ def create_app(
             if request.transport is not None:
                 request.transport.abort()
             return response
-        except (asyncio.CancelledError, asyncio.TimeoutError, ConnectionError):
+        except (asyncio.CancelledError, asyncio.TimeoutError, ConnectionError) as exc:
+            logger.info(
+                "request %s terminated: %s",
+                channel.request_id if channel else "unadmitted",
+                type(exc).__name__,
+            )
             if response is not None and request.transport is not None:
                 request.transport.abort()
             raise

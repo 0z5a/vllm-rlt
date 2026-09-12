@@ -341,7 +341,10 @@ def main():
                     )
                 data = json.loads((out / f"{name}.json").read_text())
                 assert data["completed"] == 16, data
+                assert data["failed"] == 0, data
                 assert data["total_output_tokens"] == 256, data
+                assert data["output_lens"] == [16] * 16, data["output_lens"]
+                assert [len(intervals) for intervals in data["itls"]] == [15] * 16
                 assert not any(data.get("errors", [])), data.get("errors")
         finally:
             process.send_signal(signal.SIGTERM)

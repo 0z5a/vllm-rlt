@@ -48,6 +48,10 @@ class CompletionRequest:
             raise ServingError(f"model must be {model!r}", 404, "model_not_found")
         if not isinstance(body.get("prompt"), str):
             raise ValueError("prompt must be one string")
+        try:
+            body["prompt"].encode("utf-8")
+        except UnicodeError as exc:
+            raise ValueError("prompt must contain valid Unicode scalar values") from exc
         for key, default in neutral.items():
             value = body.get(key, default)
             valid_type = type(value) is type(default)

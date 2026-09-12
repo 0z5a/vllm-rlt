@@ -1,0 +1,33 @@
+{
+  "status": 200,
+  "request": {
+    "model": "ByteDance/Ouro-1.4B",
+    "prompt": "The capital of France is",
+    "max_tokens": 8,
+    "temperature": 0.0,
+    "seed": 0,
+    "ignore_eos": true,
+    "min_loops": 2,
+    "max_loops": 4,
+    "exit_threshold": 1.0
+  },
+  "response": {
+    "id": "cmpl-0d97333439024f6a8a82c3fe2ea60b6d",
+    "object": "text_completion",
+    "created": 1789198940,
+    "model": "ByteDance/Ouro-1.4B",
+    "choices": [
+      {
+        "text": " Paris.\n\n## Step 1",
+        "index": 0,
+        "logprobs": null,
+        "finish_reason": "length"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 5,
+      "completion_tokens": 8,
+      "total_tokens": 13
+    }
+  }
+}

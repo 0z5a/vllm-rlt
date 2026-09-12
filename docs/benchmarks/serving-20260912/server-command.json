@@ -1,0 +1,13 @@
+[
+  "/home/hsliu2/tmp/venvs/vllm-lt-q1/bin/python",
+  "-m",
+  "vllm_lt.entrypoints.serve",
+  "--model",
+  "/data/hsliu2/tmp/vllm-lt-models/ouro-1.4b",
+  "--tokenizer",
+  "/data/hsliu2/tmp/vllm-lt-models/ouro-1.4b",
+  "--port",
+  "18022",
+  "--num-blocks",
+  "512"
+]

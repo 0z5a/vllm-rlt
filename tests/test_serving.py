@@ -75,6 +75,7 @@ def body(**kwargs):
     [
         {"prompt": [1, 2]},
         {"prompt": None},
+        {"prompt": "\ud800"},
         {"stream": 1},
         {"ignore_eos": "true"},
         {"n": 2},
@@ -218,6 +219,8 @@ def test_http_output_matches_direct_and_stream_has_exact_token_events():
             assert events[-1]["choices"] == [] and events[-1]["usage"] == data["usage"]
             response = await client.post("/v1/completions", json=body(prompt=""))
             assert response.status == 400
+            response = await client.post("/v1/completions", json=body(prompt="\ud800"))
+            assert response.status == 400 and worker.ready
             response = await client.post("/v1/completions", json=body(model="missing"))
             assert response.status == 404
             response = await client.post("/v1/completions", data="{bad")

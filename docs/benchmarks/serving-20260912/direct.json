@@ -1,0 +1,152 @@
+[
+  {
+    "request_id": "0",
+    "prompt_token_ids": [
+      504,
+      3575,
+      282,
+      4649,
+      314
+    ],
+    "token_ids": [
+      7042,
+      30,
+      198,
+      198,
+      712,
+      5970,
+      216,
+      33
+    ],
+    "exit_depths": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "finished": true,
+    "finish_reason": "length",
+    "text": " Paris.\n\n## Step 1"
+  },
+  {
+    "request_id": "1",
+    "prompt_token_ids": [
+      34,
+      1232,
+      216,
+      34,
+      446
+    ],
+    "token_ids": [
+      216,
+      36,
+      30,
+      198,
+      198,
+      2931,
+      28,
+      260
+    ],
+    "exit_depths": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+    ],
+    "finished": true,
+    "finish_reason": "length",
+    "text": " 4.\n\nSo, the"
+  },
+  {
+    "request_id": "2",
+    "prompt_token_ids": [
+      19161,
+      253,
+      1890,
+      6330,
+      563,
+      260,
+      5065,
+      30
+    ],
+    "token_ids": [
+      198,
+      2,
+      198,
+      1,
+      9519,
+      9531,
+      198,
+      504
+    ],
+    "exit_depths": [
+      4,
+      4,
+      3,
+      3,
+      4,
+      3,
+      3,
+      4
+    ],
+    "finished": true,
+    "finish_reason": "length",
+    "text": "\n\nAssistant\nThe"
+  },
+  {
+    "request_id": "3",
+    "prompt_token_ids": [
+      18645,
+      250,
+      48392,
+      138,
+      12831,
+      16313,
+      132,
+      15076,
+      229,
+      20887,
+      231,
+      22924,
+      42080,
+      18645,
+      250,
+      44974,
+      120,
+      36149,
+      126,
+      19076
+    ],
+    "token_ids": [
+      198,
+      2,
+      198,
+      1,
+      520,
+      9531,
+      198,
+      19805
+    ],
+    "exit_depths": [
+      4,
+      4,
+      3,
+      4,
+      4,
+      3,
+      3,
+      4
+    ],
+    "finished": true,
+    "finish_reason": "length",
+    "text": "\n\nassistant\n�"
+  }
+]

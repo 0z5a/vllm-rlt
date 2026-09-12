@@ -1,0 +1,158 @@
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:13 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:13 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:14 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:14 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:14 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:14 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:15 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:15 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:15 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:15 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:15 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:16 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:16 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:16 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:16 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:16 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:17 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:17 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:17 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:17 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:17 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:18 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:18 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:18 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:18 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:18 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:19 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:19 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:19 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:19 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:19 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:20 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:20 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:20 +0800] "GET /health HTTP/1.1" 503 201 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.worker:model, tokenizer and engine ready
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:20 +0800] "GET /health HTTP/1.1" 200 178 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-0d97333439024f6a8a82c3fe2ea60b6d: prompt_tokens=5 completion_tokens=8 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:20 +0800] "POST /v1/completions HTTP/1.1" 200 470 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-1fb10993227c4d10bb4f023695f890ea: prompt_tokens=8 completion_tokens=8 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:22 +0800] "POST /v1/completions HTTP/1.1" 200 468 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-3c16f6c54a97412fbd777c7b572db974: prompt_tokens=20 completion_tokens=8 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:22 +0800] "POST /v1/completions HTTP/1.1" 200 472 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-5b49a19f3308485696313dd69294743c: prompt_tokens=5 completion_tokens=8 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:22 +0800] "POST /v1/completions HTTP/1.1" 200 464 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:54 +0800] "POST /tokenize HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:55 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:55 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-2e9e21bd809b489788395712cad80100: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:55 +0800] "POST /v1/completions HTTP/1.1" 200 4345 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-08804ff4b82a484fae1f3faf10047f1d: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:56 +0800] "POST /v1/completions HTTP/1.1" 200 4336 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-cdf0a485cb1e48cdbf75aeb2c291114a: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:57 +0800] "POST /v1/completions HTTP/1.1" 200 4334 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-481d5d1754164555a5fb5a057f4c615e: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:42:59 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-0ee5015e1d704c7fa0103c1b1f796a95: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:00 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-2d5a8c3bf1b240cabc88ebc87590b496: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:01 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-16698d270370447691355ee17900ddf0: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:02 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-5445508684944c6cb083604bb2ec0de6: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:03 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-03db661c066b43f2a4969467292552c3: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:04 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-0d01706f69bf44409240e8edf1be5426: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:06 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-ede8367bf7284a6ea425a9291f421834: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:07 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-ef8431fd24404d36b819c2e4cdbb5721: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:08 +0800] "POST /v1/completions HTTP/1.1" 200 4336 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-7e09e53380b04442a55dc4e16f35aea5: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:09 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-2f6c6288a51d4eee9ba81bb60235cf7a: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:10 +0800] "POST /v1/completions HTTP/1.1" 200 4334 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-b2195e14af994610b69f03cab81d6a32: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:11 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-025230f651fe4a5f9a5bf71cfee5cb9d: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:13 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:14 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:14 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:37 +0800] "POST /tokenize HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-db16fcc1c18548f3bbd9cec2356f3487: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "POST /v1/completions HTTP/1.1" 200 4345 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-5b95c69e06bd4ee9a7dd9206fde62fac: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-039cb844ae074c0699b2e141ec737bca: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "POST /v1/completions HTTP/1.1" 200 4336 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-f9f09ed291fa457e899edf0fc8bd57cc: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-fffaf9c22dcb46be9666f9ac7957e8d3: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-8e5c59078d9f4b98b0da7185242c5f0d: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "POST /v1/completions HTTP/1.1" 200 4334 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-b9295a4b793b413c8b8bf1ebe719a31e: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-a0e95a75047c47358144da1f9bd576c6: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:38 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-191287bbe3034d7889d0e45787f3af2e: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:40 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-6274590c6c804b50ae6f9121215404b6: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:40 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-5a1babe50f21462a929ad9c49c89dd95: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:40 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-24cf48fc709f4ffabc1040c53cec4b77: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:40 +0800] "POST /v1/completions HTTP/1.1" 200 4336 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-29239e72a4fd4b36b0834e4d9ddc7531: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:40 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-81ad2cf0feef4febae2763c97aeed63e: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:40 +0800] "POST /v1/completions HTTP/1.1" 200 4334 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-04ed0baa53494addac0c4d3973978950: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:40 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-d3da82a0361c47ad97c01f13601f2795: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:40 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:42 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:43:42 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:13 +0800] "POST /tokenize HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:14 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:14 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-5fd2c59788294172a6a04a26a85f8533: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:14 +0800] "POST /v1/completions HTTP/1.1" 200 4345 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-342a2a9e39fd4bdfae0e9344c9d4a2f3: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:16 +0800] "POST /v1/completions HTTP/1.1" 200 4336 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-d0077c525da64c7f91a90e6317b374d0: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:16 +0800] "POST /v1/completions HTTP/1.1" 200 4334 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-d39c878845014ebbb66a22b04f850fd9: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:16 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-73f7fd8cd621428a88bbd45494e072ff: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:17 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-7bc302be06034d98b3c6d588daa55194: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:18 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-df5de328d253424fa7354a62d7a81695: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:19 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-e5b0d0bf45e94365943cd23f191fb44d: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:19 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-9f29dc27009c4cda97cda4ccf48db36a: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:19 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-235347b2340b466585155292331ba38e: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:19 +0800] "POST /v1/completions HTTP/1.1" 200 4341 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-e5586af53a784b57924a2e0d2c81cbb4: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:20 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-292791e1cada4ad385b65d62f3d19543: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:21 +0800] "POST /v1/completions HTTP/1.1" 200 4336 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-9b5f0dca009142d3b1d31642360f1c75: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:21 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-3e9e300ca036433f939f9bdad470854d: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:21 +0800] "POST /v1/completions HTTP/1.1" 200 4334 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-410a818147774849b726b4e238bfef36: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:22 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.server:generation cmpl-f57ad7f91080456e885d86b508d02622: prompt_tokens=128 completion_tokens=16 finish_reason=length
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:22 +0800] "POST /v1/completions HTTP/1.1" 200 4340 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:24 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:aiohttp.access:127.0.0.1 [12/Sep/2026:15:44:24 +0800] "GET /metrics HTTP/1.1" 404 174 "-" "Python/3.12 aiohttp/3.14.3"
+INFO:vllm_lt.serving.worker:engine cleanup: requests=0 kv_blocks=0
+======== Running on http://127.0.0.1:18022 ========
+(Press CTRL+C to quit)
