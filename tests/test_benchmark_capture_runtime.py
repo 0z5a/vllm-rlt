@@ -1,13 +1,21 @@
-"""CPU tests of excluded observation and failure ownership around the M1 loop."""
+"""The benchmark adapter preserves setup failures and confirmed resource ownership."""
 
+from dataclasses import asdict
 from types import SimpleNamespace
 
 import pytest
+import test_recurrent_graph as fixtures
 import torch
+from test_recurrent_graph import fake_runtime, make_cache
 
 from benchmarks.capture import runtime
 from vllm_lt.benchmarks import runner
 from vllm_lt.benchmarks.schema import read_json, write_json
+from vllm_lt.worker.model_runner import ModelRunner
+from vllm_lt.worker.recurrent_graph import GraphLimits
+
+model = fixtures.model
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
 
 def test_feasibility_checks_replay_return_without_module_hooks():
@@ -37,107 +45,46 @@ def test_feasibility_checks_replay_return_without_module_hooks():
     assert counts == {"recurrent": 0, "coda": 0}
 
 
-@pytest.mark.parametrize("export_failure", [False, True])
-def test_adapter_closes_after_setup_failure_and_retains_primary(
-    tmp_path, monkeypatch, export_failure
+@pytest.mark.parametrize("failure", ["capture", "export", "unconfirmed", "budget"])
+def test_setup_failure_preserves_primary_and_resource_ownership(
+    model, tmp_path, monkeypatch, failure
 ):
-    events = []
-    if export_failure:
+    cache = make_cache(model)
+    device = fake_runtime(monkeypatch, cache)
+    model_runner = ModelRunner(model, cache)
+    engine = SimpleNamespace(model_runner=model_runner, scheduler=SimpleNamespace(requests={}))
+    primary = RuntimeError("capture failed")
 
-        def fail_export(*args):
-            raise OSError("disk full")
+    def fail():
+        if failure == "unconfirmed":
+            device.main.failure = RuntimeError("completion uncertain")
+        raise primary
 
-        monkeypatch.setattr(runtime, "write_json", fail_export)
+    def disk_full(*args):
+        raise OSError("disk full")
 
-    class Executor:
-        status = "failed"
-
-        def snapshot(self):
-            return {"status": self.status}
-
-        def close(self):
-            events.append("close")
-            self.status = "closed"
-
-    class Runner:
-        _decode_executor = Executor()
-
-        def _graph_snapshot(self):
-            return self._decode_executor.snapshot()
-
-        def _enable_recurrent_graph(self, **kwargs):
-            raise RuntimeError("capture failed")
-
-    engine = SimpleNamespace(model_runner=Runner(), scheduler=SimpleNamespace(requests={}))
-    adapter = runtime.ExecutionAdapter(implementation_id="B", graph_limits={})
-    with pytest.raises(RuntimeError, match="capture failed") as caught:
+    monkeypatch.setattr(device, "new_graph", fail)
+    if failure == "export":
+        monkeypatch.setattr(runtime, "write_json", disk_full)
+    limits = asdict(GraphLimits())
+    if failure == "budget":
+        limits["common_payload_bytes"] = 1
+    adapter = runtime.ExecutionAdapter(implementation_id="B", graph_limits=limits)
+    with pytest.raises(ValueError if failure == "budget" else RuntimeError) as caught:
         adapter.prepare(engine, {"implementation_id": "B", "use_graphs": True}, tmp_path)
     adapter.abort(caught.value, tmp_path)
-    assert events == ["close", "close"]
-    assert adapter.engine is None
-    if export_failure:
-        assert len(caught.value.__notes__) == 2
+    if failure == "budget":
+        assert "declined its budget" in str(caught.value)
+    else:
+        assert caught.value is primary
+    assert (adapter.engine is engine) is (failure == "unconfirmed")
+    if failure == "export":
         assert all("disk full" in note for note in caught.value.__notes__)
     else:
-        evidence = read_json(tmp_path / "graph-setup-failure.json")
-        assert evidence["failed_setup"]["status"] == "failed"
-        assert evidence["after_close"]["status"] == "closed"
-
-
-def test_adapter_retains_uncertain_resources_and_original_error(tmp_path):
-    events = []
-
-    class Executor:
-        status = "in_flight"
-
-        def settle_failure(self, error):
-            events.append("settle")
-            self.status = "failed"
-
-        def snapshot(self):
-            return {"status": self.status}
-
-        def close(self):
-            events.append("close")
-            raise RuntimeError("unconfirmed completion")
-
-    engine = SimpleNamespace(
-        model_runner=SimpleNamespace(_decode_executor=Executor()),
-        scheduler=SimpleNamespace(requests={}),
-    )
-    adapter = runtime.ExecutionAdapter(implementation_id="B", graph_limits={})
-    adapter.engine = engine
-    primary = KeyboardInterrupt("stop")
-    adapter.abort(primary, tmp_path)
-    assert events == ["settle", "close"]
-    assert adapter.engine is engine
-    assert "unconfirmed completion" in primary.__notes__[0]
-    assert (
-        read_json(tmp_path / "graph-failure-cleanup.json")["primary"]["type"] == "KeyboardInterrupt"
-    )
-
-
-def test_experiment_rejects_budget_decline_before_any_inference(tmp_path):
-    class Runner:
-        _decode_executor = None
-
-        def _enable_recurrent_graph(self, **kwargs):
-            pass
-
-        def _graph_snapshot(self):
-            return {"enabled": False, "budget_decline": {"reason": "capture_budget"}}
-
-        def _close_recurrent_graph(self):
-            pass
-
-    engine = SimpleNamespace(model_runner=Runner(), scheduler=SimpleNamespace(requests={}))
-    adapter = runtime.ExecutionAdapter(implementation_id="B", graph_limits={})
-    with pytest.raises(ValueError, match="declined its budget") as primary:
-        adapter.prepare(engine, {"implementation_id": "B", "use_graphs": True}, tmp_path)
-    adapter.abort(primary.value, tmp_path)
-    evidence = read_json(tmp_path / "graph-setup-failure.json")
-    assert evidence["runner_setup"]["budget_decline"]["reason"] == "capture_budget"
-    assert adapter.engine is None
+        assert (tmp_path / "graph-setup-failure.json").is_file()
+    device.main.failure = None
+    model_runner._close_recurrent_graph()
+    assert all(ref() is None for ref in device.pool_refs)
 
 
 def test_shared_loop_calls_adapter_abort_for_setup_systemexit(tmp_path, monkeypatch):

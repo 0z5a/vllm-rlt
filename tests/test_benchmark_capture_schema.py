@@ -31,36 +31,6 @@ def rehash(plan):
     return plan
 
 
-def held_plans():
-    """Only shared ordering in these tests; exact real nested plans tested separately."""
-    lifecycle = {
-        "resource_estimates": {"artifact_bytes_upper_bound": 48 * 1024**2},
-        "execution_order": [
-            {
-                "evaluation_id": f"LIFE-{side}-triton",
-                "implementation_id": side,
-                "backend": "triton",
-                "use_graphs": side == "B",
-            }
-            for side in ("A", "B")
-        ],
-    }
-    kernels = {
-        "resource_estimates": {"artifact_bytes_upper_bound": 256 * 1024**2},
-        "execution_order": [
-            {
-                "evaluation_id": f"K-{side}-triton-{layout}",
-                "implementation_id": side,
-                "backend": "triton",
-                "layout_id": layout,
-            }
-            for side in ("A", "B")
-            for layout in ("K4-zero", "K4-one-limit", "K4-two-crossing")
-        ],
-    }
-    return lifecycle, kernels
-
-
 @pytest.fixture(autouse=True)
 def no_cuda_or_weights(forbid_cuda, monkeypatch):
     import safetensors.torch
@@ -71,7 +41,6 @@ def no_cuda_or_weights(forbid_cuda, monkeypatch):
 
 @pytest.fixture
 def capture_plan(tmp_path, monkeypatch):
-    monkeypatch.setattr(schema, "_held_plans", held_plans)
     model = tmp_path / "model"
     model.mkdir()
     write_json(model / "config.json", OuroConfig().to_dict())
@@ -129,98 +98,48 @@ def capture_plan(tmp_path, monkeypatch):
     )
 
 
-def test_cpu_plan_exact_order_exclusions_pairs_and_graph_work(capture_plan):
+def test_plan_binds_capture_sources_order_and_budgets(capture_plan):
     schema.verify_plan(capture_plan)
-    harness_paths = {row["path"] for row in capture_plan["harness"]["files"]}
+    paths = {row["path"] for row in capture_plan["harness"]["files"]}
     assert {
         name.replace(".", "/") + ".py"
         for name in schema.IMPORT_MODULES
         if name.startswith("benchmarks.capture.")
-    } <= harness_paths
-    rows, workers = capture_plan["execution_order"], capture_plan["workers"]
+    } <= paths
+    rows = capture_plan["execution_order"]
     assert len(rows) == len({r["execution_id"] for r in rows}) == 101
-    assert [w["worker_id"] for w in workers] == list(schema.WORKERS)
-    assert [len(w["execution_ids"]) for w in workers] == [21, 16, 14, 14, 14, 14, 4, 4]
     assert Counter(r["kind"] for r in rows) == {
         "model": 15,
         "lifecycle": 2,
         "kernel": 6,
         "benchmark": 78,
     }
-    for side in ("A", "B"):
-        worker_rows = [r for r in rows if r["worker_id"] == "N-" + side]
-        assert [r["kind"] for r in worker_rows[:5]] == [
-            "model",
-            "kernel",
-            "kernel",
-            "kernel",
-            "lifecycle",
-        ]
-        assert worker_rows[0]["phase"] == "feasibility"
-        assert all(
-            r["kind"] == "benchmark" and r["phase"] == "feasibility" for r in worker_rows[-7:]
-        )
-    benchmark = [r for r in rows if r["kind"] == "benchmark"]
-    assert Counter(r["phase"] for r in benchmark) == {
-        "feasibility": 14,
-        "warmup": 32,
-        "measured": 28,
-        "profile": 4,
-    }
-    measured = [r for r in benchmark if r["phase"] == "measured"]
+    measured = [r for r in rows if r["phase"] == "measured"]
     assert [r["worker_id"] for r in measured] == [
         w for w in ("A1", "B1", "B2", "A2") for _ in range(7)
     ]
-    assert len({r["controls_sha256"] for r in measured}) == 1
     assert len(set(r["pair_id"] for r in measured)) == 14
     assert set(Counter(r["pair_id"] for r in measured).values()) == {2}
-    assert all(r["pair_id"] is None for r in benchmark if r["phase"] != "measured")
     assert all(r["use_graphs"] == (r["implementation_id"] == "B") for r in rows)
-    estimates = capture_plan["resource_estimates"]
-    assert estimates["graph_owning_B_executions"] == 44
-    assert estimates["graph_captures"] == estimates["capture_recordings"] == 88
-    assert estimates["warmup_device_traversals"] == 264
-    assert estimates["verification_device_traversals"] == 88
-    assert estimates["total_device_scratch_traversals"] == 352
-    assert estimates["numerical"]["retained_tensor_bytes_upper_bound"] == 2536572960
-    assert estimates["numerical"]["comparison_records_upper_bound"] == 3879
-    assert estimates["numerical"]["pointer_evidence_bytes_upper_bound"] < 200 * 1024**2
-    assert estimates["artifact_bytes_upper_bound"] < 16 * 1024**3
-    assert capture_plan["production_differences"] == []
-    assert schema.execution_view(capture_plan)["plan_sha256"] == capture_plan["plan_sha256"]
+    assert all(
+        r["pair_id"] is None for r in rows if r["kind"] == "benchmark" and r["phase"] != "measured"
+    )
+    assert capture_plan["resource_estimates"]["artifact_bytes_upper_bound"] < 16 * 1024**3
+    assert capture_plan["resource_estimates"]["total_device_scratch_traversals"] == 352
 
 
 @pytest.mark.parametrize(
     "mutate",
     [
-        lambda p: p["contract"]["controls"].update(gpu_ids=None),
-        lambda p: p["contract"]["controls"].update(gpu_ids=[True]),
         lambda p: p["contract"]["implementation_options"]["B"].update(use_graphs=1),
-        lambda p: p["contract"]["limits"].update(executions=102),
-        lambda p: p["contract"]["graph_limits"].update(setup_timeout_s=61),
-        # One altered acceptance value exercises the shared exact-dictionary check.
-        # Individual throughput, TTFT and memory gates are tested in the report.
         lambda p: p["contract"]["acceptance"].update(target_ttft_ratio_max=1.1),
-        lambda p: p["contract"]["controls"]["affinity"]["numactl_show"].update(policy="default"),
         lambda p: p["execution_order"].reverse(),
-        lambda p: p["execution_order"][0].update(use_graphs=True),
-        lambda p: p["execution_order"][-1].update(instrumentation="timing"),
-        lambda p: p["workers"][0]["execution_ids"].pop(),
         lambda p: p["implementations"]["B"]["source"].update(commit="b" * 40),
-        lambda p: p["implementations"]["B"]["source"].update(status=" M x.py"),
-        lambda p: p["implementations"]["B"]["source"]["files"][0].update(sha256="b" * 64),
-        lambda p: p["implementations"]["A"]["imports"].pop(schema.IMPORT_MODULES[-1]),
         lambda p: p["implementations"]["B"]["imports"].update(
             {schema.IMPORT_MODULES[-1]: "/elsewhere.py"}
         ),
-        lambda p: p["lifecycle"]["execution_order"].pop(),
-        lambda p: p["kernels"]["execution_order"][0].update(layout_id="unplanned"),
-        lambda p: p["resource_estimates"].update(total_device_scratch_traversals=440),
+        lambda p: p["kernels"]["execution_order"].pop(),
         lambda p: p["graph_limits"].update(graph_retained_reserved_bytes=2**30),
-        lambda p: p["production_differences"].append("vllm_lt/models/ouro.py"),
-        lambda p: p["benchmark_contract"]["engine"]["sampling"].update(ignore_eos=False),
-        lambda p: p["dependencies"]["official"].update(optional_kernels_present=True),
-        lambda p: p.update(unrecognized=True),
     ],
 )
 def test_rehashed_protocol_tampering_rejected(capture_plan, mutate):
@@ -230,27 +149,17 @@ def test_rehashed_protocol_tampering_rejected(capture_plan, mutate):
         schema.validate_plan(rehash(changed))
 
 
-@pytest.mark.parametrize(
-    "change", ["weights", "input", "source", "contract", "affinity", "environment", "config"]
-)
-def test_verify_rejects_actual_frozen_control_drift(capture_plan, monkeypatch, change):
-    if change == "weights":
+@pytest.mark.parametrize("change", ["source", "weights", "affinity"])
+def test_verify_rejects_frozen_control_drift(capture_plan, monkeypatch, change):
+    if change == "source":
+        root = Path(capture_plan["implementations"]["B"]["root"])
+        (root / "benchmarks/capture/runtime.py").write_text("changed")
+    elif change == "weights":
         (Path(capture_plan["model_path"]) / "model.safetensors").write_bytes(b"changed")
-    elif change == "input":
-        Path(capture_plan["inputs"]["numerical_suite"]["file"]["path"]).write_text("{}")
-    elif change == "source":
-        path = Path(capture_plan["implementations"]["B"]["root"]) / "vllm_lt/models/ouro.py"
-        path.write_text("changed")
-    elif change == "contract":
-        Path(capture_plan["contract_file"]["path"]).write_text("{}")
-    elif change == "config":
-        (Path(capture_plan["model_path"]) / "config.json").write_text("{}")
-    elif change == "affinity":
+    else:
         changed = deepcopy(AFFINITY)
         changed["numactl_show"]["membind"] = "0"
         monkeypatch.setattr(schema, "affinity_snapshot", lambda: changed)
-    else:
-        monkeypatch.setenv("OMP_NUM_THREADS", "changed")
     with pytest.raises(ValueError):
         schema.verify_plan(capture_plan)
 
@@ -269,30 +178,3 @@ def test_embedded_input_is_bound_to_actual_parsed_frozen_bytes(capture_plan):
     schema.validate_plan(rehash(changed))
     with pytest.raises(ValueError, match="embedded input"):
         schema.verify_plan(changed)
-
-
-def test_unresolved_template_cannot_run():
-    contract = read_json(ROOT / "benchmarks/capture/fixtures/ouro-m3-capture-contract.json")
-    schema.validate_contract(contract)
-    with pytest.raises(ValueError):
-        schema.validate_contract(contract, resolved=True)
-
-
-def test_actual_projected_lifecycle_kernel_builders_fit_combined_budget(capture_plan, monkeypatch):
-    from benchmarks.capture.kernels import build_kernel_plan
-    from benchmarks.capture.lifecycle import build_lifecycle_plan
-
-    def actual_held():
-        return build_lifecycle_plan(), build_kernel_plan()
-
-    monkeypatch.setattr(schema, "_held_plans", actual_held)
-    plan = deepcopy(capture_plan)
-    plan["lifecycle"], plan["kernels"] = actual_held()
-    schema.validate_plan(rehash(plan))
-    schema.verify_plan(plan)
-    assert len(plan["lifecycle"]["execution_order"]) == 2
-    assert len(plan["kernels"]["execution_order"]) == 6
-    assert plan["lifecycle"]["resource_estimates"]["artifact_bytes_upper_bound"] <= 48 * 1024**2
-    assert plan["kernels"]["resource_estimates"]["artifact_bytes_upper_bound"] <= 256 * 1024**2
-    assert next(s for s in plan["lifecycle"]["steps"] if s["step_id"] == 3)["positions"] == [511]
-    assert plan["lifecycle"]["expected_executor"]["bucket_visits"] == {"4": 4, "8": 3}

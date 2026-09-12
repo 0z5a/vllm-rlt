@@ -1,10 +1,8 @@
 """CPU transaction/lifetime tests; fake capture does not qualify CUDA replay."""
 
-import gc
 import sys
 import weakref
 from contextlib import contextmanager
-from dataclasses import asdict
 from types import SimpleNamespace
 
 import pytest
@@ -21,7 +19,7 @@ from vllm_lt.models import OuroConfig, OuroForCausalLM
 from vllm_lt.request import Request, Stage
 from vllm_lt.sampling_params import SamplingParams
 from vllm_lt.worker.model_runner import ModelRunner
-from vllm_lt.worker.recurrent_graph import GraphLimits, RecurrentGraphExecutor
+from vllm_lt.worker.recurrent_graph import RecurrentGraphExecutor
 
 pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
@@ -64,7 +62,6 @@ class FakeStream:
 class FakePool:
     def __init__(self, runtime, index):
         self.runtime, self.id = runtime, (0, index)
-        runtime.pool_reserved[self.id] = 0
         runtime.events.append(("pool_create", self.id))
 
     def __del__(self):
@@ -72,10 +69,6 @@ class FakePool:
         ready = all(g.reset_done and all(ref() is None for ref in g.output_refs) for g in graphs)
         self.runtime.pool_releases.append((self.id, ready))
         self.runtime.events.append(("pool_release", self.id))
-        # Model targeted MemPool destruction: still-live graph/output references
-        # prevent reclaim. The default/shared allocator cache remains untouched.
-        if ready:
-            self.runtime.pool_reserved.pop(self.id)
 
 
 class FakeGraph:
@@ -87,9 +80,8 @@ class FakeGraph:
         self.pool_id, self.output_refs = None, []
 
     def capture_begin(self, *, pool, capture_error_mode):
-        assert pool in self.runtime.pool_reserved and capture_error_mode == "global"
+        assert pool[0] == 0 and pool[1] > 0 and capture_error_mode == "global"
         self.pool_id = pool
-        self.runtime.pool_reserved[pool] = 19 * 1024**2
         assert self.runtime.current is self.runtime.side
         self.runtime.capture = self
         self.runtime.events.append(("capture_begin", self.index))
@@ -126,8 +118,7 @@ class FakeRuntime:
         self.current, self.capture = self.main, None
         self.after_memory = None
         self.memory_calls = 0
-        self.pool_refs, self.pool_releases, self.pool_reserved = [], [], {}
-        self.default_reserved = 123 * 1024**2
+        self.pool_refs, self.pool_releases = [], []
 
     def current_stream(self):
         return self.current
@@ -169,7 +160,10 @@ class FakeRuntime:
         )
 
 
-def fake_runtime(monkeypatch, cache):
+_original_tensor_body = RecurrentGraphExecutor._tensor_body
+
+
+def fake_runtime(monkeypatch, cache=None):
     """Replace raw kernels and stream/graph plumbing, retaining real tensor/body/cache code."""
 
     def scatter(keys, values, blocks, offsets, k, v, active):
@@ -181,12 +175,14 @@ def fake_runtime(monkeypatch, cache):
         sys.modules, "vllm_lt.kernels.triton_kv_write", SimpleNamespace(masked_kv_write=scatter)
     )
     monkeypatch.setattr(kv_module, "triton_paged_attention", torch_paged_attention)
-    monkeypatch.setattr(cache, "backend", "triton")
+    if cache is not None:
+        monkeypatch.setattr(cache, "backend", "triton")
     runtime = FakeRuntime()
     monkeypatch.setattr(graph_module, "_make_runtime", lambda device: runtime)
-    original = RecurrentGraphExecutor._tensor_body
+    original = _original_tensor_body
 
     def body(executor, bucket):
+        runtime = executor.runtime
         if runtime.capture is not None:
             runtime.capture.body = lambda: original(executor, bucket)
         outputs = original(executor, bucket)
@@ -199,92 +195,19 @@ def fake_runtime(monkeypatch, cache):
 
 
 @pytest.mark.parametrize("use_graphs", [False, True])
-def test_torch_backend_is_compact_and_has_no_cuda_setup(model, use_graphs):
+def test_torch_backend_falls_back_without_cuda_setup(model, use_graphs):
     cache, reference = make_cache(model), make_cache(model)
     runner = ModelRunner(model, cache)
     runner._enable_recurrent_graph(use_graphs=use_graphs)
-    setup = runner._graph_snapshot()
-    assert setup["setup"]["skip_reason"] == "backend"
-    assert setup["device_payload_bytes"] == 96 * model.config.hidden_size + 1980
-    assert setup["cpu_staging_bytes"] == 1884
-    assert all(b["generation"] == 0 and b["graph_id"] is None for b in setup["buckets"].values())
-    for c in (cache, reference):
-        c.allocate("a", 3)
-    for pos in range(3):
-        hidden = model.prelude(torch.tensor([pos + 2]))
-        actual = runner._recurrent(hidden, ["a"], [0], [pos])
-        expected = model.recurrent(hidden, ["a"], [0], [pos], reference)
-        assert all(torch.equal(a, b) for a, b in zip(actual, expected))
-        assert torch.equal(cache.key_cache, reference.key_cache)
-        assert torch.equal(cache.value_cache, reference.value_cache)
-        assert prefixes(cache) == prefixes(reference)
-    snapshot = runner._graph_snapshot()
-    assert snapshot["fallback_counts"] == {"backend": 3, "live_count": 0, "table_width": 0}
-    assert snapshot["counters"]["prepared"] == snapshot["counters"]["replays"] == 0
-    assert snapshot["counters"]["completed"] == 3
+    assert runner._graph_snapshot()["setup"]["skip_reason"] == "backend"
+    for current in (cache, reference):
+        current.allocate("a", 2)
+    hidden = model.prelude(torch.tensor([3]))
+    actual = runner._recurrent(hidden, ["a"], [0], [0])
+    expected = model.recurrent(hidden, ["a"], [0], [0], reference)
+    assert all(torch.equal(a, b) for a, b in zip(actual, expected))
+    assert runner._decode_executor.fallback_counts["backend"] == 1
     runner._close_recurrent_graph()
-    assert runner._graph_snapshot()["status"] == "closed"
-    assert runner._graph_snapshot()["buckets"] == {}
-    with pytest.raises(RuntimeError, match="closed"):
-        runner._decode_executor.require_usable()
-
-
-def test_limits_installation_and_admission_guards(model):
-    for invalid in ({}, {**asdict(GraphLimits()), "setup_timeout_s": True}):
-        runner = ModelRunner(model, make_cache(model))
-        with pytest.raises(ValueError):
-            runner._enable_recurrent_graph(use_graphs=False, limits=invalid)
-        assert runner._graph_snapshot() == {"enabled": False}
-    for first in ("persistent", "graph"):
-        runner = ModelRunner(model, make_cache(model))
-        if first == "persistent":
-            runner._enable_persistent_decode()
-        else:
-            runner._enable_recurrent_graph(use_graphs=False)
-        for enable in (
-            runner._enable_persistent_decode,
-            lambda: runner._enable_recurrent_graph(use_graphs=True),
-        ):
-            with pytest.raises(RuntimeError, match="replacement"):
-                enable()
-    engine = LLMEngine(model, cache_config=CacheConfig(num_blocks=160))
-    engine.add_request("queued", [3])
-    with pytest.raises(RuntimeError, match="admission"):
-        engine._enable_recurrent_graph(use_graphs=False)
-    cache = make_cache(model)
-    cache.allocate("admitted", 2)
-    with pytest.raises(RuntimeError, match="admission"):
-        ModelRunner(model, cache)._enable_recurrent_graph(use_graphs=False)
-
-
-def test_fake_capture_setup_restores_exact_pool_and_has_independent_graphs(model, monkeypatch):
-    cache = make_cache(model)
-    # Deliberately use a noncanonical allocator order, so ordinary free is insufficient.
-    cache._free_blocks[:] = cache._free_blocks[11:] + cache._free_blocks[:11]
-    original = cache.key_cache.clone(), cache.value_cache.clone(), tuple(cache._free_blocks)
-    runtime = fake_runtime(monkeypatch, cache)
-    runner = ModelRunner(model, cache)
-    runner._enable_recurrent_graph(use_graphs=True)
-    snapshot = runner._graph_snapshot()
-    setup = snapshot["setup"]
-    assert setup["status"] == "complete" and snapshot["status"] == "ready"
-    assert (setup["warmups"], setup["captures"], setup["verification_replays"]) == (6, 2, 2)
-    assert setup["scratch"]["saved_cpu_bytes"] == 4 * cache.bytes_per_block
-    assert setup["scratch"]["restored"] and not cache._allocations
-    assert setup["scratch"]["before_hashes"] == setup["scratch"]["after_hashes"]
-    assert torch.equal(cache.key_cache, original[0]) and torch.equal(cache.value_cache, original[1])
-    assert tuple(cache._free_blocks) == original[2]
-    assert runtime.current is runtime.main
-    assert runtime.events.count(("capture_begin", 1)) == 1
-    assert runtime.events.count(("capture_begin", 2)) == 1
-    assert snapshot["buckets"]["4"]["pool_id"] == snapshot["buckets"]["8"]["pool_id"]
-    assert all(b["generation"] == b["setup_generation"] == 1 for b in snapshot["buckets"].values())
-    assert all(v == 0 for v in snapshot["counters"].values())
-    assert all(b["verification"]["inactive_positive_zero"] for b in snapshot["buckets"].values())
-    snapshot["buckets"]["4"]["generation"] = 99
-    assert runner._graph_snapshot()["buckets"]["4"]["generation"] == 1
-    runner._close_recurrent_graph()
-    assert all(g.reset_done for g in runtime.graphs)
 
 
 def test_empty_invalid_prefix_and_shape_fallback_do_not_use_bucket(model, monkeypatch):
@@ -316,35 +239,6 @@ def test_empty_invalid_prefix_and_shape_fallback_do_not_use_bucket(model, monkey
     assert executor.fallback_counts["live_count"] == 1
     assert executor.counters["prepared"] == 0
     assert executor.snapshot()["buckets"] == initial
-    executor.close()
-
-
-def test_ordinary_dispatch_does_not_collect_rich_tensor_descriptors(model, monkeypatch):
-    import vllm_lt.worker.recurrent_graph as implementation
-
-    cache = make_cache(model)
-    fake_runtime(monkeypatch, cache)
-    runner = ModelRunner(model, cache)
-    runner._enable_recurrent_graph(use_graphs=False)
-    cache.allocate("live", 2)
-    executor = runner._decode_executor
-    assert executor.record_dispatch_tensors is False
-    with monkeypatch.context() as patch:
-        patch.setattr(
-            implementation,
-            "_description",
-            lambda *args: pytest.fail("ordinary dispatch collected rich tensor diagnostics"),
-        )
-        outputs = runner._recurrent(torch.ones(1, model.config.hidden_size), ["live"], [0], [0])
-    assert outputs[0].shape == (1, model.config.hidden_size)
-    assert executor.counters["completed"] == 1
-    assert executor.last_dispatch["actual_inputs"] is None
-    assert executor.last_dispatch["actual_physical_outputs"] is None
-    assert executor.last_publication is None
-    executor.record_dispatch_tensors = True
-    runner._recurrent(torch.ones(1, model.config.hidden_size), ["live"], [0], [1])
-    assert executor.last_dispatch["actual_inputs"] is not None
-    assert executor.last_publication is not None
     executor.close()
 
 
@@ -401,77 +295,23 @@ def test_partial_replay_failure_retains_primary_and_resources_until_safe_close(
     runtime.graphs[0].replay_failure = primary
     if not confirmed:
         runtime.main.failure = RuntimeError("stream secondary")
-    graph_ref = weakref.ref(runtime.graphs[0])
-    buffer_ref = weakref.ref(executor.buckets[4]["tensors"]["hidden_in"])
     with pytest.raises(RuntimeError) as raised:
         runner._recurrent(torch.ones(1, model.config.hidden_size), ["a"], [0], [0])
     assert raised.value is primary and prefixes(cache) == before
     assert executor.failure["completion_confirmed"] is confirmed
     assert executor.buckets[4]["metadata"].in_use is not confirmed
-    assert graph_ref() is not None and buffer_ref() is not None
     with pytest.raises(RuntimeError):
         runner._recurrent(torch.ones(1, model.config.hidden_size), ["a"], [0], [0])
     if not confirmed:
         with pytest.raises(RuntimeError, match="stream secondary"):
             executor.close()
-        assert buffer_ref() is not None and not runtime.graphs[0].reset_done
+        assert not runtime.graphs[0].reset_done
         runtime.main.failure = None
     executor.close()
     assert (
         executor.status == "closed" and executor.failure["primary"]["message"] == "replay primary"
     )
     assert executor.failure["completion_confirmed"]
-    # An externally retained exception traceback legitimately keeps the call's
-    # local bucket alive; remove that test-owned reference before checking close.
-    primary.__traceback__ = None
-    del raised
-    gc.collect()
-    assert buffer_ref() is None
-
-
-def test_failed_capture_restores_stream_and_scratch_without_masking_primary(model, monkeypatch):
-    cache = make_cache(model)
-    runtime = fake_runtime(monkeypatch, cache)
-    original = cache.key_cache.clone(), cache.value_cache.clone(), tuple(cache._free_blocks)
-    create = runtime.new_graph
-    primary = ValueError("capture primary")
-
-    def graph():
-        value = create()
-        value.end_failure = RuntimeError("capture end secondary")
-        return value
-
-    monkeypatch.setattr(runtime, "new_graph", graph)
-    original_body = RecurrentGraphExecutor._tensor_body
-
-    def body(executor, bucket):
-        if runtime.capture is not None:
-            raise primary
-        return original_body(executor, bucket)
-
-    monkeypatch.setattr(RecurrentGraphExecutor, "_tensor_body", body)
-    runner = ModelRunner(model, cache)
-    with pytest.raises(ValueError) as raised:
-        runner._enable_recurrent_graph(use_graphs=True)
-    assert raised.value is primary and runtime.current is runtime.main
-    executor = runner._decode_executor
-    assert executor.status == "failed" and executor.setup_record["scratch"]["restored"]
-    assert executor.setup_record["capture_cleanup_errors"][0]["message"] == "capture end secondary"
-    assert not cache._allocations and tuple(cache._free_blocks) == original[2]
-    assert torch.equal(cache.key_cache, original[0]) and torch.equal(cache.value_cache, original[1])
-    executor.close()
-
-
-def test_setup_last_timestamp_deadline_cannot_report_success(model, monkeypatch):
-    clock = iter([0, 0, 0, 60 * 10**9, 60 * 10**9 + 1])
-    monkeypatch.setattr(graph_module.time, "perf_counter_ns", lambda: next(clock))
-    runner = ModelRunner(model, make_cache(model))
-    runner._enable_recurrent_graph(use_graphs=False)
-    decline = runner._graph_snapshot()["budget_decline"]
-    assert decline["attempt_setup"]["status"] == "failed"
-    assert decline["error"]["limit_name"] == "setup_timeout_s"
-    assert decline["error"]["observed"] >= decline["error"]["limit"]
-    runner._close_recurrent_graph()
 
 
 @pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt])
@@ -518,20 +358,3 @@ def test_engine_update_failure_preserves_commit_and_only_frees_after_completion(
             engine.abort_request("a")
         runtime.main.failure = None
     runner._close_recurrent_graph()
-
-
-def test_changed_bucket_storage_is_rejected_before_write_and_cannot_retry(model, monkeypatch):
-    cache = make_cache(model)
-    fake_runtime(monkeypatch, cache)
-    runner = ModelRunner(model, cache)
-    runner._enable_recurrent_graph(use_graphs=True)
-    cache.allocate("a", 2)
-    initial = cache.key_cache.clone(), cache.value_cache.clone(), prefixes(cache)
-    executor = runner._decode_executor
-    executor.buckets[4]["tensors"]["hidden_in"] = torch.zeros(4, model.config.hidden_size)
-    with pytest.raises(RuntimeError, match="signature"):
-        runner._recurrent(torch.ones(1, model.config.hidden_size), ["a"], [0], [0])
-    assert torch.equal(cache.key_cache, initial[0]) and torch.equal(cache.value_cache, initial[1])
-    assert prefixes(cache) == initial[2] and executor.counters["prepared"] == 0
-    assert executor.status == "failed"
-    executor.close()

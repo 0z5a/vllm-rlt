@@ -68,6 +68,12 @@ def test_eight_live_requests_alternate_buckets_without_aliasing_outputs(model, m
             current.allocate(name, 8)
     positions = dict.fromkeys("abcdefgh", 0)
     retained = []
+    if executor is not None:
+        import vllm_lt.worker.recurrent_graph as graph
+
+        monkeypatch.setattr(
+            graph, "_description", lambda *args: pytest.fail("hot-path tensor descriptions")
+        )
     for ids, rows in [("abcdefgh", 16), ("a", 4), ("abc", 8), ("abcdefgh", 16), ("ab", 4)]:
         ids = list(ids)
         pos = [positions[name] for name in ids]

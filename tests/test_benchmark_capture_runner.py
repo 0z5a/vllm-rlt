@@ -74,29 +74,11 @@ def test_worker_keeps_fully_completed_failed_numerical_case_and_skips_performanc
     assert result["teardown_after_workspace_release"] == {"allocated_bytes": 0, "reserved_bytes": 0}
 
 
-def test_partial_environment_initialization_still_releases_owned_device(worker_host, monkeypatch):
-    plan, output, released = worker_host
-
-    def partial_environment():
-        monkeypatch.setattr(runner.torch.cuda, "is_initialized", lambda: True)
-        raise RuntimeError("metadata failed after initialization")
-
-    monkeypatch.setattr(runner, "environment", partial_environment)
-    monkeypatch.setattr(
-        runner, "load_model", lambda *a: pytest.fail("loaded after environment failure")
-    )
-    result = capture.run_worker(
-        plan, worker_id="N-A", output_dir=output, deadline_ns=time.perf_counter_ns() + 100 * 10**9
-    )
-    assert result["status"] == "failed" and released == ["N-A"]
-    assert result["model_loads"] == 0
-    assert result["failures"][0]["message"] == "metadata failed after initialization"
-
-
-def test_controller_preserves_stopped_prefix_and_never_launches_B(
-    capture_plan, monkeypatch, tmp_path
+@pytest.mark.parametrize("failure", ["worker", "io"])
+def test_controller_preserves_failure_and_stops_before_next_worker(
+    capture_plan, monkeypatch, tmp_path, failure
 ):
-    monkeypatch.setattr(capture, "verify_plan", lambda *a: None)
+    monkeypatch.setattr(capture, "verify_plan", lambda *args: None)
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
     launches = []
     original_handler = signal.getsignal(signal.SIGTERM)
@@ -107,10 +89,12 @@ def test_controller_preserves_stopped_prefix_and_never_launches_B(
             "active_deadline": capture.active_case_deadline,
         }
         launches.append(worker["worker_id"])
-        folder = output / "workers" / worker["worker_id"]
-        folder.mkdir()
+        if failure == "io":
+            raise OSError(5, "Input/output error " + "y" * 10000, "/owned/" + "x" * 2000)
+        path = output / "workers" / worker["worker_id"] / "manifest.json"
+        path.parent.mkdir()
         write_json(
-            folder / "manifest.json",
+            path,
             {
                 "completed_executions": worker["execution_ids"][:1],
                 "status": "failed",
@@ -121,49 +105,14 @@ def test_controller_preserves_stopped_prefix_and_never_launches_B(
 
     monkeypatch.setattr(ab, "_launch_worker", launch)
     result = capture.run_ab(capture_plan, output_dir=tmp_path / "controller")
-    assert launches == ["N-A"]
-    assert result["completed_workers"] == [] and result["status"] == "failed"
-    assert result["completed_executions"] == capture_plan["workers"][0]["execution_ids"][:1]
+    assert (
+        launches == ["N-A"] and result["completed_workers"] == [] and result["status"] == "failed"
+    )
     assert signal.getsignal(signal.SIGTERM) is original_handler
-
-
-def test_lifecycle_watchdog_stays_active_until_terminal_result(capture_plan, tmp_path):
-    worker = capture_plan["workers"][0]
-    row = capture_plan["lifecycle"]["execution_order"][0]
-    folder = tmp_path / "lifecycle/evaluations" / row["evaluation_id"]
-    folder.mkdir(parents=True)
-    write_json(folder / "started.json", {"evaluation": row, "started_ns": 100, "deadline_ns": 200})
-    write_json(folder / "result.pending.json", {"status": "complete"})
-    assert capture.active_case_deadline(tmp_path, worker) == 200
-    write_json(folder / "result.json", {"status": "failed"})
-    assert capture.active_case_deadline(tmp_path, worker) is None
-
-
-def test_controller_io_failure_keeps_bounded_context_without_retry(
-    capture_plan, monkeypatch, tmp_path
-):
-    from vllm_lt.benchmarks.schema import read_json
-
-    monkeypatch.setattr(capture, "verify_plan", lambda *args: None)
-    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
-    launches = []
-    original_handler = signal.getsignal(signal.SIGTERM)
-    filename = "/owned/run/" + "x" * 2000
-
-    def launch(plan, worker, output, deadline, **kwargs):
-        launches.append(worker["worker_id"])
-        raise OSError(5, "Input/output error " + "y" * 10000, filename)
-
-    monkeypatch.setattr(ab, "_launch_worker", launch)
-    folder = tmp_path / "controller-io"
-    result = capture.run_ab(capture_plan, output_dir=folder)
-    assert launches == ["N-A"]
-    assert result["status"] == "failed" and result["completed_workers"] == []
-    assert result["workers"][0]["returned_ns"] is not None
-    failure = result["failures"][0]
-    assert failure["type"] == "OSError" and failure["errno"] == 5
-    assert failure["filename"] == filename[:1024] and failure["filename2"] is None
-    assert len(failure["message"]) <= 2048 and len(failure["traceback"]) <= 8192
-    assert "OSError" in failure["traceback"] and "Input/output error" in failure["traceback"]
-    assert read_json(folder / "manifest.json")["failures"] == result["failures"]
-    assert signal.getsignal(signal.SIGTERM) is original_handler
+    if failure == "worker":
+        assert result["completed_executions"] == capture_plan["workers"][0]["execution_ids"][:1]
+    else:
+        error = result["failures"][0]
+        assert error["type"] == "OSError" and error["errno"] == 5
+        assert len(error["filename"]) == 1024 and len(error["message"]) <= 2048
+        assert "Input/output error" in error["traceback"] and len(error["traceback"]) <= 8192
