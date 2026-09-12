@@ -1,0 +1,9 @@
+{
+  "status": "artifact_budget_failed_after_all_four_executions",
+  "complete_executions": 4,
+  "measured_executions": 0,
+  "artifact_bytes": 588043520,
+  "artifact_cap_bytes": 536870912,
+  "notes": "Both matched 14-output profiles completed, but their uncompressed artifacts exceed the predeclared cap. Keep this diagnostic resource failure; no additional GPU run or retroactive cap increase. Actual trace attribution is audited separately from resource qualification.",
+  "worker_cleanup": "Both workers report zero final allocation/reservation."
+}

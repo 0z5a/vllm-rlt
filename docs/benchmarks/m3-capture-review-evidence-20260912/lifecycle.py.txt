@@ -1,0 +1,149 @@
+"""Frozen post-review churn and live-gate correctness checks; no timing claims."""
+import gc
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+import time
+
+ROOT = Path('/home/hsliu2/tmp/vllm-lt-graph-review-20260912')
+BENCH = ROOT / 'benchmark'
+RAW = Path('/tmp/hsliu2-vllm-lt-graph-review-20260912')
+SOURCE = RAW / 'source'
+sys.path.insert(0, str(SOURCE))
+def read(path): return json.loads(Path(path).read_text())
+def write(name, value): (ROOT / name).write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
+def sha(path):
+    with Path(path).open('rb') as f: return hashlib.file_digest(f, 'sha256').hexdigest()
+def probe():
+    import torch
+    def blocked(*args, **kwargs): raise RuntimeError('CPU probe forbids CUDA')
+    torch.cuda._lazy_init = blocked
+    p = read(BENCH / 'plan.json')
+    for name, digest in p['source_manifest'].items(): assert sha(SOURCE / name) == digest
+    write('lifecycle-plan.json', {
+        'source_sha': p['source_sha'], 'source_manifest': p['source_manifest'],
+        'model_manifest': p['model_manifest'], 'model_path': p['model_path'],
+        'script_sha256': sha(__file__), 'gpu_id': p['gpu_id'], 'controls': p['controls'],
+        'hypothesis': 'Released setup streams and one owned pool per executor stop linear create/close reserved-memory growth while preserving replay and independent live-engine ownership.',
+        'variable': 'executor lifecycle number, same model/cache/device/stream lease policy',
+        'churn': {'cycles': 17, 'feasibility': 1, 'measured': 16, 'cache_blocks': 1024, 'max_num_seqs': 8,
+                  'success': 'Identical post-close allocated and reserved bytes for all 16 measured cycles and the first feasibility close; no live private pool segments.',
+                  'cache_policy': 'No allocator cache drops between cycles; model and cache stay resident.'},
+        'correctness': {'configurations': ['compact', 'graph'], 'waves_each': 2, 'requests_per_wave': 8,
+                        'output_lengths': list(range(2, 10)), 'prompt_length': 32, 'exit_threshold': 0.5,
+                        'max_loops': 4, 'min_loops': 2, 'cache_blocks': 256,
+                        'success': 'Exact generated tokens and exit depths between modes; finite returned recurrent/gate/logit values; all requests release KV. Graph wave 2 still works after closing a separate, concurrently alive graph executor.',
+                        'performance': 'No latency/throughput interpretation; these are correctness checks.'},
+        'budget': {'graph_lifetimes': 19, 'capture_recordings': 57, 'setup_warmups': 171,
+                   'verification_replays': 57, 'inference_waves': 4, 'timeout_s': 480},
+        'stop': 'First correctness, memory, source/model identity, setup or cleanup failure; no extra runs.',
+        'cpu_probe': {'passed': True, 'cuda_initialized': torch.cuda.is_initialized()},
+    })
+    print('Lifecycle probe passed: 17 churn cycles and four live-gate waves; 19 graph lifetimes total.')
+def run():
+    import torch
+    from vllm_lt.benchmarks import runner
+    from vllm_lt.benchmarks.capture_runtime import finite_checks
+    from vllm_lt.config import CacheConfig, SchedulerConfig
+    from vllm_lt.engine.llm_engine import LLMEngine
+    from vllm_lt.request import Stage
+    from vllm_lt.sampling_params import SamplingParams
+    from vllm_lt.worker.decode_buffers import DecodeBucketLayout
+    from vllm_lt.worker.recurrent_graph import RecurrentGraphExecutor
+    p, b = read(ROOT / 'lifecycle-plan.json'), read(BENCH / 'plan.json')
+    assert sha(__file__) == p['script_sha256']
+    for name, digest in p['source_manifest'].items(): assert sha(SOURCE / name) == digest
+    for name, digest in p['model_manifest'].items(): assert sha(Path(p['model_path']) / name) == digest
+    assert os.environ['CUDA_VISIBLE_DEVICES'] == str(p['gpu_id'])
+    assert sorted(os.sched_getaffinity(0)) == p['controls']['affinity']
+    runner.configure_process(b['contract'])
+    record = {'status': 'running', 'environment': runner.environment(), 'cycles': [], 'live_gate': {}}
+    model = cache = holder = executor = engine = second = None
+    def memory():
+        gc.collect(); torch.cuda.synchronize()
+        segments = torch.cuda.memory_snapshot()
+        return {'allocated': torch.cuda.memory_allocated(), 'reserved': torch.cuda.memory_reserved(),
+                'segments': [{k: s[k] for k in ('address', 'stream', 'total_size', 'allocated_size', 'active_size', 'segment_pool_id')} for s in segments]}
+    start = time.monotonic()
+    try:
+        model = runner.load_model(b, record)
+        holder = LLMEngine(model, cache_config=CacheConfig(num_blocks=1024), attention_backend='triton')
+        cache = holder.cache_manager
+        record['before'] = memory()
+        for i in range(p['churn']['cycles']):
+            assert time.monotonic() - start < p['budget']['timeout_s']
+            executor = RecurrentGraphExecutor(model, cache, use_graphs=True, layout=DecodeBucketLayout(8))
+            executor.setup()
+            row = {'cycle': i, 'phase': 'feasibility' if i == 0 else 'measured',
+                   'stream': executor.setup_stream.cuda_stream, 'pool_ids': [v['pool_id'] for v in executor.buckets.values()],
+                   'during': memory(), 'setup': executor.snapshot()['setup']}
+            assert len(set(map(tuple, row['pool_ids']))) == 1
+            executor.close(); executor = None
+            row['after_close'] = memory()
+            assert all(tuple(s['segment_pool_id']) == (0, 0) for s in row['after_close']['segments'])
+            record['cycles'].append(row); write('lifecycle-results.json', record)
+            baseline = record['cycles'][0]['after_close']
+            assert row['after_close']['allocated'] == baseline['allocated']
+            assert row['after_close']['reserved'] == baseline['reserved']
+            assert row['stream'] == record['cycles'][0]['stream']
+            print('cycle', i, 'post-close', row['after_close']['allocated'], row['after_close']['reserved'], flush=True)
+        cache = holder = None; gc.collect()
+        prompts = next(w for w in b['suite']['workloads'] if w['workload_id'] == 'batch8')['requests']
+        for mode in ['compact', 'graph']:
+            engine = LLMEngine(model, cache_config=CacheConfig(num_blocks=256), attention_backend='triton')
+            if mode == 'graph': engine._enable_recurrent_graph(use_graphs=True)
+            rows = []
+            for wave in range(2):
+                if mode == 'graph' and wave == 1:
+                    second = LLMEngine(model, cache_config=CacheConfig(num_blocks=256), attention_backend='triton')
+                    second._enable_recurrent_graph(use_graphs=True)
+                    first_ex = engine.model_runner._decode_executor
+                    other_ex = second.model_runner._decode_executor
+                    assert first_ex.setup_stream != other_ex.setup_stream
+                    assert first_ex.pool_owner.id != other_ex.pool_owner.id
+                    record['concurrent'] = {'streams': [first_ex.setup_stream.cuda_stream, other_ex.setup_stream.cuda_stream],
+                                            'pool_ids': [first_ex.pool_owner.id, other_ex.pool_owner.id]}
+                    second.model_runner._close_recurrent_graph(); second = None
+                    first_ex = other_ex = None
+                for i, request in enumerate(prompts):
+                    engine.add_request(str(i), request['prompt_token_ids'][:32], SamplingParams(max_tokens=i + 2, min_loops=2, max_loops=4, exit_threshold=.5, ignore_eos=True))
+                finished, dispatches = {}, []
+                with finite_checks(engine, True) as checks:
+                    for _ in range(2048):
+                        if not engine.has_unfinished_requests(): break
+                        assert time.monotonic() - start < p['budget']['timeout_s']
+                        for output in engine.step():
+                            if output.finished: finished[output.request_id] = {'tokens': output.token_ids, 'depths': output.exit_depths}
+                        batch = engine.last_schedule
+                        if batch.stage == Stage.RECURRENT:
+                            dispatches.append({'count': len(batch.items), 'depths': [x.request.loops_done for x in batch.items],
+                                               'bucket': engine.model_runner._decode_executor.last_dispatch['bucket_id'] if mode == 'graph' else None})
+                assert len(finished) == 8 and engine.cache_manager.num_free_blocks == 256
+                rows.append({'outputs': finished, 'dispatches': dispatches, 'finite_checks': checks})
+                if mode == 'graph': assert finished == record['live_gate']['compact'][wave]['outputs']
+            record['live_gate'][mode] = rows
+            if mode == 'graph':
+                record['resident_final'] = engine.model_runner._graph_snapshot()
+                assert record['resident_final']['counters']['replays'] > 0
+                assert not any(record['resident_final']['fallback_counts'].values())
+                engine.model_runner._close_recurrent_graph()
+            engine = None
+            write('lifecycle-results.json', record)
+        record['status'] = 'passed'
+    except BaseException as error:
+        record['error'] = repr(error)
+        raise
+    finally:
+        for owned in (engine, second):
+            if owned is not None and owned.model_runner._decode_executor is not None:
+                owned.model_runner._close_recurrent_graph()
+        owned = batch = output = first_ex = other_ex = None
+        if executor is not None: executor.close()
+        model = cache = holder = executor = engine = second = None
+        gc.collect(); runner.release_device(record)
+        record['elapsed_s'] = time.monotonic() - start
+        write('lifecycle-results.json', record)
+if __name__ == '__main__':
+    probe() if sys.argv[1] == 'probe' else run()

@@ -1,0 +1,189 @@
+"""CPU-only audit and report for the separately frozen September 12 benchmark."""
+import hashlib
+import json
+from pathlib import Path
+import statistics
+import sys
+
+ROOT=Path('/home/hsliu2/tmp/vllm-lt-graph-review-20260912/benchmark-v3')
+RAW=Path('/tmp/hsliu2-vllm-lt-graph-review-ab-v3-20260912')
+sys.path.insert(0,str(RAW/'source'))
+def read(p): return json.loads(Path(p).read_text())
+def write(p,v): Path(p).write_text(json.dumps(v,indent=2,sort_keys=True,allow_nan=False)+'\n')
+def history(r): return [(x['request_id'],x['token_ids'],x['exit_depths']) for x in r['requests']]
+def rng(v): return f'{min(v):.2f}–{max(v):.2f}'
+
+p=read(ROOT/'plan.json')
+done=read(ROOT/'stopped.json')
+results={x.parent.name:read(x) for x in (RAW/'results/runs').glob('*/result.json')}
+assert len(results) == 77
+failed = {k: r for k, r in results.items() if r['status'] != 'complete'}
+assert list(failed) == ['P-E-mixed8-profile']
+results = {k: r for k, r in results.items() if r['status'] == 'complete'}
+assert len(results) == 76
+assert sum(r['phase'] == 'measured' for r in results.values()) == 30
+assert all(r['status']=='complete' and not any(r['cleanup'].values()) and not r['failures'] for r in results.values())
+from vllm_lt.benchmarks.observe import summarize_records
+from vllm_lt.benchmarks.report import _differences, _event_problems, _read_events
+for run_id, record in results.items():
+    computed = summarize_records(record['requests'], arrival_ns=record['arrival_ns'], synchronized_ns=record['synchronized_ns'])
+    assert not _differences(record['metrics'], computed), run_id
+    assert not _event_problems(_read_events(RAW/'results/runs'/run_id/'events.jsonl'), record), run_id
+    assert record['controls_sha256'] == p['plan_sha256'] and record['plan_sha256'] == p['plan_sha256'], run_id
+workers=[read(x) for x in (RAW/'results/workers').glob('*.json')]
+assert len(workers) == 10
+workers = [w for w in workers if not w['worker']['id'].startswith('P-')]
+assert len(workers) == 9
+assert all(w['status']=='complete' and not any(w['teardown_after_workspace_release'].values()) for w in workers)
+environments=[w['environment'] for w in workers]
+for env in environments:
+    for key in ['host','account','gpu_name','gpu_uuid','cpu_affinity','software','runtime_environment','actual_torch_threads']:
+        assert env[key]==environments[0][key],key
+    assert env['cuda_visible_devices']==str(p['gpu_id'])
+    assert env['cpu_affinity']==p['controls']['affinity']
+for w in workers:
+    assert w['numa_policy']==workers[0]['numa_policy']
+rows=[]
+for cell in [w['workload_id'] for w in p['suite']['workloads']]:
+    values={mode:[results[f'{mode}{i}-{cell}-measured'] for i in [1,2]] for mode in ['C','E','G']}
+    base=results[f'F-C-{cell}-feasibility']
+    for r in [x for x in results.values() if x['cell_id']==cell]:
+        assert history(r)==history(base),(cell,r['run_id'],'output mismatch')
+        for key in ['logical_copy_bytes','recurrent_depth_counts','recurrent_occupancy','request_work','stage_counts','stage_tokens']:
+            assert r['counts'][key]==base['counts'][key],(cell,r['run_id'],key)
+    data={mode:{'tokens_per_second':[r['metrics']['generated_tokens_per_second'] for r in runs],
+                'synchronized_tokens_per_second':[r['metrics']['generated_tokens']*1e9/r['metrics']['synchronized_wall_ns'] for r in runs],
+                'tpot_ms':[r['metrics']['token_weighted_tpot_ns']/1e6 for r in runs],
+                'ttft_ms':[statistics.mean(v['ttft_ns'] for v in r['metrics']['per_request'].values())/1e6 for r in runs],
+                'peak_allocated_mib':[r['memory']['peak_allocated_bytes']/1024**2 for r in runs],
+                'peak_reserved_mib':[r['memory']['peak_reserved_bytes']/1024**2 for r in runs],
+                'setup_ms':[r['setup_ns']/1e6 for r in runs],
+                'recurrent_calls':[sum(r['counts']['recurrent_occupancy'].values()) if isinstance(r['counts']['recurrent_occupancy'],dict) else None for r in runs]}
+          for mode,runs in values.items()}
+    ratios={baseline:[g/b for g,b in zip(data['G']['tokens_per_second'],data[baseline]['tokens_per_second'])] for baseline in ['C','E']}
+    memory={baseline:{kind:[g-b for g,b in zip(data['G'][kind],data[baseline][kind])] for kind in ['peak_allocated_mib','peak_reserved_mib']} for baseline in ['C','E']}
+    data['G']['dispatch']=[{'counters':r['capture']['final']['counters'],'fallback_counts':r['capture']['final']['fallback_counts'],
+                         'buckets':{k:v['counters'] for k,v in r['capture']['final']['buckets'].items()}} for r in values['G']]
+    target=1.10 if cell=='single' else .95
+    gates={'compact_throughput':all(v>=target for v in ratios['C']),
+           'memory_vs_compact':all(v<=512 for vs in memory['C'].values() for v in vs)}
+    if cell=='single':
+        gates['ttft']=all(g/c<=1.05 for g,c in zip(data['G']['ttft_ms'],data['C']['ttft_ms']))
+        gates['range_separation']=min(data['G']['tokens_per_second'])>max(data['C']['tokens_per_second'])
+    rows.append({'cell':cell,'values':data,'graph_speedup':ratios,'extra_memory_mib':memory,'gates':gates})
+
+import torch
+def blocked(*args, **kwargs):
+    raise RuntimeError('Offline reporting forbids accelerator initialization')
+torch.cuda._lazy_init = blocked
+torch.cuda.is_available = lambda: False
+torch.cuda.device_count = lambda: 0
+from vllm_lt.benchmarks.capture_report import audit_graph_profile, audit_capture_record
+for record in results.values():
+    if record['capture'].get('enabled') is False:
+        continue
+    audit_capture_record(record['capture'], record, p['graph_limits'], model_config=p['model_config'], block_size=16)
+PROFILE_ROOT = ROOT.parent / 'profile-check'
+PROFILE_RAW = Path('/tmp/hsliu2-vllm-lt-graph-review-profile-20260912')
+diag = read(PROFILE_ROOT / 'plan.json')
+diag_status = read(PROFILE_ROOT / 'stopped.json')
+assert diag_status['status'] == 'artifact_budget_failed_after_all_four_executions'
+assert diag['source_sha'] == p['source_sha'] and diag['dependencies'] == p['dependencies']
+assert diag['python_executable'] == p['python_executable']
+profiles = {}
+for mode in ['E', 'G']:
+    run_id = f'P-{mode}-mixed8-profile'
+    run = read(PROFILE_RAW / 'results/runs' / run_id / 'result.json')
+    assert run['status'] == 'complete' and not any(run['cleanup'].values()) and not run['failures']
+    audit_capture_record(run['capture'], run, diag['graph_limits'], model_config=diag['model_config'], block_size=16)
+    assert not _event_problems(_read_events(PROFILE_RAW/'results/runs'/run_id/'events.jsonl'), run)
+    trace = read(PROFILE_RAW / 'results/profiles' / run_id / 'trace.json')
+    audited = audit_graph_profile(trace, run['capture'])
+    assert audited['complete'], audited['missing']
+    assert [d['bucket_id'] for d in run['capture']['profile_dispatches']] == [d['bucket'] for d in diag['mixed_profile_cpu_simulation']]
+    audited['window'] = read(PROFILE_RAW / 'results/profiles' / run_id / 'metadata.json')
+    assert audited['window']['complete_window'] and audited['window']['subsequent_outputs'] == 14
+    audited['launch_api_count'] = sum(e.get('ph') == 'X' and e.get('cat') in ('cuda_runtime','cuda_driver') and (e.get('name','').startswith('cudaLaunchKernel') or e.get('name','').startswith('cudaGraphLaunch')) for e in trace['traceEvents'])
+    profiles[mode] = audited
+    worker = read(PROFILE_RAW / 'results/workers' / f'P-{mode}.json')
+    assert worker['status'] == 'complete' and not any(worker['teardown_after_workspace_release'].values())
+    for key in ['host','account','gpu_name','gpu_uuid','cpu_affinity','software','runtime_environment','actual_torch_threads']:
+        assert worker['environment'][key] == environments[0][key], key
+    del trace
+assert set(profiles['G']['graph_ids_by_bucket']) == {'4', '8', '16'}
+assert profiles['E']['graph_launches'] == 0
+assert (profiles['E']['window']['start_step'],profiles['E']['window']['end_step']) == (profiles['G']['window']['start_step'],profiles['G']['window']['end_step'])
+a = PROFILE_RAW / 'results/runs/P-E-mixed8-feasibility'
+b = PROFILE_RAW / 'results/runs/P-G-mixed8-feasibility'
+assert history(read(a/'result.json')) == history(read(b/'result.json'))
+assert read(a/'actual-coda-argmax.json') == read(b/'actual-coda-argmax.json')
+al, bl = (torch.load(path/'coda-logits.pt', map_location='cpu', weights_only=True) for path in (a,b))
+assert all(torch.allclose(al[k], bl[k], atol=.001, rtol=.0001) for k in al)
+
+import math
+for row in rows:
+    cell = row['cell']
+    graphs = [results[f'G{i}-{cell}-measured'] for i in [1, 2]]
+    compact = [results[f'C{i}-{cell}-measured'] for i in [1, 2]]
+    row['inactive_row_fraction'] = []
+    row['setup_break_even_generated_tokens_vs_compact'] = []
+    row['per_request_latency_ms'] = {}
+    for g, c in zip(graphs, compact):
+        counters = g['capture']['final']
+        if not any(counters['fallback_counts'].values()):
+            live = sum(int(k) * v for k, v in g['counts']['recurrent_occupancy'].items())
+            physical = sum(int(k) * b['counters']['replays'] for k, b in counters['buckets'].items())
+            assert physical >= live
+            row['inactive_row_fraction'].append(1 - live / physical)
+        else:
+            row['inactive_row_fraction'].append(None)
+        saving = 1 / c['metrics']['generated_tokens_per_second'] - 1 / g['metrics']['generated_tokens_per_second']
+        overhead = max(0, g['setup_ns'] - c['setup_ns']) / 1e9
+        row['setup_break_even_generated_tokens_vs_compact'].append(math.ceil(overhead / saving) if saving > 0 else None)
+    for mode in ['C', 'E', 'G']:
+        row['per_request_latency_ms'][mode] = [{key: {f: v[f] / 1e6 for f in ('ttft_ns', 'tpot_ns', 'completion_latency_ns', 'admission_queue_ns')} for key, v in results[f'{mode}{i}-{cell}-measured']['metrics']['per_request'].items()} for i in [1, 2]]
+progression = {}
+for mode in ['C', 'E', 'G']:
+    progression[mode] = []
+    for i in [1, 2]:
+        ordered = sorted([r for r in results.values() if r['run_id'].startswith(f'{mode}{i}-')], key=lambda r: r['case_started_ns'])
+        progression[mode].append([{'run_id': r['run_id'], **r['memory']['after_engine_release']} for r in ordered])
+passed = all(all(row['gates'].values()) for row in rows)
+report = {'status': 'measured performance gates passed; original experiment incomplete after profiler interruption' if passed else 'measured performance guardrails failed; original experiment incomplete after profiler interruption',
+          'source_sha': p['source_sha'], 'plan_sha256': p['plan_sha256'], 'rows': rows, 'profiles': profiles,
+          'environment': environments[0], 'feasibility': read(ROOT / 'feasibility-comparison.json'),
+          'original_experiment': done, 'separate_profile_plan_sha256': diag['plan_sha256'], 'separate_profile_status': diag_status, 'post_engine_release': progression,
+          'cleanup': 'All nine measured/feasibility workers and both separate diagnostic workers reached zero allocated/reserved bytes. The interrupted original profiler retained traceback-owned tensors during its teardown check; its process exited and scheduler status then showed GPU 2 free with zero memory.',
+          'scope': 'FP32 bounded screen, five controlled workloads, two measurements each; not full M3 qualification or BF16/task quality. Mixed8 replays forced archived routing/output prefixes after real computation.'}
+write(ROOT / 'report.json', report)
+lines = ['# Post-review CUDA graph screen — 2026-09-12', '', report['status'].capitalize() + '.', '',
+         f"Source `{p['source_sha']}`; plan `{p['plan_sha256']}`. Model ByteDance/Ouro-1.4B at `{p['model_revision']}`. FP32, Triton, GPU 2, {environments[0]['gpu_name']}, CPU cores 56–63, memory node 1.", '',
+         'C: compact eager. E: padded eager. G: the same padded executor with graph replay. G/E isolates replay; G/C includes padding, metadata, staging, actual gate readback, routing and output publication.', '',
+         'Each range contains two measured observations, not a confidence interval. Model loading, cache/executor setup, warmups, profiles and cleanup are excluded from delivery throughput and recorded separately. Synchronized throughput, every request’s TTFT/TPOT/completion latency and paired memory deltas are retained in report.json.', '',
+         '| Workload | C tok/s | E tok/s | G tok/s | G/C paired ratio | G/E paired ratio |',
+         '| --- | ---: | ---: | ---: | ---: | ---: |']
+labels = {'single': '1 request, 128 input / 64 output', 'batch4': '4 requests, 128 / 64 each', 'mixed8': '8 mixed-depth requests, 64–128 / 8–22', 'batch8': '8 requests, 128 / 64 each', 'prefill512': '1 request, 512 / 32'}
+for row in rows:
+    values = row['values']
+    lines.append(f"| {labels[row['cell']]} | {rng(values['C']['tokens_per_second'])} | {rng(values['E']['tokens_per_second'])} | {rng(values['G']['tokens_per_second'])} | {rng(row['graph_speedup']['C'])}× | {rng(row['graph_speedup']['E'])}× |")
+lines += ['', '| Workload | C/G TPOT ms | C/G mean TTFT ms | G replay/fallback calls per run | Inactive physical rows | Paired extra peak reserved MiB |', '| --- | --- | --- | --- | ---: | ---: |']
+for row in rows:
+    v = row['values']; d = v['G']['dispatch']; padding = row['inactive_row_fraction']
+    inactive = rng([x * 100 for x in padding]) + '%' if all(x is not None for x in padding) else 'compact fallback'
+    lines.append(f"| {row['cell']} | {rng(v['C']['tpot_ms'])} / {rng(v['G']['tpot_ms'])} | {rng(v['C']['ttft_ms'])} / {rng(v['G']['ttft_ms'])} | " + ', '.join(f"{x['counters']['replays']}/{sum(x['fallback_counts'].values())}" for x in d) + f" | {inactive} | {rng(row['extra_memory_mib']['C']['peak_reserved_mib'])} |")
+lines += ['', 'The 512-input control requires 34 table columns and takes compact fallback; the other four workloads replay. The default scheduler’s eight live requests now use physical bucket 16. All input copies, gate readbacks, CPU routing and fallbacks remain inside measured delivery time.', '',
+          '| Workload | C setup ms | G setup ms | Estimated setup break-even output tokens, two pairs |', '| --- | ---: | ---: | --- |']
+for row in rows:
+    lines.append(f"| {row['cell']} | {rng(row['values']['C']['setup_ms'])} | {rng(row['values']['G']['setup_ms'])} | " + ', '.join('no break-even' if x is None else str(x) for x in row['setup_break_even_generated_tokens_vs_compact']) + ' |')
+lines += ['', 'Setup estimates use the excluded setup overhead and observed throughput difference; they are workload-specific projections, not measured resident-server amortization. All these engines are fresh per execution; model loading is once per worker, and allocator caches remain intact between executions.', '',
+          f"The separate diagnostic CPU plan predicts buckets 4/8/16. The separately planned matched diagnostic profiles complete their 14-output window. G records {profiles['G']['graph_launches']} correlated graph launches and {profiles['G']['graph_kernel_count']} linked GPU kernels across all three buckets. E records zero graph launches. These are diagnostic traces, excluded from throughput.", '',
+          'All 15 feasibility and 30 measured runs completed, with matching token/depth histories and work counts; all requests released KV. The timing plan did not complete its original diagnostic profiles. Feasibility checked finite loop/gate/logit outputs, actual coda argmax histories and first/last coda logits (atol 0.001, rtol 0.0001). Mixed8 is a shortened eight-request derivative of W4 using forced trace prefixes, not the original W4 qualification case or a live adaptive-quality benchmark.', '',
+          'Predeclared gates: both single-request G/C ratios ≥1.10, single TTFT ratio ≤1.05, nonoverlapping single-request throughput ranges, all four controls’ G/C ratios ≥0.95, and paired peak allocated/reserved increases ≤512 MiB.']
+lines.append('')
+for row in rows:
+    lines.append('- ' + row['cell'] + ': ' + ', '.join(f"{k}: {'PASS' if v else 'FAIL'}" for k, v in row['gates'].items()))
+lines += ['', 'The planned 79-run experiment attempted 77 executions: 15 feasibility, 30 measurements and 31 warmups completed; the first profile was interrupted after exceeding its 180-second budget in PyTorch CPU aggregation. The remaining graph-profile worker was not started. Its interrupted predecessor retained traceback-owned tensors during its cleanup check, then exited; scheduler status showed GPU 2 free at zero memory. Nine ordinary workers completed cleanly. A separate four-run diagnostic (two feasibility, two profiles) completed all four executions with both workers reaching zero memory, but its 588,043,520 bytes of artifacts exceeded the 536,870,912-byte cap (560.8 versus 512 MiB). Trace attribution is valid evidence; the diagnostic failed its resource gate. It adds no measured throughput samples and does not turn the original experiment into a complete one. No further GPU run was added.', '',
+          'This screen does not qualify the complete M3 milestone, BF16, quality, arbitrary context lengths or increasing concurrent-engine count. The original benchmark launch stopped at source-manifest validation before model loading because GPU pytest had written cache files into that archive. A second attempt passed 15 feasibility runs, then stopped before its first measured worker because eight packages appeared in the shared environment. The timing attempt uses a task-owned copy of that prepared environment and a clean source archive; its CPU-predicted 112-output profile still exceeded the processing budget described above. Neither stopped attempt contributes measured samples; both remain preserved.', '',
+          f"Raw evidence: `{RAW / 'results'}`. Plan, commands, environment, all results and this audit script are retained beside this report."]
+(ROOT / 'report.md').write_text('\n'.join(lines) + '\n')
+print(json.dumps({'status': report['status'], 'rows': [{'cell': r['cell'], 'graph_speedup': r['graph_speedup'], 'gates': r['gates']} for r in rows], 'profile_buckets': sorted(profiles['G']['graph_ids_by_bucket'])}))

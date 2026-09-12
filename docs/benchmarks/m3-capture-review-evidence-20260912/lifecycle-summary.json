@@ -1,0 +1,844 @@
+{
+  "diagnostic": {
+    "source_sha": "65a719d9086fe96f311b2a195d424c2a01c9bbf2",
+    "variable": "fresh vs reused setup stream; unchanged per-bucket private pools",
+    "cycles_per_configuration": 3,
+    "feasibility_cycles_each": 1,
+    "measured_cycles_each": 2,
+    "configs": {
+      "fresh": {
+        "cycles": [
+          {
+            "cycle": 0,
+            "phase": "feasibility",
+            "stream": 1735131808,
+            "allocated": 12181062656,
+            "reserved": 12218007552,
+            "private_pool_segments": 0,
+            "active_bytes": 12181062656
+          },
+          {
+            "cycle": 1,
+            "phase": "measured",
+            "stream": 1735129888,
+            "allocated": 12181062656,
+            "reserved": 12253659136,
+            "private_pool_segments": 0,
+            "active_bytes": 12181062656
+          },
+          {
+            "cycle": 2,
+            "phase": "measured",
+            "stream": 1735124880,
+            "allocated": 12181062656,
+            "reserved": 12289310720,
+            "private_pool_segments": 0,
+            "active_bytes": 12181062656
+          }
+        ],
+        "cleanup": {
+          "allocated_bytes": 0,
+          "reserved_bytes": 0
+        }
+      },
+      "reuse": {
+        "cycles": [
+          {
+            "cycle": 0,
+            "phase": "feasibility",
+            "stream": 1769486880,
+            "allocated": 12181062656,
+            "reserved": 12218007552,
+            "private_pool_segments": 0,
+            "active_bytes": 12181062656
+          },
+          {
+            "cycle": 1,
+            "phase": "measured",
+            "stream": 1769486880,
+            "allocated": 12181062656,
+            "reserved": 12218007552,
+            "private_pool_segments": 0,
+            "active_bytes": 12181062656
+          },
+          {
+            "cycle": 2,
+            "phase": "measured",
+            "stream": 1769486880,
+            "allocated": 12181062656,
+            "reserved": 12218007552,
+            "private_pool_segments": 0,
+            "active_bytes": 12181062656
+          }
+        ],
+        "cleanup": {
+          "allocated_bytes": 0,
+          "reserved_bytes": 0
+        }
+      }
+    }
+  },
+  "candidate": {
+    "source_sha": "af3327d5a30219bcc92c57deb43a10cc7be3040f",
+    "churn_cycles": 17,
+    "feasibility_cycles": 1,
+    "measured_cycles": 16,
+    "cycles": [
+      {
+        "cycle": 0,
+        "phase": "feasibility",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 1,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 2,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 3,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 4,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 5,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 6,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 7,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 8,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 9,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 10,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 11,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 12,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 13,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 14,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 15,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      },
+      {
+        "cycle": 16,
+        "phase": "measured",
+        "stream": 1777753696,
+        "allocated": 12181062656,
+        "reserved": 12218007552,
+        "private_pool_segments": 0
+      }
+    ],
+    "live_gate": {
+      "compact": [
+        {
+          "outputs": {
+            "0": {
+              "depths": [
+                4,
+                3
+              ],
+              "tokens": [
+                6826,
+                281
+              ]
+            },
+            "1": {
+              "depths": [
+                4,
+                4,
+                3
+              ],
+              "tokens": [
+                30,
+                198,
+                198
+              ]
+            },
+            "2": {
+              "depths": [
+                4,
+                4,
+                3,
+                3
+              ],
+              "tokens": [
+                638,
+                17161,
+                5125,
+                4037
+              ]
+            },
+            "3": {
+              "depths": [
+                4,
+                4,
+                3,
+                4,
+                4
+              ],
+              "tokens": [
+                32584,
+                32995,
+                338,
+                260,
+                2763
+              ]
+            },
+            "4": {
+              "depths": [
+                4,
+                4,
+                3,
+                3,
+                4,
+                3
+              ],
+              "tokens": [
+                253,
+                5918,
+                4308,
+                351,
+                6450,
+                9577
+              ]
+            },
+            "5": {
+              "depths": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                3,
+                3
+              ],
+              "tokens": [
+                314,
+                253,
+                1379,
+                837,
+                701,
+                416,
+                1012
+              ]
+            },
+            "6": {
+              "depths": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                3,
+                4,
+                4
+              ],
+              "tokens": [
+                1564,
+                21910,
+                1592,
+                28,
+                284,
+                260,
+                1122,
+                359
+              ]
+            },
+            "7": {
+              "depths": [
+                4,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                4
+              ],
+              "tokens": [
+                6443,
+                335,
+                253,
+                13083,
+                2856,
+                260,
+                3102,
+                30,
+                1985
+              ]
+            }
+          },
+          "buckets": [
+            null
+          ],
+          "finite_checks": {
+            "coda": 22,
+            "recurrent": 62
+          }
+        },
+        {
+          "outputs": {
+            "0": {
+              "depths": [
+                4,
+                3
+              ],
+              "tokens": [
+                6826,
+                281
+              ]
+            },
+            "1": {
+              "depths": [
+                4,
+                4,
+                3
+              ],
+              "tokens": [
+                30,
+                198,
+                198
+              ]
+            },
+            "2": {
+              "depths": [
+                4,
+                4,
+                3,
+                3
+              ],
+              "tokens": [
+                638,
+                17161,
+                5125,
+                4037
+              ]
+            },
+            "3": {
+              "depths": [
+                4,
+                4,
+                3,
+                4,
+                4
+              ],
+              "tokens": [
+                32584,
+                32995,
+                338,
+                260,
+                2763
+              ]
+            },
+            "4": {
+              "depths": [
+                4,
+                4,
+                3,
+                3,
+                4,
+                3
+              ],
+              "tokens": [
+                253,
+                5918,
+                4308,
+                351,
+                6450,
+                9577
+              ]
+            },
+            "5": {
+              "depths": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                3,
+                3
+              ],
+              "tokens": [
+                314,
+                253,
+                1379,
+                837,
+                701,
+                416,
+                1012
+              ]
+            },
+            "6": {
+              "depths": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                3,
+                4,
+                4
+              ],
+              "tokens": [
+                1564,
+                21910,
+                1592,
+                28,
+                284,
+                260,
+                1122,
+                359
+              ]
+            },
+            "7": {
+              "depths": [
+                4,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                4
+              ],
+              "tokens": [
+                6443,
+                335,
+                253,
+                13083,
+                2856,
+                260,
+                3102,
+                30,
+                1985
+              ]
+            }
+          },
+          "buckets": [
+            null
+          ],
+          "finite_checks": {
+            "coda": 22,
+            "recurrent": 62
+          }
+        }
+      ],
+      "graph": [
+        {
+          "outputs": {
+            "0": {
+              "depths": [
+                4,
+                3
+              ],
+              "tokens": [
+                6826,
+                281
+              ]
+            },
+            "1": {
+              "depths": [
+                4,
+                4,
+                3
+              ],
+              "tokens": [
+                30,
+                198,
+                198
+              ]
+            },
+            "2": {
+              "depths": [
+                4,
+                4,
+                3,
+                3
+              ],
+              "tokens": [
+                638,
+                17161,
+                5125,
+                4037
+              ]
+            },
+            "3": {
+              "depths": [
+                4,
+                4,
+                3,
+                4,
+                4
+              ],
+              "tokens": [
+                32584,
+                32995,
+                338,
+                260,
+                2763
+              ]
+            },
+            "4": {
+              "depths": [
+                4,
+                4,
+                3,
+                3,
+                4,
+                3
+              ],
+              "tokens": [
+                253,
+                5918,
+                4308,
+                351,
+                6450,
+                9577
+              ]
+            },
+            "5": {
+              "depths": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                3,
+                3
+              ],
+              "tokens": [
+                314,
+                253,
+                1379,
+                837,
+                701,
+                416,
+                1012
+              ]
+            },
+            "6": {
+              "depths": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                3,
+                4,
+                4
+              ],
+              "tokens": [
+                1564,
+                21910,
+                1592,
+                28,
+                284,
+                260,
+                1122,
+                359
+              ]
+            },
+            "7": {
+              "depths": [
+                4,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                4
+              ],
+              "tokens": [
+                6443,
+                335,
+                253,
+                13083,
+                2856,
+                260,
+                3102,
+                30,
+                1985
+              ]
+            }
+          },
+          "buckets": [
+            16,
+            4,
+            8
+          ],
+          "finite_checks": {
+            "coda": 22,
+            "recurrent": 35
+          }
+        },
+        {
+          "outputs": {
+            "0": {
+              "depths": [
+                4,
+                3
+              ],
+              "tokens": [
+                6826,
+                281
+              ]
+            },
+            "1": {
+              "depths": [
+                4,
+                4,
+                3
+              ],
+              "tokens": [
+                30,
+                198,
+                198
+              ]
+            },
+            "2": {
+              "depths": [
+                4,
+                4,
+                3,
+                3
+              ],
+              "tokens": [
+                638,
+                17161,
+                5125,
+                4037
+              ]
+            },
+            "3": {
+              "depths": [
+                4,
+                4,
+                3,
+                4,
+                4
+              ],
+              "tokens": [
+                32584,
+                32995,
+                338,
+                260,
+                2763
+              ]
+            },
+            "4": {
+              "depths": [
+                4,
+                4,
+                3,
+                3,
+                4,
+                3
+              ],
+              "tokens": [
+                253,
+                5918,
+                4308,
+                351,
+                6450,
+                9577
+              ]
+            },
+            "5": {
+              "depths": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                3,
+                3
+              ],
+              "tokens": [
+                314,
+                253,
+                1379,
+                837,
+                701,
+                416,
+                1012
+              ]
+            },
+            "6": {
+              "depths": [
+                4,
+                4,
+                4,
+                4,
+                4,
+                3,
+                4,
+                4
+              ],
+              "tokens": [
+                1564,
+                21910,
+                1592,
+                28,
+                284,
+                260,
+                1122,
+                359
+              ]
+            },
+            "7": {
+              "depths": [
+                4,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                3,
+                4
+              ],
+              "tokens": [
+                6443,
+                335,
+                253,
+                13083,
+                2856,
+                260,
+                3102,
+                30,
+                1985
+              ]
+            }
+          },
+          "buckets": [
+            16,
+            4,
+            8
+          ],
+          "finite_checks": {
+            "coda": 22,
+            "recurrent": 35
+          }
+        }
+      ]
+    },
+    "concurrent": {
+      "pool_ids": [
+        [
+          0,
+          18
+        ],
+        [
+          0,
+          19
+        ]
+      ],
+      "streams": [
+        1777753696,
+        1777736160
+      ]
+    },
+    "cleanup": {
+      "allocated_bytes": 0,
+      "reserved_bytes": 0
+    },
+    "status": "passed"
+  }
+}

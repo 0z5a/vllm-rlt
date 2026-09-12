@@ -1,0 +1,6 @@
+{
+  "source": "/home/hsliu2/tmp/venvs/vllm-lt-q1",
+  "destination": "/tmp/hsliu2-venvs/vllm-lt-pr15-review",
+  "reason": "Shared venv received dependencies during benchmark; task-owned copy isolates package metadata. Prepared package files reused, no reinstall or upgrade. Interpreter/activation script paths adjusted in the copy.",
+  "created_utc": "2026-09-12T07:32:52Z"
+}

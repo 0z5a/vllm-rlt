@@ -116,6 +116,13 @@ checked between phases rather than interrupting a CUDA call at exactly 60 second
 
 ## Evidence and qualification
 
+The [September 12 owner-review follow-up](reviews/pr15-20260912.md) records the
+stream diagnostic, a 17-cycle fixed-concurrency memory plateau and live-gate
+correctness across all three default buckets. The post-review performance
+[screen](benchmarks/m3-capture-review-20260912.md) is a separate frozen experiment;
+its measured gates pass, while profiler time and artifact-budget failures leave
+overall qualification incomplete.
+
 Historical experiments remain bound to their original source and contracts:
 
 - [First stopped attempt](benchmarks/m3-capture-stopped-20260911.md).

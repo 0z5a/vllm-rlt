@@ -1,0 +1,73 @@
+import argparse, gc, hashlib, json, os, subprocess, sys, time
+from pathlib import Path
+ROOT=Path('/home/hsliu2/tmp/vllm-lt-graph-review-20260912')
+SOURCE=Path('/tmp/hsliu2-vllm-lt-cudagraph-ab-20260912/source')
+sys.path.insert(0,str(SOURCE))
+P=Path('/home/hsliu2/tmp/vllm-lt-cudagraph-ab-20260912/plan.json')
+def write(name,value): (ROOT/name).write_text(json.dumps(value,indent=2,sort_keys=True)+'\n')
+def sha(p): return hashlib.file_digest(Path(p).open('rb'),'sha256').hexdigest()
+def probe():
+ import torch
+ def block(*a,**k): raise RuntimeError('CPU only')
+ torch.cuda._lazy_init=block
+ previous=json.loads(P.read_text())
+ for name,h in previous['source_manifest'].items(): assert sha(SOURCE/name)==h
+ plan={'source_sha':previous['source_sha'],'source_manifest':previous['source_manifest'],'script_sha':sha(__file__),
+ 'hypothesis':'34 MiB create/close retention is inactive default-pool warmup storage on fresh capture streams, not live private graph allocations.',
+ 'variable':'fresh versus reused setup stream; same per-bucket owned MemPools and unchanged tensor body',
+ 'configurations':['fresh','reuse'],'cycles_each':3,'feasibility_cycles_each':1,'measured_cycles_each':2,
+ 'success':'fresh post-close default-pool reserved bytes increase while reuse plateaus after feasibility; closed graph-private pools disappear in both',
+ 'controls':previous['controls'],'model_path':previous['model_path'],'model_manifest':previous['model_manifest'],
+ 'model_revision':previous['model_revision'],'gpu_id':2,'timeout_s':300,'stop':'first execution, identity, cleanup or nonfinite failure; no retry',
+ 'cpu_probe':{'cuda_initialized':torch.cuda.is_initialized()}}
+ write('stream-plan.json',plan);print('CPU diagnostic probe passed; six executor create/close cycles total.')
+def worker(mode):
+ import torch
+ from vllm_lt.benchmarks import runner
+ from vllm_lt.config import CacheConfig,SchedulerConfig
+ from vllm_lt.engine.llm_engine import LLMEngine
+ from vllm_lt.worker import recurrent_graph as module
+ plan=json.loads((ROOT/'stream-plan.json').read_text()); previous=json.loads(P.read_text())
+ assert sha(__file__)==plan['script_sha']
+ for name,h in plan['source_manifest'].items(): assert sha(SOURCE/name)==h
+ assert os.environ['CUDA_VISIBLE_DEVICES']=='2'
+ runner.configure_process(previous['contract']); manifest={'mode':mode,'environment':runner.environment(),'cycles':[]}
+ assert sorted(os.sched_getaffinity(0))==plan['controls']['affinity']
+ model=runner.load_model(previous,manifest)
+ cache_engine=LLMEngine(model,cache_config=CacheConfig(num_blocks=1024),scheduler_config=SchedulerConfig(),attention_backend='triton')
+ cache=cache_engine.cache_manager
+ shared=None
+ original=module._CudaRuntime.new_stream
+ def stream(runtime):
+  nonlocal shared
+  if mode=='fresh':return original(runtime)
+  if shared is None:shared=original(runtime)
+  return shared
+ module._CudaRuntime.new_stream=stream
+ def memory():
+  torch.cuda.synchronize();gc.collect()
+  segments=torch.cuda.memory_snapshot()
+  return {'allocated':torch.cuda.memory_allocated(),'reserved':torch.cuda.memory_reserved(),'segments':segments}
+ manifest['before']=memory()
+ try:
+  for i in range(3):
+   executor=module.RecurrentGraphExecutor(model,cache,use_graphs=True)
+   executor.setup()
+   row={'cycle':i,'phase':'feasibility' if i==0 else 'measured','stream':executor.setup_stream.cuda_stream,
+        'pool_ids':[b['pool_id'] for b in executor.buckets.values()],'during':memory()}
+   executor.close();executor=None
+   row['after_close']=memory();manifest['cycles'].append(row)
+   write('stream-'+mode+'.json',manifest)
+   print(mode,i,row['stream'],row['after_close']['allocated'],row['after_close']['reserved'],flush=True)
+ finally:
+  model=cache=cache_engine=executor=shared=None
+  runner.release_device(manifest);write('stream-'+mode+'.json',manifest)
+if __name__=='__main__':
+ action=sys.argv[1]
+ if action=='probe':probe()
+ elif action in ('fresh','reuse'):worker(action)
+ else:
+  start=time.monotonic()
+  for mode in ['fresh','reuse']:
+   with (ROOT/('stream-'+mode+'.log')).open('w') as f:
+    subprocess.run([sys.executable,__file__,mode],stdout=f,stderr=subprocess.STDOUT,check=True,timeout=300-(time.monotonic()-start))
