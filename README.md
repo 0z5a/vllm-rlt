@@ -164,6 +164,10 @@ See the [M1 benchmark guide](docs/benchmarks.md) for workloads, timing definitio
 reserved execution, and offline reporting, and the
 [baseline report](docs/benchmarks/m1-20260910.md) for results and downloadable evidence.
 
+For end-to-end accuracy, use the [GSM8K evaluation guide](docs/accuracy.md) to
+run the fixed 87-question regression case. Its measured official Transformers
+baseline is **59/87 (67.82%)**, matched by BF16 native inference.
+
 ## License
 
 Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). The native model adapts
