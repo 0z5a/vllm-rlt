@@ -6,8 +6,8 @@ from copy import deepcopy
 import pytest
 import torch
 
+from benchmarks.capture import lifecycle as capture
 from vllm_lt.core.kv_cache_manager import KVCacheManager
-from vllm_lt.validation import m3_capture_lifecycle as capture
 from vllm_lt.validation.schema import read_json
 
 

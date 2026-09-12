@@ -4,10 +4,10 @@ import math
 import re
 from pathlib import Path
 
-from .ab_report import _finite, _memory, _work_identity
-from .ab_schema import CELLS, WORKERS, equal, require
-from .report import _event_problems, _profiles, _read_events, _run_record
-from .schema import _file_record, read_json, write_json
+from vllm_lt.benchmarks.ab_report import _finite, _memory, _work_identity
+from vllm_lt.benchmarks.ab_schema import CELLS, WORKERS, equal, require
+from vllm_lt.benchmarks.report import _event_problems, _profiles, _read_events, _run_record
+from vllm_lt.benchmarks.schema import _file_record, read_json, write_json
 
 
 def _ttft(record):
@@ -148,7 +148,7 @@ def audit_capture_record(
     capture, planned, limits, *, model_config, block_size, expected_device="cuda:0"
 ):
     """Audit setup inventories and measured counters, without per-step tensor reads."""
-    from vllm_lt.validation.m3_capture import _audit_graph_setup
+    from benchmarks.capture.validation import _audit_graph_setup
 
     equal(capture["schema_version"], 1, "capture schema")
     side = planned["implementation_id"]
@@ -439,7 +439,7 @@ def _anchor(root, path, hashes):
 
 
 def _audit_workers(root, plan, manifest, report, *, workers=None):
-    from .capture import audit_worker_controls
+    from benchmarks.capture.runner import audit_worker_controls
 
     limits = plan["contract"]["limits"]
     expected = [row["execution_id"] for row in plan["execution_order"]]
@@ -811,8 +811,8 @@ def _decision(*, invalid, complete, hard_failure, variation):
 
 
 def build_report(output_dir):
-    from .capture import audit_correctness
-    from .capture_schema import execution_view, validate_plan
+    from benchmarks.capture.runner import audit_correctness
+    from benchmarks.capture.schema import execution_view, validate_plan
 
     root = Path(output_dir).resolve()
     report = {
@@ -949,14 +949,14 @@ def build_report(output_dir):
     try:
         correctness = audit_correctness(root, plan)
         if not correctness["numerical"]["complete"]:
-            from vllm_lt.validation.m3_capture import audit_completed_prefix
+            from benchmarks.capture.validation import audit_completed_prefix
 
             prefix = audit_completed_prefix(root, plan)
             if prefix["errors"]:
                 report["errors"].append({"scope": "numerical/prefix", "message": prefix["errors"]})
             correctness["numerical"] = prefix
-        from vllm_lt.validation.m3_capture_kernels import audit_kernel_outputs
-        from vllm_lt.validation.m3_capture_lifecycle import audit_lifecycle_outputs
+        from benchmarks.capture.kernels import audit_kernel_outputs
+        from benchmarks.capture.lifecycle import audit_lifecycle_outputs
 
         for key, audit in (
             ("kernels", audit_kernel_outputs),

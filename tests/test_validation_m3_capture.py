@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 import torch
 
+from benchmarks.capture import validation as capture
 from vllm_lt.models import OuroConfig, OuroForCausalLM
-from vllm_lt.validation import m3_capture as capture
 from vllm_lt.validation import m3_persistent
 from vllm_lt.validation.diagnostics import DiagnosticDump, SpoolBudget
 from vllm_lt.validation.report import _expected_boundaries

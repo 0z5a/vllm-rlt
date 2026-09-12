@@ -4,9 +4,9 @@ from contextlib import contextmanager
 
 import torch
 
-from .ab_schema import equal, require
-from .profile import Capture
-from .runner import write_json
+from vllm_lt.benchmarks.ab_schema import equal, require
+from vllm_lt.benchmarks.profile import Capture
+from vllm_lt.benchmarks.runner import write_json
 
 
 class GraphCapture(Capture):

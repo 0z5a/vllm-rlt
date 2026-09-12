@@ -11,10 +11,9 @@ from pathlib import Path
 
 from vllm_lt.models.config import OuroConfig
 from vllm_lt.request import Stage
-
-from . import m3_persistent
-from .m2 import _audit_numerical_view, _run_numerical_view, build_numerical_plan
-from .schema import _digest, read_json, write_json
+from vllm_lt.validation import m3_persistent
+from vllm_lt.validation.m2 import _audit_numerical_view, _run_numerical_view, build_numerical_plan
+from vllm_lt.validation.schema import _digest, read_json, write_json
 
 PROJECTION = "loop_gate_logits_full_kv_v1"
 OPERATIONS = ("loop_hidden", "gate_logits", "logits", "populated_kv")
@@ -221,7 +220,7 @@ def observe_projected(engine, sink, *, on_completed_kv=None, observations=None):
     """Observe returned tensors outside capture; install no Module forward hooks."""
     import torch
 
-    from .native import history_hash
+    from vllm_lt.validation.native import history_hash
 
     observations = [] if observations is None else observations
     runner, model = engine.model_runner, engine.model
@@ -372,7 +371,7 @@ def observe_projected(engine, sink, *, on_completed_kv=None, observations=None):
 
 @contextmanager
 def _execution(case, observations, lifecycle, limits):
-    from . import runner
+    from vllm_lt.validation import runner
 
     original_engine, original_observer = runner.ValidationEngine, runner.observe_native
     engines = []
@@ -427,7 +426,7 @@ def _execution(case, observations, lifecycle, limits):
 
 
 def execute_model_case(model, view, case, output, budget, dumps, deadline):
-    from .runner import execute_case
+    from vllm_lt.validation.runner import execute_case
 
     observations, lifecycle = [], {}
     failure = None
@@ -1002,7 +1001,7 @@ def audit_completed_prefix(output_dir, parent, *, expected_device="cuda:0"):
     An active unfinished case is explicitly unaudited and cannot establish a
     trusted failure through this completed-prefix interface.
     """
-    from .report import _audit_case, _audit_comparison, _audit_raw_evidence
+    from vllm_lt.validation.report import _audit_case, _audit_comparison, _audit_raw_evidence
 
     view = model_view(parent)
     folder = Path(output_dir) / "numerical"

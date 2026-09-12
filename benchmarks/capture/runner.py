@@ -9,27 +9,26 @@ import time
 import traceback
 from pathlib import Path
 
-from . import ab
-from .ab_schema import RUNTIME_VARIABLES, affinity_snapshot, equal, require
-from .capture_schema import (
+from benchmarks.capture.schema import (
     execution_view,
     make_plan,
     source_probe,
     validate_plan,
     verify_plan,
 )
-from .runner import write_json
-from .schema import read_json
+from vllm_lt.benchmarks import ab
+from vllm_lt.benchmarks.ab_schema import RUNTIME_VARIABLES, affinity_snapshot, equal, require
+from vllm_lt.benchmarks.runner import write_json
+from vllm_lt.benchmarks.schema import read_json
 
 artifact_usage = ab.artifact_usage
 audit_worker_controls = ab.audit_worker_controls
 
 
 def run_worker(plan, *, worker_id, output_dir, deadline_ns):
-    from vllm_lt.validation.m3_capture import run_model_rows
-
-    from . import runner
-    from .capture_runtime import ExecutionAdapter
+    from benchmarks.capture.runtime import ExecutionAdapter
+    from benchmarks.capture.validation import run_model_rows
+    from vllm_lt.benchmarks import runner
 
     start = time.perf_counter_ns()
     validate_plan(plan)
@@ -164,8 +163,8 @@ def run_worker(plan, *, worker_id, output_dir, deadline_ns):
 
 
 def run_held_checks(plan, implementation, output_dir, deadline_ns):
-    from vllm_lt.validation.m3_capture_kernels import run_kernel_evaluation
-    from vllm_lt.validation.m3_capture_lifecycle import run_lifecycle_evaluation
+    from benchmarks.capture.kernels import run_kernel_evaluation
+    from benchmarks.capture.lifecycle import run_lifecycle_evaluation
 
     for key, execute in (
         ("kernels", run_kernel_evaluation),
@@ -186,9 +185,9 @@ def run_held_checks(plan, implementation, output_dir, deadline_ns):
 
 
 def audit_correctness(output_dir, plan):
-    from vllm_lt.validation.m3_capture import audit_model_rows
-    from vllm_lt.validation.m3_capture_kernels import audit_kernel_outputs
-    from vllm_lt.validation.m3_capture_lifecycle import audit_lifecycle_outputs
+    from benchmarks.capture.kernels import audit_kernel_outputs
+    from benchmarks.capture.lifecycle import audit_lifecycle_outputs
+    from benchmarks.capture.validation import audit_model_rows
 
     audits = {
         "numerical": audit_model_rows(output_dir, plan),
@@ -275,7 +274,7 @@ def run_ab(plan, *, output_dir):
                     worker,
                     output_dir,
                     deadline,
-                    module="vllm_lt.benchmarks.capture",
+                    module="benchmarks.capture",
                     active_deadline=active_case_deadline,
                 )
                 launch["exit_code"] = exit_code
@@ -378,7 +377,7 @@ def main(argv=None):
             )
             return 0
         if args.command == "report":
-            from .capture_report import write_report
+            from benchmarks.capture.report import write_report
 
             result = write_report(args.run_dir)
             print(json.dumps({key: result[key] for key in ("evidence_status", "decision")}))
@@ -395,7 +394,3 @@ def main(argv=None):
     except (ValueError, KeyError, TypeError, OSError) as exc:
         print(f"invalid or incomplete experiment: {exc}", file=sys.stderr)
         return 2
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

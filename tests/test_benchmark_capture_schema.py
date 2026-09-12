@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from vllm_lt.benchmarks import capture_schema as schema
+from benchmarks.capture import schema
 from vllm_lt.benchmarks.schema import _digest, _file_record, read_json, write_json
 from vllm_lt.models import OuroConfig
 
@@ -128,7 +128,9 @@ def capture_plan(tmp_path, monkeypatch):
     monkeypatch.setattr(schema, "probe_checkout", probe)
     monkeypatch.setattr(schema, "affinity_snapshot", lambda: deepcopy(AFFINITY))
     contract = tmp_path / "contract.json"
-    write_json(contract, read_json(ROOT / "benchmarks/fixtures/ouro-m3-capture-contract.json"))
+    write_json(
+        contract, read_json(ROOT / "benchmarks/capture/fixtures/ouro-m3-capture-contract.json")
+    )
     return schema.make_plan(
         baseline_root=roots["A"],
         candidate_root=roots["B"],
@@ -141,6 +143,12 @@ def capture_plan(tmp_path, monkeypatch):
 
 def test_cpu_plan_exact_order_exclusions_pairs_and_graph_work(capture_plan):
     schema.verify_plan(capture_plan)
+    harness_paths = {row["path"] for row in capture_plan["harness"]["files"]}
+    assert {
+        name.replace(".", "/") + ".py"
+        for name in schema.IMPORT_MODULES
+        if name.startswith("benchmarks.capture.")
+    } <= harness_paths
     rows, workers = capture_plan["execution_order"], capture_plan["workers"]
     assert len(rows) == len({r["execution_id"] for r in rows}) == 101
     assert [w["worker_id"] for w in workers] == list(schema.WORKERS)
@@ -278,7 +286,7 @@ def test_embedded_input_is_bound_to_actual_parsed_frozen_bytes(capture_plan):
 
 
 def test_unresolved_template_and_nonfinite_json_cannot_run():
-    contract = read_json(ROOT / "benchmarks/fixtures/ouro-m3-capture-contract.json")
+    contract = read_json(ROOT / "benchmarks/capture/fixtures/ouro-m3-capture-contract.json")
     schema.validate_contract(contract)
     with pytest.raises(ValueError):
         schema.validate_contract(contract, resolved=True)
@@ -288,8 +296,8 @@ def test_unresolved_template_and_nonfinite_json_cannot_run():
 
 
 def test_actual_projected_lifecycle_kernel_builders_fit_combined_budget(capture_plan, monkeypatch):
-    from vllm_lt.validation.m3_capture_kernels import build_kernel_plan
-    from vllm_lt.validation.m3_capture_lifecycle import build_lifecycle_plan
+    from benchmarks.capture.kernels import build_kernel_plan
+    from benchmarks.capture.lifecycle import build_lifecycle_plan
 
     def actual_held():
         return build_lifecycle_plan(), build_kernel_plan()

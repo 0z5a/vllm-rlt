@@ -6,12 +6,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from vllm_lt.models.config import OuroConfig
-from vllm_lt.validation.m3_capture import GRAPH_LIMITS, build_model_plan, validate_model_plan
-from vllm_lt.validation.schema import _file_records, _validate_dependencies
-
-from . import ab_schema as ab
-from .ab_schema import (
+from benchmarks.capture.validation import GRAPH_LIMITS, build_model_plan, validate_model_plan
+from vllm_lt.benchmarks import ab_schema as ab
+from vllm_lt.benchmarks.ab_schema import (
     CELLS,
     INPUTS,
     RUNTIME_VARIABLES,
@@ -24,7 +21,7 @@ from .ab_schema import (
     validate_affinity,
     validate_model_config,
 )
-from .schema import (
+from vllm_lt.benchmarks.schema import (
     _constants,
     _digest,
     _file_record,
@@ -37,16 +34,18 @@ from .schema import (
     _workload_stats,
     read_json,
 )
+from vllm_lt.models.config import OuroConfig
+from vllm_lt.validation.schema import _file_records, _validate_dependencies
 
 IMPORT_MODULES = (
     *ab.IMPORT_MODULES,
-    "vllm_lt.benchmarks.capture_schema",
-    "vllm_lt.benchmarks.capture",
-    "vllm_lt.benchmarks.capture_report",
-    "vllm_lt.benchmarks.capture_runtime",
-    "vllm_lt.validation.m3_capture",
-    "vllm_lt.validation.m3_capture_lifecycle",
-    "vllm_lt.validation.m3_capture_kernels",
+    "benchmarks.capture.schema",
+    "benchmarks.capture.runner",
+    "benchmarks.capture.report",
+    "benchmarks.capture.runtime",
+    "benchmarks.capture.validation",
+    "benchmarks.capture.lifecycle",
+    "benchmarks.capture.kernels",
     "vllm_lt.worker.recurrent_graph",
 )
 OPTIONS = {"A": {"use_graphs": False}, "B": {"use_graphs": True}}
@@ -181,7 +180,7 @@ def source_probe():
 def probe_checkout(root):
     root = Path(root).resolve()
     code = (
-        "import json; from vllm_lt.benchmarks.capture_schema import source_probe; "
+        "import json; from benchmarks.capture.schema import source_probe; "
         "print(json.dumps(source_probe(), allow_nan=False))"
     )
     result = read_json_string(
@@ -226,7 +225,15 @@ def _source_controls(implementations):
     a, b = (implementations[side]["source"] for side in ("A", "B"))
     equal(a["commit"], b["commit"], "A/B identical commit")
     equal(a["files"], b["files"], "A/B all source bytes identical")
-    return ab._harness(a)
+    common_paths = {row["path"] for row in ab._harness(a)["files"]}
+    files = [
+        row
+        for row in a["files"]
+        if row["path"] in common_paths
+        or row["path"].startswith("benchmarks/capture/")
+        or row["path"] == "benchmarks/__init__.py"
+    ]
+    return {"files": files, "sha256": _digest(files)}
 
 
 def execution_rows(suite, contract, stats, numerical, lifecycle, kernels):
@@ -346,8 +353,8 @@ def resource_estimates(numerical, rows):
 
 
 def _held_plans():
-    from vllm_lt.validation.m3_capture_kernels import build_kernel_plan
-    from vllm_lt.validation.m3_capture_lifecycle import build_lifecycle_plan
+    from benchmarks.capture.kernels import build_kernel_plan
+    from benchmarks.capture.lifecycle import build_lifecycle_plan
 
     return build_lifecycle_plan(), build_kernel_plan()
 

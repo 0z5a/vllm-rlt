@@ -145,3 +145,11 @@ freeze a post-close allocated/reserved-memory plateau criterion without dropping
 shared caches. Process-terminal zero memory alone does not prove a plateau.
 Two throughput samples show observed variability, not a confidence interval.
 CPU stand-ins verify transactions; only reserved-device runs verify CUDA replay.
+
+## Benchmark tooling
+
+Graph benchmarks and numerical, kernel and lifecycle validation live in
+[`benchmarks/capture/`](../benchmarks/capture/README.md), outside the installed
+runtime package. Run `python -m benchmarks.capture --help` from the repository
+root. Generated plans, traces, results and logs belong in external experiment
+storage or the ignored `artifacts/` directory.

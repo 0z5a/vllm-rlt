@@ -5,7 +5,7 @@ from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 
-from . import m3_persistent_lifecycle as base
+from vllm_lt.validation import m3_persistent_lifecycle as base
 
 MiB = 1024**2
 _METADATA = base._METADATA
@@ -112,8 +112,8 @@ def _audit_one(root, plan, evaluation, *, expected_device):
 
     import torch
 
-    from .diagnostics import TensorSpool
-    from .m3_capture import _audit_graph_setup
+    from benchmarks.capture.validation import _audit_graph_setup
+    from vllm_lt.validation.diagnostics import TensorSpool
 
     eid = evaluation["evaluation_id"]
     result = base._read(root / "evaluations" / eid / "result.json")
@@ -540,7 +540,7 @@ def _evaluation_prefix(root, plan, kind, expected_device):
 
 
 def _failed_lifecycle_evidence(root, plan, result, prior):
-    from .diagnostics import TensorSpool
+    from vllm_lt.validation.diagnostics import TensorSpool
 
     known = False
     steps = result.get("steps", [])
@@ -910,9 +910,8 @@ def run_lifecycle_evaluation(plan, evaluation_id, output_dir, device="cuda", dea
     from vllm_lt.core.scheduler import ScheduledItem, SchedulerOutput
     from vllm_lt.request import Request, Stage
     from vllm_lt.sampling_params import SamplingParams
+    from vllm_lt.validation.diagnostics import SpoolBudget, TensorSpool
     from vllm_lt.worker.model_runner import ModelRunner
-
-    from .diagnostics import SpoolBudget, TensorSpool
 
     validate_lifecycle_plan(plan)
     matches = [row for row in plan["execution_order"] if row["evaluation_id"] == evaluation_id]

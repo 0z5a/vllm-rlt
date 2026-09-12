@@ -6,8 +6,8 @@ from copy import deepcopy
 import pytest
 import torch
 
+from benchmarks.capture import kernels as capture
 from vllm_lt.kernels.paged_attention import torch_paged_attention
-from vllm_lt.validation import m3_capture_kernels as capture
 from vllm_lt.validation.schema import read_json
 
 

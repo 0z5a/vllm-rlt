@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from vllm_lt.benchmarks import capture_runtime as runtime
+from benchmarks.capture import runtime
 from vllm_lt.benchmarks import runner
 from vllm_lt.benchmarks.schema import read_json, write_json
 

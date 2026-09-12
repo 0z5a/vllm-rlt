@@ -6,7 +6,7 @@ import pytest
 import test_benchmark_capture_schema as schema_fixtures
 import torch
 
-from vllm_lt.benchmarks import capture_report as report
+from benchmarks.capture import report
 from vllm_lt.benchmarks.schema import write_json
 
 capture_plan = schema_fixtures.capture_plan
@@ -496,7 +496,7 @@ def test_counter_pointer_setup_or_cleanup_claim_changes_are_rejected(cpu_capture
 @pytest.fixture
 def synthetic_run(capture_plan, tmp_path, monkeypatch):
     """Mock component auditors only; real parent/worker/row/source chronology remains checked."""
-    from vllm_lt.benchmarks import capture
+    from benchmarks.capture import runner as capture
 
     root = tmp_path / "evidence"
     root.mkdir()

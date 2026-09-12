@@ -1,9 +1,0 @@
-{
-  "status": "stopped_before_first_measured_worker",
-  "reason": "Shared environment changed: eight new networking dependency distributions; exact dependency guard rejected C1 before loading model.",
-  "feasibility_executions": 15,
-  "measured_executions": 0,
-  "all_feasibility_comparisons_passed": true,
-  "device_cleanup": "All three completed feasibility workers report zero terminal allocated/reserved bytes. C1 did not initialize CUDA.",
-  "next_plan": "Task-owned copy of the prepared environment; separate source/output paths and newly frozen dependency identity; no pooled samples."
-}

@@ -5,8 +5,8 @@ from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 
-from . import m3_inactive_kernels as base
-from .m3_persistent_lifecycle import _persist_result, _require
+from vllm_lt.validation import m3_inactive_kernels as base
+from vllm_lt.validation.m3_persistent_lifecycle import _persist_result, _require
 
 _unsettled = []
 
@@ -129,7 +129,7 @@ def run_kernel_evaluation(plan, evaluation_id, output_dir, *, device, deadline_n
 
     import torch
 
-    from .diagnostics import SpoolBudget, TensorSpool
+    from vllm_lt.validation.diagnostics import SpoolBudget, TensorSpool
 
     validate_kernel_plan(plan)
     matches = [x for x in plan["execution_order"] if x["evaluation_id"] == evaluation_id]
@@ -296,7 +296,7 @@ def run_kernel_evaluation(plan, evaluation_id, output_dir, *, device, deadline_n
 def _failed_kernel_evidence(root, plan, result, outputs):
     import torch
 
-    from .diagnostics import TensorSpool
+    from vllm_lt.validation.diagnostics import TensorSpool
 
     row = result["evaluation"]
     layout = next(x for x in plan["layouts"] if x["layout_id"] == row["layout_id"])
@@ -353,9 +353,9 @@ def _failed_kernel_evidence(root, plan, result, outputs):
 def audit_kernel_outputs(output_dir, plan, *, expected_device="cuda:0", allow_prefix=False):
     import torch
 
-    from .diagnostics import TensorSpool
-    from .m3_capture_lifecycle import _evaluation_prefix
-    from .m3_persistent_lifecycle import _file_hash
+    from benchmarks.capture.lifecycle import _evaluation_prefix
+    from vllm_lt.validation.diagnostics import TensorSpool
+    from vllm_lt.validation.m3_persistent_lifecycle import _file_hash
 
     report = {
         "schema_version": 1,

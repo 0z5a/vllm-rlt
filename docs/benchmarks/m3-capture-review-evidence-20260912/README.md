@@ -8,20 +8,13 @@ The root-cause diagnostic uses unchanged predecessor
 30-measurement performance screen, fixed-concurrency lifecycle plateau and
 actual replay attribution from the incomplete profiling protocols.
 
-- `lifecycle-summary.json`: derived directly from CUDA memory snapshots and
-  real-model output histories; includes the six baseline diagnostic lifetimes
-  and seventeen candidate churn lifetimes.
-- `stream-plan.json`, `lifecycle-plan.json`, `timing-plan.json`, `profile-plan.json`:
-  frozen hypotheses, controls, source/model hashes, budgets and stopping rules.
-- `report.json`: audited timing, per-request latency, padding, setup projections,
-  cleanup and launch/kernel attribution. `report.py.txt` recomputes metrics and
-  checks host events, inventories and profile correlations from raw artifacts.
-- `*-stop.json`: preserve each separate preflight, environment, profiler-time
-  and artifact-cap failure. No failed attempt is relabeled as complete.
-- The `.py.txt` files preserve the actual experiment drivers without adding
-  archived scripts to runtime tooling. They retain their recorded absolute
-  paths, not a portable benchmark CLI. `baseline-plan.json`
-  supplies the prior plan referenced by the stream diagnostic.
+Generated JSON, logs and archived driver copies are kept outside the repository.
+The original published summaries and plans are preserved under
+`/home/hsliu2/tmp/vllm-lt-graph-review-20260912/published-evidence/`.
+They include lifecycle byte counts and output histories, frozen plans, audited
+timing/latency metrics, and every stopped-attempt record. No failed attempt is
+relabeled as complete. The maintained benchmark and validation code lives in
+[`benchmarks/capture/`](../../../benchmarks/capture/README.md).
 
 Full local evidence archive: `/home/hsliu2/tmp/vllm-lt-graph-review-20260912/evidence.tar.gz`.
 It contains both source snapshots, all attempts, profiles, raw results, logs,

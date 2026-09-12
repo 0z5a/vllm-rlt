@@ -8,9 +8,10 @@ from types import SimpleNamespace
 import pytest
 import test_benchmark_capture_schema as fixtures
 
-from vllm_lt.benchmarks import ab, capture, runner
+from benchmarks.capture import runner as capture
+from benchmarks.capture import validation as m3_capture
+from vllm_lt.benchmarks import ab, runner
 from vllm_lt.benchmarks.schema import write_json
-from vllm_lt.validation import m3_capture
 
 capture_plan = fixtures.capture_plan
 no_cuda_or_weights = fixtures.no_cuda_or_weights
@@ -181,7 +182,7 @@ def test_actual_shared_launcher_cleans_only_its_child_group(
                 worker,
                 tmp_path,
                 time.perf_counter_ns() + 100 * 10**9,
-                module="vllm_lt.benchmarks.capture",
+                module="benchmarks.capture",
                 active_deadline=lambda *a: 1 if reason == "case_deadline" else None,
             )
     finally:
