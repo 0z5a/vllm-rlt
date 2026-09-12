@@ -107,11 +107,9 @@ def test_plan_binds_capture_sources_order_and_budgets(capture_plan):
         if name.startswith("benchmarks.capture.")
     } <= paths
     rows = capture_plan["execution_order"]
-    assert len(rows) == len({r["execution_id"] for r in rows}) == 101
+    assert len(rows) == len({r["execution_id"] for r in rows}) == 93
     assert Counter(r["kind"] for r in rows) == {
         "model": 15,
-        "lifecycle": 2,
-        "kernel": 6,
         "benchmark": 78,
     }
     measured = [r for r in rows if r["phase"] == "measured"]
@@ -125,12 +123,15 @@ def test_plan_binds_capture_sources_order_and_budgets(capture_plan):
         r["pair_id"] is None for r in rows if r["kind"] == "benchmark" and r["phase"] != "measured"
     )
     assert capture_plan["resource_estimates"]["artifact_bytes_upper_bound"] < 16 * 1024**3
-    assert capture_plan["resource_estimates"]["total_device_scratch_traversals"] == 352
+    assert capture_plan["resource_estimates"]["total_device_scratch_traversals"] == 500
+    assert capture_plan["resource_estimates"]["capture_recordings"] == 125
+    assert capture_plan["graph_limits"]["common_payload_bytes"] == 1024**2
 
 
 @pytest.mark.parametrize(
     "mutate",
     [
+        lambda p: p.update(schema_version=1),
         lambda p: p["contract"]["implementation_options"]["B"].update(use_graphs=1),
         lambda p: p["contract"]["acceptance"].update(target_ttft_ratio_max=1.1),
         lambda p: p["execution_order"].reverse(),
@@ -138,7 +139,7 @@ def test_plan_binds_capture_sources_order_and_budgets(capture_plan):
         lambda p: p["implementations"]["B"]["imports"].update(
             {schema.IMPORT_MODULES[-1]: "/elsewhere.py"}
         ),
-        lambda p: p["kernels"]["execution_order"].pop(),
+        lambda p: p["numerical"]["execution_order"].pop(),
         lambda p: p["graph_limits"].update(graph_retained_reserved_bytes=2**30),
     ],
 )

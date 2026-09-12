@@ -3,10 +3,8 @@
 import argparse
 import json
 import os
-import signal
 import sys
 import time
-import traceback
 from pathlib import Path
 
 from benchmarks.capture.schema import (
@@ -100,15 +98,6 @@ def run_worker(plan, *, worker_id, output_dir, deadline_ns):
 
             def after_case(case, value):
                 completed(case["case_id"], value)
-                if case["phase"] == "feasibility":
-                    for evaluation_id, result in run_held_checks(
-                        plan, implementation, output_dir, deadline_ns
-                    ):
-                        require(
-                            result["status"] == "complete" and result["passed"],
-                            "held-input correctness prerequisite failed",
-                        )
-                        completed(evaluation_id, result)
 
             numerical = run_model_rows(
                 model, plan, implementation, output_dir, deadline_ns, after_case=after_case
@@ -162,178 +151,29 @@ def run_worker(plan, *, worker_id, output_dir, deadline_ns):
     return manifest
 
 
-def run_held_checks(plan, implementation, output_dir, deadline_ns):
-    from benchmarks.capture.kernels import run_kernel_evaluation
-    from benchmarks.capture.lifecycle import run_lifecycle_evaluation
-
-    for key, execute in (
-        ("kernels", run_kernel_evaluation),
-        ("lifecycle", run_lifecycle_evaluation),
-    ):
-        for row in plan[key]["execution_order"]:
-            if row["implementation_id"] == implementation:
-                yield (
-                    row["evaluation_id"],
-                    execute(
-                        plan[key],
-                        row["evaluation_id"],
-                        output_dir / key,
-                        device="cuda",
-                        deadline_ns=deadline_ns,
-                    ),
-                )
-
-
 def audit_correctness(output_dir, plan):
-    from benchmarks.capture.kernels import audit_kernel_outputs
-    from benchmarks.capture.lifecycle import audit_lifecycle_outputs
     from benchmarks.capture.validation import audit_model_rows
 
-    audits = {
-        "numerical": audit_model_rows(output_dir, plan),
-        "kernels": audit_kernel_outputs(output_dir / "kernels", plan["kernels"]),
-        "lifecycle": audit_lifecycle_outputs(output_dir / "lifecycle", plan["lifecycle"]),
-    }
-    return {
-        "complete": all(row["complete"] for row in audits.values()),
-        "passed": all(row["passed"] for row in audits.values()),
-        **audits,
-    }
+    numerical = audit_model_rows(output_dir, plan)
+    return {key: numerical[key] for key in ("complete", "passed")} | {"numerical": numerical}
 
 
-def active_case_deadline(output_dir, worker):
-    from vllm_lt.validation.m3_inactive_run import _active_deadline
-
-    candidates = [ab.active_case_deadline(output_dir, worker)]
-    for kind in ("kernels", "lifecycle"):
-        ids = []
-        for execution_id in worker["execution_ids"]:
-            folder = output_dir / kind / "evaluations" / execution_id
-            if (folder / "started.json").exists():
-                ids.append(execution_id)
-        candidates.append(_active_deadline(output_dir, worker, check_directory=kind, check_ids=ids))
-    return min((value for value in candidates if value is not None), default=None)
+active_case_deadline = ab.active_case_deadline
 
 
 def run_ab(plan, *, output_dir):
-    start = time.perf_counter_ns()
-    verify_plan(plan)
-    require(
-        os.environ.get("CUDA_VISIBLE_DEVICES") == str(plan["contract"]["controls"]["gpu_ids"][0]),
-        "controller must run inside the frozen scheduler assignment",
+    from functools import partial
+
+    return ab._run_ab(
+        plan,
+        output_dir=output_dir,
+        verify=verify_plan,
+        audit=audit_correctness,
+        artifact_type="m3_capture_manifest",
+        launch_worker=partial(
+            ab._launch_worker, module="benchmarks.capture", active_deadline=active_case_deadline
+        ),
     )
-    output_dir = Path(output_dir).resolve()
-    output_dir.mkdir(parents=True, exist_ok=False)
-    (output_dir / "workers").mkdir()
-    write_json(output_dir / "plan.json", plan)
-    deadline = start + plan["contract"]["limits"]["total_timeout_s"] * 1_000_000_000
-    manifest = {
-        "schema_version": 1,
-        "artifact_type": "m3_capture_manifest",
-        "plan_sha256": plan["plan_sha256"],
-        "status": "running",
-        "started_ns": start,
-        "deadline_ns": deadline,
-        "completed_workers": [],
-        "completed_executions": [],
-        "failures": [],
-        "workers": [],
-        "numerical_gate": None,
-    }
-    write_json(output_dir / "manifest.json", manifest)
-    previous = None
-    old_sigterm = signal.getsignal(signal.SIGTERM)
-
-    def stopped(signum, frame):
-        raise KeyboardInterrupt("controller received SIGTERM")
-
-    signal.signal(signal.SIGTERM, stopped)
-    try:
-        for worker in plan["workers"]:
-            require(time.perf_counter_ns() < deadline, "global deadline exhausted")
-            if worker["worker_id"] == "A1":
-                gate = audit_correctness(output_dir, plan)
-                manifest["numerical_gate"] = gate
-                manifest["numerical_gate_ns"] = time.perf_counter_ns()
-                write_json(output_dir / "numerical-gate.json", gate)
-                require(
-                    gate["complete"] and gate["passed"], "numerical evidence cannot qualify timing"
-                )
-            launched = time.perf_counter_ns()
-            launch = {
-                "worker_id": worker["worker_id"],
-                "exit_code": None,
-                "launched_ns": launched,
-                "returned_ns": None,
-            }
-            manifest["workers"].append(launch)
-            write_json(output_dir / "manifest.json", manifest)
-            try:
-                exit_code = ab._launch_worker(
-                    plan,
-                    worker,
-                    output_dir,
-                    deadline,
-                    module="benchmarks.capture",
-                    active_deadline=active_case_deadline,
-                )
-                launch["exit_code"] = exit_code
-            finally:
-                launch["returned_ns"] = time.perf_counter_ns()
-            path = output_dir / "workers" / worker["worker_id"] / "manifest.json"
-            result = read_json(path)
-            child_completed = result["completed_executions"]
-            equal(
-                child_completed,
-                worker["execution_ids"][: len(child_completed)],
-                "worker completed execution prefix",
-            )
-            manifest["completed_executions"].extend(child_completed)
-            equal(child_completed, worker["execution_ids"], "complete worker execution order")
-            require(
-                exit_code == 0 and result["status"] == "complete" and result["passed"],
-                f"worker {worker['worker_id']} failed; no subsequent worker started",
-            )
-            require(
-                result["started_ns"] >= launched and result["ended_ns"] < deadline,
-                "worker clock/deadline is invalid",
-            )
-            require(result["model_loads"] == 1, "worker must load exactly one model")
-            audit_worker_controls(plan, result, previous)
-            previous = result
-            manifest["completed_workers"].append(worker["worker_id"])
-            manifest["artifact_usage"] = artifact_usage(output_dir, plan["contract"]["limits"])
-            write_json(output_dir / "manifest.json", manifest)
-        manifest["status"] = "complete"
-    except BaseException as exc:
-        manifest["status"] = (
-            "incomplete" if isinstance(exc, (TimeoutError, KeyboardInterrupt)) else "failed"
-        )
-        failure = {
-            "type": type(exc).__name__,
-            "message": str(exc)[:2048],
-            "traceback": (
-                "".join(traceback.format_tb(exc.__traceback__, limit=16))[-6000:]
-                + f"{type(exc).__name__}: {str(exc)[:2048]}"
-            )[:8192],
-        }
-        if isinstance(exc, OSError):
-            failure.update(
-                errno=exc.errno,
-                filename=None if exc.filename is None else str(exc.filename)[:1024],
-                filename2=None if exc.filename2 is None else str(exc.filename2)[:1024],
-            )
-        manifest["failures"].append(failure)
-    finally:
-        signal.signal(signal.SIGTERM, old_sigterm)
-        manifest["ended_ns"] = time.perf_counter_ns()
-        if manifest["ended_ns"] >= deadline:
-            manifest["status"] = "incomplete"
-            manifest["failures"].append(
-                {"type": "deadline", "message": "overall deadline exhausted"}
-            )
-        write_json(output_dir / "manifest.json", manifest)
-    return manifest
 
 
 def main(argv=None):

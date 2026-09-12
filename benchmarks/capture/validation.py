@@ -18,15 +18,10 @@ from vllm_lt.validation.schema import _digest, read_json, write_json
 PROJECTION = "loop_gate_logits_full_kv_v1"
 OPERATIONS = ("loop_hidden", "gate_logits", "logits", "populated_kv")
 BUCKETS = {"row_counts": [4, 8], "table_width": 32, "max_live_rows": 4, "mapping": "odd"}
-GRAPH_LIMITS = {
-    "common_payload_bytes": 262144,
-    "cpu_staging_bytes": 16384,
-    "graph_retained_allocated_bytes": 268435456,
-    "graph_retained_reserved_bytes": 268435456,
-    "setup_peak_allocated_bytes": 536870912,
-    "setup_peak_reserved_bytes": 536870912,
-    "setup_timeout_s": 60,
-}
+GRAPH_LIMITS = read_json(Path(__file__).parent / "fixtures/ouro-m3-capture-contract.json")[
+    "graph_limits"
+]
+
 EVIDENCE = {
     "projection": PROJECTION,
     "operations": list(OPERATIONS),
@@ -39,9 +34,8 @@ EVIDENCE = {
 }
 
 
-def _require(value, message):
-    if not value:
-        raise ValueError(message)
+_require = m3_persistent._require
+_descriptor = m3_persistent._descriptor
 
 
 def _rename(value):
@@ -209,10 +203,6 @@ def validate_model_plan(plan):
 def model_view(parent):
     validate_model_plan(parent["numerical"])
     return {**parent["numerical"], "plan_sha256": parent["plan_sha256"]}
-
-
-def _descriptor(tensor):
-    return m3_persistent._descriptor(tensor)
 
 
 @contextmanager
@@ -481,23 +471,47 @@ def run_model_rows(model, parent, implementation, output_dir, deadline_ns, *, af
     )
 
 
+def _graph_io(bucket):
+    tensors = bucket["tensors"]
+    return (
+        {"hidden": tensors["hidden_in"], **{k: tensors[k] for k in m3_persistent._METADATA}},
+        {"hidden": tensors["hidden_out"], "gates": tensors["gate_out"]},
+    )
+
+
+def _audit_setup_memory(setup, replay, limits):
+    before, after = setup["memory_baseline"], setup["memory_after"]
+    for memory in (before, after):
+        _require(all(type(v) is int and v >= 0 for v in memory.values()), "integer setup memory")
+        _require(memory["reserved_bytes"] >= memory["allocated_bytes"], "setup reserved memory")
+    if not replay:
+        _require(after == before, "eager baseline performed graph setup")
+    deltas = {}
+    for kind, cap_prefix in (("retained", "graph_retained_"), ("peak", "setup_peak_")):
+        for field in ("allocated_bytes", "reserved_bytes"):
+            actual = field if kind == "retained" else "peak_" + field
+            delta = max(0, after[actual] - before[field]) if replay else 0
+            _require(delta <= limits[cap_prefix + field], "graph memory budget exceeded")
+            deltas[kind + "_" + field] = delta
+    _require(setup["memory_deltas"] == deltas, "graph memory deltas differ from snapshots")
+
+
 def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cuda:0", limits=None):
     """Audit setup, pool ownership and complete owned tensor inventory."""
     from vllm_lt.worker.decode_buffers import DecodeBucketLayout
 
     limits = GRAPH_LIMITS if limits is None else limits
-    layout_record = setup.get("layout")
+    layout_record = setup["layout"]
     layout = DecodeBucketLayout(
-        max_num_seqs=layout_record["max_num_seqs"] if layout_record else 4,
-        table_width=layout_record["table_width"] if layout_record else 32,
+        max_num_seqs=layout_record["max_num_seqs"],
+        table_width=layout_record["table_width"],
     )
     rows_inventory = layout.row_counts
-    if layout_record:
-        _require(
-            layout_record["row_counts"] == list(rows_inventory)
-            and layout_record["pool_scope"] == "executor",
-            "graph layout or pool scope differs",
-        )
+    _require(
+        layout_record["row_counts"] == list(rows_inventory)
+        and layout_record["pool_scope"] == "executor",
+        "graph layout or pool scope differs",
+    )
     hidden = config["hidden_size"]
     setup_record = setup["setup"]
     _require(setup_record["status"] == "complete", "graph setup incomplete")
@@ -567,37 +581,12 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
             and scratch["before_hashes"] == scratch["after_hashes"],
             "scratch free-list or byte restoration differs",
         )
-        before_memory, after_memory = setup_record["memory_baseline"], setup_record["memory_after"]
-        deltas = {
-            "retained_allocated_bytes": max(
-                0, after_memory["allocated_bytes"] - before_memory["allocated_bytes"]
-            ),
-            "retained_reserved_bytes": max(
-                0, after_memory["reserved_bytes"] - before_memory["reserved_bytes"]
-            ),
-            "peak_allocated_bytes": max(
-                0, after_memory["peak_allocated_bytes"] - before_memory["allocated_bytes"]
-            ),
-            "peak_reserved_bytes": max(
-                0, after_memory["peak_reserved_bytes"] - before_memory["reserved_bytes"]
-            ),
-        }
-        _require(
-            deltas == setup_record["memory_deltas"],
-            "graph memory deltas do not derive from snapshots",
-        )
-        for key, cap in (
-            ("retained_allocated_bytes", "graph_retained_allocated_bytes"),
-            ("retained_reserved_bytes", "graph_retained_reserved_bytes"),
-            ("peak_allocated_bytes", "setup_peak_allocated_bytes"),
-            ("peak_reserved_bytes", "setup_peak_reserved_bytes"),
-        ):
-            _require(0 <= deltas[key] <= limits[cap], "graph memory budget exceeded")
     else:
         _require(
             setup_record["events"] == [] and setup_record["scratch"] is None,
             "eager/backend fallback performed graph setup",
         )
+    _audit_setup_memory(setup_record, replay, limits)
     stable = setup["buckets"]
     _require(set(stable) == set(map(str, rows_inventory)), "graph bucket inventory differs")
     owned = set()
@@ -645,14 +634,7 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
                 ),
                 "invalid graph or instantiated executable identity",
             )
-            inputs = {
-                "hidden": bucket["tensors"]["hidden_in"],
-                **{key: bucket["tensors"][key] for key in m3_persistent._METADATA},
-            }
-            outputs = {
-                "hidden": bucket["tensors"]["hidden_out"],
-                "gates": bucket["tensors"]["gate_out"],
-            }
+            inputs, outputs = _graph_io(bucket)
             _require(
                 bucket["captured_inputs"] == inputs and bucket["captured_outputs"] == outputs,
                 "captured tensor addresses differ from owned bundle",
@@ -673,21 +655,53 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
     )
     if replay:
         pool_ids = {tuple(bucket["pool_id"]) for bucket in stable.values()}
-        if layout_record:
-            _require(len(pool_ids) == 1, "executor buckets must share their owned pool")
-            for bucket in stable.values():
-                _require(
-                    bucket["pool_owner"]
-                    == {
-                        "kind": "torch.cuda.MemPool",
-                        "id": bucket["pool_id"],
-                        "release_policy": "synchronize-reset-drop-captured-outputs-owner-last",
-                    },
-                    "graph pool ownership evidence differs",
-                )
-        else:
-            _require(len(pool_ids) == len(stable), "legacy graph pools must be independent")
+        _require(len(pool_ids) == 1, "executor buckets must share their owned pool")
+        for bucket in stable.values():
+            _require(
+                bucket["pool_owner"]
+                == {
+                    "kind": "torch.cuda.MemPool",
+                    "id": bucket["pool_id"],
+                    "release_policy": "synchronize-reset-drop-captured-outputs-owner-last",
+                },
+                "graph pool ownership evidence differs",
+            )
     return stable, owned
+
+
+def _same_except(before, after, changing):
+    _require(
+        {k: v for k, v in before.items() if k not in changing}
+        == {k: v for k, v in after.items() if k not in changing},
+        "immutable graph state or captured addresses changed",
+    )
+
+
+def _audit_graph_snapshot(initial, current):
+    """One invariant check for numerical dispatches and timed-run boundaries."""
+    _require(
+        initial["enabled"] is True and initial["failure"] is None and initial["status"] == "ready",
+        "graph executor disabled or failed",
+    )
+    _same_except(
+        initial,
+        current,
+        ("buckets", "counters", "fallback_counts", "last_dispatch", "last_publication"),
+    )
+    _require(set(initial["buckets"]) == set(current["buckets"]), "graph bucket inventory changed")
+    for key, bucket in initial["buckets"].items():
+        _same_except(bucket, current["buckets"][key], ("generation", "counters"))
+
+
+def _audit_graph_close(final, closed):
+    _require(
+        closed["status"] == "closed"
+        and closed["buckets"] == {}
+        and closed["device_payload_bytes"] == closed["cpu_staging_bytes"] == 0,
+        "closed graph executor retains owned buffers",
+    )
+    for field in ("counters", "fallback_counts", "setup", "failure"):
+        _require(closed[field] == final[field], "graph state changed during close")
 
 
 def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
@@ -711,16 +725,17 @@ def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
     )
     _require("close_error" not in lifecycle, "graph executor cleanup failed")
     setup = lifecycle["setup"]
-    _require(
-        lifecycle["after_close"].get("enabled") is False
-        or lifecycle["after_close"].get("status") == "closed",
-        "graph executor was not closed",
-    )
     replay = case["storage_strategy"] == "graph_replay"
     fallback = case["storage_strategy"] == "backend_fallback"
     hidden = config["hidden_size"]
     stable, owned = _audit_graph_setup(
         setup, config, replay=replay, block_size=case["block_size"], expected_device=expected_device
+    )
+    _require(
+        setup["use_graphs"] == (case["implementation_id"] == "B")
+        and setup["backend"] == case["backend"]
+        and setup["limits"] == GRAPH_LIMITS,
+        "graph request/backend/limits differ",
     )
     visits = {"4": 0, "8": 0}
     for index, (event, row) in enumerate(zip(events, schedule), 1):
@@ -745,36 +760,11 @@ def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
             "numerical fixture left declared support bounds",
         )
         before, after = event["before"], event["after"]
-        for snap in (before, after):
-            _require(
-                snap["enabled"] and snap["failure"] is None, "graph executor disabled or failed"
-            )
-            _require(
-                snap["use_graphs"] == (case["implementation_id"] == "B")
-                and snap["backend"] == case["backend"],
-                "graph request/backend identity differs",
-            )
-            _require(snap["limits"] == GRAPH_LIMITS, "graph limits differ")
-            _require(set(snap["buckets"]) == set(stable), "graph bucket set changed")
-            for key, bucket in snap["buckets"].items():
-                _require(
-                    not bucket["in_use"] and not bucket["failed"],
-                    "observed bucket is still borrowed or failed",
-                )
-                for field in (
-                    "tensors",
-                    "staging_tensors",
-                    "graph_id",
-                    "graph_exec_id",
-                    "pool_id",
-                    "captured_inputs",
-                    "captured_outputs",
-                    "setup_generation",
-                ):
-                    _require(
-                        bucket[field] == stable[key][field],
-                        "graph owned or captured addresses changed",
-                    )
+        _require(
+            before == (setup if index == 1 else events[index - 2]["after"]),
+            "graph state changed before scheduled dispatch",
+        )
+        _audit_graph_snapshot(setup, after)
         expected_counts = {
             "calls": index,
             "empty": 0,
@@ -788,20 +778,9 @@ def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
             after["counters"] == expected_counts, "actual graph dispatch/completion counters differ"
         )
         _require(
-            before["counters"]
-            == {
-                key: (index - 1 if number == index else number)
-                for key, number in expected_counts.items()
-            },
-            "pre-dispatch graph counters differ from completed prefix",
-        )
-        _require(
             after["fallback_counts"]
             == {"backend": index if fallback else 0, "live_count": 0, "table_width": 0},
             "graph fallback counters differ",
-        )
-        _require(
-            before["status"] == after["status"] == "ready", "graph storage reused before completion"
         )
         dispatch = after["last_dispatch"]
         _require(
@@ -873,14 +852,7 @@ def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
                 and dispatch["generation"] == bucket["generation"],
                 "production lease generation differs from setup baseline",
             )
-            inputs = {
-                "hidden": bucket["tensors"]["hidden_in"],
-                **{key: bucket["tensors"][key] for key in m3_persistent._METADATA},
-            }
-            outputs = {
-                "hidden": bucket["tensors"]["hidden_out"],
-                "gates": bucket["tensors"]["gate_out"],
-            }
+            inputs, outputs = _graph_io(bucket)
             _require(
                 dispatch["actual_inputs"] == inputs
                 and dispatch["actual_physical_outputs"] == outputs,
@@ -919,13 +891,7 @@ def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
         lifecycle["before_close"] == events[-1]["after"],
         "final graph state differs from last completed dispatch",
     )
-    _require(
-        lifecycle["after_close"]["buckets"] == {}
-        and lifecycle["after_close"]["device_payload_bytes"]
-        == lifecycle["after_close"]["cpu_staging_bytes"]
-        == 0,
-        "closed graph executor retains owned buffers",
-    )
+    _audit_graph_close(lifecycle["before_close"], lifecycle["after_close"])
     return {
         "dispatches": len(events),
         "replay_dispatches": len(events) if replay else 0,
@@ -935,306 +901,62 @@ def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
     }
 
 
-def audit_model_rows(output_dir, parent, *, expected_device="cuda:0"):
+def _graph_case_auditor(view, expected_device, totals, buckets):
+    def audit(case, value, lifetime):
+        counts = _audit_graph_case(
+            case, value, view["model_config"], expected_device=expected_device
+        )
+        if case["implementation"] == "native":
+            setup = value["graph_lifecycle"]["setup"]["setup"]
+            _require(
+                lifetime["started_ns"]
+                <= setup["started_ns"]
+                <= setup["finished_ns"]
+                <= lifetime["finished_ns"],
+                "graph setup lies outside case lifetime",
+            )
+        for key in totals:
+            totals[key] += counts[key]
+        if case["phase"] == "validation":
+            buckets[case["implementation_id"]].update(counts["buckets"])
+
+    return audit
+
+
+def _audit_model(output_dir, parent, expected_device, *, prefix):
+    from vllm_lt.validation.m2 import _audit_numerical_prefix
+
     view = model_view(parent)
-    result = _audit_numerical_view(output_dir, view)
-    result["counts"].update(
-        planned_qualification_cases=13,
-        planned_excluded_feasibility_cases=2,
-        planned_qualification_comparisons=30,
-        planned_excluded_feasibility_comparisons=1,
+    totals = dict.fromkeys(
+        ("dispatches", "replay_dispatches", "eager_dispatches", "backend_fallbacks"), 0
     )
-    if not result["complete"]:
-        return result
-    totals = {
-        "dispatches": 0,
-        "replay_dispatches": 0,
-        "eager_dispatches": 0,
-        "backend_fallbacks": 0,
-    }
     buckets = {"A": set(), "B": set()}
-    try:
-        for case in view["execution_order"]:
-            value = read_json(
-                Path(output_dir) / "numerical/cases" / case["case_id"] / "result.json"
+    audit = _audit_numerical_prefix if prefix else _audit_numerical_view
+    result = audit(
+        output_dir, view, audit_case=_graph_case_auditor(view, expected_device, totals, buckets)
+    )
+    result["counts"].update({"verified_" + k: v for k, v in totals.items()})
+    counts = dict(
+        qualification_cases=13,
+        excluded_feasibility_cases=2,
+        qualification_comparisons=30,
+        excluded_feasibility_comparisons=1,
+    )
+    result["counts"].update({"planned_" + k: v for k, v in counts.items()})
+    if result["complete"]:
+        if buckets != {"A": {4, 8}, "B": {4, 8}}:
+            result["complete"] = result["passed"] = False
+            result["errors"].append(
+                {"type": "ValueError", "message": "missing qualification bucket coverage"}
             )
-            counts = _audit_graph_case(
-                case, value, view["model_config"], expected_device=expected_device
-            )
-            if case["implementation"] == "native":
-                setup = value["graph_lifecycle"]["setup"]["setup"]
-                lifetime = result["ledger"]["case_lifetimes"][case["case_id"]]
-                _require(
-                    lifetime["started_ns"]
-                    <= setup["started_ns"]
-                    <= setup["finished_ns"]
-                    <= lifetime["finished_ns"],
-                    "graph setup lies outside case lifetime",
-                )
-            for key in totals:
-                totals[key] += counts[key]
-            if case["phase"] == "validation":
-                buckets[case["implementation_id"]].update(counts["buckets"])
-        _require(
-            buckets == {"A": {4, 8}, "B": {4, 8}},
-            "qualification lacks actual execution of both buckets on both sides",
-        )
-        result["counts"].update({"verified_" + key: value for key, value in totals.items()})
-        result["counts"].update(
-            verified_qualification_cases=13,
-            verified_excluded_feasibility_cases=2,
-            verified_qualification_comparisons=30,
-            verified_excluded_feasibility_comparisons=1,
-        )
-    except (ValueError, KeyError, TypeError, OSError) as error:
-        result["complete"] = result["passed"] = False
-        result["errors"].append({"type": type(error).__name__, "message": str(error)})
+        else:
+            result["counts"].update({"verified_" + k: v for k, v in counts.items()})
     return result
+
+
+def audit_model_rows(output_dir, parent, *, expected_device="cuda:0"):
+    return _audit_model(output_dir, parent, expected_device, prefix=False)
 
 
 def audit_completed_prefix(output_dir, parent, *, expected_device="cuda:0"):
-    """Audit a settled prefix without turning its missing suffix into corruption.
-
-    Original case/comparison rows and the full frozen plan hash are preserved.
-    Error aggregates are reconstructed from recorded statistics; retained typed
-    anchors are byte-verified, not a recomputation of all native tensor errors.
-    An active unfinished case is explicitly unaudited and cannot establish a
-    trusted failure through this completed-prefix interface.
-    """
-    from vllm_lt.validation.report import _audit_case, _audit_comparison, _audit_raw_evidence
-
-    view = model_view(parent)
-    folder = Path(output_dir) / "numerical"
-    planned = [case["case_id"] for case in view["execution_order"]]
-    result = {
-        "schema_version": 1,
-        "artifact_type": "m3_capture_completed_prefix_report",
-        "plan_sha256": view["plan_sha256"],
-        "complete": False,
-        "passed": False,
-        "valid_prefix": False,
-        "known_required_failure": False,
-        "evidence_status": "incomplete",
-        "expected_case_ids": planned,
-        "completed_cases": [],
-        "missing_case_ids": planned,
-        "comparisons": [],
-        "required_failures": 0,
-        "behavior_failures": 0,
-        "errors": [],
-        "counts": {
-            "planned_cases": len(planned),
-            "verified_cases": 0,
-            "planned_comparisons": len(view["comparison_order"]),
-            "verified_comparisons": 0,
-        },
-    }
-    if not (folder / "ledger.json").exists():
-        result["missing_evidence"] = "numerical ledger has not been published"
-        return result
-    try:
-        ledger = read_json(folder / "ledger.json")
-        result["ledger"] = ledger
-        _require(
-            ledger["plan_sha256"] == view["plan_sha256"]
-            and ledger["numerical_plan_sha256"] == view["numerical_plan_sha256"],
-            "prefix ledger identity differs",
-        )
-        completed = ledger["completed_cases"]
-        _require(
-            isinstance(completed, list) and completed == planned[: len(completed)],
-            "completed numerical cases are not the frozen prefix",
-        )
-        started = ledger["started_cases"]
-        _require(
-            started == planned[: len(started)]
-            and len(completed) <= len(started) <= len(completed) + 1,
-            "started numerical cases are not the bounded prefix",
-        )
-        result["completed_cases"] = list(completed)
-        result["missing_case_ids"] = planned[len(completed) :]
-        active = ledger["active_case"]
-        if active is not None:
-            _require(
-                len(started) == len(completed) + 1 and active["case_id"] == started[-1],
-                "active case differs from next frozen case",
-            )
-            _require(
-                set(active) == {"case_id", "started_ns", "deadline_ns"}
-                and all(type(active[k]) is int for k in ("started_ns", "deadline_ns"))
-                and 0 < active["started_ns"] < active["deadline_ns"]
-                and active["deadline_ns"] - active["started_ns"]
-                <= view["contract"]["limits"]["case_timeout_s"] * 10**9,
-                "pending numerical case marker is malformed or over budget",
-            )
-            result["pending_case"] = active
-            result["missing_evidence"] = (
-                "active case and its partial tensor/dump writes remain unaudited"
-            )
-            return result
-        _require(started == completed, "unsettled started case has no active marker")
-        _require(
-            set(ledger["case_lifetimes"]) == set(completed), "prefix lifetime coverage differs"
-        )
-        actual = (
-            sorted(path.name for path in (folder / "cases").iterdir() if path.is_dir())
-            if (folder / "cases").exists()
-            else []
-        )
-        _require(actual == sorted(completed), "unexpected or missing completed case directories")
-        subset = {
-            **view,
-            "execution_order": view["execution_order"][: len(completed)],
-            "comparison_order": [
-                r for r in view["comparison_order"] if r["candidate_case_id"] in completed
-            ],
-        }
-        fixtures = {f["fixture_id"]: f for f in view["suite"]["fixtures"]}
-        cases, previous_end = {}, 0
-        dispatches = 0
-        for case in subset["execution_order"]:
-            case_id = case["case_id"]
-            life = ledger["case_lifetimes"][case_id]
-            start, end, deadline = (
-                life[key] for key in ("started_ns", "finished_ns", "deadline_ns")
-            )
-            _require(
-                all(type(v) is int and v > 0 for v in (start, end, deadline))
-                and previous_end <= start <= end <= deadline
-                and deadline - start <= view["contract"]["limits"]["case_timeout_s"] * 10**9,
-                "prefix case lifetime exceeded its frozen deadline",
-            )
-            previous_end = end
-            value = read_json(folder / "cases" / case_id / "result.json")
-            _audit_case(value, view, case, fixtures)
-            graph = _audit_graph_case(
-                case, value, view["model_config"], expected_device=expected_device
-            )
-            dispatches += graph["dispatches"]
-            if case["implementation"] == "native":
-                setup = value["graph_lifecycle"]["setup"]["setup"]
-                _require(
-                    start <= setup["started_ns"] <= setup["finished_ns"] <= end,
-                    "prefix graph setup lies outside case lifetime",
-                )
-            cases[case_id] = value
-            result["counts"]["verified_cases"] += 1
-        indices, reverse = {}, {}
-        for comparison in subset["comparison_order"]:
-            _require(
-                comparison["reference_case_id"] in cases,
-                "completed comparison lacks its earlier reference",
-            )
-            case_id = comparison["candidate_case_id"]
-            seen, identities = indices.setdefault(case_id, {}), reverse.setdefault(case_id, {})
-
-            def observe(index, fixture_id, key):
-                identity = (fixture_id, key)
-                _require(
-                    (index not in seen or seen[index] == identity)
-                    and (identity not in identities or identities[identity] == index),
-                    "inconsistent prefix cross-stream observation order",
-                )
-                seen[index], identities[identity] = identity, index
-
-            result["comparisons"].append(
-                _audit_comparison(folder, view, comparison, cases, fixtures, observe)
-            )
-            result["counts"]["verified_comparisons"] += 1
-        for case_id, seen in indices.items():
-            _require(
-                sorted(seen) == list(range(1, cases[case_id]["observed_boundaries"] + 1)),
-                "prefix global observation coverage differs",
-            )
-        comparison_ids = [c["comparison_id"] for c in subset["comparison_order"]]
-        for suffix in (".jsonl", ".summary.json"):
-            actual = sorted(
-                p.name.removesuffix(suffix) for p in (folder / "comparisons").glob("*" + suffix)
-            )
-            _require(
-                actual == sorted(comparison_ids),
-                "unexpected or missing prefix comparison artifacts",
-            )
-        raw = _audit_raw_evidence(folder, subset, cases, fixtures, result["comparisons"], ledger)
-        groups = {}
-        for spool in raw["retained_references"]:
-            group = cases[spool["namespace"]]["case"]["spool_group"]
-            groups[group] = groups.get(group, 0) + spool["size_bytes"]
-        groups.update(ledger["diagnostic_dumps"]["fixture_written_bytes"])
-        _require(
-            groups == ledger["spool_bytes_by_group"]
-            and sum(groups.values()) == ledger["tensor_written_bytes"],
-            "prefix spool ledger differs from verified retained bytes",
-        )
-        caps = view["contract"]["limits"]
-        _require(
-            ledger["tensor_written_bytes"] <= caps["cumulative_spool_written_bytes"]
-            and all(0 <= size <= caps["group_spool_bytes"] for size in groups.values()),
-            "prefix tensor budget exceeded",
-        )
-        workers = ledger["workers"]
-        sides = [side for side in ("A", "B") if side in workers]
-        _require(
-            sides and list(workers) == sides and sides in (["A"], ["A", "B"]),
-            "prefix worker order differs",
-        )
-        failures = {
-            r["comparison_id"]
-            for r in result["comparisons"]
-            if r["required_failures"] or r["behavior_failures"]
-        }
-        for side in sides:
-            worker = workers[side]
-            expected = [
-                c["case_id"] for c in view["execution_order"] if c["implementation_id"] == side
-            ]
-            observed = [c for c in completed if c in expected]
-            failed_ids = {
-                c["comparison_id"]
-                for c in subset["comparison_order"]
-                if c["candidate_case_id"] in observed and c["comparison_id"] in failures
-            }
-            _require(
-                worker["implementation_id"] == side
-                and worker["completed_cases"] == observed
-                and type(worker["complete"]) is bool
-                and type(worker["passed"]) is bool
-                and isinstance(worker["errors"], list),
-                "prefix worker summary identity differs",
-            )
-            _require(
-                not worker["complete"] or observed == expected,
-                "incomplete side falsely marked complete",
-            )
-            _require(
-                worker["passed"] is (worker["complete"] and not worker["errors"]),
-                "prefix worker pass flag differs from recorded completion/errors",
-            )
-            claimed = {
-                error["comparison_id"] for error in worker["errors"] if "comparison_id" in error
-            }
-            _require(
-                claimed == failed_ids, "worker required-failure claims differ from audited streams"
-            )
-            if side == "B":
-                _require(
-                    workers["A"]["passed"], "B started after an unqualified A numerical worker"
-                )
-        _require(
-            all(c["implementation_id"] in sides for c in subset["execution_order"]),
-            "completed cases have no owning worker ledger",
-        )
-        result.update(
-            valid_prefix=True,
-            raw_evidence=raw,
-            required_failures=sum(r["required_failures"] for r in result["comparisons"]),
-            behavior_failures=sum(r["behavior_failures"] for r in result["comparisons"]),
-        )
-        result["known_required_failure"] = bool(
-            result["required_failures"] or result["behavior_failures"]
-        )
-        result["counts"]["verified_dispatches"] = dispatches
-    except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
-        result["evidence_status"] = "invalid"
-        result["errors"].append({"type": type(exc).__name__, "message": str(exc)})
-    return result
+    return _audit_model(output_dir, parent, expected_device, prefix=True)

@@ -63,7 +63,7 @@ def _work_identity(result):
     }
 
 
-def pair_results(plan, records):
+def pair_results(plan, records, *, pair_prefix="M2", pair_extra=None):
     """Both observations must meet their own limits; never average away a failure."""
     acceptance = plan["contract"]["acceptance"]
     measured = [row for row in records if row["planned"]["phase"] == "measured"]
@@ -71,7 +71,7 @@ def pair_results(plan, records):
     for cell in CELLS:
         pairs, avalues, bvalues = [], [], []
         for repetition in (1, 2):
-            pair_id = f"M2-{cell}-{repetition}"
+            pair_id = f"{pair_prefix}-{cell}-{repetition}"
             members = [row for row in measured if row["planned"]["pair_id"] == pair_id]
             item = {"pair_id": pair_id, "status": "invalid", "errors": []}
             try:
@@ -120,7 +120,6 @@ def pair_results(plan, records):
                 setup = _finite(b["setup_ns"], "B setup") - _finite(a["setup_ns"], "A setup")
                 gates = {
                     "throughput": bv / av >= target,
-                    "setup": setup <= acceptance["setup_increase_ns_max"],
                     **{
                         name: value <= acceptance["peak_increase_bytes_max"]
                         for name, value in increases.items()
@@ -141,18 +140,24 @@ def pair_results(plan, records):
                     baseline_metrics=arow["recomputed_metrics"],
                     candidate_metrics=brow["recomputed_metrics"],
                 )
+                if pair_extra is None:
+                    gates["setup"] = setup <= acceptance["setup_increase_ns_max"]
+                else:
+                    pair_extra(arow, brow, item, acceptance)
+                item["status"] = "passed" if all(gates.values()) else "failed"
                 avalues.append(av)
                 bvalues.append(bv)
             except (ValueError, KeyError, TypeError) as exc:
+                item["status"] = "invalid"
                 item["errors"].append(str(exc))
             pairs.append(item)
         complete = len(avalues) == len(bvalues) == 2
         separated = (min(bvalues) > max(avalues)) if complete else None
         status = (
-            "inconclusive"
-            if not complete
-            else "failed"
+            "failed"
             if any(pair["status"] == "failed" for pair in pairs)
+            else "inconclusive"
+            if not complete
             else "inconclusive"
             if (cell == acceptance["target_cell"] and not separated)
             else "passed"

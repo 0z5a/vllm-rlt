@@ -60,9 +60,16 @@ def test_one_failed_pair_cannot_be_hidden_by_the_second(capture_plan, metric):
     assert [p["status"] for p in cell["pairs"]] == ["failed", "passed"]
 
 
-def test_capture_pair_uses_shared_work_identity(capture_plan):
+@pytest.mark.parametrize("change", ["tokens", "worker", "ttft"])
+def test_invalid_pair_never_qualifies(capture_plan, change):
     records = records_for(capture_plan)
-    pick(records)["result"]["requests"][0]["token_ids"][0] += 1
+    row = pick(records)
+    if change == "tokens":
+        row["result"]["requests"][0]["token_ids"][0] += 1
+    elif change == "worker":
+        row["planned"]["worker_id"] = "B2"
+    else:
+        row["recomputed_metrics"]["per_request"]["q"]["ttft_ns"] = float("nan")
     cell = report.pair_results(capture_plan, records)[0]
     assert cell["pairs"][0]["status"] == "invalid" and cell["status"] == "inconclusive"
 

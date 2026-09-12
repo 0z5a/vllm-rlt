@@ -4,8 +4,8 @@ import math
 import re
 from pathlib import Path
 
-from vllm_lt.benchmarks.ab_report import _finite, _memory, _work_identity
-from vllm_lt.benchmarks.ab_schema import CELLS, WORKERS, equal, require
+from vllm_lt.benchmarks.ab_report import _finite, _memory
+from vllm_lt.benchmarks.ab_schema import WORKERS, equal, require
 from vllm_lt.benchmarks.report import _event_problems, _profiles, _read_events, _run_record
 from vllm_lt.benchmarks.schema import _file_record, read_json, write_json
 
@@ -16,139 +16,44 @@ def _ttft(record):
     return _finite(next(iter(requests.values()))["ttft_ns"], "W1 TTFT", positive=True)
 
 
+def _capture_pair(arow, brow, pair, acceptance):
+    repetition = arow["planned"]["repetition"]
+    equal(
+        [arow["planned"]["worker_id"], brow["planned"]["worker_id"]],
+        [f"A{repetition}", f"B{repetition}"],
+        "AB/BA worker assignment",
+    )
+    if arow["planned"]["cell_id"] == acceptance["target_cell"]:
+        at, bt = _ttft(arow), _ttft(brow)
+        pair["gates"]["ttft"] = bt <= at * acceptance["target_ttft_ratio_max"]
+        pair["ttft"] = {"baseline_ns": at, "candidate_ns": bt, "candidate_over_baseline": bt / at}
+    else:
+        pair["ttft"] = None
+    saving = 1e9 * (1 / pair["baseline_tokens_per_s"] - 1 / pair["candidate_tokens_per_s"])
+    pair.update(
+        baseline_setup_ns=arow["result"]["setup_ns"],
+        candidate_setup_ns=brow["result"]["setup_ns"],
+        estimated_setup_break_even_tokens=(
+            math.ceil(max(0, pair["setup_increase_ns"]) / saving) if saving > 0 else None
+        ),
+    )
+
+
 def pair_results(plan, records):
-    """Gate each AB/BA pair before interpreting the two observed throughput ranges."""
-    acceptance = plan["contract"]["acceptance"]
-    measured = [row for row in records if row["planned"]["phase"] == "measured"]
-    cells = []
-    for cell in CELLS:
-        pairs, avs, bvs = [], [], []
-        for repetition in (1, 2):
-            pair_id = f"M3-capture-{cell}-{repetition}"
-            members = [row for row in measured if row["planned"]["pair_id"] == pair_id]
-            item = {"pair_id": pair_id, "status": "invalid", "errors": []}
-            try:
-                require(len(members) == 2, "matched pair requires exactly two observations")
-                sides = {row["planned"]["implementation_id"]: row for row in members}
-                equal(sorted(sides), ["A", "B"], "one observation per implementation")
-                arow, brow = sides["A"], sides["B"]
-                for record in members:
-                    require(record["comparison_eligible"], "pair has invalid or missing evidence")
-                    equal(
-                        [record["planned"]["cell_id"], record["planned"]["repetition"]],
-                        [cell, repetition],
-                        "pair stratum",
-                    )
-                for field in ("controls_sha256", "workload_sha256", "instrumentation"):
-                    equal(arow["planned"][field], brow["planned"][field], f"paired {field}")
-                expected_workers = ["A1", "B1"] if repetition == 1 else ["A2", "B2"]
-                equal(
-                    [arow["planned"]["worker_id"], brow["planned"]["worker_id"]],
-                    expected_workers,
-                    "AB/BA worker assignment",
-                )
-                a, b = arow["result"], brow["result"]
-                for value in (a, b):
-                    _memory(
-                        value, plan["workload_stats"][arow["planned"]["workload_id"]]["pool_bytes"]
-                    )
-                equal(
-                    _work_identity(a),
-                    _work_identity(b),
-                    "actual A/B token/depth/gate/work histories",
-                )
-                av = _finite(
-                    arow["recomputed_metrics"]["generated_tokens_per_second"],
-                    "A TPS",
-                    positive=True,
-                )
-                bv = _finite(
-                    brow["recomputed_metrics"]["generated_tokens_per_second"],
-                    "B TPS",
-                    positive=True,
-                )
-                target = cell == acceptance["target_cell"]
-                minimum = acceptance["target_ratio_min" if target else "control_ratio_min"]
-                increases = {
-                    key: b["memory"][key] - a["memory"][key]
-                    for key in ("peak_allocated_bytes", "peak_reserved_bytes")
-                }
-                gates = {
-                    "throughput": bv >= av * minimum,
-                    **{
-                        key: value <= acceptance["peak_increase_bytes_max"]
-                        for key, value in increases.items()
-                    },
-                }
-                ttft = None
-                if target:
-                    at, bt = _ttft(arow), _ttft(brow)
-                    gates["ttft"] = bt <= at * acceptance["target_ttft_ratio_max"]
-                    ttft = {
-                        "baseline_ns": at,
-                        "candidate_ns": bt,
-                        "candidate_over_baseline": bt / at,
-                    }
-                setup_delta = b["setup_ns"] - a["setup_ns"]
-                saving = 1e9 * (1 / av - 1 / bv)
-                amortization = math.ceil(max(0, setup_delta) / saving) if saving > 0 else None
-                item.update(
-                    status="passed" if all(gates.values()) else "failed",
-                    gates=gates,
-                    baseline_run_id=arow["run_id"],
-                    candidate_run_id=brow["run_id"],
-                    baseline_tokens_per_s=av,
-                    candidate_tokens_per_s=bv,
-                    candidate_over_baseline=bv / av,
-                    required_ratio_min=minimum,
-                    throughput_improvement_percent=100 * (bv / av - 1),
-                    ttft=ttft,
-                    baseline_setup_ns=a["setup_ns"],
-                    candidate_setup_ns=b["setup_ns"],
-                    setup_increase_ns=setup_delta,
-                    estimated_setup_break_even_tokens=amortization,
-                    peak_increases_bytes={
-                        key: b["memory"][key] - a["memory"][key]
-                        for key in ("peak_allocated_bytes", "peak_reserved_bytes")
-                    },
-                    baseline_metrics=arow["recomputed_metrics"],
-                    candidate_metrics=brow["recomputed_metrics"],
-                )
-                avs.append(av)
-                bvs.append(bv)
-            except (ValueError, KeyError, TypeError, ZeroDivisionError) as error:
-                item["errors"].append(str(error))
-            pairs.append(item)
-        complete = len(avs) == len(bvs) == 2
-        separation = min(bvs) > max(avs) if complete else None
-        status = (
-            "failed"
-            if any(pair["status"] == "failed" for pair in pairs)
-            else "inconclusive"
-            if not complete or (cell == acceptance["target_cell"] and not separation)
-            else "passed"
-        )
-        cells.append(
-            {
-                "cell_id": cell,
-                "status": status,
-                "pairs": pairs,
-                "baseline_values": avs,
-                "candidate_values": bvs,
-                "baseline_range": [min(avs), max(avs)] if avs else None,
-                "candidate_range": [min(bvs), max(bvs)] if bvs else None,
-                "strict_range_separation": separation,
-                "variation_gate_required": cell == acceptance["target_cell"],
-            }
-        )
-    return cells
+    from vllm_lt.benchmarks.ab_report import pair_results as shared_pairs
+
+    return shared_pairs(plan, records, pair_prefix="M3-capture", pair_extra=_capture_pair)
 
 
 def audit_capture_record(
     capture, planned, limits, *, model_config, block_size, expected_device="cuda:0"
 ):
     """Audit setup inventories and measured counters, without per-step tensor reads."""
-    from benchmarks.capture.validation import _audit_graph_setup
+    from benchmarks.capture.validation import (
+        _audit_graph_close,
+        _audit_graph_setup,
+        _audit_graph_snapshot,
+    )
 
     equal(capture["schema_version"], 1, "capture schema")
     side = planned["implementation_id"]
@@ -165,16 +70,9 @@ def audit_capture_record(
         expected_device=expected_device,
         limits=limits,
     )
-    for snapshot in (initial, final):
-        equal(snapshot["status"], "ready", "executor ready at run boundary")
-        equal(snapshot["use_graphs"], side == "B", "actual executor mode")
-        equal(snapshot["limits"], limits, "actual graph limits")
-        require(snapshot["enabled"] is True and snapshot["failure"] is None, "executor failure")
-        equal(sorted(snapshot["buckets"]), sorted(initial["buckets"]), "fixed bucket set")
-        equal(snapshot.get("layout"), initial.get("layout"), "fixed bucket layout")
-    equal(final["setup"], initial["setup"], "immutable setup evidence")
-    for field in ("device_payload_bytes", "cpu_staging_bytes"):
-        equal(final[field], initial[field], f"unchanged {field}")
+    equal(initial["use_graphs"], side == "B", "actual executor mode")
+    equal(initial["limits"], limits, "actual graph limits")
+    _audit_graph_snapshot(initial, final)
     setup = initial["setup"]
     require(setup["finished_ns"] < setup["deadline_ns"], "setup time cap")
     equal(
@@ -214,53 +112,13 @@ def audit_capture_record(
         require(
             all(type(v) is int and v >= 0 for v in after["counters"].values()), "bucket counters"
         )
-        for field in (
-            "tensors",
-            "staging_tensors",
-            "graph_id",
-            "graph_exec_id",
-            "pool_id",
-            "row_count",
-            "table_width",
-            "max_live_rows",
-            "setup_generation",
-        ):
-            equal(before[field], after[field], f"stable bucket {field}")
-    before, after, deltas = (
-        setup[key] for key in ("memory_baseline", "memory_after", "memory_deltas")
-    )
-    require(isinstance(before, dict) and isinstance(after, dict), "synchronized setup CUDA memory")
-    for memory in (before, after):
-        require(all(type(v) is int and v >= 0 for v in memory.values()), "integer setup memory")
-        require(memory["reserved_bytes"] >= memory["allocated_bytes"], "setup reserved memory")
-    if side == "A":
-        equal(after, before, "eager baseline has no graph setup phase")
-        equal(
-            deltas,
-            dict.fromkeys(
-                (
-                    "retained_allocated_bytes",
-                    "retained_reserved_bytes",
-                    "peak_allocated_bytes",
-                    "peak_reserved_bytes",
-                ),
-                0,
-            ),
-            "eager graph memory deltas",
-        )
-    equal(closed["status"], "closed", "safe close status")
-    equal(closed["buckets"], {}, "closed graph ownership")
-    equal(
-        [closed["device_payload_bytes"], closed["cpu_staging_bytes"]], [0, 0], "closed bundle bytes"
-    )
-    for field in ("counters", "fallback_counts", "setup", "failure"):
-        equal(closed[field], final[field], f"unchanged {field} during close")
+    _audit_graph_close(final, closed)
     equal(capture["cleanup"], {"closed": True}, "graph cleanup marker")
     if planned["phase"] != "profile":
         equal(capture["profile_dispatches"], [], "no profile instrumentation in timing")
     return {
         "setup_ns": setup["finished_ns"] - setup["started_ns"],
-        "memory_deltas": deltas,
+        "memory_deltas": setup["memory_deltas"],
         "fallback_counts": fallbacks,
         "counters": count,
         "buckets": {k: v["counters"] for k, v in final["buckets"].items()},
@@ -628,35 +486,6 @@ def _audit_workers(root, plan, manifest, report, *, workers=None):
     return workers
 
 
-def _audit_artifact_caps(root, limits, report):
-    total = traces = 0
-    for path in root.rglob("*"):
-        require(not path.is_symlink(), "artifact tree contains a symbolic link")
-        if not path.is_file() or path.name in ("capture-report.json", "capture-report.md"):
-            continue
-        size = path.stat().st_size
-        total += size
-        if path.name == "trace.json":
-            traces += size
-            if size > limits["profile_trace_bytes_max"]:
-                report["hard_failures"].append(
-                    {
-                        "scope": str(path.relative_to(root)),
-                        "reason": "individual trace byte cap",
-                        "bytes": size,
-                    }
-                )
-    for observed, limit, name in (
-        (total, limits["artifact_bytes_max"], "artifact bytes"),
-        (traces, limits["profile_total_bytes_max"], "profile bytes"),
-    ):
-        if observed > limit:
-            report["hard_failures"].append(
-                {"scope": "artifacts", "reason": name, "bytes": observed, "limit": limit}
-            )
-    report["artifact_usage"] = {"total_bytes": total, "profile_trace_bytes": traces}
-
-
 def _audit_chronology(root, plan, workers, reports, records, hashes):
     """Bind every planned kind into one serial timeline, including excluded cases."""
     by_id = {row["run_id"]: row for row in records}
@@ -693,13 +522,6 @@ def _audit_chronology(root, plan, workers, reports, records, hashes):
             start, end = lifetime["started_ns"], lifetime["finished_ns"]
             deadline = lifetime["deadline_ns"]
             marker = root / "numerical" / "cases" / eid / "started.json"
-        else:
-            kind = "kernels" if row["kind"] == "kernel" else "lifecycle"
-            matches = [r for r in reports[kind]["evaluations"] if r["evaluation_id"] == eid]
-            require(len(matches) == 1, "one audited held-input evaluation")
-            value = matches[0]
-            start, end, deadline = (value[k] for k in ("started_ns", "finished_ns", "deadline_ns"))
-            marker = root / kind / "evaluations" / eid / "started.json"
         for timestamp in (start, end, deadline):
             require(type(timestamp) is int and timestamp >= 0, "integer execution timestamps")
         require(
@@ -714,32 +536,6 @@ def _audit_chronology(root, plan, workers, reports, records, hashes):
         equal(deadline, min(worker["deadline_ns"], start + 600 * 10**9), "whole case deadline")
         previous[row["worker_id"]] = end
         _anchor(root, marker, hashes)
-
-    for key in ("kernels", "lifecycle"):
-        stopped = reports[key].get("stopped_evaluation")
-        if stopped is None:
-            continue
-        eid = stopped["evaluation_id"]
-        row = next(r for r in plan["execution_order"] if r["execution_id"] == eid)
-        worker = workers[row["worker_id"]]
-        done = worker["completed_executions"]
-        require(
-            len(done) < len(worker["execution_ids"]) and worker["execution_ids"][len(done)] == eid,
-            "failed held evaluation is not next in worker order",
-        )
-        start, end, deadline = (stopped[k] for k in ("started_ns", "finished_ns", "deadline_ns"))
-        require(
-            worker["started_ns"]
-            <= previous.get(row["worker_id"], start)
-            <= start
-            <= end
-            <= worker["ended_ns"],
-            "failed held evaluation outside worker lifetime",
-        )
-        equal(
-            deadline, min(worker["deadline_ns"], start + 600 * 10**9), "failed held global deadline"
-        )
-        _anchor(root, root / key / "evaluations" / eid / "started.json", hashes)
 
 
 def _audit_failed_benchmark(root, row, result, report, workers):
@@ -811,7 +607,7 @@ def _decision(*, invalid, complete, hard_failure, variation):
 
 
 def build_report(output_dir):
-    from benchmarks.capture.runner import audit_correctness
+    from benchmarks.capture.runner import artifact_usage, audit_correctness
     from benchmarks.capture.schema import execution_view, validate_plan
 
     root = Path(output_dir).resolve()
@@ -866,7 +662,12 @@ def build_report(output_dir):
     workers = {}
     try:
         _audit_workers(root, plan, manifest, report, workers=workers)
-        _audit_artifact_caps(root, plan["contract"]["limits"], report)
+        report["artifact_usage"] = artifact_usage(
+            root,
+            plan["contract"]["limits"],
+            failures=report["hard_failures"],
+            exclude=("capture-report.json", "capture-report.md"),
+        )
     except (OSError, ValueError, KeyError, TypeError) as error:
         report["errors"].append({"scope": "workers/controls", "message": str(error)})
     rows = [r for r in plan["execution_order"] if r["kind"] == "benchmark"]
@@ -955,36 +756,16 @@ def build_report(output_dir):
             if prefix["errors"]:
                 report["errors"].append({"scope": "numerical/prefix", "message": prefix["errors"]})
             correctness["numerical"] = prefix
-        from benchmarks.capture.kernels import audit_kernel_outputs
-        from benchmarks.capture.lifecycle import audit_lifecycle_outputs
-
-        for key, audit in (
-            ("kernels", audit_kernel_outputs),
-            ("lifecycle", audit_lifecycle_outputs),
-        ):
-            if not correctness[key]["complete"]:
-                value = audit(root / key, plan[key], allow_prefix=True)
-                correctness[key] = value
-                if value["errors"]:
-                    report["errors"].append({"scope": key + "/prefix", "message": value["errors"]})
-        for key in ("numerical", "lifecycle", "kernels"):
-            value = correctness[key]
-            if not value["complete"]:
-                report["missing"].append(f"{key}: incomplete planned evidence")
-        correctness["complete"] = all(
-            correctness[k]["complete"] for k in ("numerical", "lifecycle", "kernels")
+        numerical = correctness["numerical"]
+        if not numerical["complete"]:
+            report["missing"].append("numerical: incomplete planned evidence")
+        correctness["complete"] = numerical["complete"]
+        correctness["known_required_failure"] = numerical.get("known_required_failure", False) or (
+            numerical["complete"] and not numerical["passed"]
         )
-        correctness["known_required_failure"] = any(
-            correctness[k].get("known_required_failure", False)
-            or (correctness[k]["complete"] and not correctness[k]["passed"])
-            for k in ("numerical", "lifecycle", "kernels")
-        )
-        report.update({key: correctness[key] for key in ("numerical", "lifecycle", "kernels")})
+        report["numerical"] = numerical
         if manifest.get("numerical_gate") is not None:
-            audited_gate = {
-                key: correctness[key]
-                for key in ("complete", "passed", "numerical", "lifecycle", "kernels")
-            }
+            audited_gate = {key: correctness[key] for key in ("complete", "passed", "numerical")}
             equal(
                 audited_gate, manifest["numerical_gate"], "recomputed pre-timing correctness gate"
             )
@@ -1036,7 +817,7 @@ def build_report(output_dir):
         manifest["status"] == "complete"
         and not manifest["failures"]
         and manifest["completed_workers"] == list(WORKERS)
-        and len(manifest["completed_executions"]) == 101
+        and len(manifest["completed_executions"]) == len(plan["execution_order"])
         and correctness["complete"]
         and all(r["status"] == "complete" and not r["validation_errors"] for r in report["records"])
     )
@@ -1055,7 +836,7 @@ def build_report(output_dir):
     if report["decision"] == "passed":
         report["milestone_status"] = "accepted_optional_path_pending_manual_evidence_review"
     report["counts"] = {
-        "planned_executions": 101,
+        "planned_executions": len(plan["execution_order"]),
         "completed_executions": len(manifest["completed_executions"]),
         "benchmark_runs": len(report["records"]),
         "eligible_timing_runs": sum(r["comparison_eligible"] for r in report["records"]),

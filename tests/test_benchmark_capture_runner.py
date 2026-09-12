@@ -43,14 +43,6 @@ def test_worker_keeps_fully_completed_failed_numerical_case_and_skips_performanc
     plan, output, released = worker_host
     cases = [c for c in plan["numerical"]["execution_order"] if c["implementation_id"] == "A"]
 
-    def held(plan, side, output, deadline):
-        for key in ("kernels", "lifecycle"):
-            for row in plan[key]["execution_order"]:
-                if row["implementation_id"] == side:
-                    yield row["evaluation_id"], {"status": "complete", "passed": True}
-
-    monkeypatch.setattr(capture, "run_held_checks", held)
-
     def numerical(model, parent, side, output, deadline, *, after_case):
         for case in cases[:-1]:
             after_case(case, {"status": "complete"})

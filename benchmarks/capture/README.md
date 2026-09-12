@@ -1,27 +1,16 @@
-# CUDA graph benchmark and validation tooling
+# CUDA graph A/B benchmark
 
-This directory contains the graph A/B controller, profiling adapter, offline
-reporter, and numerical, kernel and lifecycle validation. It runs from a source
-checkout and is excluded from the installed `vllm_lt` package. Shared benchmark
-and oracle utilities remain in `vllm_lt.benchmarks` and `vllm_lt.validation`.
-
-The inference graph executor, CUDA resources and persistent decode buffers stay
-under `vllm_lt/worker/`. This directory depends on those runtime modules, and the
-runtime must not depend on this experiment tooling. See
-[module ownership](../../docs/m3-cuda-graphs.md#module-ownership) for the boundary
-and the upstream vLLM comparison.
+Run from a source checkout; this tooling is excluded from the installed package.
+The executor and its buffers remain under `vllm_lt/worker/`. Shared controllers,
+metric reconstruction and numerical auditing are reused from `vllm_lt`.
 
 | Module | Purpose |
 | --- | --- |
-| `runner.py` | Controller and reserved-device workers |
-| `schema.py` | CPU-only planning, source hashing and contract validation |
+| `runner.py` | CLI and workers, using the shared A/B controller |
+| `schema.py` | CPU planning, source hashes and contract validation |
 | `runtime.py` | Eager/replay adapter and profiler attribution |
-| `report.py` | Offline correctness, timing and profile audits |
-| `validation.py` | Numerical comparisons and graph setup audits |
-| `kernels.py` | Held-input kernel validation |
-| `lifecycle.py` | Executor ownership, teardown and failure validation |
-
-From the repository root, with the prepared development/validation environment:
+| `report.py` | Offline timing, ownership and profile audits |
+| `validation.py` | Numerical projection and graph-specific evidence |
 
 ```bash
 python -m benchmarks.capture --help
@@ -30,19 +19,19 @@ python -m benchmarks.capture probe --help
 python -m benchmarks.capture report --run-dir /absolute/path/to/results
 ```
 
-`probe` requires two clean source checkouts, a prepared local model, a contract,
-an explicit physical GPU ID and verified CPU/NUMA affinity. It does not use CUDA.
-`run` and `worker` perform GPU work and must execute within a scheduler reservation.
-Keep generated plans, results, traces and logs in an external experiment directory
-or the ignored `artifacts/` directory. Do not commit generated output.
+`probe` freezes clean source checkouts, a prepared model, explicit physical GPU
+and CPU/NUMA affinity without using CUDA. `run` and `worker` require a scheduler
+reservation. Keep generated results under ignored `artifacts/` or external storage.
 
-The two JSON files in `fixtures/` are hand-authored input contracts for the
-historical bounded 101-execution experiment, not generated results. Their bytes,
-limits and historical four-live-row validation matrix are unchanged. Relocating
-the tooling changes source provenance; existing frozen plans must be audited with
-their recorded source snapshots. Historical reports retain the commands and paths
-used at those snapshots. A new experiment needs a newly frozen plan.
+The single input contract in `fixtures/` defines **v2: 93 executions**: 15 model
+cases with 31 numerical comparisons, plus 78 benchmark runs including 28 measured
+AB/BA observations. Performance uses buckets 4/8/16 and a 1 MiB tensor budget.
+Setup, feasibility, warmup and profiles stay outside timing.
+Standalone kernel and synthetic lifecycle reruns from earlier milestones have
+been removed; graph setup, scratch restoration, ownership, transactions, full-KV
+numerical comparisons and teardown are still audited on actual model cases.
+Runtime regression tests retain the failure, fallback and pool-lifetime coverage.
 
-See the [graph design](../../docs/m3-cuda-graphs.md),
-[latest benchmark report](../../docs/benchmarks/m3-capture-review-20260912.md), and
-[external evidence archive](../../docs/benchmarks/m3-capture-review-evidence-20260912/README.md).
+Historical 101-execution plans and the owned-pool contract require their recorded
+source snapshots; v2 rejects them. Freeze a new plan for new experiments. See the
+[graph design](../../docs/m3-cuda-graphs.md) and [historical evidence archive](../../docs/benchmarks/m3-capture-review-evidence-20260912/README.md).

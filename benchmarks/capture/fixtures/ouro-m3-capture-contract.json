@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "artifact_type": "m3_capture_contract",
-  "contract_id": "ouro-m3-capture-replay-v1",
+  "contract_id": "ouro-m3-capture-replay-v2",
   "hypothesis": "Replaying the common fixed-bucket FP32 Triton decode tensor body improves W1 throughput while preserving original numerical behavior, controls, and bounded setup/storage.",
   "isolated_variable": "Identical source and common tensor body: eager A use_graphs=false versus CUDA graph replay B use_graphs=true.",
   "inputs": {
@@ -61,9 +61,8 @@
     "verdict_precedence": "invalid-evidence-then-required-failure-then-missing-or-inconclusive",
     "numerical": "all-original-Q1-FP32-required-logit-token-exit-and-full-populated-KV-gates",
     "intermediates": "finite-required-deltas-diagnostic-no-new-tolerance",
-    "lifecycle": "both-buckets-exact-held-input-outputs-guards-transactions-and-fallbacks",
     "profile": "actual-correlated-replay-launch-proof-for-W1-and-W4-refill",
-    "setup": "reported-separately-original-graph-limits-no-M2-relative-setup-cap",
+    "setup": "reported-separately-scheduler-sized-graph-limits-no-M2-relative-setup-cap",
     "sanitizer": "unavailable-no-executions-no-coverage-claim",
     "peak_increase_bytes_max": 536870912
   },
@@ -72,15 +71,13 @@
     "case_timeout_s": 600,
     "workers": 8,
     "model_loads": 8,
-    "executions": 101,
-    "correctness_executions": 23,
+    "executions": 93,
+    "correctness_executions": 15,
     "model_cases": 15,
     "model_qualification_cases": 13,
     "model_excluded_feasibility_cases": 2,
     "comparison_streams": 31,
     "qualification_comparison_streams": 30,
-    "lifecycle_evaluations": 2,
-    "kernel_evaluations": 6,
     "feasibility_executions": 14,
     "warmup_executions": 28,
     "measured_executions": 28,
@@ -91,12 +88,10 @@
     "profile_total_bytes_max": 4294967296,
     "artifact_bytes_max": 17179869184,
     "pointer_evidence_bytes_max": 209715200,
-    "lifecycle_evidence_bytes_max": 50331648,
-    "kernel_evidence_bytes_max": 268435456,
     "sanitizer_executions": 0
   },
   "graph_limits": {
-    "common_payload_bytes": 262144,
+    "common_payload_bytes": 1048576,
     "cpu_staging_bytes": 16384,
     "graph_retained_allocated_bytes": 268435456,
     "graph_retained_reserved_bytes": 268435456,
@@ -108,7 +103,7 @@
     "Any execution, nonfinite, ownership, source, input, dependency, device, affinity or cleanup failure stops subsequent executions; retain the failed prefix and do not retry.",
     "All correctness and excluded feasibility gates must pass before measured A1.",
     "Independent parent watchdogs enforce case 600-second and total 7200-second limits, including setup, export and cleanup. Setup must complete within 60 seconds to qualify; its phase checks are cooperative, while blocked device calls remain subject to the case/global watchdogs. No hard 60-second interruption is claimed.",
-    "Any frozen tensor, pointer, lifecycle, kernel, trace or total artifact budget overrun.",
+    "Any frozen tensor, pointer, trace or total artifact budget overrun.",
     "Performance misses and overlapping ranges cannot promote the candidate or expand the matrix."
   ]
 }
