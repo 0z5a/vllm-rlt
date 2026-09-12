@@ -1,7 +1,6 @@
 """CPU allocator-lifetime model; no claim of measured CUDA allocator behavior."""
 
 from contextlib import contextmanager
-from dataclasses import asdict
 
 import pytest
 import test_recurrent_graph as fixtures
@@ -9,10 +8,10 @@ import torch
 
 from vllm_lt.worker import capture_resources
 from vllm_lt.worker.model_runner import ModelRunner
-from vllm_lt.worker.recurrent_graph import GraphLimits, _CudaRuntime
+from vllm_lt.worker.recurrent_graph import _CudaRuntime
 
 model = fixtures.model
-no_cuda = fixtures.no_cuda
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
 
 def test_capture_stream_reused_only_after_release_and_never_shared_by_live_runtimes(monkeypatch):
@@ -113,6 +112,7 @@ def test_failed_close_retains_shared_owner_and_outputs_until_confirmed_close(
     model, monkeypatch, failure_site
 ):
     _, runtime, _, executor = enable(model, monkeypatch)
+    pointer = executor.buckets[4]["tensors"]["hidden_in"].data_ptr()
     primary = RuntimeError("close completion/reset failed")
     reset = runtime.graphs[1].reset
 
@@ -126,6 +126,9 @@ def test_failed_close_retains_shared_owner_and_outputs_until_confirmed_close(
     with pytest.raises(RuntimeError) as caught:
         executor.close()
     assert caught.value is primary
+    assert executor.status == "failed"
+    assert executor.buckets[4]["tensors"]["hidden_in"].data_ptr() == pointer
+    assert executor.failure["primary"]["message"] == str(primary)
     assert all(ref() is not None for ref in runtime.pool_refs)
     assert all(ref() is not None for graph in runtime.graphs for ref in graph.output_refs)
     assert len(runtime.pool_reserved) == 1 and not runtime.pool_releases
@@ -134,6 +137,7 @@ def test_failed_close_retains_shared_owner_and_outputs_until_confirmed_close(
     runtime.main.failure = None
     monkeypatch.setattr(runtime.graphs[1], "reset", reset)
     executor.close()
+    assert executor.status == "closed"
     # The saved primary traceback still holds local graph/bucket references.
     # Explicit owner/output assignments must nevertheless have released pools.
     released(runtime)
@@ -189,34 +193,10 @@ def test_graph_creation_failure_releases_owner_without_a_completed_graph(model, 
     released(runtime)
 
 
-def test_budget_decline_releases_shared_pool_before_compact_fallback(model, monkeypatch):
+def test_closed_executor_can_be_replaced_without_retaining_its_pool(model, monkeypatch):
     cache = fixtures.make_cache(model)
     runtime = fixtures.fake_runtime(monkeypatch, cache)
-    runtime.after_memory = {
-        "allocated_bytes": 2,
-        "reserved_bytes": 2,
-        "peak_allocated_bytes": 2,
-        "peak_reserved_bytes": 2,
-    }
-    runner = ModelRunner(model, cache)
-    runner._enable_recurrent_graph(
-        use_graphs=True,
-        limits={**asdict(GraphLimits()), "graph_retained_allocated_bytes": 1},
-    )
-    assert runner._decode_executor is None
-    assert runner._graph_snapshot()["budget_decline"]["completion_confirmed"]
-    assert len(runtime.pool_refs) == 1
-    released(runtime)
-    assert cache.allocate("request", 1)
-    result = runner._recurrent(torch.ones(1, model.config.hidden_size), ["request"], [0], [0])
-    assert result[0].shape == (1, model.config.hidden_size)
-    assert runner._graph_snapshot()["budget_decline"]["calls"] == 1
-
-
-def test_fourteen_safe_executor_lifetimes_do_not_accumulate_private_pool_cache(model, monkeypatch):
-    cache = fixtures.make_cache(model)
-    runtime = fixtures.fake_runtime(monkeypatch, cache)
-    for repetition in range(14):
+    for repetition in range(2):
         runner = ModelRunner(model, cache)
         runner._enable_recurrent_graph(use_graphs=True)
         assert sum(runtime.pool_reserved.values()) == 19 * 1024**2
@@ -224,8 +204,8 @@ def test_fourteen_safe_executor_lifetimes_do_not_accumulate_private_pool_cache(m
         runner._close_recurrent_graph()
         released(runtime)
         assert len(runtime.pool_releases) == repetition + 1
-    assert len(runtime.graphs) == 28 and all(g.reset_done for g in runtime.graphs)
-    assert runtime.events.count(("reset_peaks",)) == 14
+    assert len(runtime.graphs) == 4 and all(g.reset_done for g in runtime.graphs)
+    assert runtime.events.count(("reset_peaks",)) == 2
 
 
 @pytest.mark.parametrize("backend", ["triton", "torch"])

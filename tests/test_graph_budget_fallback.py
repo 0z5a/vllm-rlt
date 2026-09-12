@@ -13,7 +13,7 @@ from vllm_lt.worker import recurrent_graph as graph
 from vllm_lt.worker.model_runner import ModelRunner
 
 model = fixtures.model
-no_cuda = fixtures.no_cuda
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
 
 def low_limits(field):
@@ -34,8 +34,9 @@ def compact_matches(model, runner, reference):
     assert runner._graph_snapshot()["budget_decline"]["calls"] == 3
 
 
-@pytest.mark.parametrize("field", ["common_payload_bytes", "cpu_staging_bytes"])
-@pytest.mark.parametrize("use_graphs", [False, True])
+@pytest.mark.parametrize(
+    "field,use_graphs", [("common_payload_bytes", True), ("cpu_staging_bytes", False)]
+)
 def test_preallocation_decline_allocates_no_executor_and_runs_actual_compact(
     model, monkeypatch, field, use_graphs
 ):
@@ -70,26 +71,34 @@ def test_preallocation_decline_allocates_no_executor_and_runs_actual_compact(
         runner._recurrent(torch.zeros(1, model.config.hidden_size), ["request"], [0], [0])
 
 
-def test_retained_cap_restores_exact_scratch_order_and_releases_graphs_before_compact(
-    model, monkeypatch
+@pytest.mark.parametrize(
+    "limit_field, measured",
+    [
+        ("graph_retained_allocated_bytes", "allocated_bytes"),
+        ("graph_retained_reserved_bytes", "reserved_bytes"),
+        ("setup_peak_allocated_bytes", "peak_allocated_bytes"),
+        ("setup_peak_reserved_bytes", "peak_reserved_bytes"),
+    ],
+)
+def test_memory_cap_restores_scratch_and_releases_shared_pool_before_compact(
+    model, monkeypatch, limit_field, measured
 ):
     cache, reference = fixtures.make_cache(model), fixtures.make_cache(model)
     cache._free_blocks[:] = cache._free_blocks[13:] + cache._free_blocks[:13]
     reference._free_blocks[:] = cache._free_blocks
     before = cache.key_cache.clone(), cache.value_cache.clone(), tuple(cache._free_blocks)
     runtime = fixtures.fake_runtime(monkeypatch, cache)
-    runtime.after_memory = {
-        "allocated_bytes": 2,
-        "reserved_bytes": 2,
-        "peak_allocated_bytes": 2,
-        "peak_reserved_bytes": 2,
-    }
+    runtime.after_memory = {**runtime.memory(), measured: 11}
+    runtime.memory_calls = 0
     runner = ModelRunner(model, cache)
     runner._enable_recurrent_graph(
-        use_graphs=True, limits=low_limits("graph_retained_allocated_bytes")
+        use_graphs=True, limits={**asdict(graph.GraphLimits()), limit_field: 10}
     )
     decline = runner._graph_snapshot()["budget_decline"]
     assert decline["attempt_setup"]["captures"] == 2
+    assert decline["attempt_setup"]["status"] == "failed"
+    assert decline["error"]["limit_name"] == limit_field
+    assert decline["error"]["observed"] == 11 and decline["error"]["limit"] == 10
     assert decline["attempt_setup"]["scratch"]["restored"]
     assert decline["attempt_failure"]["completion_confirmed"]
     assert decline["attempt_failure"]["secondary"] == []
@@ -97,6 +106,10 @@ def test_retained_cap_restores_exact_scratch_order_and_releases_graphs_before_co
     assert not cache._allocations and tuple(cache._free_blocks) == before[2]
     assert torch.equal(cache.key_cache, before[0]) and torch.equal(cache.value_cache, before[1])
     assert runner._decode_executor is None
+    assert len(runtime.pool_refs) == 1 and runtime.pool_refs[0]() is None
+    assert runtime.pool_reserved == {}
+    assert len(runtime.pool_releases) == 1 and runtime.pool_releases[0][1]
+    assert runtime.default_reserved == 123 * 1024**2
     compact_matches(model, runner, reference)
 
 

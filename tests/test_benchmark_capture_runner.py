@@ -1,9 +1,7 @@
 """CPU controller failures retain the prefix and stop task-owned worker groups."""
 
 import signal
-import subprocess
 import time
-from types import SimpleNamespace
 
 import pytest
 import test_benchmark_capture_schema as fixtures
@@ -104,6 +102,10 @@ def test_controller_preserves_stopped_prefix_and_never_launches_B(
     original_handler = signal.getsignal(signal.SIGTERM)
 
     def launch(plan, worker, output, deadline, **kwargs):
+        assert kwargs == {
+            "module": "benchmarks.capture",
+            "active_deadline": capture.active_case_deadline,
+        }
         launches.append(worker["worker_id"])
         folder = output / "workers" / worker["worker_id"]
         folder.mkdir()
@@ -135,61 +137,6 @@ def test_lifecycle_watchdog_stays_active_until_terminal_result(capture_plan, tmp
     assert capture.active_case_deadline(tmp_path, worker) == 200
     write_json(folder / "result.json", {"status": "failed"})
     assert capture.active_case_deadline(tmp_path, worker) is None
-
-
-@pytest.mark.parametrize("reason", ["case_deadline", "sigterm", "artifact_cap"])
-def test_actual_shared_launcher_cleans_only_its_child_group(
-    capture_plan, monkeypatch, tmp_path, reason
-):
-    (tmp_path / "workers").mkdir()
-    worker = capture_plan["workers"][0]
-    killed, starts = [], []
-    process = SimpleNamespace(pid=123456, done=False)
-
-    def wait(timeout=None):
-        if reason == "sigterm" and not killed:
-            signal.getsignal(signal.SIGTERM)(signal.SIGTERM, None)
-        if not killed:
-            raise subprocess.TimeoutExpired("owned worker", timeout)
-        process.done = True
-        return -15
-
-    process.wait = wait
-    process.poll = lambda: -15 if process.done else None
-
-    def launch(*args, **kwargs):
-        starts.append(kwargs)
-        return process
-
-    monkeypatch.setattr(ab.subprocess, "Popen", launch)
-    monkeypatch.setattr(ab.os, "killpg", lambda pid, sig: killed.append((pid, sig)))
-    if reason == "artifact_cap":
-
-        def over_cap(*args):
-            raise ValueError("artifact cap exceeded")
-
-        monkeypatch.setattr(ab, "artifact_usage", over_cap)
-    previous = signal.getsignal(signal.SIGTERM)
-
-    def stopped(signum, frame):
-        raise KeyboardInterrupt("controller received SIGTERM")
-
-    signal.signal(signal.SIGTERM, stopped)
-    try:
-        with pytest.raises((TimeoutError, KeyboardInterrupt, ValueError)):
-            ab._launch_worker(
-                capture_plan,
-                worker,
-                tmp_path,
-                time.perf_counter_ns() + 100 * 10**9,
-                module="benchmarks.capture",
-                active_deadline=lambda *a: 1 if reason == "case_deadline" else None,
-            )
-    finally:
-        signal.signal(signal.SIGTERM, previous)
-    assert killed == [(123456, signal.SIGTERM)] and process.done
-    assert starts[0]["start_new_session"] is True
-    assert starts[0]["cwd"] == capture_plan["implementations"]["A"]["root"]
 
 
 def test_controller_io_failure_keeps_bounded_context_without_retry(

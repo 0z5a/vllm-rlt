@@ -10,21 +10,7 @@ from benchmarks.capture import kernels as capture
 from vllm_lt.kernels.paged_attention import torch_paged_attention
 from vllm_lt.validation.schema import read_json
 
-
-@pytest.fixture(autouse=True)
-def no_cuda(monkeypatch):
-    def forbidden(*args, **kwargs):
-        raise AssertionError("CPU kernel evidence test attempted CUDA work")
-
-    for name in (
-        "is_available",
-        "device_count",
-        "current_device",
-        "init",
-        "_lazy_init",
-        "synchronize",
-    ):
-        monkeypatch.setattr(torch.cuda, name, forbidden)
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
 
 def cpu_kernels(device):

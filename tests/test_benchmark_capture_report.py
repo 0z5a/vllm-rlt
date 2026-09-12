@@ -13,20 +13,8 @@ capture_plan = schema_fixtures.capture_plan
 
 
 @pytest.fixture(autouse=True)
-def no_cuda_or_model(monkeypatch):
-    def forbidden(*args, **kwargs):
-        pytest.fail("offline capture report touched CUDA or a model loader")
-
-    for name in (
-        "is_available",
-        "device_count",
-        "current_device",
-        "init",
-        "_lazy_init",
-        "synchronize",
-    ):
-        monkeypatch.setattr(torch.cuda, name, forbidden)
-    monkeypatch.setattr(torch, "load", forbidden)
+def no_cuda_or_model(forbid_cuda, monkeypatch):
+    monkeypatch.setattr(torch, "load", forbid_cuda)
 
 
 def records_for(plan):
@@ -137,7 +125,7 @@ def test_passing_pairs_with_overlapping_ranges_are_only_inconclusive(capture_pla
 
 @pytest.mark.parametrize(
     "change",
-    ["missing", "duplicate", "tokens", "depths", "gates", "work", "worker", "pool", "eligibility"],
+    ["missing", "duplicate", "tokens", "worker", "pool", "eligibility"],
 )
 def test_invalid_pair_is_unqualified(capture_plan, change):
     records = records_for(capture_plan)
@@ -146,12 +134,10 @@ def test_invalid_pair_is_unqualified(capture_plan, change):
         records.remove(row)
     elif change == "duplicate":
         records.append(deepcopy(row))
-    elif change in ("tokens", "depths"):
-        row["result"]["requests"][0]["token_ids" if change == "tokens" else "exit_depths"][0] += 1
-    elif change in ("gates", "work"):
-        row["result"]["counts"][
-            "gate_probabilities" if change == "gates" else "request_work"
-        ].append(1)
+    elif change == "tokens":
+        # The shared _work_identity field matrix lives in test_benchmark_ab_report.
+        # Keep one integration case proving the capture report uses that identity.
+        row["result"]["requests"][0]["token_ids"][0] += 1
     elif change == "worker":
         row["planned"]["worker_id"] = "B2"
     elif change == "pool":

@@ -10,21 +10,7 @@ from benchmarks.capture import lifecycle as capture
 from vllm_lt.core.kv_cache_manager import KVCacheManager
 from vllm_lt.validation.schema import read_json
 
-
-@pytest.fixture(autouse=True)
-def no_cuda(monkeypatch):
-    def forbidden(*args, **kwargs):
-        raise AssertionError("CPU held lifecycle test attempted CUDA work")
-
-    for name in (
-        "is_available",
-        "device_count",
-        "current_device",
-        "init",
-        "_lazy_init",
-        "synchronize",
-    ):
-        monkeypatch.setattr(torch.cuda, name, forbidden)
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
 
 def install_cpu(monkeypatch):

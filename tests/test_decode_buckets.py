@@ -10,7 +10,7 @@ from vllm_lt.worker.decode_buffers import DecodeBucketLayout, allocate_bucket
 from vllm_lt.worker.model_runner import ModelRunner
 
 model = fixtures.model
-no_cuda = fixtures.no_cuda
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
 
 @pytest.mark.parametrize(
@@ -61,6 +61,8 @@ def test_eight_live_requests_alternate_buckets_without_aliasing_outputs(model, m
         runner._enable_persistent_decode()
     else:
         runner._enable_recurrent_graph(use_graphs=mode == "graph")
+    executor = runner._decode_executor
+    owned = executor.snapshot()["buckets"] if executor is not None else None
     for current in (cache, reference):
         for name in "abcdefgh":
             current.allocate(name, 8)
@@ -70,7 +72,13 @@ def test_eight_live_requests_alternate_buckets_without_aliasing_outputs(model, m
         ids = list(ids)
         pos = [positions[name] for name in ids]
         hidden = torch.randn(len(ids), model.config.hidden_size)
-        actual = runner._recurrent(hidden, ids, [0] * len(ids), pos)
+        if executor is None:
+            actual = runner._recurrent(hidden, ids, [0] * len(ids), pos)
+        else:
+            before = fixtures.prefixes(cache)
+            actual = executor.recurrent(hidden, ids, [0] * len(ids), pos, defer_completion=True)
+            assert fixtures.prefixes(cache) == before and executor.ticket.state == "bound"
+            assert executor.buckets[rows]["metadata"].in_use
         padded = reference._pad_prepared(
             reference._prepare_batch(ids, [0] * len(ids), pos),
             row_indices=range(1, 2 * len(ids), 2),
@@ -86,10 +94,24 @@ def test_eight_live_requests_alternate_buckets_without_aliasing_outputs(model, m
         if mode == "persistent":
             assert runner._persistent["last_dispatch"]["row_count"] == rows
         else:
-            assert runner._decode_executor.last_dispatch["bucket_id"] == rows
+            executor.complete_after_gate()
+            assert fixtures.prefixes(cache) == fixtures.prefixes(reference)
+            assert executor.last_dispatch["bucket_id"] == rows
+            assert executor.last_dispatch["ticket_state"] == "committed"
+            assert not executor.buckets[rows]["metadata"].in_use
+            for value in actual:
+                assert all(
+                    value.untyped_storage().data_ptr() != tensor.untyped_storage().data_ptr()
+                    for bucket in executor.buckets.values()
+                    for tensor in bucket["tensors"].values()
+                )
         retained.append((actual, tuple(t.clone() for t in actual)))
         for name in ids:
             positions[name] += 1
     assert all(torch.equal(a, b) for output, saved in retained for a, b in zip(output, saved))
-    if mode != "persistent":
+    if executor is not None:
+        now = executor.snapshot()
+        assert all(now["buckets"][key]["tensors"] == owned[key]["tensors"] for key in owned)
+        assert now["counters"]["prepared"] == now["counters"]["committed"] == 5
+        assert now["counters"]["replays" if mode == "graph" else "eager"] == 5
         runner._close_recurrent_graph()

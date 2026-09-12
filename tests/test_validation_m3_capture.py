@@ -15,6 +15,8 @@ from vllm_lt.validation.diagnostics import DiagnosticDump, SpoolBudget
 from vllm_lt.validation.report import _expected_boundaries
 from vllm_lt.validation.schema import read_json
 
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -23,24 +25,6 @@ def inputs():
         read_json(ROOT / "benchmarks/fixtures/ouro-q1.json"),
         read_json(ROOT / "benchmarks/fixtures/ouro-q1-contract.json"),
     )
-
-
-@pytest.fixture(autouse=True)
-def no_cuda(monkeypatch):
-    def forbidden(*args, **kwargs):
-        pytest.fail("capture numerical CPU test attempted CUDA discovery/device work")
-
-    for name in (
-        "is_available",
-        "device_count",
-        "current_device",
-        "_lazy_init",
-        "init",
-        "synchronize",
-        "memory_allocated",
-        "memory_reserved",
-    ):
-        monkeypatch.setattr(torch.cuda, name, forbidden)
 
 
 def test_projected_plan_preserves_inputs_original_policy_and_full_kv():

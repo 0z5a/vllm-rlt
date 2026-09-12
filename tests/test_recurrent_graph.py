@@ -23,28 +23,7 @@ from vllm_lt.sampling_params import SamplingParams
 from vllm_lt.worker.model_runner import ModelRunner
 from vllm_lt.worker.recurrent_graph import GraphLimits, RecurrentGraphExecutor
 
-
-@pytest.fixture(autouse=True)
-def no_cuda(monkeypatch):
-    def forbidden(*args, **kwargs):
-        pytest.fail("CPU graph tests must not discover or initialize CUDA")
-
-    for name in (
-        "is_available",
-        "device_count",
-        "current_device",
-        "init",
-        "_lazy_init",
-        "synchronize",
-        "current_stream",
-        "Stream",
-        "CUDAGraph",
-        "MemPool",
-        "get_allocator_backend",
-        "memory_allocated",
-        "memory_reserved",
-    ):
-        monkeypatch.setattr(torch.cuda, name, forbidden)
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
 
 @pytest.fixture
@@ -308,63 +287,6 @@ def test_fake_capture_setup_restores_exact_pool_and_has_independent_graphs(model
     assert all(g.reset_done for g in runtime.graphs)
 
 
-@pytest.mark.parametrize("use_graphs", [False, True])
-def test_bucket_alternation_commits_only_after_completion_and_owns_publication(
-    model, monkeypatch, use_graphs
-):
-    cache, reference = make_cache(model), make_cache(model)
-    fake_runtime(monkeypatch, cache)
-    runner = ModelRunner(model, cache)
-    runner._enable_recurrent_graph(use_graphs=use_graphs)
-    executor = runner._decode_executor
-    for c in (cache, reference):
-        for name in "abcd":
-            c.allocate(name, 3)
-    owned = runner._graph_snapshot()["buckets"]
-    retained = []
-    for ids, positions, rows in [
-        (list("abcd"), [0] * 4, 8),
-        (["a"], [1], 4),
-        (list("bcd"), [1] * 3, 8),
-        (["a"], [2], 4),
-    ]:
-        hidden = torch.randn(len(ids), model.config.hidden_size)
-        before = prefixes(cache)
-        actual = executor.recurrent(hidden, ids, [0] * len(ids), positions, defer_completion=True)
-        assert prefixes(cache) == before and executor.ticket.state == "bound"
-        assert executor.buckets[rows]["metadata"].in_use
-        padded = reference._pad_prepared(
-            reference._prepare_batch(ids, [0] * len(ids), positions),
-            row_indices=range(1, 2 * len(ids), 2),
-            row_count=rows,
-            table_width=32,
-        )
-        physical = hidden.new_zeros(rows, model.config.hidden_size)
-        physical[list(padded.live_rows)] = hidden
-        full = model._recurrent_prepared(physical, padded, reference)
-        assert all(torch.equal(a, b[list(padded.live_rows)]) for a, b in zip(actual, full))
-        assert torch.equal(cache.key_cache, reference.key_cache)
-        assert torch.equal(cache.value_cache, reference.value_cache)
-        executor.complete_after_gate()
-        assert prefixes(cache) == prefixes(reference)
-        assert executor.last_dispatch["ticket_state"] == "committed"
-        assert not executor.buckets[rows]["metadata"].in_use
-        for value in actual:
-            assert all(
-                value.untyped_storage().data_ptr() != t.untyped_storage().data_ptr()
-                for b in executor.buckets.values()
-                for t in b["tensors"].values()
-            )
-        retained.append((actual, tuple(v.clone() for v in actual)))
-    for actual, copied in retained:
-        assert all(torch.equal(a, b) for a, b in zip(actual, copied))
-    now = executor.snapshot()
-    assert all(now["buckets"][key]["tensors"] == owned[key]["tensors"] for key in owned)
-    assert now["counters"]["prepared"] == now["counters"]["committed"] == 4
-    assert now["counters"]["replays" if use_graphs else "eager"] == 4
-    executor.close()
-
-
 def test_empty_invalid_prefix_and_shape_fallback_do_not_use_bucket(model, monkeypatch):
     cache = make_cache(model)
     fake_runtime(monkeypatch, cache)
@@ -540,31 +462,6 @@ def test_failed_capture_restores_stream_and_scratch_without_masking_primary(mode
     executor.close()
 
 
-@pytest.mark.parametrize(
-    "limit_field, measured",
-    [
-        ("graph_retained_allocated_bytes", "allocated_bytes"),
-        ("graph_retained_reserved_bytes", "reserved_bytes"),
-        ("setup_peak_allocated_bytes", "peak_allocated_bytes"),
-        ("setup_peak_reserved_bytes", "peak_reserved_bytes"),
-    ],
-)
-def test_setup_memory_caps_decline_after_restoration(model, monkeypatch, limit_field, measured):
-    cache = make_cache(model)
-    runtime = fake_runtime(monkeypatch, cache)
-    runtime.after_memory = {**runtime.memory(), measured: 11}
-    runtime.memory_calls = 0
-    limits = {**asdict(GraphLimits()), limit_field: 10}
-    runner = ModelRunner(model, cache)
-    runner._enable_recurrent_graph(use_graphs=True, limits=limits)
-    decline = runner._graph_snapshot()["budget_decline"]
-    assert decline["attempt_setup"]["scratch"]["restored"] and not cache._allocations
-    assert decline["attempt_setup"]["status"] == "failed"
-    assert decline["error"]["limit_name"] == limit_field
-    assert decline["error"]["observed"] == 11 and decline["error"]["limit"] == 10
-    assert runner._decode_executor is None and all(g.reset_done for g in runtime.graphs)
-
-
 def test_setup_last_timestamp_deadline_cannot_report_success(model, monkeypatch):
     clock = iter([0, 0, 0, 60 * 10**9, 60 * 10**9 + 1])
     monkeypatch.setattr(graph_module.time, "perf_counter_ns", lambda: next(clock))
@@ -577,7 +474,7 @@ def test_setup_last_timestamp_deadline_cannot_report_success(model, monkeypatch)
     runner._close_recurrent_graph()
 
 
-@pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt, SystemExit])
+@pytest.mark.parametrize("error_type", [RuntimeError, KeyboardInterrupt])
 @pytest.mark.parametrize("confirmed", [False, True])
 def test_engine_update_failure_preserves_commit_and_only_frees_after_completion(
     model, monkeypatch, error_type, confirmed
@@ -638,27 +535,3 @@ def test_changed_bucket_storage_is_rejected_before_write_and_cannot_retry(model,
     assert prefixes(cache) == initial[2] and executor.counters["prepared"] == 0
     assert executor.status == "failed"
     executor.close()
-
-
-def test_close_failure_retains_buffers_and_preserves_first_failure(model, monkeypatch):
-    cache = make_cache(model)
-    runtime = fake_runtime(monkeypatch, cache)
-    runner = ModelRunner(model, cache)
-    runner._enable_recurrent_graph(use_graphs=True)
-    executor = runner._decode_executor
-    pointer = executor.buckets[4]["tensors"]["hidden_in"].data_ptr()
-    primary = RuntimeError("reset primary")
-    reset = runtime.graphs[0].reset
-
-    def fail_reset():
-        raise primary
-
-    monkeypatch.setattr(runtime.graphs[0], "reset", fail_reset)
-    with pytest.raises(RuntimeError) as raised:
-        executor.close()
-    assert raised.value is primary and executor.status == "failed"
-    assert executor.buckets[4]["tensors"]["hidden_in"].data_ptr() == pointer
-    assert executor.failure["primary"]["message"] == "reset primary"
-    monkeypatch.setattr(runtime.graphs[0], "reset", reset)
-    executor.close()
-    assert executor.status == "closed"

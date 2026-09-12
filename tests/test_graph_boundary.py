@@ -12,14 +12,7 @@ from vllm_lt.core.kv_cache_manager import KVCacheManager, _TensorKVView
 from vllm_lt.kernels.paged_attention import torch_paged_attention
 from vllm_lt.models import OuroConfig, OuroForCausalLM
 
-
-@pytest.fixture(autouse=True)
-def no_cuda(monkeypatch):
-    def forbidden(*args, **kwargs):
-        pytest.fail("graph-boundary CPU tests must not discover or initialize CUDA")
-
-    for name in ("is_available", "device_count", "current_device", "init", "_lazy_init"):
-        monkeypatch.setattr(torch.cuda, name, forbidden)
+pytestmark = pytest.mark.usefixtures("forbid_cuda")
 
 
 def make_cache(config=None):
