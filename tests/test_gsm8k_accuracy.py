@@ -45,13 +45,13 @@ def task(monkeypatch):
     return make_task()
 
 
-def test_paper_prompt_and_strict_scoring(task):
+def test_three_shot_prompt_and_strict_scoring(task):
     task.build_all_requests(limit=1, rank=0, world_size=1)
     instance = task.instances[0]
     assert instance.args[0].count("Q:") == 4  # three demonstrations plus the question
     row = {"doc": instance.doc}
     assert score(task, row, "6 * 3 = 18. The answer is 18.")["correct"]
-    # A bare number must not silently pass the paper's strict extraction rule.
+    # A bare number must not silently pass the harness's strict extraction rule.
     assert score(task, row, "18")["unparseable"]
     assert not score(task, row, "The answer is 19.")["correct"]
 
@@ -214,7 +214,7 @@ def test_native_cli_enforces_stored_baseline(monkeypatch, correct, exit_code):
         gsm8k.main()
 
 
-def comparison_fixture(tmp_path, native_correct=True):
+def comparison_fixture(tmp_path, native_correct=True, examples=1):
     for backend, correct in (("transformers", True), ("native", native_correct)):
         path = tmp_path / backend
         path.mkdir()
@@ -224,17 +224,19 @@ def comparison_fixture(tmp_path, native_correct=True):
             "correct": correct,
             "answer": "18" if correct else "19",
         }
-        (path / "samples.jsonl").write_text(json.dumps(row) + "\n")
+        (path / "samples.jsonl").write_text(
+            "".join(json.dumps(dict(row, id=i)) + "\n" for i in range(examples))
+        )
         summary = {
             "backend": backend,
             "protocol_sha256": "same",
-            "expected_examples": 1,
+            "expected_examples": examples,
             "split": "test",
             "max_regression_pp": 1.0,
             "min_reference_accuracy_pct": 75.92,
             "complete": True,
-            "examples": 1,
-            "correct": int(correct),
+            "examples": examples,
+            "correct": examples * int(correct),
             "accuracy": float(correct),
             "samples_sha256": file_digest(path / "samples.jsonl"),
         }
@@ -278,7 +280,7 @@ def test_measured_transformers_score_is_the_default_baseline(tmp_path):
 
 @pytest.mark.parametrize("change", ["different_protocol", "partial", "wrong_score", "duplicate"])
 def test_invalid_comparisons_rejected(tmp_path, change):
-    args = comparison_fixture(tmp_path)
+    args = comparison_fixture(tmp_path, examples=2 if change == "duplicate" else 1)
     path = args.native / "summary.json"
     summary = json.loads(path.read_text())
     if change == "different_protocol":
@@ -289,8 +291,11 @@ def test_invalid_comparisons_rejected(tmp_path, change):
         summary["accuracy"] = 0.0
     else:
         rows = args.native / "samples.jsonl"
-        rows.write_text(rows.read_text() * 2)
-        summary.update(examples=2, samples_sha256=file_digest(rows))
+        records = [json.loads(line) for line in rows.read_text().splitlines()]
+        records[1]["id"] = records[0]["id"]
+        rows.write_text("".join(json.dumps(row) + "\n" for row in records))
+        summary.update(samples_sha256=file_digest(rows))
     path.write_text(json.dumps(summary))
-    with pytest.raises(ValueError):
+    message = "Missing or duplicate examples" if change == "duplicate" else None
+    with pytest.raises(ValueError, match=message):
         compare(args)

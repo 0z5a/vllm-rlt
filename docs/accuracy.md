@@ -33,8 +33,10 @@ trust_remote_code=True)` and the released model's `generate()`. It uses eager
 attention and the standard Transformers `DynamicCache` with 96 depth/layer slots,
 plus `exit_at_step=3` for fourth-loop logits. This cache setup accommodates the
 pinned release's older cache interface; the model source is not patched.
-The candidate uses the existing native engine and Triton attention. Both retain
-their existing BF16 reduction precision.
+The candidate uses the existing native engine and Triton attention. Both use
+BF16 weights and activations, retaining each backend's existing FP32 reductions
+and other operations that need higher precision. The evaluator changes no
+inference arithmetic.
 
 The recorded environment used torch 2.13.0, Transformers 4.55.0, lm-eval 0.4.9.2,
 datasets 3.6.0, tokenizers 0.21.4 and Triton 3.7.1. The fixture records these
@@ -113,3 +115,9 @@ Dataset: [GSM8K](https://huggingface.co/datasets/openai/gsm8k).
 The [Ouro evaluation settings](https://arxiv.org/html/2510.25741v5#A3.T16) do not
 pin the exact harness revision, demonstrations or token limits, so the settings
 above are explicit project choices rather than an exact paper reproduction.
+
+The [full 1,319-question comparison](benchmarks/gsm8k-bf16-20260912.md) recorded
+**62.02% native versus 61.64% Transformers** with strict matching. It includes
+per-question audits and a separate extraction diagnostic. That experiment's
+frozen 75.92% reference floor failed; the current default remains the measured
+GSM8K-87 baseline described above.
