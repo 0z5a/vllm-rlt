@@ -1,4 +1,4 @@
-"""Two-bucket experiment adapter for the existing, timed M1 inference loop."""
+"""Graph experiment adapter for the existing, timed M1 inference loop."""
 
 from contextlib import contextmanager
 
@@ -40,8 +40,9 @@ class GraphCapture(Capture):
                 return original(hidden, request_ids, depths, positions, **kwargs)
             count = len(request_ids)
             width = executor.cache._prepare_host_batch(request_ids, depths, positions).width
-            supported = bool(count) and count <= 4 and width <= 32
-            bucket = (4 if count <= 2 else 8) if supported else None
+            bucket, reason = executor.layout.select(count, width)
+            supported = bool(count) and reason is None and executor.cache.backend == "triton"
+            bucket = bucket if supported else None
             kind = (
                 "empty"
                 if not count

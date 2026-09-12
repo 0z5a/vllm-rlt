@@ -156,6 +156,10 @@ class FakeRuntime:
     def new_stream(self):
         return self.side
 
+    def release_stream(self, stream):
+        assert stream is self.side
+        self.events.append(("release_stream", stream.name))
+
     @contextmanager
     def stream_context(self, stream):
         old, self.current = self.current, stream
@@ -294,7 +298,7 @@ def test_fake_capture_setup_restores_exact_pool_and_has_independent_graphs(model
     assert runtime.current is runtime.main
     assert runtime.events.count(("capture_begin", 1)) == 1
     assert runtime.events.count(("capture_begin", 2)) == 1
-    assert snapshot["buckets"]["4"]["pool_id"] != snapshot["buckets"]["8"]["pool_id"]
+    assert snapshot["buckets"]["4"]["pool_id"] == snapshot["buckets"]["8"]["pool_id"]
     assert all(b["generation"] == b["setup_generation"] == 1 for b in snapshot["buckets"].values())
     assert all(v == 0 for v in snapshot["counters"].values())
     assert all(b["verification"]["inactive_positive_zero"] for b in snapshot["buckets"].values())

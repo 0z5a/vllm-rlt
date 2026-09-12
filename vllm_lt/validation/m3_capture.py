@@ -381,6 +381,11 @@ def _execution(case, observations, lifecycle, limits):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             engines.append(self)
+            from vllm_lt.worker.decode_buffers import DecodeBucketLayout
+
+            # This frozen numerical contract qualifies the original 4/8-row
+            # shapes. New scheduler-sized experiments use their own plan.
+            self.model_runner._decode_layout = DecodeBucketLayout(max_num_seqs=4)
             self.model_runner._enable_recurrent_graph(
                 use_graphs=case["implementation_id"] == "B", limits=limits
             )
@@ -477,8 +482,23 @@ def run_model_rows(model, parent, implementation, output_dir, deadline_ns, *, af
     )
 
 
-def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cuda:0"):
-    """Audit shared setup, independent graph pools and complete owned tensor inventory."""
+def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cuda:0", limits=None):
+    """Audit setup, pool ownership and complete owned tensor inventory."""
+    from vllm_lt.worker.decode_buffers import DecodeBucketLayout
+
+    limits = GRAPH_LIMITS if limits is None else limits
+    layout_record = setup.get("layout")
+    layout = DecodeBucketLayout(
+        max_num_seqs=layout_record["max_num_seqs"] if layout_record else 4,
+        table_width=layout_record["table_width"] if layout_record else 32,
+    )
+    rows_inventory = layout.row_counts
+    if layout_record:
+        _require(
+            layout_record["row_counts"] == list(rows_inventory)
+            and layout_record["pool_scope"] == "executor",
+            "graph layout or pool scope differs",
+        )
     hidden = config["hidden_size"]
     setup_record = setup["setup"]
     _require(setup_record["status"] == "complete", "graph setup incomplete")
@@ -486,12 +506,16 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
     _require(
         all(type(x) is int and x > 0 for x in (start, end, deadline))
         and start <= end <= deadline
-        and deadline - start == GRAPH_LIMITS["setup_timeout_s"] * 10**9,
+        and deadline - start == limits["setup_timeout_s"] * 10**9,
         "graph setup deadline differs",
     )
     _require(
         [setup_record[k] for k in ("warmups", "captures", "verification_replays")]
-        == ([6, 2, 2] if replay else [0, 0, 0]),
+        == (
+            [3 * len(rows_inventory), len(rows_inventory), len(rows_inventory)]
+            if replay
+            else [0, 0, 0]
+        ),
         "graph setup traversal/capture budget differs",
     )
     _require(
@@ -506,7 +530,7 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
             [("scratch_save_and_seed", None)]
             + [
                 (phase, rows)
-                for rows in (4, 8)
+                for rows in rows_inventory
                 for phase in ("warmup", "warmup", "warmup", "capture", "verification_replay")
             ]
             + [("scratch_restore", None)]
@@ -569,20 +593,20 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
             ("peak_allocated_bytes", "setup_peak_allocated_bytes"),
             ("peak_reserved_bytes", "setup_peak_reserved_bytes"),
         ):
-            _require(0 <= deltas[key] <= GRAPH_LIMITS[cap], "graph memory budget exceeded")
+            _require(0 <= deltas[key] <= limits[cap], "graph memory budget exceeded")
     else:
         _require(
             setup_record["events"] == [] and setup_record["scratch"] is None,
             "eager/backend fallback performed graph setup",
         )
     stable = setup["buckets"]
-    _require(set(stable) == {"4", "8"}, "graph bucket inventory differs")
+    _require(set(stable) == set(map(str, rows_inventory)), "graph bucket inventory differs")
     owned = set()
     for name, bucket in stable.items():
         rows = int(name)
         _require(
             bucket["row_count"] == rows
-            and bucket["table_width"] == 32
+            and bucket["table_width"] == layout.table_width
             and bucket["max_live_rows"] == rows // 2,
             "fixed bucket layout differs",
         )
@@ -591,6 +615,7 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
             key: ([rows // 2] if key == "live_indices" else [rows, *shape[1:]], dtype)
             for key, (shape, dtype) in layouts.items()
         }
+        layouts["block_tables"] = ([rows, layout.table_width], "int32")
         _require(
             set(bucket["tensors"]) == set(layouts)
             and set(bucket["staging_tensors"]) == set(m3_persistent._METADATA),
@@ -642,15 +667,27 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
     payload = sum(d["size_bytes"] for b in stable.values() for d in b["tensors"].values())
     staging = sum(d["size_bytes"] for b in stable.values() for d in b["staging_tensors"].values())
     _require(
-        setup["device_payload_bytes"] == payload <= GRAPH_LIMITS["common_payload_bytes"]
-        and setup["cpu_staging_bytes"] == staging == 1884,
+        setup["device_payload_bytes"] == payload <= limits["common_payload_bytes"]
+        and setup["cpu_staging_bytes"] == staging <= limits["cpu_staging_bytes"]
+        and (payload, staging) == layout.payload_bytes(hidden),
         "common storage byte accounting differs",
     )
     if replay:
-        _require(
-            stable["4"]["pool_id"] != stable["8"]["pool_id"],
-            "alternating graphs share a private pool",
-        )
+        pool_ids = {tuple(bucket["pool_id"]) for bucket in stable.values()}
+        if layout_record:
+            _require(len(pool_ids) == 1, "executor buckets must share their owned pool")
+            for bucket in stable.values():
+                _require(
+                    bucket["pool_owner"]
+                    == {
+                        "kind": "torch.cuda.MemPool",
+                        "id": bucket["pool_id"],
+                        "release_policy": "synchronize-reset-drop-captured-outputs-owner-last",
+                    },
+                    "graph pool ownership evidence differs",
+                )
+        else:
+            _require(len(pool_ids) == len(stable), "legacy graph pools must be independent")
     return stable, owned
 
 

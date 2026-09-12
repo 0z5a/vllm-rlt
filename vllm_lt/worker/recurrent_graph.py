@@ -1,63 +1,21 @@
-"""Private two-bucket eager/replay executor with synchronous host transactions."""
+"""Private bucketed eager/replay executor with synchronous host transactions."""
 
-import hashlib
 import time
-from copy import deepcopy
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 
 import torch
 
-
-@dataclass(frozen=True)
-class GraphLimits:
-    common_payload_bytes: int = 256 * 1024
-    cpu_staging_bytes: int = 16 * 1024
-    graph_retained_allocated_bytes: int = 256 * 1024**2
-    graph_retained_reserved_bytes: int = 256 * 1024**2
-    setup_peak_allocated_bytes: int = 512 * 1024**2
-    setup_peak_reserved_bytes: int = 512 * 1024**2
-    setup_timeout_s: int = 60
-
-    def __post_init__(self):
-        for name, value in asdict(self).items():
-            if type(value) is not int or value <= 0:
-                raise ValueError(f"{name} must be a positive integer")
-
-
-class CaptureBudgetExceeded(RuntimeError):
-    """Only a declared executor limit, never a CUDA/allocator/device exception."""
-
-    def __init__(self, limits, limit_name, observed):
-        self.limits = asdict(limits)
-        self.limit_name = limit_name
-        self.limit = self.limits[limit_name]
-        self.observed = observed
-        super().__init__(
-            f"configured capture budget {limit_name} exceeded: "
-            f"observed={observed}, limit={self.limit}"
-        )
-
-    def record(self):
-        return {
-            "type": type(self).__name__,
-            "message": str(self),
-            "limit_name": self.limit_name,
-            "limit": self.limit,
-            "observed": self.observed,
-        }
-
-
-def _description(tensor):
-    return {
-        "data_ptr": tensor.data_ptr(),
-        "storage_ptr": tensor.untyped_storage().data_ptr(),
-        "shape": list(tensor.shape),
-        "stride": list(tensor.stride()),
-        "dtype": str(tensor.dtype),
-        "device": str(tensor.device),
-        "size_bytes": tensor.numel() * tensor.element_size(),
-        "storage_bytes": tensor.untyped_storage().nbytes(),
-    }
+from .capture_resources import _CudaRuntime as _CudaRuntime
+from .capture_resources import _make_runtime
+from .decode_buffers import DecodeBucketLayout, allocate_bucket
+from .graph_diagnostics import (
+    CaptureBudgetExceeded,
+    GraphLimits,
+    _description,
+    _error,
+    _hash,
+    graph_snapshot,
+)
 
 
 def _signature(tensor):
@@ -71,68 +29,15 @@ def _signature(tensor):
     )
 
 
-def _hash(tensor):
-    cpu = tensor.detach().to("cpu").contiguous().reshape(-1).view(torch.uint8)
-    return hashlib.sha256(memoryview(cpu.numpy()).cast("B")).hexdigest()
-
-
-def _error(error):
-    return {"type": type(error).__name__, "message": str(error)[:512]}
-
-
-class _CudaRuntime:
-    """The small CUDA setup surface; CPU tests replace it without device discovery."""
-
-    def __init__(self, device):
-        self.device = device
-
-    def current_stream(self):
-        return torch.cuda.current_stream(self.device)
-
-    def new_stream(self):
-        return torch.cuda.Stream(device=self.device)
-
-    @staticmethod
-    def stream_context(stream):
-        return torch.cuda.stream(stream)
-
-    @staticmethod
-    def new_graph():
-        return torch.cuda.CUDAGraph(keep_graph=False)
-
-    def new_pool(self):
-        # Public MemPool owns the user-created pool until its targeted teardown.
-        # A graph reset alone only makes an implicit graph pool freeable.
-        if torch.cuda.get_allocator_backend() != "native":
-            raise RuntimeError("owned recurrent graph pools require the native CUDA allocator")
-        with torch.cuda.device(self.device):
-            return torch.cuda.MemPool()
-
-    def memory(self):
-        return {
-            "allocated_bytes": torch.cuda.memory_allocated(self.device),
-            "reserved_bytes": torch.cuda.memory_reserved(self.device),
-            "peak_allocated_bytes": torch.cuda.max_memory_allocated(self.device),
-            "peak_reserved_bytes": torch.cuda.max_memory_reserved(self.device),
-        }
-
-    def reset_peaks(self):
-        torch.cuda.reset_peak_memory_stats(self.device)
-
-
-def _make_runtime(device):
-    return _CudaRuntime(device) if device.type == "cuda" else None
-
-
 class RecurrentGraphExecutor:
-    """Own one ordered execution stream, two fixed bundles, and their graph pools.
+    """Own one ordered execution stream, a fixed bucket ladder and one graph pool.
 
     Construction validates host configuration only. The runner retains this
     object before calling setup(), including when setup fails partway through.
     Weights and the original cache pool must remain immutable for this lifetime.
     """
 
-    def __init__(self, model, cache, *, use_graphs, limits=None):
+    def __init__(self, model, cache, *, use_graphs, limits=None, layout=None):
         if type(use_graphs) is not bool:
             raise ValueError("use_graphs must be bool")
         if limits is None:
@@ -157,8 +62,9 @@ class RecurrentGraphExecutor:
             and (cache.max_loops != 4 or cache.num_free_blocks < 4 or cache.block_size < 2)
         ):
             raise ValueError("graph setup requires four scratch depth pages and two token slots")
-        payload = 96 * model.config.hidden_size + 1980
-        for name, observed in (("common_payload_bytes", payload), ("cpu_staging_bytes", 1884)):
+        self.layout = layout if layout is not None else DecodeBucketLayout()
+        payload, staging = self.layout.payload_bytes(model.config.hidden_size)
+        for name, observed in (("common_payload_bytes", payload), ("cpu_staging_bytes", staging)):
             if observed > getattr(limits, name):
                 raise CaptureBudgetExceeded(limits, name, observed)
         self.model, self.cache, self.device = model, cache, cache.device
@@ -170,6 +76,7 @@ class RecurrentGraphExecutor:
             raise ValueError("Triton recurrent buckets require a CUDA runtime")
         self.status, self.failure = "new", None
         self.buckets, self.stream, self.setup_stream = {}, None, None
+        self.pool_owner = None
         self.ticket = self.batch = self.active_bucket = None
         self.submitted = False
         self.counters = dict.fromkeys(
@@ -232,39 +139,27 @@ class RecurrentGraphExecutor:
         )
         try:
             self.stream = self.runtime.current_stream() if self.runtime is not None else None
-            for rows in (4, 8):
-                metadata = self.cache._allocate_metadata_storage(row_count=rows)
-                tensors = {
-                    **metadata.tensors,
-                    "hidden_in": torch.zeros(
-                        (rows, self.model.config.hidden_size),
-                        device=self.device,
-                        dtype=torch.float32,
-                    ),
-                    "hidden_out": torch.zeros(
-                        (rows, self.model.config.hidden_size),
-                        device=self.device,
-                        dtype=torch.float32,
-                    ),
-                    "gate_out": torch.zeros(rows, device=self.device, dtype=torch.float32),
-                    "live_indices": torch.arange(1, rows, 2, device=self.device, dtype=torch.long),
-                }
-                bucket = {
-                    "metadata": metadata,
-                    "tensors": tensors,
-                    "view": None,
-                    "graph": None,
-                    "pool_owner": None,
-                    "pool_id": None,
-                    "graph_exec_id": None,
-                    "capture_outputs": None,
-                    "setup_generation": 0,
-                    "captured_inputs": None,
-                    "captured_outputs": None,
-                    "counters": dict.fromkeys(
-                        ("prepared", "eager", "replays", "committed", "completed"), 0
-                    ),
-                }
+            for rows in self.layout.row_counts:
+                bucket = allocate_bucket(
+                    self.cache, self.layout, rows, self.model.config.hidden_size
+                )
+                metadata, tensors = bucket["metadata"], bucket["tensors"]
+                bucket.update(
+                    {
+                        "view": None,
+                        "graph": None,
+                        "pool_owner": None,
+                        "pool_id": None,
+                        "graph_exec_id": None,
+                        "capture_outputs": None,
+                        "setup_generation": 0,
+                        "captured_inputs": None,
+                        "captured_outputs": None,
+                        "counters": dict.fromkeys(
+                            ("prepared", "eager", "replays", "committed", "completed"), 0
+                        ),
+                    }
+                )
                 self.buckets[rows] = bucket
                 self._clear(bucket)
                 if self.cache.backend == "triton":
@@ -422,7 +317,9 @@ class RecurrentGraphExecutor:
         return hidden, gates
 
     def _capture(self, bucket):
-        bucket["pool_owner"] = self.runtime.new_pool()
+        if self.pool_owner is None:
+            self.pool_owner = self.runtime.new_pool()
+        bucket["pool_owner"] = self.pool_owner
         bucket["pool_id"] = list(bucket["pool_owner"].id)
         graph = self.runtime.new_graph()
         bucket["graph"] = graph
@@ -438,7 +335,7 @@ class RecurrentGraphExecutor:
         else:
             graph.capture_end()
         if list(graph.pool()) != bucket["pool_id"]:
-            raise RuntimeError("captured graph must use its independently owned pool")
+            raise RuntimeError("captured graph must use its executor's shared pool")
         bucket["graph_exec_id"] = graph.raw_cuda_graph_exec()
         bucket["captured_inputs"], bucket["captured_outputs"] = (
             self._inputs(bucket),
@@ -503,9 +400,10 @@ class RecurrentGraphExecutor:
                     self.cache._release_prepared(self.batch)
                     self.ticket = self.batch = self.active_bucket = None
                     self.submitted = False
-            pools = [bucket["pool_id"] for bucket in self.buckets.values()]
-            if pools[0] == pools[1]:
-                raise RuntimeError("graph buckets must retain independent pools")
+            if any(
+                bucket["pool_id"] != list(self.pool_owner.id) for bucket in self.buckets.values()
+            ):
+                raise RuntimeError("graph buckets must retain their executor's shared pool")
             self.stream.wait_stream(self.setup_stream)
             self.stream.synchronize()
             self._phase("scratch_restore", None, self._restore_scratch)
@@ -586,16 +484,9 @@ class RecurrentGraphExecutor:
         count = len(host.rows)
         # Reject holes before selecting a fallback or copying a single input byte.
         ticket = self.cache._begin_decode_traversal(host) if count else None
-        reason = (
-            "backend"
-            if self.cache.backend != "triton"
-            else "live_count"
-            if count > 4
-            else "table_width"
-            if host.width > 32
-            else None
-        )
-        rows = 4 if count <= 2 else 8
+        rows, reason = self.layout.select(count, host.width)
+        if self.cache.backend != "triton":
+            reason = "backend"
         self.counters["calls"] += 1
         self.last_publication = None
         self.last_dispatch = {
@@ -612,7 +503,7 @@ class RecurrentGraphExecutor:
             "positions": list(positions),
             "live_rows": list(range(count)) if reason else list(range(1, 2 * count, 2)),
             "row_count": 0 if not count else count if reason else rows,
-            "table_width": 0 if not count else host.width if reason else 32,
+            "table_width": 0 if not count else host.width if reason else self.layout.table_width,
             "bucket_id": None if reason or not count else rows,
             "generation": None,
             "ticket_state": None,
@@ -762,8 +653,8 @@ class RecurrentGraphExecutor:
             # In particular, do not drop graph pools or borrowed inputs if a
             # synchronization or graph reset failed partway through close.
             raise
-        # Complete both resets before releasing either owner. Captured model
-        # outputs belong to the private pools, unlike the common output buffers.
+        # Complete all resets before releasing the shared owner. Captured model
+        # outputs belong to the private pool, unlike the common output buffers.
         # Drop every executor-owned output reference before MemPool destruction
         # performs its pool-specific cache release. Explicit assignments also
         # work when an exception traceback retains a local bucket dictionary.
@@ -772,66 +663,15 @@ class RecurrentGraphExecutor:
             bucket["graph"] = None
         for bucket in self.buckets.values():
             bucket["pool_owner"] = None
+        self.pool_owner = None
         self.buckets.clear()
+        if self.setup_stream is not None:
+            self.runtime.release_stream(self.setup_stream)
+            self.setup_stream = None
         self._weights = ()
         self.ticket = self.batch = self.active_bucket = None
         self.model = self.cache = None
         self.status = "closed"
 
     def snapshot(self):
-        buckets = {}
-        for rows, bucket in self.buckets.items():
-            metadata = bucket["metadata"]
-            buckets[str(rows)] = {
-                "row_count": rows,
-                "table_width": 32,
-                "max_live_rows": rows // 2,
-                "generation": metadata.generation,
-                "setup_generation": bucket["setup_generation"],
-                "in_use": metadata.in_use,
-                "failed": metadata.failed,
-                "tensors": {name: _description(value) for name, value in bucket["tensors"].items()},
-                "staging_tensors": {
-                    name: _description(value) for name, value in metadata.staging.items()
-                },
-                "graph_id": id(bucket["graph"]) if bucket["graph"] is not None else None,
-                "graph_exec_id": bucket["graph_exec_id"],
-                "pool_id": bucket["pool_id"],
-                "pool_owner": {
-                    "kind": "torch.cuda.MemPool",
-                    "id": list(bucket["pool_owner"].id),
-                    "release_policy": "synchronize-reset-drop-captured-outputs-owner-last",
-                }
-                if bucket["pool_owner"] is not None
-                else None,
-                "captured_inputs": bucket["captured_inputs"],
-                "captured_outputs": bucket["captured_outputs"],
-                "counters": bucket["counters"],
-                "verification": bucket.get("verification"),
-            }
-        return deepcopy(
-            {
-                "enabled": True,
-                "status": self.status,
-                "use_graphs": self.use_graphs,
-                "backend": self.cache.backend if self.cache is not None else None,
-                "limits": asdict(self.limits),
-                "device_payload_bytes": sum(
-                    value.numel() * value.element_size()
-                    for bucket in self.buckets.values()
-                    for value in bucket["tensors"].values()
-                ),
-                "cpu_staging_bytes": sum(
-                    value.numel() * value.element_size()
-                    for bucket in self.buckets.values()
-                    for value in bucket["metadata"].staging.values()
-                ),
-                "setup": self.setup_record,
-                "counters": self.counters,
-                "fallback_counts": self.fallback_counts,
-                "last_dispatch": self.last_dispatch,
-                "last_publication": self.last_publication,
-                "failure": self.failure,
-                "buckets": buckets,
-            }
-        )
+        return graph_snapshot(self)

@@ -224,6 +224,9 @@ def completed_run(tmp_path_factory):
         def new_stream(self):
             return Stream()
 
+        def release_stream(self, stream):
+            pass
+
         @contextmanager
         def stream_context(self, stream):
             previous, self.current = self.current, stream
@@ -367,9 +370,7 @@ def test_rehashed_or_missing_replay_pointer_lifetime_evidence_cannot_qualify(com
             "data_ptr"
         ] += 4
     elif change == "pool_alias":
-        value["graph_lifecycle"]["setup"]["buckets"]["8"]["pool_id"] = value["graph_lifecycle"][
-            "setup"
-        ]["buckets"]["4"]["pool_id"]
+        value["graph_lifecycle"]["setup"]["buckets"]["8"]["pool_id"] = [0, 999]
     elif change == "generation":
         events[0]["after"]["buckets"]["4"]["generation"] += 1
     elif change == "counter":

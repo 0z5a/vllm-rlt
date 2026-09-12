@@ -82,6 +82,7 @@ class _MetadataStorage:
     owner: "KVCacheManager"
     tensors: dict[str, torch.Tensor]
     staging: dict[str, torch.Tensor]
+    capacity: tuple[int, int] = (8, 32)
     generation: int = 0
     in_use: bool = False
     failed: bool = False
@@ -458,17 +459,22 @@ class KVCacheManager:
             writable=batch.writable,
         )
 
-    def _allocate_metadata_storage(self, row_count: int = 8) -> _MetadataStorage:
-        """Allocate one fixed private four/eight-row, 32-column decode capacity."""
+    def _allocate_metadata_storage(
+        self, row_count: int = 8, table_width: int = 32
+    ) -> _MetadataStorage:
+        """Allocate fixed storage for a caller-budgeted decode bucket."""
         self._require_usable()
         if (
             not isinstance(row_count, Integral)
             or isinstance(row_count, bool)
-            or row_count not in (4, 8)
+            or row_count < 4
+            or row_count & (row_count - 1)
         ):
-            raise ValueError("persistent row_count must be 4 or 8")
+            raise ValueError("persistent row_count must be a power of two of at least 4")
+        if type(table_width) is not int or table_width <= 0:
+            raise ValueError("persistent table_width must be a positive integer")
         row_count = int(row_count)
-        specifications = _metadata_specifications(row_count)
+        specifications = _metadata_specifications(row_count, table_width)
         staging = {
             name: torch.empty(shape, dtype=dtype, device="cpu", pin_memory=False)
             for name, (shape, dtype) in specifications.items()
@@ -477,7 +483,7 @@ class KVCacheManager:
             name: torch.empty(shape, dtype=dtype, device=self.device)
             for name, (shape, dtype) in specifications.items()
         }
-        return _MetadataStorage(self, tensors, staging)
+        return _MetadataStorage(self, tensors, staging, capacity=(row_count, table_width))
 
     def _prepare_into(self, storage: _MetadataStorage, host: _HostKVBatch) -> _PreparedKVBatch:
         """Borrow fixed tensors for exactly one generation, after all host checks."""
@@ -487,7 +493,7 @@ class KVCacheManager:
         if storage.failed or storage.in_use or storage.transaction is not None:
             raise RuntimeError("persistent metadata is failed or already in use")
         row_count, table_width = storage.tensors["block_tables"].shape
-        if row_count not in (4, 8) or table_width != 32:
+        if (row_count, table_width) != storage.capacity:
             raise ValueError("persistent metadata must retain its fixed capacity")
         if len(host.rows) > row_count // 2 or host.width > table_width:
             raise ValueError("persistent metadata capacity exceeded")

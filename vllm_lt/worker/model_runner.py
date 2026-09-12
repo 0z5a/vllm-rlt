@@ -4,16 +4,17 @@ from copy import deepcopy
 
 import torch
 
-from vllm_lt.core.kv_cache_manager import _metadata_payload_bytes
 from vllm_lt.core.scheduler import SchedulerOutput
 from vllm_lt.request import Request, Stage
+from vllm_lt.worker.decode_buffers import DecodeBucketLayout, allocate_bucket
 
 
 class ModelRunner:
-    def __init__(self, model, cache_manager):
+    def __init__(self, model, cache_manager, *, max_num_seqs=4):
         self.model = model.eval()
         self.cache_manager = cache_manager
         self.device = next(model.parameters()).device
+        self._decode_layout = DecodeBucketLayout(max_num_seqs=max_num_seqs)
         self._persistent = None
         self._decode_executor = None
         self._graph_declined = None
@@ -35,7 +36,7 @@ class ModelRunner:
         }
 
     def _enable_persistent_decode(self):
-        """Opt in to one fixed eager capacity; construction never changes request KV."""
+        """Prepare the scheduler-sized eager bucket ladder before request admission."""
         self.cache_manager._require_usable()
         if (
             self._persistent is not None
@@ -51,26 +52,22 @@ class ModelRunner:
         if parameter.device != self.cache_manager.device:
             raise ValueError("persistent model and KV cache must use the same device")
         width = self.model.config.hidden_size
-        payload_bytes = (2 * 8 * width + 8) * 4 + _metadata_payload_bytes() + 4 * 8
-        if payload_bytes > 256 * 1024:
-            raise ValueError("persistent decode exceeds the 256 KiB tensor payload cap")
+        payload_bytes, staging_bytes = self._decode_layout.payload_bytes(width)
+        if payload_bytes > 1024 * 1024 or staging_bytes > 16 * 1024:
+            raise ValueError("persistent decode exceeds its 1 MiB tensor / 16 KiB staging cap")
         setup_stream = (
             torch.cuda.current_stream(self.device) if self.device.type == "cuda" else None
         )
-        metadata = self.cache_manager._allocate_metadata_storage()
-        tensors = {
-            **metadata.tensors,
-            "hidden_in": torch.empty((8, width), dtype=torch.float32, device=self.device),
-            "hidden_out": torch.empty((8, width), dtype=torch.float32, device=self.device),
-            "gate_out": torch.empty(8, dtype=torch.float32, device=self.device),
-            "live_indices": torch.tensor([1, 3, 5, 7], dtype=torch.long, device=self.device),
+        buckets = {
+            rows: allocate_bucket(self.cache_manager, self._decode_layout, rows, width)
+            for rows in self._decode_layout.row_counts
         }
         # Publish the bundle only after every allocation succeeds. No partially
         # constructed executor is reachable after a constructor exception.
         self._persistent_stream = setup_stream
         self._persistent = {
-            "metadata": metadata,
-            "tensors": tensors,
+            **buckets[self._decode_layout.row_counts[-1]],
+            "buckets": buckets,
             "counters": {"calls": 0, "prepared": 0, "completed": 0, "empty": 0},
             "fallback_counts": {"live_count": 0, "table_width": 0},
             "last_dispatch": None,
@@ -94,7 +91,11 @@ class ModelRunner:
         executor = None
         try:
             executor = RecurrentGraphExecutor(
-                self.model, self.cache_manager, use_graphs=use_graphs, limits=limits
+                self.model,
+                self.cache_manager,
+                use_graphs=use_graphs,
+                limits=limits,
+                layout=self._decode_layout,
             )
             # Retain partial setup storage on failure until completion permits close.
             self._decode_executor = executor
@@ -174,13 +175,34 @@ class ModelRunner:
             "enabled": True,
             "status": "failed" if metadata.failed else "in_flight" if metadata.in_use else "ready",
             "generation": metadata.generation,
-            "capacity": {"row_count": 8, "table_width": 32, "max_live_rows": 4},
+            "capacity": {
+                "row_count": self._decode_layout.row_counts[-1],
+                "table_width": self._decode_layout.table_width,
+                "max_live_rows": self._decode_layout.max_num_seqs,
+            },
             "device_payload_bytes": sum(
-                t.numel() * t.element_size() for t in bundle["tensors"].values()
+                t.numel() * t.element_size()
+                for bucket in bundle["buckets"].values()
+                for t in bucket["tensors"].values()
             ),
             "cpu_staging_bytes": sum(
-                t.numel() * t.element_size() for t in metadata.staging.values()
+                t.numel() * t.element_size()
+                for bucket in bundle["buckets"].values()
+                for t in bucket["metadata"].staging.values()
             ),
+            "buckets": {
+                str(rows): {
+                    "generation": bucket["metadata"].generation,
+                    "tensors": {
+                        k: self._tensor_description(v) for k, v in bucket["tensors"].items()
+                    },
+                    "staging_tensors": {
+                        k: self._tensor_description(v)
+                        for k, v in bucket["metadata"].staging.items()
+                    },
+                }
+                for rows, bucket in bundle["buckets"].items()
+            },
             "tensors": {k: self._tensor_description(v) for k, v in bundle["tensors"].items()},
             "staging_tensors": {
                 k: self._tensor_description(v) for k, v in metadata.staging.items()
@@ -205,7 +227,9 @@ class ModelRunner:
             raise RuntimeError("declined recurrent executor is closed")
         if self._decode_executor is not None:
             self._decode_executor.require_usable()
-        if self._persistent is not None and self._persistent["metadata"].failed:
+        if self._persistent is not None and any(
+            b["metadata"].failed for b in self._persistent["buckets"].values()
+        ):
             raise RuntimeError("persistent executor failed; retry is forbidden")
 
     def _select_persistent_stream(self):
@@ -230,8 +254,8 @@ class ModelRunner:
             return True
         if bundle["failure"] is not None:
             return bundle["failure"]["completion_confirmed"]
-        metadata = bundle["metadata"]
-        metadata.failed = True
+        for bucket in bundle["buckets"].values():
+            bucket["metadata"].failed = True
         failure = {
             "primary": self._error_description(error),
             "secondary": [],
@@ -249,7 +273,8 @@ class ModelRunner:
             self.cache_manager._quarantine("persistent stream completion failed")
             return False
         failure["completion_confirmed"] = True
-        metadata.in_use = False
+        for bucket in bundle["buckets"].values():
+            bucket["metadata"].in_use = False
         self._persistent_lease = None
         return True
 
@@ -361,7 +386,7 @@ class ModelRunner:
         bundle = self._persistent
         if bundle is None:
             raise RuntimeError("persistent decode is not enabled")
-        if bundle["metadata"].in_use:
+        if any(b["metadata"].in_use for b in bundle["buckets"].values()):
             raise RuntimeError("persistent decode still has an in-flight lease")
         if hidden.shape != (len(request_ids), self.model.config.hidden_size):
             raise ValueError("persistent decode requires compact live hidden inputs")
@@ -369,7 +394,11 @@ class ModelRunner:
             raise ValueError("persistent hidden inputs must match the float32 model device")
         host = self.cache_manager._prepare_host_batch(request_ids, depths, positions)
         count = len(host.rows)
-        reason = "live_count" if count > 4 else "table_width" if host.width > 32 else None
+        rows, reason = self._decode_layout.select(count, host.width)
+        if not reason and count:
+            # The selected view supports existing diagnostic callers; all
+            # bucket storage remains owned by the executor between traversals.
+            bundle.update(bundle["buckets"][rows])
         bundle["counters"]["calls"] += 1
         bundle["last_publication"] = None
         bundle["last_dispatch"] = {
@@ -378,8 +407,8 @@ class ModelRunner:
             "depths": [depth for _, depth, _ in host.rows],
             "positions": [position for _, _, position in host.rows],
             "live_rows": list(range(count)) if reason else [2 * i + 1 for i in range(count)],
-            "row_count": count if reason else 8,
-            "table_width": host.width if reason else 32,
+            "row_count": count if reason else rows,
+            "table_width": host.width if reason else self._decode_layout.table_width,
             "generation": bundle["metadata"].generation,
         }
         if not count:

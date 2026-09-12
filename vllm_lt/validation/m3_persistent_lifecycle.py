@@ -727,7 +727,9 @@ def run_lifecycle_evaluation(plan, evaluation_id, output_dir, device="cuda", dea
         model = _probe_model(target, observe, emit)
         runner = ModelRunner(model, cache)
         if persistent:
-            runner._enable_persistent_decode()
+            from .m3_persistent import _enable_frozen_persistent_decode
+
+            _enable_frozen_persistent_decode(runner)
             for name, tensor in runner._persistent["tensors"].items():
                 if name != "live_indices":
                     tensor.zero_()
@@ -1176,6 +1178,13 @@ def _snapshot_evidence(snapshot, initial, *, generation, calls, empty, fallbacks
         "last_publication",
         "failure",
     }
+    if "buckets" in snapshot:
+        expected_fields.add("buckets")
+        _require(
+            snapshot["buckets"]
+            == {"8": {key: snapshot[key] for key in ("generation", "tensors", "staging_tensors")}},
+            "frozen persistent bucket inventory differs",
+        )
     _require(
         set(snapshot) == expected_fields
         and snapshot["enabled"] is True

@@ -53,7 +53,7 @@ def prefixes(cache):
     }
 
 
-@pytest.mark.parametrize("row_count", [4, 8])
+@pytest.mark.parametrize("row_count", [4, 8, 16, 32])
 def test_fixed_capacity_is_derived_from_storage_and_preserves_odd_slots(row_count):
     cache = make_cache()
     ids = [f"r{i}" for i in range(row_count // 2)]
@@ -86,10 +86,10 @@ def test_fixed_capacity_is_derived_from_storage_and_preserves_odd_slots(row_coun
     assert all(torch.equal(value, storage.tensors[name]) for name, value in before.items())
 
 
-@pytest.mark.parametrize("row_count", [0, 2, 16, True, 4.0])
+@pytest.mark.parametrize("row_count", [0, 2, 6, True, 4.0])
 def test_only_declared_storage_capacities_are_allocated(row_count):
     cache = make_cache()
-    with pytest.raises(ValueError, match="4 or 8"):
+    with pytest.raises(ValueError, match="power of two of at least 4"):
         cache._allocate_metadata_storage(row_count)
     assert cache.num_free_blocks == cache.num_blocks
 

@@ -116,6 +116,19 @@ def _replace(obj, name, replacement):
             delattr(obj, name)
 
 
+def _enable_frozen_persistent_decode(runner):
+    """Preserve historical 8x32 arithmetic and byte bounds in the old protocols."""
+    from vllm_lt.worker.decode_buffers import DecodeBucketLayout
+
+    class FrozenPersistentLayout(DecodeBucketLayout):
+        @property
+        def row_counts(self):
+            return (8,)
+
+    runner._decode_layout = FrozenPersistentLayout(max_num_seqs=4)
+    runner._enable_persistent_decode()
+
+
 @contextmanager
 def _storage_observation(engine, case, observations):
     """Record actual call arguments/publication; snapshots supply owned-buffer inventory."""
@@ -125,7 +138,7 @@ def _storage_observation(engine, case, observations):
     persistent = case["storage_strategy"] == "persistent_decode"
     if persistent:
         del runner._recurrent  # Remove only the allocating validation override.
-        runner._enable_persistent_decode()
+        _enable_frozen_persistent_decode(runner)
     current = None
     core, execute = model._recurrent_prepared, runner.execute
     recurrence_name = "_recurrent_persistent" if persistent else "_recurrent"

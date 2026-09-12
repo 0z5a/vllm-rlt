@@ -163,13 +163,15 @@ def audit_capture_record(
         replay=side == "B",
         block_size=block_size,
         expected_device=expected_device,
+        limits=limits,
     )
     for snapshot in (initial, final):
         equal(snapshot["status"], "ready", "executor ready at run boundary")
         equal(snapshot["use_graphs"], side == "B", "actual executor mode")
         equal(snapshot["limits"], limits, "actual graph limits")
         require(snapshot["enabled"] is True and snapshot["failure"] is None, "executor failure")
-        equal(sorted(snapshot["buckets"]), ["4", "8"], "fixed bucket set")
+        equal(sorted(snapshot["buckets"]), sorted(initial["buckets"]), "fixed bucket set")
+        equal(snapshot.get("layout"), initial.get("layout"), "fixed bucket layout")
     equal(final["setup"], initial["setup"], "immutable setup evidence")
     for field in ("device_payload_bytes", "cpu_staging_bytes"):
         equal(final[field], initial[field], f"unchanged {field}")
@@ -266,9 +268,9 @@ def audit_capture_record(
 
 
 _DISPATCH = re.compile(
-    r"^vllm_lt::graph_dispatch::(\d+)::bucket::(4|8|0)::(eager|replay|compact|empty)$"
+    r"^vllm_lt::graph_dispatch::(\d+)::bucket::(\d+)::(eager|replay|compact|empty)$"
 )
-_REPLAY = re.compile(r"^vllm_lt::graph_replay::(4|8)::exec::(\d+)$")
+_REPLAY = re.compile(r"^vllm_lt::graph_replay::(\d+)::exec::(\d+)$")
 
 
 def _contains(outer, inner):
@@ -322,7 +324,10 @@ def audit_graph_profile(trace, capture):
         record = record_by_id[dispatch_id]
         equal([record["bucket_id"], record["kind"]], [bucket, kind], "actual dispatch scope")
         if kind in ("eager", "replay"):
-            require(bucket in (4, 8), "supported dispatch bucket")
+            require(
+                str(bucket) in inventories and str(bucket) in final_buckets,
+                "supported dispatch bucket must belong to the executor inventory",
+            )
             owned = inventories[str(bucket)]
             generation = record["generation"]
             require(

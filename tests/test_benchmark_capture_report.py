@@ -162,7 +162,7 @@ def test_invalid_pair_is_unqualified(capture_plan, change):
     assert cell["pairs"][0]["status"] == "invalid" and cell["status"] == "inconclusive"
 
 
-def profile_fixture(*, replay=True):
+def profile_fixture(*, replay=True, large_bucket=8):
     def event(name, cat, ts, dur, args=None, tid=7):
         return {
             "name": name,
@@ -177,14 +177,14 @@ def profile_fixture(*, replay=True):
 
     kind = "replay" if replay else "eager"
     events, dispatches = [], []
-    generations = {4: 1 if replay else 0, 8: 1 if replay else 0}
+    generations = {4: 1 if replay else 0, large_bucket: 1 if replay else 0}
     initial = {
         "buckets": {
             str(k): {"generation": v, "graph_exec_id": k + 100 if replay else None}
             for k, v in generations.items()
         }
     }
-    for i, bucket in enumerate((8, 4, 8), 1):
+    for i, bucket in enumerate((large_bucket, 4, large_bucket), 1):
         generations[bucket] += 1
         start = i * 100
         dispatches.append(
@@ -234,11 +234,12 @@ def profile_fixture(*, replay=True):
     }
 
 
-def test_actual_graph_launches_correlate_to_buckets_and_do_not_supply_speedup():
-    trace, capture = profile_fixture()
+@pytest.mark.parametrize("large_bucket", [8, 16, 32])
+def test_actual_graph_launches_correlate_to_buckets_and_do_not_supply_speedup(large_bucket):
+    trace, capture = profile_fixture(large_bucket=large_bucket)
     evidence = report.audit_graph_profile(trace, capture)
     assert evidence["complete"] and evidence["graph_launches"] == 3
-    assert evidence["graph_ids_by_bucket"] == {"4": 204, "8": 208}
+    assert evidence["graph_ids_by_bucket"] == {"4": 204, str(large_bucket): large_bucket + 200}
     assert evidence["graph_kernel_count"] == 3
     assert not any("time" in key or "speed" in key for key in evidence)
     trace, capture = profile_fixture(replay=False)

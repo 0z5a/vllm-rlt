@@ -31,7 +31,9 @@ class LLMEngine:
             backend=attention_backend,
         )
         self.scheduler = Scheduler(scheduler_config, self.cache_manager)
-        self.model_runner = ModelRunner(model, self.cache_manager)
+        self.model_runner = ModelRunner(
+            model, self.cache_manager, max_num_seqs=scheduler_config.max_num_seqs
+        )
         self.last_schedule = None
 
     def _enable_recurrent_graph(self, *, use_graphs: bool, limits=None):
