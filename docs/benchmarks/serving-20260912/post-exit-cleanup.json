@@ -1,8 +1,0 @@
-{
-  "owned_pids": [
-    2719329,
-    2721009
-  ],
-  "owned_pids_absent": true,
-  "note": "Both task-owned processes exited; the scheduler automatically released the run reservation."
-}

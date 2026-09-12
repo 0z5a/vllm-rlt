@@ -185,5 +185,7 @@ comparisons, freeze a separate hypothesis, variable, controls, success criteria
 and stop budget first; use the experiment policy's excluded feasibility and
 measured repetitions. Preserve all failures and variability.
 
-The [2026-09-12 validation report](benchmarks/serving-20260912.md) retains the first
-BF16 compatibility pass, raw client/server results and cleanup evidence.
+The [2026-09-12 validation report](benchmarks/serving-20260912.md) summarizes the
+first BF16 compatibility pass and cleanup. Keep generated logs, results and
+manifests under ignored `artifacts/`; commit concise reports and reproduction
+instructions.
