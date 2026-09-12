@@ -1,4 +1,4 @@
-"""Prepare, run, and compare the paper-aligned Ouro GSM8K accuracy evaluation."""
+"""Compare Ouro with the released Transformers model on a fixed GSM8K subset."""
 
 import argparse
 import hashlib
@@ -60,6 +60,51 @@ def make_task(config=None, split="test"):
     return task
 
 
+def select_doc_ids(population, *, limit, seed, split):
+    """Select without inspecting answers or model outputs; retain dataset row IDs."""
+    if population < 1 or (limit is not None and not 1 <= limit <= population):
+        raise ValueError("--limit must be between 1 and the dataset size")
+    ranked = sorted(
+        range(population),
+        key=lambda index: hashlib.sha256(
+            f"{DATA_REVISION}:{split}:{seed}:{index}".encode()
+        ).digest(),
+    )
+    return sorted(ranked[:limit])
+
+
+def build_records(task, tokenizer, *, split, limit, seed, max_new_tokens, max_length):
+    ids = select_doc_ids(len(task.eval_docs), limit=limit, seed=seed, split=split)
+    task.build_all_requests(samples=ids, rank=0, world_size=1)
+    records = []
+    for instance in task.instances:
+        prompt, kwargs = instance.args
+        prompt_ids = tokenizer.encode(prompt, add_special_tokens=False)
+        if len(prompt_ids) + max_new_tokens > max_length:
+            raise ValueError("Prompt would be truncated; increase --max-length")
+        # lm-eval 0.4.9.2 renumbers explicit samples from zero. Restore the
+        # original dataset ID so paired reports identify the actual question.
+        records.append(
+            {
+                "id": ids[instance.doc_id],
+                "doc": instance.doc,
+                "prompt": prompt,
+                "prompt_ids": prompt_ids,
+                "generation_kwargs": kwargs,
+            }
+        )
+    if [row["id"] for row in records] != ids:
+        raise ValueError("The task did not produce exactly one request per selected question")
+    return records, {
+        "method": "sha256-ranked-source-ids-v1",
+        "seed": seed,
+        "split": split,
+        "dataset_revision": DATA_REVISION,
+        "population": len(task.eval_docs),
+        "ids": ids,
+    }
+
+
 def prepare(args):
     import torch
     from huggingface_hub import get_hf_file_metadata, hf_hub_url
@@ -77,22 +122,15 @@ def prepare(args):
     if config.get("model_type") != "ouro" or config.get("total_ut_steps") != 4:
         raise ValueError("This evaluation requires the four-loop Ouro checkpoint")
     task = make_task(split=args.split)
-    task.build_all_requests(limit=args.limit, rank=0, world_size=1)
-    records = []
-    for instance in task.instances:
-        prompt, kwargs = instance.args
-        ids = tokenizer.encode(prompt, add_special_tokens=False)
-        if len(ids) + args.max_new_tokens > args.max_length:
-            raise ValueError("Prompt would be truncated; increase --max-length")
-        records.append(
-            {
-                "id": instance.doc_id,
-                "doc": instance.doc,
-                "prompt": prompt,
-                "prompt_ids": ids,
-                "generation_kwargs": kwargs,
-            }
-        )
+    records, selection = build_records(
+        task,
+        tokenizer,
+        split=args.split,
+        limit=args.limit,
+        seed=args.seed,
+        max_new_tokens=args.max_new_tokens,
+        max_length=args.max_length,
+    )
     files = [
         p
         for p in model.iterdir()
@@ -122,6 +160,7 @@ def prepare(args):
         "model_files": hashes,
         "task_config": task.dump_config(),
         "records": records,
+        "selection": selection,
         "max_new_tokens": args.max_new_tokens,
         "max_length": args.max_length,
         "dtype": "bfloat16",
@@ -271,6 +310,8 @@ def compare(args):
         "split": a["split"],
         "transformers_accuracy_pct": 100 * a["accuracy"],
         "native_accuracy_pct": 100 * b["accuracy"],
+        "transformers_correct": a["correct"],
+        "native_correct": b["correct"],
         "delta_pp": delta,
         "paired_delta_stderr_pp": 100 * statistics.stdev(differences) / len(pairs) ** 0.5
         if len(pairs) > 1
@@ -281,10 +322,12 @@ def compare(args):
         "max_regression_pp": a["max_regression_pp"],
         "passes_observed_accuracy_gate": (
             delta >= -a["max_regression_pp"]
-            and 100 * a["accuracy"] >= a["min_reference_accuracy_pct"]
+            and (
+                a["min_reference_accuracy_pct"] is None
+                or 100 * a["accuracy"] >= a["min_reference_accuracy_pct"]
+            )
         ),
         "min_reference_accuracy_pct": a["min_reference_accuracy_pct"],
-        "paper_accuracy_pct": 78.92,
     }
     write_json(args.output, result)
     print(json.dumps(result, indent=2))
@@ -302,11 +345,18 @@ def main():
     )
     p.add_argument("--output", required=True)
     p.add_argument("--split", choices=["train", "test"], default="test")
-    p.add_argument("--limit", type=int)
+    subset = p.add_mutually_exclusive_group()
+    subset.add_argument("--limit", type=int, default=100, help="Question count (default: 100)")
+    subset.add_argument("--all", dest="limit", action="store_const", const=None)
+    p.add_argument("--seed", type=int, default=0, help="Fixed subset selection seed (default: 0)")
     p.add_argument("--max-new-tokens", type=int, default=1024)
     p.add_argument("--max-length", type=int, default=2048)
     p.add_argument("--max-regression-pp", type=float, default=1.0)
-    p.add_argument("--min-reference-accuracy-pct", type=float, default=75.92)
+    p.add_argument(
+        "--min-reference-accuracy-pct",
+        type=float,
+        help="Optional absolute floor; by default use the measured Transformers baseline only",
+    )
     p = commands.add_parser("run")
     p.add_argument("--backend", choices=["transformers", "native"], required=True)
     p.add_argument("--protocol", required=True)

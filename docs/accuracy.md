@@ -1,83 +1,86 @@
-# Ouro GSM8K accuracy
+# Ouro GSM8K-100 accuracy benchmark
 
-Compare vllm-lt against the released Transformers implementation in BF16 before
-assessing changes to inference arithmetic. The original Ouro paper reports
-**78.92%** for Ouro-1.4B with four loops. Its
-[evaluation settings](https://arxiv.org/html/2510.25741v5#A3.T16) specify
-3-shot CoT, strict match, and lm-eval-harness. The exact harness revision,
-demonstrations, and generation limit are not specified there; the choices below
-are pinned project settings, not a claim of exact paper reproduction.
+Use **100 fixed questions from GSM8K `main`/`test`**, with the original released
+Hugging Face Transformers model as the accuracy baseline. Report its measured
+score on these same questions, native accuracy, and the paired difference.
+The paper's full-dataset score is not the baseline for this subset.
 
-The evaluator uses lm-eval-harness 0.4.9.2's `gsm8k_cot` task, its first three
-demonstrations, and its strict-match filter and metric. Both backends receive
-identical token IDs without a chat template or added special tokens. Generation
-is greedy, batch size one, fixed four loops, with natural EOS and the harness's
-stop sequences. The default limit is 1,024 new tokens and 2,048 total tokens;
-preparation rejects prompt truncation. BF16 weights/activations retain each
-backend's existing reduction precision.
+The dataset revision, seed (default 0), SHA-256 selection rule and original
+source row IDs are frozen in the prepared protocol. Selection uses only dataset
+revision, split, seed and row ID, before generation. It never filters questions
+by answer, model correctness or prompt length. Oversized prompts fail preparation
+instead of being truncated or replaced. Both backends consume the same saved
+prompts and token IDs.
 
-## Run
+## Protocol
 
-Install the optional evaluation dependencies in an environment with working
-PyTorch and Triton, then prepare the pinned checkpoint on CPU:
+- Pinned `ByteDance/Ouro-1.4B` checkpoint and official release code; BF16,
+  fixed four loops, greedy decoding, one request at a time.
+- lm-eval-harness 0.4.9.2's `gsm8k_cot`, first three demonstrations and strict
+  answer extraction/scoring, following the Ouro paper's stated 3-shot CoT setup.
+- No chat template or added special tokens. Natural EOS and identical harness
+  stop sequences; at most 1,024 new tokens within a 2,048-token total context.
+- Exact-answer accuracy with unparseable answers counted as incorrect. Save
+  raw text, token IDs, extracted answers, correctness and stopping reason.
+- Default regression threshold: native may lose at most one percentage point
+  against measured Transformers accuracy. On 100 questions, one question is
+  one percentage point. This is a regression screen, not proof of population
+  equivalence; report paired disagreements and uncertainty as well as the score.
+
+The reference calls `AutoModelForCausalLM.from_pretrained(...,
+trust_remote_code=True)` and the released model's `generate()`. It uses eager
+attention and the standard Transformers `DynamicCache` with 96 depth/layer slots,
+plus `exit_at_step=3` for fourth-loop logits. This cache setup accommodates the
+pinned release's older cache interface; the model source is not patched.
+The candidate uses the existing native engine and Triton attention. Both retain
+their existing BF16 reduction precision.
+
+## Prepare and run
+
+Use the same prepared environment and local checkpoint for both backends:
 
 ```bash
 pip install -e .
 pip install -r benchmarks/requirements-accuracy.txt
 hf download ByteDance/Ouro-1.4B \
   --revision 574fa66cb8bf5abdc979642d01cf2b79b16bfab1 --local-dir /path/to/ouro
-python -m benchmarks.gsm8k prepare --model /path/to/ouro --output /path/to/protocol.json
+python -m benchmarks.gsm8k prepare --model /path/to/ouro \
+  --limit 100 --seed 0 --output /path/to/gsm8k-100-protocol.json
 ```
 
-Preparation downloads the pinned GSM8K data, verifies local model files against
-the pinned Hub revision, and saves every prompt, token ID, answer, package
-version, and model hash without initializing CUDA. The default covers all 1,319
-test examples. `--limit N` creates a bounded screen. Use `--split train --limit 2`
-for a disjoint feasibility run; set `--min-reference-accuracy-pct 0` for that
-screen. Freeze any threshold or generation-budget changes before inference.
+Preparation runs without CUDA. It verifies the local checkpoint against the
+pinned Hub release, downloads the pinned dataset, and freezes the selected
+questions, prompts, token IDs, controls and package/model hashes. Keep generated
+protocols and results outside Git. `--all` explicitly selects the complete test
+split; changing `--limit` or `--seed` creates a different benchmark.
 
-Run each backend with the same protocol on the same reserved GPU. On hosts with
-the GPU scheduler, wrap each command in `gpu run --gpu-ids <available-id>
---timeout 8h --note "Ouro GSM8K accuracy" --`. Keep CPU/NUMA affinity fixed.
+Freeze GPU/CPU affinity and the run budget before inference. Use two disjoint
+training questions (`prepare --split train --limit 2`) for feasibility, then
+one pass per backend on the 100 test questions: 4 feasibility generations and
+200 scored generations total. Repeated identical greedy passes are not needed.
+On a host with the GPU scheduler, run each backend through
+`gpu run --gpu-ids <available-id> --timeout 2h --note "GSM8K-100 accuracy" --`
+and keep the same exact GPU and CPU/NUMA controls for both passes.
 
 ```bash
 python -m benchmarks.gsm8k run --backend transformers \
-  --protocol /path/to/protocol.json --output /path/to/transformers
+  --protocol /path/to/gsm8k-100-protocol.json --output /path/to/transformers
 python -m benchmarks.gsm8k run --backend native \
-  --protocol /path/to/protocol.json --output /path/to/native
+  --protocol /path/to/gsm8k-100-protocol.json --output /path/to/native
 python -m benchmarks.gsm8k compare --transformers /path/to/transformers \
   --native /path/to/native --output /path/to/comparison.json
 ```
 
-The Transformers reference executes the pinned official Python code with eager
-attention and the standard Transformers `DynamicCache`, initialized with 96
-depth/layer slots. Explicit `exit_at_step=3` selects the fourth loop's logits.
-The native backend uses its existing Triton attention and engine scheduler.
-Both stop at the same harness-defined conditions and check generation logits
-for non-finite values. The evaluator changes no production inference arithmetic.
+The comparison reports both correct counts and accuracies, native-minus-reference
+percentage points, losses/gains and answer disagreements. It rejects incomplete
+or mismatched runs. Exceptions and non-finite logits stop execution while
+preserving completed records; do not replace examples or reduce the denominator.
+An optional `--min-reference-accuracy-pct` floor and `--max-regression-pp` changes
+must be declared during preparation. There is no default paper-score floor.
+Loading and generation durations are recorded separately; they are not a
+throughput benchmark. No GSM8K-100 GPU score has been established by this change.
 
-## Interpret results
-
-The default observed accuracy gate requires Transformers accuracy of at least
-75.92% (three percentage points below the published score) and native accuracy
-no more than one percentage point below Transformers. These are project
-thresholds, configurable during preparation. `compare` writes its report and
-exits nonzero on failure. Its paired standard error describes uncertainty; an
-observed pass is not a statistical non-inferiority proof or a kernel equivalence
-test. A subset is a regression screen, not a full benchmark reproduction.
-
-Each run retains raw generated text and token IDs, extracted answers, per-item
-correctness, stopping reasons, and prompt hashes. A completed summary is written
-only after every example finishes. Exceptions stop the run and retain the
-completed JSONL prefix; missing or mismatched results cannot pass comparison.
-Loading is reported separately, and elapsed times are not performance claims.
-
-For the initial local experiment, the isolated variable is the inference backend.
-Controls are the pinned checkpoint/data/task, BF16, four loops, all 1,319 test
-examples, greedy decoding, stop rules, budgets, and exact GPU/CPU affinity.
-Run two training examples per backend for feasibility, excluded from the test
-score, then one full test pass per backend. A single pass is predeclared because
-this is deterministic greedy accuracy evaluation; uncertainty comes from paired
-test examples rather than repeated identical generations. Stop on execution,
-non-finite, context, or cache failures, or at the eight-hour per-backend deadline.
-Preserve failed results and report discrepancies without post-hoc rescoring.
+Dataset: [GSM8K](https://huggingface.co/datasets/openai/gsm8k).
+The [Ouro evaluation settings](https://arxiv.org/html/2510.25741v5#A3.T16) do not
+pin the exact harness revision, demonstrations or token limits, so the settings
+above are explicit project choices rather than an exact paper reproduction.

@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from benchmarks.gsm8k import compare, file_digest, make_task, score
+from benchmarks.gsm8k import build_records, compare, file_digest, make_task, score, select_doc_ids
 
 
 @pytest.fixture
@@ -18,7 +18,10 @@ def task(monkeypatch):
         self.dataset = DatasetDict(
             {
                 split: Dataset.from_dict(
-                    {"question": ["What is 6 times 3?"], "answer": ["#### 18"]}
+                    {
+                        "question": [f"What is 6 times 3? Question #{i}" for i in range(150)],
+                        "answer": ["#### 18"] * 150,
+                    }
                 )
                 for split in ("train", "test")
             }
@@ -37,6 +40,38 @@ def test_paper_prompt_and_strict_scoring(task):
     # A bare number must not silently pass the paper's strict extraction rule.
     assert score(task, row, "18")["unparseable"]
     assert not score(task, row, "The answer is 19.")["correct"]
+
+
+def test_sample_is_fixed_and_does_not_use_the_first_hundred():
+    selected = select_doc_ids(1319, limit=100, seed=0, split="test")
+    assert len(selected) == len(set(selected)) == 100
+    assert selected == sorted(selected)
+    assert selected == select_doc_ids(1319, limit=100, seed=0, split="test")
+    assert selected != list(range(100))
+    assert selected != select_doc_ids(1319, limit=100, seed=1, split="test")
+    assert select_doc_ids(1319, limit=None, seed=0, split="test") == list(range(1319))
+
+
+@pytest.mark.parametrize("population,limit", [(10, 100), (10, 0), (0, None)])
+def test_selection_rejects_missing_coverage(population, limit):
+    with pytest.raises(ValueError):
+        select_doc_ids(population, limit=limit, seed=0, split="test")
+
+
+def test_sampled_requests_keep_original_dataset_ids(task):
+    tokenizer = SimpleNamespace(encode=lambda prompt, **kwargs: [1, 2, 3])
+    records, selection = build_records(
+        task, tokenizer, split="test", limit=100, seed=0, max_new_tokens=10, max_length=20
+    )
+    assert len(records) == 100
+    assert [row["id"] for row in records] == selection["ids"]
+    for row in records:
+        assert row["doc"]["question"] == f"What is 6 times 3? Question #{row['id']}"
+        assert row["prompt"].count("Q:") == 4
+    with pytest.raises(ValueError, match="truncated"):
+        build_records(
+            task, tokenizer, split="test", limit=100, seed=0, max_new_tokens=20, max_length=20
+        )
 
 
 def comparison_fixture(tmp_path, native_correct=True):
@@ -76,6 +111,29 @@ def test_accuracy_regression_fails(tmp_path):
     assert result["delta_pp"] == -100
     assert result["reference_correct_native_wrong"] == 1
     assert not result["passes_observed_accuracy_gate"]
+
+
+def test_measured_transformers_score_is_the_default_baseline(tmp_path):
+    args = comparison_fixture(tmp_path, native_correct=False)
+    for backend in ("transformers", "native"):
+        folder = tmp_path / backend
+        samples = folder / "samples.jsonl"
+        row = json.loads(samples.read_text())
+        row.update(correct=False, answer="19")
+        samples.write_text(json.dumps(row) + "\n")
+        path = folder / "summary.json"
+        summary = json.loads(path.read_text())
+        summary.update(
+            correct=0,
+            accuracy=0.0,
+            min_reference_accuracy_pct=None,
+            samples_sha256=file_digest(samples),
+        )
+        path.write_text(json.dumps(summary))
+    result = compare(args)
+    assert result["transformers_correct"] == result["native_correct"] == 0
+    assert result["delta_pp"] == 0
+    assert result["passes_observed_accuracy_gate"]
 
 
 @pytest.mark.parametrize("change", ["different_protocol", "partial", "wrong_score", "duplicate"])
