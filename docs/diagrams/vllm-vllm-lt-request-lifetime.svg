@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1090" viewBox="0 0 1120 1090" role="img" aria-labelledby="life-title life-desc">
+  <title id="life-title">vLLM and vllm-lt request lifetimes, flowing left to right</title>
+  <desc id="life-desc">One prefill followed by two decodes produces three output tokens. A conventional causal model in vLLM performs a full forward for each decode token. Ouro in vllm-lt embeds a token, traverses the shared core repeatedly, and runs coda to sample the next token. The scheduler can refill a recurrent batch between core traversals. In this implementation gate results return synchronously to the CPU. Widths are schematic, not timings. Prefill chunking and speculative decoding are omitted.</desc>
+  <metadata>vllm-lt source: https://github.com/hsliuustc0106/vllm-lt/tree/a381696d153d859ab9f1e2d3a57876448d224c69/vllm_lt . vLLM source: https://docs.vllm.ai/en/latest/design/arch_overview/ . Source check: 2026-09-12.</metadata>
+  <defs>
+    <marker id="life-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#94A3B8"/>
+    </marker>
+    <style>
+      .life text { font-family: Arial, 'DejaVu Sans', sans-serif; fill: #192235; }
+      .life .title { font-size: 32px; font-weight: 700; }
+      .life .heading { font-size: 28px; font-weight: 700; }
+      .life .label { font-size: 21px; font-weight: 700; }
+      .life .body { font-size: 20px; }
+      .life .note { font-size: 19px; fill: #62748F; }
+      .life .micro { font-size: 18px; fill: #62748F; }
+      .life .badge { font-size: 19px; font-weight: 700; text-anchor: middle; }
+      .life .panel { fill: white; stroke: #CBD5E1; stroke-width: 1.4; }
+      .life .shadow { fill: #192235; opacity: 0.035; }
+      .life .arrow { fill: none; stroke: #94A3B8; stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#life-arrow); }
+      .life .blue { fill: #EFF6FF; stroke: #BFDBFE; stroke-width: 1.2; }
+      .life .purple { fill: #F5F0FF; stroke: #DDD0FF; stroke-width: 1.2; }
+      .life .neutral { fill: #F8FAFC; stroke: #E2E8F0; stroke-width: 1.2; }
+      .life .teal { fill: #E8FBF6; stroke: #99E5D9; stroke-width: 1.2; }
+      .life .orange { fill: #FFF4E7; stroke: #FED7AA; stroke-width: 1.2; }
+    </style>
+  </defs>
+  <g class="life">
+    <rect width="1120" height="1090" fill="#FFFFFF"/>
+    <text class="title" x="40" y="49">vLLM vs vllm-lt: the life of one request</text>
+    <text class="note" x="40" y="83">1 prefill + 2 decodes → 3 output tokens · left to right · schematic, not timing</text>
+
+    <!-- The large panels denote systems; small blocks denote phases, not processes. -->
+    <rect class="shadow" x="28" y="121" width="1064" height="253" rx="20"/>
+    <rect class="panel" x="28" y="116" width="1064" height="253" rx="20"/>
+    <rect x="28" y="116" width="1064" height="6" rx="3" fill="#2864F0"/>
+    <text class="heading" x="54" y="160">vLLM</text>
+    <rect x="796" y="139" width="270" height="35" rx="17.5" fill="#EFF6FF"/>
+    <text class="badge" x="931" y="163" fill="#2454DB">Token-level scheduling</text>
+    <text class="note" x="54" y="194">Conventional causal LM · scheduler selects token work; model runs a full forward</text>
+
+    <g transform="translate(54 216)">
+      <rect class="neutral" width="168" height="125" rx="12"/>
+      <text class="label" x="16" y="30">Admit</text>
+      <text class="body" x="16" y="65">Tokenize</text>
+      <text class="body" x="16" y="94">Queue + KV</text>
+    </g>
+    <path class="arrow" d="M229 278 H245"/>
+    <g transform="translate(254 216)">
+      <rect class="blue" width="194" height="125" rx="12"/>
+      <text class="label" x="16" y="30">Prefill</text>
+      <text class="body" x="16" y="61">Prompt forward</text>
+      <rect x="16" y="78" width="162" height="32" rx="16" fill="#DBEAFE"/>
+      <text class="badge" x="97" y="101">Sample → y1</text>
+    </g>
+    <path class="arrow" d="M455 278 H471"/>
+    <g transform="translate(480 216)">
+      <rect class="blue" width="186" height="125" rx="12"/>
+      <text class="label" x="16" y="30">Decode 1</text>
+      <text class="body" x="16" y="61">y1 → forward</text>
+      <rect x="16" y="78" width="154" height="32" rx="16" fill="#DBEAFE"/>
+      <text class="badge" x="93" y="101">Sample → y2</text>
+    </g>
+    <path class="arrow" d="M673 278 H689"/>
+    <g transform="translate(698 216)">
+      <rect class="blue" width="186" height="125" rx="12"/>
+      <text class="label" x="16" y="30">Decode 2</text>
+      <text class="body" x="16" y="61">y2 → forward</text>
+      <rect x="16" y="78" width="154" height="32" rx="16" fill="#DBEAFE"/>
+      <text class="badge" x="93" y="101">Sample → y3</text>
+    </g>
+    <path class="arrow" d="M891 278 H907"/>
+    <g transform="translate(916 216)">
+      <rect class="neutral" width="150" height="125" rx="12"/>
+      <text class="label" x="14" y="30">Finish</text>
+      <text class="body" x="14" y="65">Release KV</text>
+      <text class="body" x="14" y="94">End output</text>
+    </g>
+
+    <rect class="shadow" x="28" y="408" width="1064" height="292" rx="20"/>
+    <rect class="panel" x="28" y="403" width="1064" height="292" rx="20"/>
+    <rect x="28" y="403" width="1064" height="6" rx="3" fill="#7C3AED"/>
+    <text class="heading" x="54" y="447">vllm-lt / Ouro</text>
+    <rect x="796" y="426" width="270" height="35" rx="17.5" fill="#F5F0FF"/>
+    <text class="badge" x="931" y="450">Loop-level scheduling</text>
+    <text class="note" x="54" y="481">One Python process · synchronous engine · scheduler dispatches one stage at a time</text>
+
+    <g transform="translate(54 503)">
+      <rect class="neutral" width="168" height="143" rx="12"/>
+      <text class="label" x="16" y="30">Admit</text>
+      <text class="body" x="16" y="63">Tokenize</text>
+      <text class="body" x="16" y="91">Reserve KV</text>
+      <text class="note" x="16" y="119">at all depths</text>
+    </g>
+    <path class="arrow" d="M229 574 H245"/>
+    <g transform="translate(254 503)">
+      <rect class="purple" width="194" height="143" rx="12"/>
+      <text class="label" x="16" y="30">Prefill</text>
+      <text class="body" x="16" y="61">Embed prompt</text>
+      <text class="body" x="16" y="87">Shared core × 4</text>
+      <rect x="16" y="101" width="162" height="29" rx="14.5" fill="#E7DDFF"/>
+      <text class="badge" x="97" y="122">Coda → y1</text>
+    </g>
+    <path class="arrow" d="M455 574 H471"/>
+    <g transform="translate(480 503)">
+      <rect class="purple" width="186" height="143" rx="12"/>
+      <text class="label" x="16" y="30">Decode 1</text>
+      <text class="body" x="16" y="61">Prelude(y1)</text>
+      <text class="body" x="16" y="87">Core × d1 loops</text>
+      <rect x="16" y="101" width="154" height="29" rx="14.5" fill="#E7DDFF"/>
+      <text class="badge" x="93" y="122">Coda → y2</text>
+    </g>
+    <path class="arrow" d="M673 574 H689"/>
+    <g transform="translate(698 503)">
+      <rect class="purple" width="186" height="143" rx="12"/>
+      <text class="label" x="16" y="30">Decode 2</text>
+      <text class="body" x="16" y="61">Prelude(y2)</text>
+      <text class="body" x="16" y="87">Core × d2 loops</text>
+      <rect x="16" y="101" width="154" height="29" rx="14.5" fill="#E7DDFF"/>
+      <text class="badge" x="93" y="122">Coda → y3</text>
+    </g>
+    <path class="arrow" d="M891 574 H907"/>
+    <g transform="translate(916 503)">
+      <rect class="neutral" width="150" height="143" rx="12"/>
+      <text class="label" x="14" y="30">Finish</text>
+      <text class="body" x="14" y="65">Release KV</text>
+      <text class="body" x="14" y="94">Return output</text>
+    </g>
+    <text class="note" x="54" y="674">d1 and d2 may differ (e.g. 2–4 loops); fixed-depth decode uses 4 loops per token.</text>
+
+    <rect class="shadow" x="28" y="735" width="1064" height="330" rx="20"/>
+    <rect class="panel" x="28" y="730" width="1064" height="330" rx="20"/>
+    <rect x="28" y="730" width="1064" height="6" rx="3" fill="#0D9F94"/>
+    <text class="heading" x="54" y="774">Inside a vllm-lt decode: where refill happens</text>
+    <text class="note" x="54" y="807">Ready tokens can join the next core batch while other requests are still looping.</text>
+
+    <g transform="translate(54 840)">
+      <rect class="purple" width="150" height="80" rx="12"/>
+      <text class="label" x="16" y="32">Prelude</text>
+      <text class="note" x="16" y="60">Embed token</text>
+    </g>
+    <path class="arrow" d="M210 880 H228"/>
+    <g transform="translate(238 840)">
+      <rect class="teal" width="178" height="80" rx="12"/>
+      <text class="label" x="16" y="32">Scheduler</text>
+      <text class="note" x="16" y="60">Refill ready rows</text>
+    </g>
+    <path class="arrow" d="M423 880 H440"/>
+    <g transform="translate(450 840)">
+      <rect class="purple" width="166" height="80" rx="12"/>
+      <text class="label" x="16" y="32">Shared core</text>
+      <text class="note" x="16" y="60">One traversal</text>
+    </g>
+    <path class="arrow" d="M623 880 H641"/>
+    <g transform="translate(651 840)">
+      <rect class="orange" width="163" height="80" rx="12"/>
+      <text class="label" x="16" y="32">Gate result</text>
+      <text class="note" x="16" y="60">CPU exit check</text>
+    </g>
+    <path class="arrow" d="M821 880 H872"/>
+    <text class="micro" x="847" y="864" text-anchor="middle">exit</text>
+    <g transform="translate(883 840)">
+      <rect class="purple" width="183" height="80" rx="12"/>
+      <text class="label" x="16" y="32">Finalize KV</text>
+      <text class="note" x="16" y="60">Coda → next token</text>
+    </g>
+    <path class="arrow" d="M732 926 V944 Q732 950 726 950 H333 Q327 950 327 944 V927"/>
+    <text class="note" x="531" y="977" text-anchor="middle">continue → reschedule + refill</text>
+    <text class="note" x="54" y="1013">Core = 24 shared layers · coda = LM head + sampling · CPU gate readback is synchronous</text>
+    <text class="micro" x="54" y="1040">Prelude and coda also require scheduling. Refill uses other ready work; one request cannot overlap its next token.</text>
+  </g>
+</svg>
