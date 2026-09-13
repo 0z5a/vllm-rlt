@@ -54,6 +54,27 @@ examples for that frozen protocol, not universal PR acceptance thresholds.
 Use the reviewed experiment's actual contract; do not impose these numbers
 on correctness-only changes or a different dataset/workload.
 
+## Single-request profiling analysis
+
+For single-request (concurrency 1) speed A/B tests, require the contributor to
+provide profiling analysis for both A and B. This is a repository requirement;
+it does not make performance testing mandatory for otherwise unaffected PRs.
+
+- Capture comparable warmed-up requests with the same BF16 workload and frozen
+  controls as the speed test. Record profiler/tool versions, commands, capture
+  boundaries and links to traces or exported reports.
+- Compare prefill and decode separately. Identify the dominant CPU/GPU work,
+  kernel time and launch counts, synchronization, transfers and GPU idle gaps
+  where relevant to the change. Report absolute before/after values and deltas,
+  not only percentages or a screenshot of the fastest kernel.
+- Explain how the changed code affects the observed bottleneck and how that
+  accounts for the end-to-end result, including regressions or unchanged speed.
+  Distinguish trace-supported conclusions from hypotheses and unexplained time.
+- Collect profiles in separate diagnostic runs; profiler overhead must not enter
+  measured A/B timings. A kernel improvement alone does not establish a request
+  speedup. If profiling is missing, mark the required performance analysis
+  incomplete rather than inferring that the implementation is incorrect.
+
 ## Validate the evidence
 
 The standard accuracy and speed A/B tests both use BF16 weights, ordinary
