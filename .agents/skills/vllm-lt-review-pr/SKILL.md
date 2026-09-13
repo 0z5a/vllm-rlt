@@ -31,6 +31,31 @@ correctness, reference fidelity, accuracy, speed and memory qualification.
   verified Git SHA; do not keep treating an integrated prerequisite as open.
   Preserve the requested snapshot for an ongoing review.
 
+## Explain core changes and Plan B
+
+For changes to core behavior in scheduling, engine/request ownership, KV,
+model execution or kernels, explicitly assess the design choice before the
+implementation details. Keep the explanation proportional to the change:
+
+- **Why change:** name the concrete failure, measured bottleneck or required
+  capability. Cite the reproducer, profile or requirement; distinguish evidence
+  from a hypothesis. Explain why the existing design cannot adequately handle it
+  and why this core module, rather than a smaller change at its caller, must change.
+- **Chosen approach:** connect the proposed mechanism to that problem and state
+  the invariants, complexity and compatibility costs it introduces.
+- **Plan B:** compare at least one credible alternative, such as a narrower fix,
+  reuse of an existing mechanism, or retaining the current implementation while
+  gathering evidence. Explain its correctness, performance and maintenance
+  tradeoffs, why it was not selected, and what evidence would favor it instead.
+  If no viable alternative is apparent, explain the constraints; do not invent one.
+  Discuss an existing fallback or rollback where relevant, without requiring a
+  second implementation merely to demonstrate an alternative.
+
+Use the PR's rationale when supported, and label reviewer-proposed alternatives
+as such. Missing rationale or unresolved tradeoffs are design questions, not
+automatically proven bugs. Surface them prominently when they affect whether
+the core change is justified.
+
 ## Follow the changed behavior
 
 Read the changed code with its callers, ownership and failure paths. Use the
@@ -139,8 +164,11 @@ to this change. Exclude speculative risks, unrelated backlog and style-only
 feedback. In repeat reviews, verify fixes at the new snapshot and avoid reposting
 resolved findings.
 
-Lead with findings in priority order, followed by a brief validation/scope note
-and the reviewed SHA. If there are none, say so without implying unrun accuracy,
+For core behavior changes, open with a short assessment of why the change is
+needed and its Plan B, including any unresolved design question. Then give
+findings in priority order, followed by a brief validation/scope note and the
+reviewed SHA. For other changes, lead directly with findings.
+If there are none, say so without implying unrun accuracy,
 speed or GPU gates passed. Use verified PR diff links or absolute local file
 links. Draft/post comments only within the user's explicit authorization; select
 reviewers from actual ownership evidence rather than inventing owners.
