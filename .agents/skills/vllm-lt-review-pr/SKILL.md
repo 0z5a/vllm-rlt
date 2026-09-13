@@ -107,59 +107,19 @@ Specific invariants to trace when touched:
   first real request; compilation/warmup and process-to-readiness are separate
   measurements. Refill alone does not imply asynchronous host/device overlap.
 
-## Assess accuracy and performance evidence
+## Select accuracy and performance checks
 
-The standard accuracy and speed A/B tests both use BF16 weights, ordinary
-activations and KV. Check explicit configuration and actual parameter/cache
-tensor dtypes, not just a CLI default or declared metadata. Full-model FP32 is
-only an explicitly requested diagnostic; do not select it as a fallback baseline
-because an older harness requires it. Retain justified FP32 reductions and
-intermediates within BF16 inference and record accumulation flags separately.
-Historical FP32 measurements or numerical failures remain scoped to their
-original contracts; neither silently qualifies nor automatically blocks a new
-BF16 experiment.
+Select validation according to the PR's actual impact and claims. Documentation,
+skill and other changes outside runtime/measurement paths do not need accuracy
+or speed A/B. Correctness-only PRs need relevant regression checks, not a
+speedup. Explain any performance concern from the changed path rather than
+requiring a benchmark merely because a core or user-facing file changed.
 
-When reporting current main's accuracy or speed, identify the execution SHA,
-dtype, workload and timing boundary for each number. A stored regression score,
-a full-dataset result from another branch, and a measurement of the latest main
-are distinct evidence. Merging serving support or accuracy tests does not rerun
-the benchmark. If the current BF16 baseline has not been measured, say so; do
-not substitute old FP32 throughput. Consult the current fixture and frozen
-contract for accuracy floors and performance gates instead of hard-coding a
-historical score, merge SHA or local proposed threshold into the review.
-
-- Metadata/data-movement-only changes preserving arithmetic require exact
-  selected state, populated KV, tokens/exits and RNG behavior. Arithmetic
-  changes need independently justified, predeclared numerical/decision bounds;
-  do not demand blanket bitwise equality with a different arithmetic path or
-  invent near-tie exceptions after seeing failures.
-- For accuracy, verify model/dataset/tokenizer/package pins, exact question and
-  prompt IDs, four-loop/greedy or declared adaptive policy, demonstrations,
-  stopping/token limits and strict scoring. Check raw-response rescoring,
-  missing/duplicate questions, paired losses/gains, parse/length failures and
-  the actual frozen floor/loss budget. Equal total scores can hide different
-  failures. A selected regression cohort is not a held-out quality estimate.
-- Fixed-depth accuracy and synthetic token/exit replay do not qualify live
-  adaptive quality. Compare adaptive history against the same last-exited
-  semantics; official/full-depth recomputation can have different KV history.
-- Speed A/B must isolate the PR change, use matching workloads and declared
-  arithmetic, exact devices, CPU/NUMA placement, package/client code, capacity
-  and cache controls. Check the actual measured order against the frozen plan;
-  ABBA means A1/B1/B2/A2, paired by repetition. Disclose any restarts and warmups.
-- Exclude feasibility, first-request diagnostics, warmups and profiling from
-  measured timings. Require complete successful requests and correct token/work
-  accounting; failed, truncated or selectively resumed runs cannot enter a
-  passing comparison. Keep original failures and exhausted budgets visible.
-- Report both observations and variability under the declared acceptance rule.
-  Separate aggregate throughput from per-request latency, HTTP/client timings
-  from engine-only timings, and allocation bytes from useful KV occupancy.
-  Changed output lengths can distort accuracy-run timing; those durations alone
-  do not establish a controlled speedup. Missing memory/capture evidence remains
-  unqualified where that claim requires it.
-- Apply thresholds frozen for this experiment; do not impose unmerged proposals
-  or a speedup requirement on correctness-only PRs. A reproducibly invalid speed
-  claim is actionable; missing evidence is otherwise a qualification limitation,
-  not proof that the implementation is wrong.
+Read [A/B evidence](references/ab-evidence.md) when a PR changes inference,
+numerics, memory, measurement logic, or makes accuracy/performance claims.
+It contains the applicability guide, monitoring checklist and evidence rules;
+apply only the relevant checks. Standard A/B uses BF16, and acceptance limits
+come from the frozen experiment contract, not a universal review threshold.
 
 ## Validate and deliver
 
