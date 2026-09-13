@@ -34,6 +34,17 @@ For a stacked PR, use its immediate prerequisite stack as A.
 | Comparison controls | Source/model/data/client pins, actual dtype and accumulation, exact GPU, CPU/NUMA affinity, prompts, output lengths, loop policy, capacity, cache state and measurement order. |
 | Changed behavior | Relevant KV ownership, request isolation, exit and RNG invariants; existing-client compatibility for interface changes. |
 
+For quick iteration, a fixed ten-question subset of GSM8K-87 can serve as the
+accuracy smoke screen when accuracy validation is relevant. Freeze the subset
+before either run, select by source IDs independently of answers or observed
+timings, and preserve prompts, BF16 generation and scoring controls. Compare
+native A/B on the same ten questions with no net lost correct answer, reporting
+paired losses/gains even when they cancel. Do not reuse or prorate the 59/87 HF
+floor: a subset needs its own measured reference if an absolute floor is claimed.
+Label the result as a smoke screen; it does not qualify the full 87-question
+case or broader quality. Use the full case when the PR's accuracy impact or
+claim requires its coverage. Neither case is mandatory for unaffected PRs.
+
 Separate primary metrics from controls before execution. The earlier proposed
 GSM8K-87 screen used a 59/87 floor and at most one percentage point loss against
 A (therefore no net lost answer on 87 questions). The proposed optimization
