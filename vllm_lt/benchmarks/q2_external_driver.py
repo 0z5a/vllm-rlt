@@ -88,6 +88,21 @@ def check_deadline(deadline_ns):
         raise TimeoutError("Q2 full-case or global deadline exceeded")
 
 
+def cpu_preflight(expected_affinity):
+    """Reject misplaced threads or current contention before timed generation."""
+    for task in Path("/proc/self/task").iterdir():
+        if sorted(os.sched_getaffinity(int(task.name))) != expected_affinity:
+            raise ValueError(f"CPU affinity differs for worker thread {task.name}")
+    before = cpu_counters()
+    time.sleep(0.2)
+    result = cpu_control_result(before, cpu_counters())
+    if before["affinity"] != expected_affinity:
+        raise ValueError("CPU affinity differs before generation")
+    if not result["passed"]:
+        raise RuntimeError(f"CPU contention before generation: {result}")
+    return result
+
+
 def request_state(engine, official):
     return {
         "native_requests": len(engine.scheduler.requests),
@@ -250,8 +265,15 @@ def execute_case(plan, run, engine, official, *, started_ns, deadline_ns):
     result = None
     # Warmup can spawn task-owned compiler processes; only measured requests
     # use this contention gate, after compilation and finite-check preparation.
-    cpu_before = cpu_counters() if plan.get("schema_version") == 2 and not feasibility else None
+    measured_cpu = plan.get("schema_version") == 2 and not feasibility
     try:
+        preflight = (
+            cpu_preflight(plan["contract"]["controls"]["affinity"]["cpu_ids"])
+            if measured_cpu
+            else None
+        )
+        check_deadline(deadline_ns)
+        cpu_before = cpu_counters() if measured_cpu else None
         with (
             finite_checks(engine.model, feasibility)
             if run["implementation_id"] == "native"
@@ -339,6 +361,7 @@ def execute_case(plan, run, engine, official, *, started_ns, deadline_ns):
         }
         if cpu_control is not None:
             result["cpu_control"] = cpu_control
+            result["cpu_preflight"] = preflight
         return result
     except BaseException as error:
         failures.append({"type": type(error).__name__, "message": str(error)[:2000]})

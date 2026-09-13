@@ -290,6 +290,23 @@ def _record(
         )
         _clock(cpu["before"]["time_ns"], "CPU observation start", start, arrival)
         _clock(cpu["after"]["time_ns"], "CPU observation end", sync, ended)
+        # Historical v2 evidence predates the pre-run gate and remains replayable.
+        if "cpu_preflight" in result:
+            gate = result["cpu_preflight"]
+            equal(
+                gate,
+                cpu_control_result(gate["before"], gate["after"]),
+                "CPU preflight reconstruction",
+            )
+            equal(gate["passed"], True, "CPU preflight screen")
+            equal(gate["before"]["affinity"], cpu["before"]["affinity"], "CPU preflight affinity")
+            _clock(gate["before"]["time_ns"], "CPU preflight start", start, arrival)
+            _clock(
+                gate["after"]["time_ns"],
+                "CPU preflight end",
+                gate["before"]["time_ns"] + 1,
+                cpu["before"]["time_ns"],
+            )
     empty = {"native_requests": 0, "native_used_blocks": 0, "official_cache_slots": 0}
     equal(result["before_request"], empty, "fresh request state")
     equal(result["cleanup"], empty, "request cleanup")

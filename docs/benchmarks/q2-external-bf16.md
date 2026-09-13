@@ -64,7 +64,12 @@ latency spot check, not an accuracy test or proof of numerical equivalence.
 Use the GSM8K regression for accuracy; its earlier results do not validate this
 different source revision and workload.
 
-Each v2 measured request records CPU busy ticks for the bound cores and SMT siblings,
+Before each v2 measured request, the worker verifies every existing thread has
+the frozen CPU affinity and samples contention for 200 ms. A failed check aborts
+before generation; the sample is outside the delivery interval but inside the
+case deadline. The result records this preflight for offline reconstruction.
+
+Each v2 measured request also records CPU busy ticks for the bound cores and SMT siblings,
 subtracts worker CPU ticks, and checks the main thread's runnable delay. More
 than 0.1 background CPU cores or 5% runnable delay fails the run and blocks later
 requests. This bounded contention screen is not a guarantee of exclusive host

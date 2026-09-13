@@ -338,3 +338,74 @@ while True:
     assert result["failures"][0]["type"] == "TimeoutError"
     with pytest.raises(ProcessLookupError):
         os.kill(children[0].pid, 0)
+
+
+@pytest.mark.parametrize("fault", [None, "thread", "contention", "drift"])
+def test_cpu_preflight_rejects_bad_controls_before_generation(monkeypatch, fault):
+    monkeypatch.setattr(Path, "iterdir", lambda self: [Path("1"), Path("2")])
+    monkeypatch.setattr(
+        os, "sched_getaffinity", lambda tid: {57} if fault == "thread" and tid == 2 else {56}
+    )
+    before = {
+        "affinity": [56],
+        "busy_ticks": {"cpu56": 0, "cpu57": 0},
+        "process_ticks": 0,
+        "runtime_ns": 0,
+        "delay_ns": 0,
+        "clock_ticks_per_second": 100,
+        "time_ns": 1,
+    }
+    after = {
+        **before,
+        "time_ns": 200_000_001,
+        "busy_ticks": {"cpu56": 0, "cpu57": 20 if fault == "contention" else 0},
+        "affinity": [57] if fault == "drift" else [56],
+    }
+    samples = iter([before, after])
+    monkeypatch.setattr(driver, "cpu_counters", lambda: next(samples))
+    sleeps = []
+    monkeypatch.setattr(driver.time, "sleep", sleeps.append)
+    if fault:
+        with pytest.raises((ValueError, RuntimeError), match="CPU"):
+            driver.cpu_preflight([56])
+    else:
+        assert driver.cpu_preflight([56])["passed"]
+    assert sleeps == ([] if fault == "thread" else [0.2])
+
+
+def test_failed_cpu_preflight_never_dispatches_and_preserves_partial_result(monkeypatch):
+    monkeypatch.setattr(driver, "require_empty", lambda *args: {})
+    monkeypatch.setattr(driver, "pool_descriptor", lambda *args: {})
+    monkeypatch.setattr(driver, "memory", lambda: {})
+    for name in ("synchronize", "reset_peak_memory_stats"):
+        monkeypatch.setattr(torch.cuda, name, lambda: None)
+
+    def reject(affinity):
+        assert affinity == [56]
+        raise RuntimeError("CPU contention before generation")
+
+    def forbidden(*args):
+        pytest.fail("failed CPU gate must not dispatch generation")
+
+    monkeypatch.setattr(driver, "cpu_preflight", reject)
+    monkeypatch.setattr(driver, "_native_outputs", forbidden)
+    monkeypatch.setattr(driver, "_official_outputs", forbidden)
+    plan = {
+        "schema_version": 2,
+        "plan_sha256": "test",
+        "workload": {"requests": [{"prompt_token_ids": [1], "max_output_tokens": 1}]},
+        "contract": {"engine": {"sampling": {}}, "controls": {"affinity": {"cpu_ids": [56]}}},
+    }
+    with pytest.raises(RuntimeError, match="CPU contention") as caught:
+        driver.execute_case(
+            plan,
+            {"phase": "measured", "implementation_id": "native"},
+            SimpleNamespace(last_schedule=None),
+            SimpleNamespace(reset=lambda: None),
+            started_ns=0,
+            deadline_ns=2**63,
+        )
+    partial = caught.value.q2_partial_result
+    assert partial["status"] == "failed"
+    assert partial["synchronized_ns"] is None
+    assert partial["requests"][0]["token_ids"] == []
