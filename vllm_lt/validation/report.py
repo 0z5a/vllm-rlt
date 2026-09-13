@@ -5,10 +5,11 @@ import json
 import math
 from pathlib import Path
 
-from vllm_lt.benchmarks.schema import _finite_float, _object_pairs, _reject_constant
+from vllm_lt.validation.common import finite_float, object_pairs, reject_constant
 
+from .common import digest, make_file_record, read_json, write_json
 from .evidence import accumulate, boundary_key, compare_behavior, empty_summary
-from .schema import _digest, _file_record, read_json, validate_plan_integrity, write_json
+from .schema import validate_plan_integrity
 
 _LAYER_OPS = ("attention_input", "query", "key", "value", "attention_output", "layer_output")
 _SUMMARY_FIELDS = (
@@ -30,7 +31,7 @@ def _require(condition, message):
 
 
 def _integer(value, name, minimum=0):
-    _require(type(value) is int and value >= minimum, f"{name} must be an integer >= {minimum}")
+    _require(type(value) is int and value >= minimum, f"{name} must be an _integer >= {minimum}")
     return value
 
 
@@ -43,7 +44,7 @@ def _number(value, name, minimum=0):
 
 
 def _equal(left, right, name):
-    _require(_digest(left) == _digest(right), f"{name} differs from independently derived evidence")
+    _require(digest(left) == digest(right), f"{name} differs from independently derived evidence")
 
 
 def _history(tokens):
@@ -251,7 +252,7 @@ def _audit_stats(record, comparison, shape, policy):
         [1, "tensor_comparison"],
         "statistics schema",
     )
-    _equal(stats["policy_sha256"], _digest(policy), "statistics policy hash")
+    _equal(stats["policy_sha256"], digest(policy), "statistics policy hash")
     _equal(stats["policy_id"], policy["policy_id"], "statistics policy ID")
     operation = (
         "bf16_fp32_sensitivity"
@@ -386,16 +387,16 @@ def _read_records(path, cap):
             )
             value = json.loads(
                 line.decode("utf-8"),
-                parse_constant=_reject_constant,
-                parse_float=_finite_float,
-                object_pairs_hook=_object_pairs,
+                parse_constant=reject_constant,
+                parse_float=finite_float,
+                object_pairs_hook=object_pairs,
             )
             _require(isinstance(value, dict), f"record {index} must be an object")
             yield value
     raise ValueError("comparison stream exceeds the bounded record count")
 
 
-def _audit_comparison(folder, plan, comparison, cases, fixtures, observation_sink=None):
+def audit_comparison(folder, plan, comparison, cases, fixtures, observation_sink=None):
     comparison_id = comparison["comparison_id"]
     path = folder / "comparisons" / (comparison_id + ".jsonl")
     stored = read_json(path.with_suffix(".summary.json"))
@@ -406,7 +407,7 @@ def _audit_comparison(folder, plan, comparison, cases, fixtures, observation_sin
         [1, "validation_comparison_summary", plan["plan_sha256"]],
         "comparison summary identity",
     )
-    file_record = _file_record(path)
+    file_record = make_file_record(path)
     _equal(
         [stored["sha256"], stored["size_bytes"]],
         [file_record["sha256"], file_record["size_bytes"]],
@@ -560,7 +561,7 @@ def _audit_comparison(folder, plan, comparison, cases, fixtures, observation_sin
     }
 
 
-def _audit_case(result, plan, case, fixtures):
+def audit_case(result, plan, case, fixtures):
     _equal(
         [result["schema_version"], result["artifact_type"], result["plan_sha256"]],
         [1, "validation_case_result", plan["plan_sha256"]],
@@ -764,7 +765,7 @@ def build_report(output_dir):
         report["evidence_status"] = "invalid"
         report["errors"].append({"scope": "plan/manifest", "message": str(exc)})
         return report
-    report["manifest_sha256"] = _file_record(folder / "manifest.json")["sha256"]
+    report["manifest_sha256"] = make_file_record(folder / "manifest.json")["sha256"]
     report["manifest_status"] = manifest.get("status")
     report["execution_failures"] = manifest.get("failures", [])
     fixtures = _fixtures(plan)
@@ -795,7 +796,7 @@ def build_report(output_dir):
                 report["missing_cases"].append(case_id)
                 _require(case_id not in completed, "incomplete case listed as completed")
                 continue
-            _audit_case(result, plan, case, fixtures)
+            audit_case(result, plan, case, fixtures)
             _require(case_id in completed, "completed case omitted from manifest")
             valid_cases.add(case_id)
             report["cases"].append(
@@ -803,7 +804,7 @@ def build_report(output_dir):
                     "case_id": case_id,
                     "dtype": case["dtype"],
                     "status": "complete",
-                    "sha256": _file_record(path)["sha256"],
+                    "sha256": make_file_record(path)["sha256"],
                 }
             )
         except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
@@ -864,7 +865,7 @@ def build_report(output_dir):
             continue
         try:
             report["comparisons"].append(
-                _audit_comparison(folder, plan, comparison, cases, fixtures, observe)
+                audit_comparison(folder, plan, comparison, cases, fixtures, observe)
             )
         except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
             report["errors"].append({"scope": comparison_id, "message": str(exc)})
@@ -880,7 +881,7 @@ def build_report(output_dir):
         try:
             _audit_environment(manifest, plan)
             if not report["errors"]:
-                report["raw_evidence"] = _audit_raw_evidence(
+                report["raw_evidence"] = audit_raw_evidence(
                     folder, plan, cases, fixtures, report["comparisons"], manifest
                 )
             total = 0
@@ -1027,11 +1028,11 @@ def _stream_spool(directory, namespace, fixture_id, validator, *, expected_count
         "records": expected_count,
         "size_bytes": total,
         "sha256": digest.hexdigest(),
-        "index_sha256": _file_record(index_path)["sha256"],
+        "index_sha256": make_file_record(index_path)["sha256"],
     }
 
 
-def _audit_raw_evidence(folder, plan, cases, fixtures, comparison_results, manifest):
+def audit_raw_evidence(folder, plan, cases, fixtures, comparison_results, manifest):
     retained, dumps = [], []
     expected_pairs = set()
     limits = plan["contract"]["limits"]

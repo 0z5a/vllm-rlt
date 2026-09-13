@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from vllm_lt.benchmarks.report import build_report
+from benchmarks.report import build_report
 
 
 def write_json(path, value):

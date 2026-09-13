@@ -6,8 +6,13 @@ import math
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from vllm_lt.benchmarks.observe import summarize_records
-from vllm_lt.benchmarks.schema import read_json, validate_plan_integrity
+from benchmarks.observe import summarize_records
+from benchmarks.schema import (
+    validate_plan_integrity,
+)
+from vllm_lt.validation.common import (
+    read_json,
+)
 
 _IDENTITY_FIELDS = (
     "run_id",
@@ -143,7 +148,7 @@ def _event_problems(events, result):
             problems.append("event schema or run identity differs")
         offset = event.get("host_offset_ns")
         if not _integer(offset) or offset < 0:
-            problems.append("event host_offset_ns must be a nonnegative integer")
+            problems.append("event host_offset_ns must be a nonnegative _integer")
             continue
         if event.get("kind") != "token_emitted":
             continue
@@ -159,7 +164,7 @@ def _event_problems(events, result):
             or not _integer(event.get("token_id"))
             or not _integer(event.get("exit_depth"))
         ):
-            problems.append("token event requires request_id and integer output_index/step_id")
+            problems.append("token event requires request_id and _integer output_index/step_id")
             continue
         key = (request_id, index)
         if key in observed:

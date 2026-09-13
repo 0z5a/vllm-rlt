@@ -9,9 +9,11 @@ import test_benchmark_ab_schema as schema_fixtures
 import torch
 from test_benchmark_ab_report import records_for
 
-from benchmarks import ab, ab_report, m2
-from vllm_lt.benchmarks import runner
-from vllm_lt.benchmarks.schema import read_json, write_json
+from benchmarks import ab, ab_report, m2, runner
+from vllm_lt.validation.common import (
+    read_json,
+    write_json,
+)
 
 ab_plan = schema_fixtures.ab_plan
 AFFINITY = schema_fixtures.AFFINITY

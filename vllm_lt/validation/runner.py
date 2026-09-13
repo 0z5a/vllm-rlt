@@ -8,13 +8,13 @@ from pathlib import Path
 
 import torch
 
-from vllm_lt.benchmarks.runner import environment, memory
 from vllm_lt.config import CacheConfig, SchedulerConfig
 from vllm_lt.core.kv_cache_manager import KVCacheManager
 from vllm_lt.models import OuroForCausalLM
 from vllm_lt.models.reference import dense_reference
 from vllm_lt.models.serial_oracle import ExitPolicy, SerialOuroOracle
 from vllm_lt.sampling_params import SamplingParams
+from vllm_lt.validation.runtime import environment, memory
 
 from .diagnostics import DiagnosticDump, SpoolBudget, TensorSpool
 from .evidence import ComparisonStream, boundary_key

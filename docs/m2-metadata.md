@@ -53,30 +53,22 @@ implementations inside a running Python process.
 
 For reproduction of the frozen 2026-09-11 comparison, use the prepared Q1
 environment and retain **FP32** on both sides. That experiment selected the
-passing FP32 contract from [Q1](benchmarks/q1-20260911.md). Its dtype selection and acceptance
+passing FP32 contract from [Q1](validation/q1-20260911.md). Its dtype selection and acceptance
 gates remain historical; they do not require future M2 work to use FP32.
 
-| Worker order | Excluded work | Measured work |
-| --- | --- | --- |
-| N-A | Seven feasibility cells, five oracle and eleven native numerical cases | None |
-| N-B | Seven feasibility cells, eleven native numerical cases | None |
-| A1, B1, B2, A2 | Seven warmup cells in each fresh process | Seven cells per process |
-| P-A, P-B | Two warmups and W1/W4 profiles per process | None |
-
-There are exactly **105 executions**: 27 numerical, 14 feasibility, 32 warmup,
-28 measured and four profiles, with eight sequential model loads. Every worker
-loads one model once and retains it across its assigned rows. A fresh engine is
-created for each row; allocator/compiler caches persist within the worker.
-Workers do not overlap. Process-local CUDA cleanup must complete before the
-next worker starts. No shared caches are dropped.
+The [frozen results report](benchmarks/m2-20260911.md#what-was-compared)
+records the worker order, execution breakdown and measured configuration.
+Each worker retains one model across its rows and creates a fresh engine per
+row. Allocator/compiler caches persist within a worker; workers run sequentially
+with process-local cleanup between them. No shared caches are dropped.
 
 The numerical subset uses unchanged Q1 fixtures `Q1-L16-F0`, `Q1-L256-F0`,
 `Q1-L64-F2` and `Q1-L128-F3`, plus actual live gates for `Q1-L16-F0`. It compares
 four Torch serial and four Triton serial cases, packed refill/no-refill, and
 one live case on each side. B compares against both the independent oracle and
-retained A tensors in the same execution. All 51 comparison trajectories
+retained A tensors in the same execution. All comparison trajectories
 require the original FP32 final-logit bounds and actual prediction/exit rules;
-the 17 B/A comparisons additionally require exact selected tensor/KV values.
+the B/A comparisons additionally require exact selected tensor/KV values.
 Teacher forcing supplies eight inputs but records nine genuine predictions.
 
 Numerical and feasibility prerequisites gate timing. The seven timed cells are
@@ -116,10 +108,9 @@ automatically. The offline report preserves missing/invalid evidence.
 ## Commands
 
 Run the repository-only A/B tools from the checkout root with
-`python -m benchmarks.ab`. The controller, schema, report and M2 numerical
-subset live in `benchmarks/`; they are excluded from the installed package.
-Shared benchmark execution, validation and comparison utilities remain in
-`vllm_lt`.
+`python -m benchmarks.ab`. The complete benchmark harness lives in `benchmarks/`
+and is excluded from the installed package. Public JSON/provenance and device-accounting helpers
+remain in `vllm_lt.validation.common` and `vllm_lt.validation.runtime`.
 
 First verify scheduler status and choose an available exact physical ID. Run
 the CPU probe under the same explicit CPU/NUMA policy as the reservation's

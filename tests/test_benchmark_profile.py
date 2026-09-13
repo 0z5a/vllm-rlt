@@ -7,8 +7,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
+from benchmarks.profile import Capture, finite_checks, trace_summary
 from vllm_lt import CacheConfig, SamplingParams
-from vllm_lt.benchmarks.profile import Capture, finite_checks, trace_summary
 from vllm_lt.engine.llm_engine import LLMEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
 

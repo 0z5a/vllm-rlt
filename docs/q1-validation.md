@@ -20,11 +20,11 @@ rounding sequence is the only valid implementation.
 ## Historical first-pass contract
 
 This suite addresses [Q1 issue #4](https://github.com/hsliuustc0106/vllm-lt/issues/4).
-The [first complete run](benchmarks/q1-20260911.md) passes FP32 and fails BF16; causal
+The [first complete run](validation/q1-20260911.md) passes FP32 and fails BF16; causal
 diagnosis remains incomplete and Q1 stays open.
 It compares real checkpoint computations and gate decisions. It makes no latency,
 throughput, task-quality, or BF16 deployment claim. The original BF16 failure and
-its tolerances remain in [the preview validation record](validation.md).
+its tolerances remain in [the preview validation record](validation/initial-20260910.md).
 
 ## Frozen comparison contract
 
@@ -194,13 +194,13 @@ after all six issue acceptance criteria and a reviewed qualified or conclusive
 negative diagnosis. Incomplete coverage or unlocalized divergence remains
 inconclusive; BF16 remains unqualified until its declared gates pass.
 
-## Review follow-up: independence and diagnostic scope
+## Reference independence and successor diagnostic scope
 
 The pinned official comparison remains required in model-fidelity follow-ups: the
 serial oracle and dense in-repository reference could share an interpretation
 error. Official BF16 disagreement remains a separate unresolved result. The
-FP32 `0.001/0.0001` limits were deliberately tightened before Q1 execution; the
-original BF16 `0.25/0.02` limits and discrete failures remain unchanged.
+[initial validation record](validation/initial-20260910.md#gpu-checkpoint-results)
+retains the original failures and predeclared diagnostic tolerances.
 
 A successor BF16 diagnostic must separate identical-input, same-state local
 arithmetic replay from equal-token-history trajectories with independently

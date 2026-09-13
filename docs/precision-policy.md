@@ -25,10 +25,10 @@ precision. BF16 inference can use FP32 inside selected operations:
 
 | Operation | Precision requirement |
 | --- | --- |
-| Projections and MLP matrix products | BF16 operands and outputs; record the backend's accumulation/reduction mode. FP32 accumulation is compatible with BF16 inference. |
-| Attention | BF16 Q/K/V and output. The official eager path uses FP32 softmax cast back to query dtype; fused-kernel FP32 reductions/statistics/accumulation are explicit backend choices to validate. |
+| Projections, MLP and LM head | BF16 operands and outputs; record the backend's accumulation/reduction mode. FP32 accumulation is compatible with BF16 inference. |
+| Attention | BF16 Q/K/V and output. The official eager path uses native-dtype QK/PV products and FP32 softmax cast back to query dtype; fused-kernel FP32 reductions/statistics/accumulation are explicit backend choices to validate. |
 | RMSNorm | Retain FP32 variance/reduction arithmetic, returning to the activation dtype at the defined boundary. |
-| RoPE | Retain FP32 frequencies and phase construction; cast the positional factors to the activation dtype as specified by the model. |
+| RoPE | Retain FP32 frequencies, phase and trigonometric computation; cast the positional factors to the activation dtype as specified by the model. |
 | Gate and sampling probabilities | Use the pinned release as the reference. Its exit-distribution code has no explicit FP32 promotion; the current runner's FP32 sigmoid/host cumulative update is a project difference to validate. Record the sampling implementation separately. |
 | Cache metadata and KV copies | Integer addresses/lengths; copy BF16 KV without changing its values. |
 

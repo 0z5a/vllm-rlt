@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == "probe":
-            from vllm_lt.benchmarks.schema import make_plan
+            from benchmarks.schema import make_plan
 
             if args.output.exists():
                 raise ValueError("probe output directory already exists")
@@ -39,13 +39,13 @@ def main():
             )
             return 0
         if args.command == "run":
-            from vllm_lt.benchmarks.runner import run_plan
-            from vllm_lt.benchmarks.schema import read_json
+            from benchmarks.runner import run_plan
+            from benchmarks.schema import read_json
 
             plan = read_json(args.plan)
             result = run_plan(plan, output_dir=args.output)
             return 0 if result["status"] == "complete" else 1
-        from vllm_lt.benchmarks.report import build_report
+        from benchmarks.report import build_report
 
         result = build_report(args.run_dir, args.output)
         print(json.dumps({"report": str(args.output / "report.md")}))

@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from vllm_lt.models.config import OuroConfig
-from vllm_lt.validation import schema
+from vllm_lt.validation import common, schema
 
 FIXTURES = Path(__file__).resolve().parents[1] / "benchmarks" / "fixtures"
 
@@ -29,17 +29,17 @@ def prepared(tmp_path, monkeypatch):
     source.write_text("# frozen validation source\n")
     monkeypatch.setattr(
         schema,
-        "_source_manifest",
+        "source_manifest",
         lambda: {
             "root": str(tmp_path),
             "commit": "a" * 40,
             "status": "",
-            "files": [schema._file_record(source, relative_to=tmp_path)],
+            "files": [common.make_file_record(source, relative_to=tmp_path)],
         },
     )
     model = tmp_path / "model"
     model.mkdir()
-    schema.write_json(model / "config.json", OuroConfig().to_dict())
+    common.write_json(model / "config.json", OuroConfig().to_dict())
     (model / "tokenizer.json").write_bytes(b'{"fixture": "metadata-only tokenizer"}\n')
     (model / "tokenizer_config.json").write_bytes(b"{}\n")
     (model / "model.safetensors").write_bytes(b"not tensors; the probe hashes bytes only")
@@ -79,12 +79,12 @@ def prepared(tmp_path, monkeypatch):
     }
     monkeypatch.setattr(schema, "dependency_manifest", lambda: deepcopy(dependency_record))
     suite = schema.load_suite(FIXTURES / "ouro-q1.json")
-    tokenizer = schema._file_record(model / "tokenizer.json")
+    tokenizer = common.make_file_record(model / "tokenizer.json")
     for key in ("sha256", "size_bytes"):
         suite["provenance"]["tokenizer"][key] = tokenizer[key]
     suite_path, contract_path = tmp_path / "suite.json", tmp_path / "contract.json"
-    schema.write_json(suite_path, suite)
-    schema.write_json(contract_path, schema.load_contract(FIXTURES / "ouro-q1-contract.json"))
+    common.write_json(suite_path, suite)
+    common.write_json(contract_path, schema.load_contract(FIXTURES / "ouro-q1-contract.json"))
     return suite_path, contract_path, model, official, source
 
 
@@ -167,16 +167,16 @@ def test_gpu_assignment_must_be_explicit_and_single_without_discovery(prepared, 
 def test_gpu_override_conflicts_are_rejected(prepared):
     contract = schema.load_contract(prepared[1])
     contract["controls"]["gpu_ids"] = [3]
-    schema.write_json(prepared[1], contract)
+    common.write_json(prepared[1], contract)
     with pytest.raises(ValueError, match="conflict"):
         schema.make_plan(*prepared[:4], gpu_ids=[0])
 
 
 @pytest.mark.parametrize("value", [True, -1, 1.5, 49152])
 def test_invalid_tokens_rejected_before_planning(prepared, value):
-    suite = schema.read_json(prepared[0])
+    suite = common.read_json(prepared[0])
     suite["fixtures"][0]["prompt_token_ids"][0] = value
-    schema.write_json(prepared[0], suite)
+    common.write_json(prepared[0], suite)
     with pytest.raises(ValueError, match="integer|vocabulary"):
         schema.load_suite(prepared[0])
 
@@ -196,7 +196,7 @@ def test_invalid_tokens_rejected_before_planning(prepared, value):
     ],
 )
 def test_malformed_histories_and_group_assignments_rejected(prepared, change):
-    suite = schema.read_json(prepared[0])
+    suite = common.read_json(prepared[0])
     if change == "unknown":
         suite["fixtures"][0]["expected_top1"] = 0
     elif change == "depth_zero":
@@ -215,7 +215,7 @@ def test_malformed_histories_and_group_assignments_rejected(prepared, change):
         suite["original_reproduction"]["prompt_token_ids"][0][0] = 504.0
     else:
         suite["fixtures_sha256"] = "0" * 64
-    schema.write_json(prepared[0], suite)
+    common.write_json(prepared[0], suite)
     with pytest.raises(ValueError):
         schema.load_suite(prepared[0])
 
@@ -225,7 +225,7 @@ def test_malformed_histories_and_group_assignments_rejected(prepared, change):
     ["logit_tolerance", "diagnostic_gate", "budget", "sampling_bool", "unknown", "original_top1"],
 )
 def test_unapproved_policy_or_budget_changes_rejected(prepared, change):
-    contract = schema.read_json(prepared[1])
+    contract = common.read_json(prepared[1])
     if change == "logit_tolerance":
         contract["comparison_policy"]["logits"]["bfloat16"]["atol"] = 0.5
     elif change == "diagnostic_gate":
@@ -238,7 +238,7 @@ def test_unapproved_policy_or_budget_changes_rejected(prepared, change):
         contract["diagnostics"]["rerun_on_failure"] = True
     else:
         contract["comparison_policy"]["original_top1_rule"] = "every-loop"
-    schema.write_json(prepared[1], contract)
+    common.write_json(prepared[1], contract)
     with pytest.raises(ValueError):
         plan_for(prepared)
 
@@ -250,7 +250,7 @@ def test_nonfinite_and_duplicate_json_fields_are_rejected(tmp_path, content):
     path = tmp_path / "bad.json"
     path.write_text(content)
     with pytest.raises(ValueError, match="nonfinite|duplicate"):
-        schema.read_json(path)
+        common.read_json(path)
 
 
 @pytest.mark.parametrize("changed", ["source", "weights", "official", "tokenizer", "contract"])
@@ -265,9 +265,9 @@ def test_verification_rehashes_every_execution_dependency(prepared, changed):
     elif changed == "tokenizer":
         (prepared[2] / "tokenizer.json").write_text("{}\n")
     else:
-        contract = schema.read_json(prepared[1])
+        contract = common.read_json(prepared[1])
         contract["hypothesis"] = "An unrecorded changed hypothesis."
-        schema.write_json(prepared[1], contract)
+        common.write_json(prepared[1], contract)
     with pytest.raises(ValueError, match="changed|mismatch|does not match"):
         schema.verify_plan(plan)
 
@@ -279,7 +279,7 @@ def test_offline_validation_rejects_rehashed_resolved_case_corruption(prepared, 
     )
     schema.validate_plan_integrity(deepcopy(plan))
     plan["execution_order"][0]["max_tokens"] = 8
-    plan["plan_sha256"] = schema._digest(
+    plan["plan_sha256"] = common.digest(
         {key: value for key, value in plan.items() if key != "plan_sha256"}
     )
     with pytest.raises(ValueError, match="execution_order"):
@@ -287,12 +287,12 @@ def test_offline_validation_rejects_rehashed_resolved_case_corruption(prepared, 
 
 
 def test_original_record_provenance_checked_even_after_fixture_rehash(prepared):
-    suite = schema.read_json(prepared[0])
+    suite = common.read_json(prepared[0])
     suite["original_reproduction"]["sources"][0]["sha256"] = "0" * 64
-    suite["fixtures_sha256"] = schema._digest(
+    suite["fixtures_sha256"] = common.digest(
         {key: suite[key] for key in schema.FIXTURE_HASH_FIELDS}
     )
-    schema.write_json(prepared[0], suite)
+    common.write_json(prepared[0], suite)
     with pytest.raises(ValueError, match="original source content provenance"):
         plan_for(prepared)
 
@@ -310,6 +310,6 @@ def test_installed_dependency_metadata_probe_never_discovers_cuda(monkeypatch):
     for name in ("is_available", "device_count", "current_device", "_lazy_init"):
         monkeypatch.setattr(torch.cuda, name, lambda *a, **k: pytest.fail("no CUDA discovery"))
     dependencies = schema.dependency_manifest()
-    schema._validate_dependencies(dependencies)
+    schema.validate_dependencies(dependencies)
     assert dependencies["torch"] == str(torch.__version__)
     assert dependencies["distributions"]

@@ -22,6 +22,7 @@ vllm-lt = "vllm_lt.entrypoints.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["vllm_lt*"]
+exclude = ["vllm_lt.benchmarks*"]
 
 [tool.setuptools]
 license-files = ["LICENSE", "NOTICE"]

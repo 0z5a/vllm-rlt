@@ -10,13 +10,15 @@ from copy import deepcopy
 from pathlib import Path
 
 from vllm_lt.models.config import OuroConfig
-from vllm_lt.validation.schema import (
-    _digest,
-    _fixture_stats,
-    _validate_contract,
-    _validate_suite,
+from vllm_lt.validation.common import (
+    digest,
     read_json,
     write_json,
+)
+from vllm_lt.validation.schema import (
+    fixture_stats,
+    validate_contract,
+    validate_suite,
 )
 
 FIXTURE_IDS = ("Q1-L16-F0", "Q1-L256-F0", "Q1-L64-F2", "Q1-L128-F3")
@@ -25,8 +27,8 @@ PRESELECTED = ("Q1-L64-F2", "Q1-L256-F0")
 
 def build_numerical_plan(suite, contract, model_config):
     """Resolve original Q1 inputs into the exact M2 subset without device work."""
-    _validate_suite(suite)
-    _validate_contract(contract)
+    validate_suite(suite)
+    validate_contract(contract)
     config = OuroConfig.from_dict(model_config)
     if config.total_ut_steps != 4:
         raise ValueError("M2 numerical validation requires four Ouro loops")
@@ -56,7 +58,7 @@ def build_numerical_plan(suite, contract, model_config):
         reference_retention="retain-oracle-and-A-per-execution-through-B-audit",
     )
     order = []
-    policy_hash = _digest(adapted["comparison_policy"])
+    policy_hash = digest(adapted["comparison_policy"])
 
     def add(implementation_id, implementation, backend, schedule, ids, *, live=False):
         family = "live_gate" if live else "main"
@@ -99,7 +101,7 @@ def build_numerical_plan(suite, contract, model_config):
             "max_tokens": 9,
             "expected_capacity": capacities,
             "max_steps": sum(len(row["prompt_token_ids"]) + 49 for row in histories),
-            "fixture_sha256": _digest(histories),
+            "fixture_sha256": digest(histories),
             "policy_sha256": policy_hash,
             "retain_evidence": implementation_id == "A",
             "spool_group": case_id,
@@ -133,7 +135,7 @@ def build_numerical_plan(suite, contract, model_config):
             if case["implementation_id"] == "B":
                 refs.append((baselines[identity], True))
             for reference, exact in refs:
-                stats = _fixture_stats(
+                stats = fixture_stats(
                     fixtures[fixture_id], "float32", config, live=case["family"] == "live_gate"
                 )
                 kind = "implementation_exact" if exact else "same_dtype_fidelity"
@@ -160,7 +162,7 @@ def build_numerical_plan(suite, contract, model_config):
         if not case["retain_evidence"]:
             continue
         stats = [
-            _fixture_stats(fixtures[key], "float32", config, live=case["family"] == "live_gate")
+            fixture_stats(fixtures[key], "float32", config, live=case["family"] == "live_gate")
             for key in case["fixture_ids"]
         ]
         case_bytes = sum(row["reference_spool_payload_bytes"] for row in stats)
@@ -184,7 +186,7 @@ def build_numerical_plan(suite, contract, model_config):
             "schema_version": 1,
             "artifact_type": "m2_numerical_suite",
             "fixtures": list(fixtures.values()),
-            "source_suite_sha256": _digest(suite),
+            "source_suite_sha256": digest(suite),
         },
         "contract": adapted,
         "model_config": config.to_dict(),
@@ -201,7 +203,7 @@ def build_numerical_plan(suite, contract, model_config):
             "comparisons": len(comparisons),
         },
     }
-    result["numerical_plan_sha256"] = _digest(result)
+    result["numerical_plan_sha256"] = digest(result)
     return result
 
 
@@ -212,7 +214,7 @@ def validate_numerical_plan(plan):
     expected = build_numerical_plan(
         plan["source_inputs"]["suite"], plan["source_inputs"]["contract"], plan["model_config"]
     )
-    if _digest(plan) != _digest(expected):
+    if digest(plan) != digest(expected):
         raise ValueError("M2 numerical plan differs from its exact frozen subset")
 
 
@@ -267,7 +269,7 @@ def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadli
         raise ValueError("implementation_id must be A or B")
     view = _view(parent_plan)
     if (
-        _digest(model.config.to_dict()) != _digest(view["model_config"])
+        digest(model.config.to_dict()) != digest(view["model_config"])
         or str(next(model.parameters()).dtype) != "torch.float32"
     ):
         raise ValueError("loaded model differs from the frozen FP32 numerical controls")
@@ -416,7 +418,7 @@ def run_numerical_rows(model, parent_plan, implementation_id, output_dir, deadli
 
 def audit_numerical(output_dir, parent_plan):
     """Offline audit using the same exact boundary/trace and typed-payload audits."""
-    from vllm_lt.validation.report import _audit_case, _audit_comparison, _audit_raw_evidence
+    from vllm_lt.validation.report import audit_case, audit_comparison, audit_raw_evidence
 
     view = _view(parent_plan)
     folder = Path(output_dir) / "numerical"
@@ -472,7 +474,7 @@ def audit_numerical(output_dir, parent_plan):
         cases = {}
         for case in view["execution_order"]:
             value = read_json(folder / "cases" / case["case_id"] / "result.json")
-            _audit_case(value, view, case, fixtures)
+            audit_case(value, view, case, fixtures)
             cases[case["case_id"]] = value
             verified_cases += 1
         observations, reverse = {}, {}
@@ -490,7 +492,7 @@ def audit_numerical(output_dir, parent_plan):
                 seen[index], keys[identity] = identity, index
 
             result["comparisons"].append(
-                _audit_comparison(folder, view, comparison, cases, fixtures, observe)
+                audit_comparison(folder, view, comparison, cases, fixtures, observe)
             )
         for case_id, seen in observations.items():
             if sorted(seen) != list(range(1, cases[case_id]["observed_boundaries"] + 1)):
@@ -499,7 +501,7 @@ def audit_numerical(output_dir, parent_plan):
         actual_comparisons = sorted(path.stem for path in (folder / "comparisons").glob("*.jsonl"))
         if actual_comparisons != expected_comparisons:
             raise ValueError("unexpected or missing numerical comparison artifacts")
-        result["raw_evidence"] = _audit_raw_evidence(
+        result["raw_evidence"] = audit_raw_evidence(
             folder, view, cases, fixtures, result["comparisons"], ledger
         )
         expected_groups = {}

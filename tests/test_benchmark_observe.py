@@ -5,13 +5,13 @@ import math
 import pytest
 import torch
 
-from vllm_lt import CacheConfig, SamplingParams, SchedulerConfig
-from vllm_lt.benchmarks.observe import (
+from benchmarks.observe import (
     RunCollector,
     instrument_engine,
     populated_page_stats,
     summarize_records,
 )
+from vllm_lt import CacheConfig, SamplingParams, SchedulerConfig
 from vllm_lt.core.kv_cache_manager import KVCacheManager
 from vllm_lt.engine.llm_engine import LLMEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
@@ -325,7 +325,7 @@ def test_timing_instrumentation_does_not_scan_cache_metadata(monkeypatch):
     def forbidden(_):
         pytest.fail("timing path scanned populated cache metadata")
 
-    monkeypatch.setattr("vllm_lt.benchmarks.observe.populated_page_stats", forbidden)
+    monkeypatch.setattr("benchmarks.observe.populated_page_stats", forbidden)
     engine = tiny_engine()
     collector = RunCollector(["a"], arrival_ns=0)
     with instrument_engine(engine, collector, clock=Clock(), profile=False):

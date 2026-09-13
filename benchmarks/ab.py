@@ -9,8 +9,10 @@ import sys
 import time
 from pathlib import Path
 
-from vllm_lt.benchmarks.runner import write_json
-from vllm_lt.benchmarks.schema import read_json
+from benchmarks.runner import write_json
+from vllm_lt.validation.common import (
+    read_json,
+)
 
 from .ab_schema import (
     RUNTIME_VARIABLES,
@@ -100,8 +102,8 @@ def audit_worker_controls(plan, manifest, previous=None):
 
 
 def run_worker(plan, *, worker_id, output_dir, deadline_ns):
+    from benchmarks import runner
     from benchmarks.m2 import run_numerical_rows
-    from vllm_lt.benchmarks import runner
 
     start = time.perf_counter_ns()
     validate_ab_plan(plan)

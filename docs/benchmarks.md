@@ -1,95 +1,20 @@
-# Ouro M1 benchmark
+# Benchmarks
 
-New benchmarks target BF16 inference with explicitly recorded accumulation
-precision; see the [precision policy](precision-policy.md). BF16 profiling and
-optimization comparisons can proceed alongside Q1 diagnosis. This guide's
-commands reproduce the historical FP32 M1 contract on one reserved GPU.
-The current schema enforces FP32: a versioned BF16 contract and harness support
-are required before using these commands for new BF16 comparisons.
-It follows [issue #3](https://github.com/hsliuustc0106/vllm-lt/issues/3).
-A completed baseline is a measurement milestone; it does not require a speedup.
-The [2026-09-10 baseline report](benchmarks/m1-20260910.md) records the first
-completed matrix, acceptance checks, measured variability, and next target.
-The [M2 metadata comparison](m2-metadata.md) reuses this executor with fresh
-baseline/candidate pairs and separate numerical, regression and resource gates.
-The [2026-09-11 M2 report](benchmarks/m2-20260911.md) records the completed
-comparison and acceptance decision for per-traversal KV metadata reuse.
+- [Roadmap M1 specification](roadmap.md#m1-first-benchmark-and-profiler-pr): workload, budget, timing and scheduler contract.
+- [M1 baseline — 2026-09-10](benchmarks/m1-20260910.md): frozen configuration, results and evidence.
+- [M2 metadata guide](m2-metadata.md): interfaces and repository-tool commands.
+- [M2 comparison — 2026-09-11](benchmarks/m2-20260911.md): frozen worker order, execution counts and acceptance results.
+- [Q1 validation guide](q1-validation.md) and [Q1 results — 2026-09-11](validation/q1-20260911.md).
+- [Initial validation — 2026-09-10](validation/initial-20260910.md): original checkpoint smoke and BF16 failure.
 
-Prepare the pinned `ByteDance/Ouro-1.4B` checkpoint at revision
-`574fa66cb8bf5abdc979642d01cf2b79b16bfab1` before running. Use a clean, committed
-checkout and an environment with PyTorch, Triton, and the package dependencies.
-The probe reads local configuration and hashes files; it neither loads weights
-nor queries CUDA. Downloading and tokenization are outside the experiment.
-The committed fixture records its tokenizer and synthetic replay provenance.
+New experiments follow the [precision policy](precision-policy.md). The current
+M1/M2 executable contracts retain FP32; BF16 requires versioned harness support.
+Run repository tools from the checkout root with `python -m benchmarks --help`
+or `python -m benchmarks.ab --help`. Freeze new plans after source changes;
+reproduce historical evidence using the source commits recorded in each report.
 
-```bash
-python -m vllm_lt.benchmarks probe \
-  --suite benchmarks/fixtures/ouro-m1.json \
-  --contract benchmarks/fixtures/ouro-m1-contract.json \
-  --model-path /path/to/prepared/ouro-1.4b \
-  --output artifacts/m1-plan
-```
-
-Inspect scheduler status and select an available exact physical GPU ID. Replace
-`<available-id>` below with that verified ID. The scheduler assigns visibility;
-the runner checks the assignment and never chooses devices.
-
-```bash
-gpu run --gpu-ids <available-id> --timeout 2h --note "vllm-lt M1 baseline" -- \
-  python -m vllm_lt.benchmarks run \
-  --plan artifacts/m1-plan/plan.json \
-  --output artifacts/m1-run
-
-python -m vllm_lt.benchmarks report \
-  --run-dir artifacts/m1-run \
-  --output artifacts/m1-report
-```
-
-Every output directory must be new. Input or source drift rejects the frozen
-plan. Exit 0 means the requested contract completed, 2 means invalid input,
-and 1 means execution/report coverage failed. The report is CPU only and
-recomputes metrics from raw records without the checkpoint or original checkout.
-
-The plan contains seven cells: W1 single-request 128/64, W2 eight-request
-128/64, W3 single-request 512/32, and mixed-length W4/W5 replay in both scheduler
-modes. W4 has heterogeneous depths 2/3/4; W5 is a four-loop control. W1–W3
-perform fixed-four-loop generation. W4/W5 impose synthetic token IDs and exits
-after real gate, coda, sampling, and KV work. Their outputs do not measure model
-accuracy or adaptive quality.
-
-The fixed budget is seven feasibility executions, seven warmups, fourteen
-measured executions, and two profiler executions. W4/W5 each use paired order
-refill-1, no-refill-1, no-refill-2, refill-2. There is no retry or resume.
-A 600-second guard applies to each workload and a two-hour deadline covers the
-whole process, including preparation and teardown. The scheduler enforces the
-outer limit even if a device call blocks. An incomplete suite remains visible.
-
-For this historical FP32 contract, one model stays resident. Each execution
-creates and destroys a fresh engine and 6 GiB KV pool outside its timer.
-Allocator and compiled caches persist.
-No shared cache is cleared; process-local cuBLAS cleanup happens only at final
-teardown. Active requests and reserved KV pages must return to zero after each
-execution; persistent model/pool/allocator bytes are reported separately.
-
-Timing begins immediately before enqueue after observer setup. Each step has
-one host return timestamp shared by its outputs. Throughput includes prefill
-and queueing; TPOT excludes the first prediction. The final device synchronization
-is a separate boundary. The CUDA stream span can include host-induced gaps and
-is not summed kernel busy time. Timing mode adds only host records/counters and
-boundary events. Feasibility checks read finite hidden/logit values; they are
-excluded from measurements.
-
-Profiling starts at the first prelude and stops after at least sixteen subsequent
-outputs, then drains outside capture. W4 can include naturally interleaved
-prefill. CPU scope durations are inclusive and overlap; do not sum them as
-independent costs. Chrome traces must contain actual kernel and memcpy events.
-Profile-only snapshots distinguish reserved pages from populated physical pages;
-logical KV copy bytes are payload accounting, not measured DRAM traffic.
-
-The experiment directory contains its plan, environment/source manifest,
-per-run start markers, raw events/results, and profiler traces/metadata. Failed
-runs retain available records and are ineligible for comparison. The offline
-report verifies hashes, replay/work accounting, cleanup, and matched pairs;
-it shows both observations and their range. Two runs are a bounded screen,
-and overlapping variation is inconclusive. Publish compact records under
-`docs/benchmarks/`; retain full local artifacts under ignored `artifacts/`.
+Review discussions live on [PR 10](https://github.com/hsliuustc0106/vllm-lt/pull/10),
+[PR 11](https://github.com/hsliuustc0106/vllm-lt/pull/11), and
+[PR 12](https://github.com/hsliuustc0106/vllm-lt/pull/12).
+The former local follow-up notes, including their check counts and deferred API
+choices, remain in [the pinned archive](https://github.com/hsliuustc0106/vllm-lt/tree/c9e646ace2d8198a52e522ea4d71129f1b143c58/docs/reviews).

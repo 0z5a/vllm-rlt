@@ -14,16 +14,9 @@ The inspected Ouro paper mentions BF16 training in its auxiliary experiments
 
 For inference, the [pinned release configuration](https://huggingface.co/ByteDance/Ouro-1.4B/blob/574fa66cb8bf5abdc979642d01cf2b79b16bfab1/config.json)
 sets `torch_dtype` to `bfloat16`. Its [Quick Start](https://huggingface.co/ByteDance/Ouro-1.4B/blob/574fa66cb8bf5abdc979642d01cf2b79b16bfab1/README.md)
-loads with `torch_dtype="auto"`. The following explicit boundaries come from
-the [released model code](https://huggingface.co/ByteDance/Ouro-1.4B/blob/574fa66cb8bf5abdc979642d01cf2b79b16bfab1/modeling_ouro.py):
-
-| Operation | Published inference behavior |
-| --- | --- |
-| Projections, MLP, LM head | Model-dtype operands/outputs; no full-model FP32 promotion. Backend accumulation flags are not fixed here. |
-| Eager attention | Native-dtype QK and PV products; softmax explicitly computes in FP32, then casts probabilities back to query dtype before PV. |
-| RMSNorm | FP32 normalization arithmetic, then cast back to input dtype. |
-| RoPE | FP32 phase and trigonometric computation, then cast factors to activation dtype. |
-| Exit distribution | Sigmoid, remaining probability, and CDF use tensors without an explicit FP32 promotion. |
+loads with `torch_dtype="auto"`. The [precision policy's operation table](precision-policy.md#inference-precision)
+records the released arithmetic boundaries alongside project requirements,
+based on the [pinned model code](https://huggingface.co/ByteDance/Ouro-1.4B/blob/574fa66cb8bf5abdc979642d01cf2b79b16bfab1/modeling_ouro.py).
 
 The downloaded model source matches the vendored official reference exactly:
 SHA-256 `c5c68fbb368ce2909c257ae2afc50719be8c91539333d3295e19312c4316f413`.

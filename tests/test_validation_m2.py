@@ -12,9 +12,13 @@ import torch
 
 from benchmarks import m2
 from vllm_lt.models import OuroConfig, OuroForCausalLM
+from vllm_lt.validation.common import (
+    digest,
+    read_json,
+    write_json,
+)
 from vllm_lt.validation.diagnostics import DiagnosticDump, SpoolBudget, TensorSpool
 from vllm_lt.validation.evidence import ComparisonStream, boundary_key
-from vllm_lt.validation.schema import _digest, read_json, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -97,7 +101,7 @@ def test_strict_subset_rejects_rehashed_control_changes(mutation):
         plan["execution_order"][0]["spool_group"] = "one-unbounded-shared-group"
     else:
         plan["artifact_type"] = "validation_execution_plan"
-    plan["numerical_plan_sha256"] = _digest(
+    plan["numerical_plan_sha256"] = digest(
         {key: value for key, value in plan.items() if key != "numerical_plan_sha256"}
     )
     with pytest.raises(ValueError):

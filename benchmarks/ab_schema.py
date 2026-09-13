@@ -6,22 +6,26 @@ import subprocess
 import sys
 from pathlib import Path
 
-from vllm_lt.benchmarks.schema import (
-    _constants,
-    _digest,
-    _file_record,
-    _integer,
-    _keys,
-    _model_files,
-    _source_manifest,
-    _text,
-    _validate_contract,
-    _validate_suite,
+from benchmarks.schema import (
     _workload_stats,
-    read_json,
+    validate_suite,
+)
+from benchmarks.schema import (
+    validate_contract as validate_benchmark_contract,
 )
 from vllm_lt.models.config import OuroConfig
-from vllm_lt.validation.schema import _file_records, _validate_dependencies, dependency_manifest
+from vllm_lt.validation.common import (
+    constants,
+    digest,
+    integer,
+    keys,
+    make_file_record,
+    model_files,
+    read_json,
+    source_manifest,
+    validate_text,
+)
+from vllm_lt.validation.schema import dependency_manifest, file_records, validate_dependencies
 
 CELLS = (
     "W1-refill",
@@ -38,7 +42,7 @@ IMPORT_MODULES = (
     "benchmarks.ab_schema",
     "benchmarks.ab_report",
     "benchmarks.m2",
-    "vllm_lt.benchmarks.runner",
+    "benchmarks.runner",
     "vllm_lt.core.kv_cache_manager",
     "vllm_lt.models.ouro",
     "vllm_lt.validation.runner",
@@ -76,7 +80,7 @@ def require(condition, message):
 
 
 def equal(actual, expected, name):
-    require(_digest(actual) == _digest(expected), f"{name} differs from the frozen contract")
+    require(digest(actual) == digest(expected), f"{name} differs from the frozen contract")
 
 
 def affinity_snapshot():
@@ -98,23 +102,23 @@ def affinity_snapshot():
 
 
 def validate_affinity(value):
-    _keys(value, ("cpu_ids", "numa_status", "numactl_show"), name="affinity")
+    keys(value, ("cpu_ids", "numa_status", "numactl_show"), name="affinity")
     require(isinstance(value["cpu_ids"], list) and bool(value["cpu_ids"]), "CPU IDs required")
     for item in value["cpu_ids"]:
-        _integer(item, "CPU ID")
+        integer(item, "CPU ID")
     equal(value["cpu_ids"], sorted(set(value["cpu_ids"])), "sorted unique CPU IDs")
     require(
         isinstance(value["numa_status"], list) and len(value["numa_status"]) == 2,
         "CPU and memory allowed masks are required",
     )
-    _keys(
+    keys(
         value["numactl_show"],
         ("policy", "preferred_node", "physcpubind", "cpubind", "nodebind", "membind"),
         name="active NUMA policy",
     )
     require(value["numactl_show"]["policy"] == "bind", "explicit parent memory binding required")
     for key, item in value["numactl_show"].items():
-        _text(item, "NUMA " + key)
+        validate_text(item, "NUMA " + key)
         require(item == " ".join(item.split()), "NUMA policy must have normalized whitespace")
     require(
         value["numactl_show"]["physcpubind"] == " ".join(map(str, value["cpu_ids"])),
@@ -125,7 +129,7 @@ def validate_affinity(value):
 
 
 def validate_contract(contract, *, resolved=False):
-    _keys(
+    keys(
         contract,
         (
             "schema_version",
@@ -144,20 +148,20 @@ def validate_contract(contract, *, resolved=False):
     )
     equal([contract["schema_version"], contract["artifact_type"]], [1, "m2_ab_contract"], "version")
     for name in ("contract_id", "hypothesis", "isolated_variable"):
-        _text(contract[name], name)
-    _constants(contract["inputs"], INPUTS, "M2 input references")
+        validate_text(contract[name], name)
+    constants(contract["inputs"], INPUTS, "M2 input references")
     equal(contract["production_diff_paths"], list(DIFF_PATHS), "allowed production differences")
-    _constants(contract["limits"], LIMITS, "M2 execution/resource budgets")
-    _constants(contract["acceptance"], ACCEPTANCE, "M2 acceptance gates")
+    constants(contract["limits"], LIMITS, "M2 execution/resource budgets")
+    constants(contract["acceptance"], ACCEPTANCE, "M2 acceptance gates")
     controls = contract["controls"]
-    _keys(controls, (*CONTROL_CONSTANTS, "gpu_ids", "affinity"), name="M2 controls")
-    _constants({key: controls[key] for key in CONTROL_CONSTANTS}, CONTROL_CONSTANTS, "controls")
+    keys(controls, (*CONTROL_CONSTANTS, "gpu_ids", "affinity"), name="M2 controls")
+    constants({key: controls[key] for key in CONTROL_CONSTANTS}, CONTROL_CONSTANTS, "controls")
     if resolved or controls["gpu_ids"] is not None:
         require(
             isinstance(controls["gpu_ids"], list) and len(controls["gpu_ids"]) == 1,
             "one explicitly selected physical GPU ID required",
         )
-        _integer(controls["gpu_ids"][0], "physical GPU ID")
+        integer(controls["gpu_ids"][0], "physical GPU ID")
     if resolved or controls["affinity"] is not None:
         validate_affinity(controls["affinity"])
     require(
@@ -165,14 +169,14 @@ def validate_contract(contract, *, resolved=False):
         "stop conditions are required",
     )
     for item in contract["stop_conditions"]:
-        _text(item, "stop condition")
+        validate_text(item, "stop condition")
 
 
 def source_probe():
     """Called in the selected checkout; imports must originate there, without CUDA."""
     import importlib
 
-    source = _source_manifest()
+    source = source_manifest()
     root = Path(source["root"]).resolve()
     imports = {}
     for name in IMPORT_MODULES:
@@ -197,41 +201,41 @@ def probe_checkout(root):
 
 
 def read_json_string(raw):
-    from vllm_lt.benchmarks.schema import _finite_float, _object_pairs, _reject_constant
+    from vllm_lt.validation.common import finite_float, object_pairs, reject_constant
 
     return json.loads(
         raw,
-        parse_constant=_reject_constant,
-        parse_float=_finite_float,
-        object_pairs_hook=_object_pairs,
+        parse_constant=reject_constant,
+        parse_float=finite_float,
+        object_pairs_hook=object_pairs,
     )
 
 
 def _harness(source):
-    prefixes = ("vllm_lt/benchmarks/", "vllm_lt/validation/", "benchmarks/")
+    prefixes = ("vllm_lt/validation/", "benchmarks/")
     files = [
         row
         for row in source["files"]
         if row["path"].startswith(prefixes) or row["path"] == "vllm_lt/models/serial_oracle.py"
     ]
     require(bool(files), "common harness is missing")
-    return {"files": files, "sha256": _digest(files)}
+    return {"files": files, "sha256": digest(files)}
 
 
 def _source_controls(implementations):
-    _keys(implementations, ("A", "B"), name="implementations")
+    keys(implementations, ("A", "B"), name="implementations")
     for item in implementations.values():
-        _keys(item, ("root", "source", "imports"), name="implementation")
-        _keys(item["source"], ("root", "commit", "status", "files"), name="source")
+        keys(item, ("root", "source", "imports"), name="implementation")
+        keys(item["source"], ("root", "commit", "status", "files"), name="source")
         require(Path(item["root"]).is_absolute(), "implementation root must be absolute")
         equal(item["root"], item["source"]["root"], "source root")
-        _file_records(item["source"]["files"], "source files")
+        file_records(item["source"]["files"], "source files")
         for row in item["source"]["files"]:
             require(
                 not Path(row["path"]).is_absolute() and ".." not in Path(row["path"]).parts,
                 "source paths must remain inside the checkout",
             )
-        _keys(item["imports"], IMPORT_MODULES, name="import provenance")
+        keys(item["imports"], IMPORT_MODULES, name="import provenance")
         for name, path in item["imports"].items():
             equal(path, name.replace(".", "/") + ".py", "module import location")
     a, b = (implementations[key]["source"] for key in ("A", "B"))
@@ -257,7 +261,7 @@ def _source_controls(implementations):
 def execution_rows(suite, contract, stats, numerical):
     workloads = {row["workload_id"]: row for row in suite["workloads"]}
     rows, workers = [], []
-    shared_hash = _digest(contract)
+    shared_hash = digest(contract)
     for worker_id in WORKERS:
         implementation = "A" if "A" in worker_id else "B"
         worker = {"worker_id": worker_id, "implementation_id": implementation, "execution_ids": []}
@@ -283,7 +287,7 @@ def execution_rows(suite, contract, stats, numerical):
                 "case_lifetime_timeout_s": 600,
                 "max_steps": stats[workload_id]["max_steps"],
                 "max_events": stats[workload_id]["max_events"],
-                "workload_sha256": _digest(workloads[workload_id]),
+                "workload_sha256": digest(workloads[workload_id]),
                 "controls_sha256": shared_hash,
             }
             rows.append(row)
@@ -359,8 +363,8 @@ def make_ab_plan(*, baseline_root, candidate_root, contract_path, model_path, gp
     harness, differences = _source_controls(implementations)
     inputs = {}
     for key, name in contract["inputs"].items():
-        record = _file_record(roots["A"] / name)
-        other = _file_record(roots["B"] / name)
+        record = make_file_record(roots["A"] / name)
+        other = make_file_record(roots["B"] / name)
         equal(
             [record["sha256"], record["size_bytes"]],
             [other["sha256"], other["size_bytes"]],
@@ -371,11 +375,11 @@ def make_ab_plan(*, baseline_root, candidate_root, contract_path, model_path, gp
         inputs["benchmark_suite"]["contents"],
         inputs["benchmark_contract"]["contents"],
     )
-    _validate_suite(suite)
-    _validate_contract(benchmark)
+    validate_suite(suite)
+    validate_benchmark_contract(benchmark)
     config = OuroConfig.from_dict(read_json(model_path / "config.json"))
     validate_model_config(config.to_dict())
-    files = _model_files(model_path)
+    files = model_files(model_path)
     tokenizer = next(row for row in files if row["path"] == "tokenizer.json")
     for name in ("sha256", "size_bytes"):
         equal(tokenizer[name], suite["provenance"]["tokenizer"][name], "tokenizer provenance")
@@ -390,7 +394,7 @@ def make_ab_plan(*, baseline_root, candidate_root, contract_path, model_path, gp
         "schema_version": 1,
         "artifact_type": "m2_ab_plan",
         "contract": contract,
-        "contract_file": _file_record(contract_path),
+        "contract_file": make_file_record(contract_path),
         "implementations": implementations,
         "harness": harness,
         "production_differences": differences,
@@ -408,7 +412,7 @@ def make_ab_plan(*, baseline_root, candidate_root, contract_path, model_path, gp
         "interpreter": sys.executable,
         "runtime_environment": {name: os.environ.get(name) for name in RUNTIME_VARIABLES},
     }
-    plan["plan_sha256"] = _digest(plan)
+    plan["plan_sha256"] = digest(plan)
     validate_ab_plan(plan)
     return plan
 
@@ -416,7 +420,7 @@ def make_ab_plan(*, baseline_root, candidate_root, contract_path, model_path, gp
 def validate_ab_plan(plan):
     from benchmarks.m2 import validate_numerical_plan
 
-    _keys(
+    keys(
         plan,
         (
             "schema_version",
@@ -446,22 +450,22 @@ def validate_ab_plan(plan):
     equal([plan["schema_version"], plan["artifact_type"]], [1, "m2_ab_plan"], "M2 plan version")
     equal(
         plan["plan_sha256"],
-        _digest({k: v for k, v in plan.items() if k != "plan_sha256"}),
+        digest({k: v for k, v in plan.items() if k != "plan_sha256"}),
         "M2 plan content hash",
     )
     validate_contract(plan["contract"], resolved=True)
-    _validate_dependencies(plan["dependencies"])
+    validate_dependencies(plan["dependencies"])
     official = plan["dependencies"]["official"]
     equal(official["dependencies"]["transformers"], "4.55.0", "prepared Q1 transformers")
     equal(official["optional_kernels_present"], False, "prepared Q1 optional kernels absence")
-    _file_records(plan["model_files"], "model files")
-    _file_records([plan["contract_file"]], "M2 contract file")
-    _keys(plan["inputs"], INPUTS, name="input references")
+    file_records(plan["model_files"], "model files")
+    file_records([plan["contract_file"]], "M2 contract file")
+    keys(plan["inputs"], INPUTS, name="input references")
     for item in plan["inputs"].values():
-        _keys(item, ("file", "contents"), name="input")
-        _file_records([item["file"]], "input file")
-    _validate_suite(plan["suite"])
-    _validate_contract(plan["benchmark_contract"])
+        keys(item, ("file", "contents"), name="input")
+        file_records([item["file"]], "input file")
+    validate_suite(plan["suite"])
+    validate_benchmark_contract(plan["benchmark_contract"])
     validate_numerical_plan(plan["numerical"])
     harness, differences = _source_controls(plan["implementations"])
     equal([plan["harness"], plan["production_differences"]], [harness, differences], "source diff")
@@ -499,7 +503,7 @@ def validate_ab_plan(plan):
     require(
         estimate <= LIMITS["artifact_bytes_max"], "planned numerical/profile artifacts exceed cap"
     )
-    _keys(plan["runtime_environment"], RUNTIME_VARIABLES, name="runtime environment")
+    keys(plan["runtime_environment"], RUNTIME_VARIABLES, name="runtime environment")
     for value in plan["runtime_environment"].values():
         require(
             value is None or isinstance(value, str), "runtime variables must be strings or null"
@@ -519,14 +523,14 @@ def verify_ab_plan(plan, *, implementation_id=None):
         equal(actual["source"], expected["source"], "frozen implementation source")
         equal(actual["imports"], expected["imports"], "frozen import paths")
         equal(actual["dependencies"], plan["dependencies"], "frozen dependencies")
-    equal(_model_files(Path(plan["model_path"])), plan["model_files"], "frozen checkpoint files")
+    equal(model_files(Path(plan["model_path"])), plan["model_files"], "frozen checkpoint files")
     equal(
         OuroConfig.from_dict(read_json(Path(plan["model_path"]) / "config.json")).to_dict(),
         plan["model_config"],
         "embedded checkpoint configuration",
     )
     equal(
-        _file_record(Path(plan["contract_file"]["path"])),
+        make_file_record(Path(plan["contract_file"]["path"])),
         plan["contract_file"],
         "M2 input contract",
     )
@@ -537,7 +541,9 @@ def verify_ab_plan(plan, *, implementation_id=None):
     )
     equal(original, plan["contract"], "resolved M2 contract contents")
     for name, record in plan["inputs"].items():
-        equal(_file_record(Path(record["file"]["path"])), record["file"], "frozen input " + name)
+        equal(
+            make_file_record(Path(record["file"]["path"])), record["file"], "frozen input " + name
+        )
         equal(read_json(Path(record["file"]["path"])), record["contents"], "embedded input " + name)
     equal(sys.executable, plan["interpreter"], "prepared interpreter")
     equal(

@@ -27,7 +27,7 @@ four loops, with maximum absolute logit error `6.2943e-5`.
 BF16 failed the predeclared logit tolerances. Matching outputs and exit depths
 on three short prompts does not qualify BF16 generally. There is no measured
 throughput improvement or task-quality result yet. See the
-[validation record](validation.md) for the exact coverage and original failure.
+[validation record](validation/initial-20260910.md) for the exact coverage and original failure.
 
 ## Milestones and dependencies
 

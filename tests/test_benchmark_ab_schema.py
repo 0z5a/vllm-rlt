@@ -8,8 +8,13 @@ import pytest
 import torch
 
 from benchmarks import ab_schema as schema
-from vllm_lt.benchmarks.schema import _digest, _file_record, read_json, write_json
 from vllm_lt.models import OuroConfig
+from vllm_lt.validation.common import (
+    digest,
+    make_file_record,
+    read_json,
+    write_json,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 AFFINITY = {
@@ -27,7 +32,7 @@ AFFINITY = {
 
 
 def rehash(plan):
-    plan["plan_sha256"] = _digest({k: v for k, v in plan.items() if k != "plan_sha256"})
+    plan["plan_sha256"] = digest({k: v for k, v in plan.items() if k != "plan_sha256"})
     return plan
 
 
@@ -48,7 +53,7 @@ def ab_plan(tmp_path, monkeypatch):
     (model / "tokenizer.json").write_text('{"fake":"byte-only-tokenizer"}\n')
     (model / "tokenizer_config.json").write_text("{}\n")
     (model / "model.safetensors").write_bytes(b"not weight tensors; hashing only")
-    tokenizer = _file_record(model / "tokenizer.json")
+    tokenizer = make_file_record(model / "tokenizer.json")
     deps = schema.dependency_manifest()
     deps["official"]["dependencies"]["transformers"] = "4.55.0"
     deps["official"]["dependencies"]["kernels"] = None
@@ -68,6 +73,10 @@ def ab_plan(tmp_path, monkeypatch):
             "benchmarks/ab_schema.py",
             "benchmarks/ab_report.py",
             "benchmarks/m2.py",
+            "benchmarks/runner.py",
+            "benchmarks/schema.py",
+            "vllm_lt/validation/common.py",
+            "vllm_lt/validation/runtime.py",
         ]:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -81,7 +90,7 @@ def ab_plan(tmp_path, monkeypatch):
                 "commit": ("a" if root.name == "A" else "b") * 40,
                 "status": "",
                 "files": [
-                    _file_record(path, relative_to=root)
+                    make_file_record(path, relative_to=root)
                     for path in sorted(root.rglob("*"))
                     if path.is_file()
                 ],
@@ -166,6 +175,10 @@ def test_rehashed_invalid_contracts_and_rows_are_rejected(ab_plan, mutate):
         "benchmarks/ab_schema.py",
         "benchmarks/ab_report.py",
         "benchmarks/m2.py",
+        "benchmarks/runner.py",
+        "benchmarks/schema.py",
+        "vllm_lt/validation/common.py",
+        "vllm_lt/validation/runtime.py",
     ],
 )
 def test_runtime_verification_detects_frozen_control_drift(ab_plan, monkeypatch, change):
@@ -179,7 +192,7 @@ def test_runtime_verification_detects_frozen_control_drift(ab_plan, monkeypatch,
         altered = deepcopy(AFFINITY)
         altered["numactl_show"]["membind"] = "0"
         monkeypatch.setattr(schema, "affinity_snapshot", lambda: altered)
-    elif change.startswith("benchmarks/"):
+    elif change.startswith(("benchmarks/", "vllm_lt/validation/")):
         # Even a matching edit on both sides invalidates an already frozen plan.
         for implementation in ab_plan["implementations"].values():
             (Path(implementation["root"]) / change).write_text("changed shared harness")
@@ -222,7 +235,7 @@ def test_rehashed_embedded_input_cannot_differ_from_original_file(ab_plan):
     changed = deepcopy(ab_plan)
     suite = changed["inputs"]["numerical_suite"]["contents"]
     suite["fixtures"][0]["continuation_input_ids"][0] += 1
-    suite["fixtures_sha256"] = _digest({key: suite[key] for key in FIXTURE_HASH_FIELDS})
+    suite["fixtures_sha256"] = digest({key: suite[key] for key in FIXTURE_HASH_FIELDS})
     changed["numerical"] = build_numerical_plan(
         suite, changed["inputs"]["numerical_contract"]["contents"], changed["model_config"]
     )

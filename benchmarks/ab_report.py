@@ -3,8 +3,12 @@
 import math
 from pathlib import Path
 
-from vllm_lt.benchmarks.report import _profiles, _run_record
-from vllm_lt.benchmarks.schema import _file_record, read_json, write_json
+from benchmarks.report import _profiles, _run_record
+from vllm_lt.validation.common import (
+    make_file_record,
+    read_json,
+    write_json,
+)
 
 from .ab_schema import CELLS, WORKERS, equal, execution_view, require, validate_ab_plan
 
@@ -243,7 +247,7 @@ def build_report(output_dir):
     report["manifest_status"] = manifest["status"]
     report["execution_failures"] = manifest["failures"]
     for path in (output_dir / "plan.json", output_dir / "manifest.json"):
-        report["hashes"][str(path.relative_to(output_dir))] = _file_record(path)["sha256"]
+        report["hashes"][str(path.relative_to(output_dir))] = make_file_record(path)["sha256"]
     worker_results = {}
     try:
         equal(
@@ -278,7 +282,7 @@ def build_report(output_dir):
             path = output_dir / "workers" / worker["worker_id"] / "manifest.json"
             child = read_json(path)
             worker_results[worker["worker_id"]] = child
-            report["hashes"][str(path.relative_to(output_dir))] = _file_record(path)["sha256"]
+            report["hashes"][str(path.relative_to(output_dir))] = make_file_record(path)["sha256"]
             equal(
                 [
                     child["schema_version"],

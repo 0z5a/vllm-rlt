@@ -22,7 +22,7 @@ is a diagnostic/reference configuration. The [precision policy](docs/precision-p
 separates BF16 storage/compute from accumulation precision and defines the
 requirements for new validation and benchmark work.
 
-The historical [Q1 run](docs/benchmarks/q1-20260911.md) passed its FP32 comparisons and
+The historical [Q1 run](docs/validation/q1-20260911.md) passed its FP32 comparisons and
 failed its original BF16 contract; the reference discrepancy remains unresolved.
 Those results are retained while BF16 evaluation proceeds under an explicit
 mixed-precision contract. They do not establish BF16 quality or performance.
@@ -164,7 +164,7 @@ gpu run --gpu-ids <available-id> --timeout 10m --note "vllm-lt kernel tests" -- 
 Tests cover dense-vs-paged model execution, GQA, packed causal prefill, varying
 depths, cache holes, early-exit propagation, fragmented pages, bounded admission,
 EOS/cancellation, refill/no-refill equivalence, checkpoint validation, and sampling
-independence. [Validation notes](docs/validation.md) record the actual environment
+independence. [Validation notes](docs/validation/initial-20260910.md) record the actual environment
 and checks performed. These correctness checks do not establish serving performance
 or adaptive-depth language-task accuracy.
 

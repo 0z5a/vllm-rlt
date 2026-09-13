@@ -4,21 +4,21 @@ import math
 import subprocess
 from pathlib import Path
 
-from vllm_lt.benchmarks.schema import (
-    _constants,
-    _digest,
-    _file_record,
-    _integer,
-    _keys,
-    _model_files,
-    _source_manifest,
-    _text,
-    _tokens,
-    _version,
+from vllm_lt.models.config import OURO_MODEL_ID, OURO_REVISION, OuroConfig
+from vllm_lt.validation.common import (
+    constants,
+    digest,
+    integer,
+    keys,
+    make_file_record,
+    model_files,
     read_json,
+    source_manifest,
+    tokens,
+    validate_text,
+    validate_version,
     write_json,
 )
-from vllm_lt.models.config import OURO_MODEL_ID, OURO_REVISION, OuroConfig
 
 __all__ = [
     "load_suite",
@@ -81,10 +81,10 @@ def _fixture(value, length, *, feasibility=False):
         "history_policy",
         "forced_exit_depths",
     )
-    _keys(value, required, optional=("dtype",) if feasibility else (), name="fixture")
-    _text(value["fixture_id"], "fixture_id")
-    _tokens(value["prompt_token_ids"], length, "prompt_token_ids")
-    _tokens(value["continuation_input_ids"], 8, "continuation_input_ids")
+    keys(value, required, optional=("dtype",) if feasibility else (), name="fixture")
+    validate_text(value["fixture_id"], "fixture_id")
+    tokens(value["prompt_token_ids"], length, "prompt_token_ids")
+    tokens(value["continuation_input_ids"], 8, "continuation_input_ids")
     depths = value["forced_exit_depths"]
     _sequence(depths, 9, "forced_exit_depths")
     if any(type(depth) is not int or depth not in (2, 3, 4) for depth in depths):
@@ -103,8 +103,8 @@ def _fixture(value, length, *, feasibility=False):
         raise ValueError("feasibility fixture requires an explicit supported dtype")
 
 
-def _validate_suite(suite):
-    _keys(
+def validate_suite(suite):
+    keys(
         suite,
         (
             "schema_version",
@@ -119,8 +119,8 @@ def _validate_suite(suite):
         ),
         name="validation suite",
     )
-    _version(suite, "validation_suite")
-    _text(suite["suite_id"], "suite_id")
+    validate_version(suite, "validation_suite")
+    validate_text(suite["suite_id"], "suite_id")
     if (suite["model_id"], suite["model_revision"], suite["tokenizer_revision"]) != (
         OURO_MODEL_ID,
         OURO_REVISION,
@@ -128,7 +128,7 @@ def _validate_suite(suite):
     ):
         raise ValueError("Q1 requires the pinned Ouro model/tokenizer revision")
     provenance = suite["provenance"]
-    _keys(
+    keys(
         provenance,
         (
             "kind",
@@ -148,23 +148,23 @@ def _validate_suite(suite):
     for key in ("text_sources", "continuation_text_sources", "feasibility_text_sources"):
         _sequence(provenance[key], 2 if key == "feasibility_text_sources" else 4, key)
         for text in provenance[key]:
-            _text(text, key)
+            validate_text(text, key)
     for key in (
         "prompt_construction",
         "continuation_construction",
         "feasibility_continuation_text",
         "feasibility_construction",
     ):
-        _text(provenance[key], key)
+        validate_text(provenance[key], key)
     tokenizer = provenance["tokenizer"]
-    _keys(
+    keys(
         tokenizer,
         ("filename", "sha256", "size_bytes", "library", "library_version", "add_special_tokens"),
         name="tokenizer provenance",
     )
     for key in ("sha256", "library", "library_version"):
-        _text(tokenizer[key], key)
-    _integer(tokenizer["size_bytes"], "tokenizer size_bytes", 1)
+        validate_text(tokenizer[key], key)
+    integer(tokenizer["size_bytes"], "tokenizer size_bytes", 1)
     if tokenizer["filename"] != "tokenizer.json" or tokenizer["add_special_tokens"] is not False:
         raise ValueError("fixtures require tokenizer.json without added special tokens")
     fixtures = suite["fixtures"]
@@ -186,7 +186,7 @@ def _validate_suite(suite):
     groups = suite["groups"]
     _sequence(groups, 4, "packed groups")
     for index, group in enumerate(groups):
-        _keys(group, ("group_id", "fixture_ids"), name="packed group")
+        keys(group, ("group_id", "fixture_ids"), name="packed group")
         if group != {
             "group_id": f"Q1-G{index}",
             "fixture_ids": [f"Q1-L{length}-F{index}" for length in LENGTHS],
@@ -206,7 +206,7 @@ def _validate_suite(suite):
             raise ValueError("feasibility prompt histories must be disjoint")
         main_histories.add(history)
     original = suite["original_reproduction"]
-    _keys(
+    keys(
         original,
         (
             "sources",
@@ -224,11 +224,11 @@ def _validate_suite(suite):
     if original["prompt_token_ids"] != ORIGINAL_PROMPTS:
         raise ValueError("original reproduction must preserve the recorded three input histories")
     for prompt in original["prompt_token_ids"]:
-        _tokens(prompt, 5, "original prompt_token_ids")
+        tokens(prompt, 5, "original prompt_token_ids")
     _sequence(original["prompt_texts"], 3, "original prompt texts")
     for text in original["prompt_texts"]:
-        _text(text, "original prompt text")
-    _constants(
+        validate_text(text, "original prompt text")
+    constants(
         {
             key: original[key]
             for key in (
@@ -252,7 +252,7 @@ def _validate_suite(suite):
         raise ValueError("original reproduction requires all four loop depths")
     _sequence(original["sources"], 2, "original source records")
     for dtype, record in zip(DTYPES, original["sources"]):
-        _keys(
+        keys(
             record,
             ("dtype", "commit", "path", "git_blob_sha1", "sha256", "size_bytes", "atol", "rtol"),
             name="original source record",
@@ -265,26 +265,26 @@ def _validate_suite(suite):
             f"docs/validation/checkpoint-{suffix}.json",
         ):
             raise ValueError("original record provenance differs from the retained source")
-        _constants(
+        constants(
             {"atol": record["atol"], "rtol": record["rtol"]},
             {"atol": atol, "rtol": rtol},
             "original logit tolerance",
         )
-        _integer(record["size_bytes"], "original record size", 1)
+        integer(record["size_bytes"], "original record size", 1)
         for key in ("git_blob_sha1", "sha256"):
-            _text(record[key], key)
-    if suite["fixtures_sha256"] != _digest({key: suite[key] for key in FIXTURE_HASH_FIELDS}):
+            validate_text(record[key], key)
+    if suite["fixtures_sha256"] != digest({key: suite[key] for key in FIXTURE_HASH_FIELDS}):
         raise ValueError("fixtures_sha256 mismatch")
 
 
 def load_suite(path):
     suite = read_json(path)
-    _validate_suite(suite)
+    validate_suite(suite)
     return suite
 
 
-def _validate_contract(contract, *, resolved=False):
-    _keys(
+def validate_contract(contract, *, resolved=False):
+    keys(
         contract,
         (
             "schema_version",
@@ -305,25 +305,25 @@ def _validate_contract(contract, *, resolved=False):
         ),
         name="validation contract",
     )
-    _version(contract, "validation_contract")
+    validate_version(contract, "validation_contract")
     for key in ("contract_id", "hypothesis", "acceptance_criterion"):
-        _text(contract[key], key)
+        validate_text(contract[key], key)
     for key in ("isolated_variables", "stop_conditions"):
         if not isinstance(contract[key], list) or not contract[key]:
             raise ValueError(f"{key} must be a nonempty list")
         for value in contract[key]:
-            _text(value, key)
+            validate_text(value, key)
     if contract["dtypes"] != list(DTYPES):
         raise ValueError("Q1 requires ordered FP32 and BF16 passes")
     engine = contract["engine"]
-    _keys(engine, ("cache", "scheduler", "sampling"), name="engine")
-    _constants(engine["cache"], {"num_blocks": 160, "block_size": 16}, "cache")
-    _constants(
+    keys(engine, ("cache", "scheduler", "sampling"), name="engine")
+    constants(engine["cache"], {"num_blocks": 160, "block_size": 16}, "cache")
+    constants(
         engine["scheduler"],
         {"max_num_seqs": 4, "max_num_batched_tokens": 64, "min_coda_batch_size": 1},
         "scheduler",
     )
-    _constants(
+    constants(
         engine["sampling"],
         {
             "temperature": 0.0,
@@ -337,7 +337,7 @@ def _validate_contract(contract, *, resolved=False):
         },
         "sampling",
     )
-    _constants(
+    constants(
         contract["arithmetic"],
         {
             "allow_tf32": False,
@@ -348,7 +348,7 @@ def _validate_contract(contract, *, resolved=False):
         "arithmetic",
     )
     controls = contract["controls"]
-    _keys(
+    keys(
         controls,
         (
             "cpu_threads",
@@ -362,7 +362,7 @@ def _validate_contract(contract, *, resolved=False):
         ),
         name="controls",
     )
-    _constants(
+    constants(
         {key: value for key, value in controls.items() if key != "gpu_ids"},
         {
             "cpu_threads": 1,
@@ -378,10 +378,10 @@ def _validate_contract(contract, *, resolved=False):
     ids = controls["gpu_ids"]
     if ids is not None:
         _sequence(ids, 1, "gpu_ids")
-        _integer(ids[0], "physical GPU ID")
+        integer(ids[0], "physical GPU ID")
     elif resolved:
         raise ValueError("plan requires one explicit physical GPU ID before device execution")
-    _constants(
+    constants(
         contract["limits"],
         {
             "case_timeout_s": 600,
@@ -402,7 +402,7 @@ def _validate_contract(contract, *, resolved=False):
         "limits",
     )
     diagnostic = contract["diagnostics"]
-    _keys(
+    keys(
         diagnostic,
         (
             "positions",
@@ -423,7 +423,7 @@ def _validate_contract(contract, *, resolved=False):
         raise ValueError("diagnostic operations differ from the frozen observer interface")
     if diagnostic["preselected_dump_fixture_ids"] != ["Q1-L16-F2", "Q1-L256-F0"]:
         raise ValueError("exactly two diagnostic fixtures must be preselected before execution")
-    _constants(
+    constants(
         {
             key: value
             for key, value in diagnostic.items()
@@ -443,7 +443,7 @@ def _validate_contract(contract, *, resolved=False):
         "diagnostics",
     )
     policy = contract["comparison_policy"]
-    _keys(
+    keys(
         policy,
         (
             "policy_id",
@@ -458,11 +458,11 @@ def _validate_contract(contract, *, resolved=False):
         ),
         name="comparison policy",
     )
-    _text(policy["policy_id"], "policy_id")
-    _text(policy["rationale"], "policy rationale")
-    _keys(policy["logits"], DTYPES, name="logit policies")
+    validate_text(policy["policy_id"], "policy_id")
+    validate_text(policy["rationale"], "policy rationale")
+    keys(policy["logits"], DTYPES, name="logit policies")
     for dtype, atol, rtol in (("float32", 0.001, 0.0001), ("bfloat16", 0.25, 0.02)):
-        _constants(policy["logits"][dtype], {"atol": atol, "rtol": rtol}, f"{dtype} logits")
+        constants(policy["logits"][dtype], {"atol": atol, "rtol": rtol}, f"{dtype} logits")
     if policy["required"] != [
         "finite",
         "final_logits_allclose",
@@ -473,7 +473,7 @@ def _validate_contract(contract, *, resolved=False):
         raise ValueError("required qualification gates must remain explicit")
     if policy["diagnostic_only"] != [*OPERATIONS[:-1], "populated_kv", "bf16_fp32_sensitivity"]:
         raise ValueError("hidden/KV/gate diagnostics cannot acquire invented acceptance bounds")
-    _constants(
+    constants(
         {
             key: policy[key]
             for key in ("near_ties", "live_gate", "live_decisions", "original_top1_rule")
@@ -486,7 +486,7 @@ def _validate_contract(contract, *, resolved=False):
         },
         "behavior policy",
     )
-    _constants(
+    constants(
         contract["official"],
         {
             "revision": OURO_REVISION,
@@ -504,11 +504,11 @@ def _validate_contract(contract, *, resolved=False):
 
 def load_contract(path):
     contract = read_json(path)
-    _validate_contract(contract)
+    validate_contract(contract)
     return contract
 
 
-def _fixture_stats(fixture, dtype, config, *, live=False):
+def fixture_stats(fixture, dtype, config, *, live=False):
     size = 4 if dtype == "float32" else 2
     capacity = len(fixture["prompt_token_ids"]) + 8
     loop_sum = 36 if live else sum(fixture["forced_exit_depths"])
@@ -543,7 +543,7 @@ def _resolve_cases(suite, contract, config):
             "prompt_token_ids": prompt,
         }
     order = []
-    policy_hash = _digest(contract["comparison_policy"])
+    policy_hash = digest(contract["comparison_policy"])
 
     def add(family, dtype, implementation, backend, schedule, ids, group_id):
         legacy = family == "original"
@@ -595,7 +595,7 @@ def _resolve_cases(suite, contract, config):
                 "max_steps": sum(
                     len(row["prompt_token_ids"]) + (4 if legacy else 49) for row in histories
                 ),
-                "fixture_sha256": _digest(histories),
+                "fixture_sha256": digest(histories),
                 "policy_sha256": policy_hash,
             }
         )
@@ -660,7 +660,7 @@ def _comparisons(order, fixtures, contract, config):
             records, predictions = 4, 4 * len(fixture["prompt_token_ids"])
             upper = False
         else:
-            stats = _fixture_stats(
+            stats = fixture_stats(
                 fixture, candidate["dtype"], config, live=candidate["family"] == "live_gate"
             )
             records = (
@@ -682,7 +682,7 @@ def _comparisons(order, fixtures, contract, config):
                 "expected_prediction_points": predictions,
                 "expected_boundary_records": records,
                 "counts_are_upper_bounds": upper,
-                "policy_sha256": _digest(contract["comparison_policy"]),
+                "policy_sha256": digest(contract["comparison_policy"]),
             }
         )
 
@@ -728,7 +728,7 @@ def _comparisons(order, fixtures, contract, config):
 def _resource_estimates(suite, contract, config, order, comparisons, fixtures):
     stats = {
         dtype: {
-            key: _fixture_stats(fixture, dtype, config)
+            key: fixture_stats(fixture, dtype, config)
             for key, fixture in fixtures.items()
             if "continuation_input_ids" in fixture
         }
@@ -741,7 +741,7 @@ def _resource_estimates(suite, contract, config, order, comparisons, fixtures):
         size = 4 if row["dtype"] == "float32" else 2
         if row["implementation"] == "oracle":
             fixture_id = row["fixture_ids"][0]
-            item = _fixture_stats(
+            item = fixture_stats(
                 fixtures[fixture_id], row["dtype"], config, live=row["family"] == "live_gate"
             )
             payload = item["reference_spool_payload_bytes"]
@@ -866,7 +866,7 @@ def _resource_estimates(suite, contract, config, order, comparisons, fixtures):
 def _official_files(path):
     records = []
     for name, expected in sorted(OFFICIAL_HASHES.items()):
-        record = _file_record(path / name, relative_to=path)
+        record = make_file_record(path / name, relative_to=path)
         if record["sha256"] != expected:
             raise ValueError(f"reviewed official source hash mismatch: {name}")
         records.append(record)
@@ -896,29 +896,29 @@ def dependency_manifest():
     }
 
 
-def _validate_dependencies(dependencies):
-    _keys(
+def validate_dependencies(dependencies):
+    keys(
         dependencies,
         ("python", "torch", "torch_cuda_build", "distributions", "official"),
         name="dependencies",
     )
     for key in ("python", "torch"):
-        _text(dependencies[key], key)
+        validate_text(dependencies[key], key)
     if dependencies["torch_cuda_build"] is not None:
-        _text(dependencies["torch_cuda_build"], "torch CUDA build")
+        validate_text(dependencies["torch_cuda_build"], "torch CUDA build")
     distributions = dependencies["distributions"]
     if not isinstance(distributions, list) or not distributions:
         raise ValueError("dependencies require installed distribution metadata")
     for record in distributions:
-        _keys(record, ("name", "version"), name="distribution")
-        _text(record["name"], "distribution name")
-        _text(record["version"], "distribution version")
+        keys(record, ("name", "version"), name="distribution")
+        validate_text(record["name"], "distribution name")
+        validate_text(record["version"], "distribution version")
     if distributions != sorted(
         distributions, key=lambda item: (item["name"].lower(), item["version"], item["name"])
     ):
         raise ValueError("dependency distributions must be sorted")
     official = dependencies["official"]
-    _keys(
+    keys(
         official,
         (
             "model_id",
@@ -935,7 +935,7 @@ def _validate_dependencies(dependencies):
         ),
         name="official dependencies",
     )
-    _constants(
+    constants(
         {
             key: official[key]
             for key in (
@@ -965,14 +965,14 @@ def _validate_dependencies(dependencies):
         raise ValueError("official dependency provenance differs from reviewed source hashes")
     if type(official["optional_kernels_present"]) is not bool:
         raise ValueError("optional kernels presence must be a boolean")
-    _keys(
+    keys(
         official["dependencies"],
         ("transformers", "torch", "huggingface-hub", "tokenizers", "safetensors", "kernels"),
         name="official package versions",
     )
     for version in official["dependencies"].values():
         if version is not None:
-            _text(version, "official package version")
+            validate_text(version, "official package version")
 
 
 def _verify_original_sources(suite):
@@ -1033,9 +1033,9 @@ def make_plan(suite_path, contract_path, model_path, official_code_path=None, *,
         if existing_ids is not None and existing_ids != gpu_ids:
             raise ValueError("explicit GPU IDs conflict with the contract")
         contract["controls"]["gpu_ids"] = gpu_ids
-    _validate_contract(contract, resolved=True)
+    validate_contract(contract, resolved=True)
     config = _config(read_json(model_path / "config.json"))
-    files = _model_files(model_path)
+    files = model_files(model_path)
     tokenizer = next(record for record in files if record["path"] == "tokenizer.json")
     if any(
         tokenizer[key] != suite["provenance"]["tokenizer"][key] for key in ("sha256", "size_bytes")
@@ -1053,28 +1053,31 @@ def make_plan(suite_path, contract_path, model_path, official_code_path=None, *,
         "model_config": config.to_dict(),
         "official_code_path": str(official_code_path),
         "official_files": _official_files(official_code_path),
-        "source": _source_manifest(),
+        "source": source_manifest(),
         "dependencies": dependency_manifest(),
         "model_files": files,
-        "inputs": {"suite": _file_record(suite_path), "contract": _file_record(contract_path)},
+        "inputs": {
+            "suite": make_file_record(suite_path),
+            "contract": make_file_record(contract_path),
+        },
         "execution_order": order,
         "comparison_order": comparisons,
         "resource_estimates": _resource_estimates(
             suite, contract, config, order, comparisons, fixtures
         ),
     }
-    plan["plan_sha256"] = _digest(plan)
+    plan["plan_sha256"] = digest(plan)
     return plan
 
 
-def _file_records(records, name):
+def file_records(records, name):
     if not isinstance(records, list) or not records:
         raise ValueError(f"{name} must be a nonempty file record list")
     paths = []
     for record in records:
-        _keys(record, ("path", "size_bytes", "sha256"), name=name)
-        _text(record["path"], "file path")
-        _integer(record["size_bytes"], "file size")
+        keys(record, ("path", "size_bytes", "sha256"), name=name)
+        validate_text(record["path"], "file path")
+        integer(record["size_bytes"], "file size")
         digest = record["sha256"]
         if (
             not isinstance(digest, str)
@@ -1089,7 +1092,7 @@ def _file_records(records, name):
 
 def validate_plan_integrity(plan):
     """Validate every resolved case/count offline, without filesystem/device reads."""
-    _keys(
+    keys(
         plan,
         (
             "schema_version",
@@ -1111,32 +1114,32 @@ def validate_plan_integrity(plan):
         ),
         name="validation plan",
     )
-    _version(plan, "validation_plan")
-    if plan["plan_sha256"] != _digest(
+    validate_version(plan, "validation_plan")
+    if plan["plan_sha256"] != digest(
         {key: value for key, value in plan.items() if key != "plan_sha256"}
     ):
         raise ValueError("validation plan content hash mismatch")
-    _validate_suite(plan["suite"])
-    _validate_contract(plan["contract"], resolved=True)
-    _validate_dependencies(plan["dependencies"])
+    validate_suite(plan["suite"])
+    validate_contract(plan["contract"], resolved=True)
+    validate_dependencies(plan["dependencies"])
     config = _config(plan["model_config"])
     for key in ("model_path", "official_code_path"):
-        _text(plan[key], key)
+        validate_text(plan[key], key)
         if not Path(plan[key]).is_absolute():
             raise ValueError(f"{key} must be absolute")
-    _file_records(plan["model_files"], "model files")
-    _file_records(plan["official_files"], "official files")
+    file_records(plan["model_files"], "model files")
+    file_records(plan["official_files"], "official files")
     if {row["path"]: row["sha256"] for row in plan["official_files"]} != OFFICIAL_HASHES:
         raise ValueError("plan official code differs from reviewed source hashes")
-    _keys(plan["inputs"], ("suite", "contract"), name="inputs")
-    _file_records(list(plan["inputs"].values()), "input files")
+    keys(plan["inputs"], ("suite", "contract"), name="inputs")
+    file_records(list(plan["inputs"].values()), "input files")
     source = plan["source"]
-    _keys(source, ("root", "commit", "status", "files"), name="source")
-    _text(source["root"], "source root")
-    _text(source["commit"], "source commit")
+    keys(source, ("root", "commit", "status", "files"), name="source")
+    validate_text(source["root"], "source root")
+    validate_text(source["commit"], "source commit")
     if not isinstance(source["status"], str):
         raise ValueError("source status must be a string")
-    _file_records(source["files"], "source files")
+    file_records(source["files"], "source files")
     order, fixtures = _resolve_cases(plan["suite"], plan["contract"], config)
     comparisons = _comparisons(order, fixtures, plan["contract"], config)
     expected = {

@@ -7,11 +7,13 @@ from pathlib import Path
 import pytest
 import torch
 
-from vllm_lt.benchmarks import runner
-from vllm_lt.benchmarks.schema import read_json
+from benchmarks import runner
 from vllm_lt.engine.llm_engine import LLMEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
 from vllm_lt.request import Stage
+from vllm_lt.validation.common import (
+    read_json,
+)
 
 FIXTURES = Path(__file__).resolve().parents[1] / "benchmarks" / "fixtures"
 
@@ -155,7 +157,7 @@ def test_execute_keeps_partial_outputs_and_releases_requests_on_failure(
 
 def test_unavailable_scheduler_rejected_before_device_query(monkeypatch, cuda_boundaries):
     monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
-    monkeypatch.setattr(runner.shutil, "which", lambda _: None)
+    monkeypatch.setattr("vllm_lt.validation.runtime.shutil.which", lambda _: None)
     with pytest.raises(ValueError, match="scheduler"):
         runner.environment()
 

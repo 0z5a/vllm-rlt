@@ -7,8 +7,9 @@ from pathlib import Path
 import pytest
 import torch
 
-from vllm_lt.benchmarks import schema
+from benchmarks import schema
 from vllm_lt.models.config import OuroConfig
+from vllm_lt.validation import common
 
 FIXTURES = Path(__file__).resolve().parents[1] / "benchmarks" / "fixtures"
 
@@ -24,28 +25,28 @@ def prepared(tmp_path, monkeypatch):
     source_file.write_text("# frozen source\n")
     monkeypatch.setattr(
         schema,
-        "_source_manifest",
+        "source_manifest",
         lambda: {
             "root": str(tmp_path),
             "commit": "a" * 40,
             "status": "",
-            "files": [schema._file_record(source_file, relative_to=tmp_path)],
+            "files": [common.make_file_record(source_file, relative_to=tmp_path)],
         },
     )
     model_path = tmp_path / "model"
     model_path.mkdir()
-    schema.write_json(model_path / "config.json", OuroConfig().to_dict())
+    common.write_json(model_path / "config.json", OuroConfig().to_dict())
     (model_path / "tokenizer.json").write_text('{"test": "tokenizer content only"}\n')
     (model_path / "tokenizer_config.json").write_text("{}\n")
     # Probe hashes bytes; it must never attempt to load this file as model tensors.
     (model_path / "model.safetensors").write_bytes(b"not real model weights")
     suite = schema.load_suite(FIXTURES / "ouro-m1.json")
-    tokenizer = schema._file_record(model_path / "tokenizer.json")
+    tokenizer = common.make_file_record(model_path / "tokenizer.json")
     for name in ("size_bytes", "sha256"):
         suite["provenance"]["tokenizer"][name] = tokenizer[name]
     suite_path, contract_path = tmp_path / "suite.json", tmp_path / "contract.json"
-    schema.write_json(suite_path, suite)
-    schema.write_json(contract_path, schema.read_json(FIXTURES / "ouro-m1-contract.json"))
+    common.write_json(suite_path, suite)
+    common.write_json(contract_path, common.read_json(FIXTURES / "ouro-m1-contract.json"))
     return suite_path, contract_path, model_path, source_file
 
 
@@ -100,9 +101,9 @@ def test_exact_plan_budget_pair_order_and_capacity_without_cuda(prepared):
 @pytest.mark.parametrize("value", [True, -1, 1.5, 49152])
 def test_invalid_token_ids_rejected(prepared, value):
     suite_path = prepared[0]
-    suite = schema.read_json(suite_path)
+    suite = common.read_json(suite_path)
     suite["workloads"][0]["requests"][0]["prompt_token_ids"][0] = value
-    schema.write_json(suite_path, suite)
+    common.write_json(suite_path, suite)
     with pytest.raises(ValueError, match="integer|vocabulary"):
         schema.load_suite(suite_path)
 
@@ -122,7 +123,7 @@ def test_invalid_token_ids_rejected(prepared, value):
 )
 def test_invalid_fixtures_rejected(prepared, corruption, match):
     suite_path = prepared[0]
-    suite = schema.read_json(suite_path)
+    suite = common.read_json(suite_path)
     first_request = suite["workloads"][0]["requests"][0]
     trace = suite["workloads"][3]["replay"]["request-0"]
     if corruption == "unknown":
@@ -141,7 +142,7 @@ def test_invalid_fixtures_rejected(prepared, corruption, match):
         suite["workloads_sha256"] = "0" * 64
     elif corruption == "workload_type":
         suite["workloads"][0] = None
-    schema.write_json(suite_path, suite)
+    common.write_json(suite_path, suite)
     with pytest.raises(ValueError, match=match):
         schema.load_suite(suite_path)
 
@@ -151,7 +152,7 @@ def test_invalid_fixtures_rejected(prepared, corruption, match):
 )
 def test_incompatible_contract_rejected(prepared, corruption):
     contract_path = prepared[1]
-    contract = schema.read_json(contract_path)
+    contract = common.read_json(contract_path)
     if corruption == "unknown":
         contract["arithmetic"]["extra_flag"] = True
     elif corruption == "bool_integer":
@@ -162,7 +163,7 @@ def test_incompatible_contract_rejected(prepared, corruption):
         contract["engine"]["sampling"]["max_tokens"] = 64
     elif corruption == "budget":
         contract["limits"]["total_timeout_s"] = 7201
-    schema.write_json(contract_path, contract)
+    common.write_json(contract_path, contract)
     with pytest.raises(ValueError):
         schema.make_plan(*prepared[:3])
 
@@ -174,7 +175,7 @@ def test_nonfinite_and_duplicate_json_rejected(tmp_path, content):
     path = tmp_path / "bad.json"
     path.write_text(content)
     with pytest.raises(ValueError, match="nonfinite|duplicate"):
-        schema.read_json(path)
+        common.read_json(path)
 
 
 @pytest.mark.parametrize("changed", ["source", "weight", "contract", "plan"])
@@ -185,9 +186,9 @@ def test_plan_verification_detects_changes(prepared, changed):
     elif changed == "weight":
         (prepared[2] / "model.safetensors").write_bytes(b"changed weights")
     elif changed == "contract":
-        contract = schema.read_json(prepared[1])
+        contract = common.read_json(prepared[1])
         contract["hypothesis"] = "A changed hypothesis."
-        schema.write_json(prepared[1], contract)
+        common.write_json(prepared[1], contract)
     else:
         plan["execution_order"][0]["mode"] = "no_refill"
     with pytest.raises(ValueError, match="changed|hash mismatch"):
@@ -206,12 +207,12 @@ def test_offline_integrity_requires_no_source_or_weights(prepared, monkeypatch):
 
 def test_config_capacity_and_tokenizer_mismatch_rejected(prepared):
     config_path = prepared[2] / "config.json"
-    config = schema.read_json(config_path)
+    config = common.read_json(config_path)
     config["max_position_embeddings"] = 500
-    schema.write_json(config_path, config)
+    common.write_json(config_path, config)
     with pytest.raises(ValueError, match="context or KV capacity"):
         schema.make_plan(*prepared[:3])
-    schema.write_json(config_path, OuroConfig().to_dict())
+    common.write_json(config_path, OuroConfig().to_dict())
     (prepared[2] / "tokenizer.json").write_text("{}\n")
     with pytest.raises(ValueError, match="tokenizer does not match"):
         schema.make_plan(*prepared[:3])

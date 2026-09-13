@@ -4,8 +4,8 @@ from collections import Counter
 import pytest
 import torch
 
+from benchmarks.replay import ReplayEngine
 from vllm_lt import CacheConfig, SamplingParams, SchedulerConfig
-from vllm_lt.benchmarks.replay import ReplayEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
 from vllm_lt.request import Stage
 

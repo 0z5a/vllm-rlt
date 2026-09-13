@@ -18,8 +18,16 @@ import torch
 
 from vllm_lt.models import OuroConfig, OuroForCausalLM
 from vllm_lt.validation import report, runner
+from vllm_lt.validation.common import (
+    digest,
+    read_json,
+    write_json,
+)
 from vllm_lt.validation.diagnostics import DiagnosticDump, SpoolBudget, compare
-from vllm_lt.validation.schema import _comparisons, _digest, _resolve_cases, read_json, write_json
+from vllm_lt.validation.schema import (
+    _comparisons,
+    _resolve_cases,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -32,7 +40,7 @@ def cpu_only(monkeypatch):
     monkeypatch.setattr(OuroForCausalLM, "from_pretrained", forbidden)
 
     def validate_tiny_plan(plan):
-        assert plan["plan_sha256"] == _digest(
+        assert plan["plan_sha256"] == digest(
             {key: value for key, value in plan.items() if key != "plan_sha256"}
         )
 
@@ -96,7 +104,7 @@ def _tiny_plan(dtype, *, family="main", preselected=False):
         ],
         "dependencies": {"python": "cpu-test", "torch_cuda_build": None, "official": official},
     }
-    plan["plan_sha256"] = _digest(plan)
+    plan["plan_sha256"] = digest(plan)
     return plan, config
 
 
@@ -109,7 +117,7 @@ def _generate(
         extra = copy.deepcopy(plan["comparison_order"][0])
         extra["comparison_id"] += "-second-reference-view"
         plan["comparison_order"].append(extra)
-        plan["plan_sha256"] = _digest(
+        plan["plan_sha256"] = digest(
             {key: value for key, value in plan.items() if key != "plan_sha256"}
         )
     torch.manual_seed(41)

@@ -47,7 +47,7 @@ class NonfiniteComparisonError(ValueError):
 
 def _integer(value, name, *, minimum=0):
     if type(value) is not int or value < minimum:
-        raise ValueError(f"{name} must be an integer >= {minimum}")
+        raise ValueError(f"{name} must be an _integer >= {minimum}")
     return value
 
 
