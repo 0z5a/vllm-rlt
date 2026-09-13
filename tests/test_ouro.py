@@ -111,7 +111,7 @@ def test_native_safetensors_roundtrip(tmp_path, model, sharded):
         )
     else:
         save_file(weights, tmp_path / "model.safetensors")
-    loaded = OuroForCausalLM.from_pretrained(tmp_path)
+    loaded = OuroForCausalLM.from_pretrained(tmp_path, dtype=torch.float32)
     assert not loaded.training
     assert not any(
         parameter.is_meta or parameter.requires_grad for parameter in loaded.parameters()
@@ -160,7 +160,10 @@ def test_official_repo_is_pinned_and_remote_code_is_not_requested(tmp_path, mode
         return str(tmp_path)
 
     monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
-    OuroForCausalLM.from_pretrained()
+    loaded = OuroForCausalLM.from_pretrained()
+    for name, parameter in loaded.named_parameters():
+        torch.testing.assert_close(parameter, model.state_dict()[name].bfloat16(), atol=0, rtol=0)
+    assert loaded.model.rotary_emb.inv_freq.dtype == torch.float32
     assert called["revision"] == OURO_REVISION
     assert called["repo_id"] == "ByteDance/Ouro-1.4B"
     assert not any(".py" in pattern for pattern in called["allow_patterns"])

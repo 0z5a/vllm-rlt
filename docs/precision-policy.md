@@ -35,4 +35,4 @@ Passing FP32 or matching a few generated tokens does not qualify BF16 generally.
 Match dtype, hardware, workload and timed work across performance comparisons.
 Report preparation separately, retain raw observations and variability, and keep
 profiling outside throughput timing. Frozen milestone-specific budgets and
-thresholds belong to their [historical records](benchmarks.md).
+thresholds belong to their [historical records](https://github.com/hsliuustc0106/vllm-lt/releases/tag/implementation-notes-archive-20260913).

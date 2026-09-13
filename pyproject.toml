@@ -15,26 +15,22 @@ dependencies = ["torch>=2.5", "safetensors>=0.4.3", "huggingface-hub>=0.25"]
 text = ["transformers>=4.54"]
 triton = ["triton>=3.1; platform_system == 'Linux'"]
 dev = ["pytest>=8", "ruff>=0.9"]
-validation = ["transformers==4.55.0", "huggingface-hub==0.36.2", "tokenizers==0.21.4"]
 
 [project.scripts]
 vllm-lt = "vllm_lt.entrypoints.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["vllm_lt*"]
-exclude = ["vllm_lt.benchmarks*"]
 
 [tool.setuptools]
 license-files = ["LICENSE", "NOTICE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 markers = ["gpu: requires a scheduler-reserved CUDA device"]
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["vllm_lt/validation/reference_code/*_ouro.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
