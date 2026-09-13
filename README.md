@@ -12,9 +12,10 @@ paged-attention backend. CPU execution provides a reference backend.
 
 It is a synchronous, single-device implementation. The paper's asynchronous
 lookahead scheduling, CUDA graphs, distributed execution, prefix sharing,
-preemption, and an HTTP server are not implemented. No throughput or task-accuracy
-claims are made. The authors' CDB code and trained lookahead gate were not
-released at the revision inspected; see [paper notes](https://github.com/hsliuustc0106/vllm-lt/blob/f0dfe5f71b83965a86fbda9cece3cb94dd0389ec/docs/paper-notes.md).
+preemption, and an HTTP server are not implemented. Performance measurements cover
+the [frozen FP32 M1 workloads](https://github.com/hsliuustc0106/vllm-lt/blob/004b2e8133189656b6d08ebea0e1c43578261b52/docs/benchmarks/m1-20260910.md); adaptive-depth
+task accuracy has not been evaluated. The authors' CDB code and trained lookahead
+gate were not released at the revision inspected; see [paper notes](https://github.com/hsliuustc0106/vllm-lt/blob/f0dfe5f71b83965a86fbda9cece3cb94dd0389ec/docs/paper-notes.md).
 
 FP32 real-checkpoint validation passes against an independent dense oracle.
 BF16 generated identical tokens across the tested scheduling modes, but its
@@ -159,8 +160,9 @@ independence. [Validation notes](https://github.com/hsliuustc0106/vllm-lt/blob/f
 and checks performed. These correctness checks do not establish serving performance
 or adaptive-depth language-task accuracy.
 
-The [M1 benchmark guide](docs/benchmarks.md) describes the frozen FP32 workloads,
-replay scheduling A/B comparison, reserved execution, and offline report commands.
+See the [M1 benchmark guide](docs/benchmarks.md) for execution guidance and the
+[archived baseline report](https://github.com/hsliuustc0106/vllm-lt/blob/004b2e8133189656b6d08ebea0e1c43578261b52/docs/benchmarks/m1-20260910.md)
+for measured workloads, timing definitions, results, and downloadable evidence.
 
 The [Q1 validation guide](docs/q1-validation.md) describes the independent
 incremental LAST-EXITED oracle, pinned official reference, FP32/BF16 numerical
