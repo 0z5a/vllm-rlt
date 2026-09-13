@@ -7,7 +7,7 @@ Historical results retain their original dtype, bounds and limitations.
 ## Inference precision
 
 Follow the pinned Ouro release, distinguishing storage/output dtype from
-accumulation precision. The [source notes](paper-notes.md#original-ouro-paper-and-precision-guidance)
+accumulation precision. The [source notes](https://github.com/hsliuustc0106/vllm-lt/blob/0f091a985e13a207f4fa127a08d51a625d130ef5/docs/paper-notes.md#original-ouro-paper-and-precision-guidance)
 identify author guidance and project differences.
 
 | Operation | Precision requirement |
