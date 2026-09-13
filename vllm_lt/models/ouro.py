@@ -226,7 +226,7 @@ class OuroForCausalLM(nn.Module):
         *,
         revision: str | None = None,
         device: torch.device | str = "cpu",
-        dtype: torch.dtype = torch.float32,
+        dtype: torch.dtype = torch.bfloat16,
     ) -> "OuroForCausalLM":
         """Stream strictly checked safetensors into a meta model; never execute Hub code.
 

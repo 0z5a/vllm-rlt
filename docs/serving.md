@@ -18,7 +18,7 @@ gpu run --gpu-ids <available-id> --timeout 30m --note "Ouro HTTP serving" -- \
   --num-blocks 512 --max-num-seqs 8
 ```
 
-BF16 weights, ordinary activations and KV are this frontend's primary target,
+BF16 weights, ordinary activations and KV are the default for serving and offline inference,
 consistent with the precision policy proposed in [PR #12](https://github.com/hsliuustc0106/vllm-lt/pull/12).
 That policy is pending and is not yet part of this branch.
 The current model uses FP32 RMSNorm/RoPE intermediates and gate/sampling
