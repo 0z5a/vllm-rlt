@@ -164,13 +164,11 @@ independence. [Validation notes](https://github.com/hsliuustc0106/vllm-lt/blob/f
 and checks performed. These correctness checks do not establish serving performance
 or adaptive-depth language-task accuracy.
 
-See the [M1 benchmark guide](docs/benchmarks.md) for execution guidance and the
-[archived baseline report](https://github.com/hsliuustc0106/vllm-lt/blob/004b2e8133189656b6d08ebea0e1c43578261b52/docs/benchmarks/m1-20260910.md)
-for measured workloads, timing definitions, results, and downloadable evidence.
-
-The [Q1 validation guide](docs/q1-validation.md) describes the independent
-incremental LAST-EXITED oracle, pinned official reference, FP32/BF16 numerical
-comparisons, bounded diagnostics, and separate qualification decision.
+Historical M1 workloads, timing definitions, results, and downloadable evidence
+are available in the
+[archived baseline report](https://github.com/hsliuustc0106/vllm-lt/blob/004b2e8133189656b6d08ebea0e1c43578261b52/docs/benchmarks/m1-20260910.md).
+Further experiment reports are preserved in the
+[release archive](https://github.com/hsliuustc0106/vllm-lt/releases/tag/implementation-notes-archive-20260913).
 
 ## License
 
