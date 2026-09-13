@@ -5,28 +5,17 @@ with continuous batching at **individual recurrent-loop boundaries** and a
 depth-aware paged KV cache. Based on
 [Continuous Depth Batching (CDB)](https://arxiv.org/abs/2608.09444).
 
-This first implementation supports native checkpoint loading, full-depth
+The engine supports native checkpoint loading, full-depth
 chunked prefill, adaptive decode, refill/no-refill scheduling, greedy and
 seeded top-k/top-p sampling, streaming engine steps, cancellation, and a Triton
 paged-attention backend. CPU execution provides a reference backend.
 
 It is a synchronous, single-device implementation. The paper's asynchronous
 lookahead scheduling, CUDA graphs, distributed execution, prefix sharing,
-preemption, and an HTTP server are not implemented. Performance measurements cover
-the [frozen FP32 M1 workloads](https://github.com/hsliuustc0106/vllm-lt/blob/004b2e8133189656b6d08ebea0e1c43578261b52/docs/benchmarks/m1-20260910.md); adaptive-depth
-task accuracy has not been evaluated. The authors' CDB code and trained lookahead
-gate were not released at the revision inspected; see [paper notes](https://github.com/hsliuustc0106/vllm-lt/blob/f0dfe5f71b83965a86fbda9cece3cb94dd0389ec/docs/paper-notes.md).
+and preemption are not implemented.
 
 BF16 is the default for checkpoint loading and offline inference.
 Use `--dtype float32` or `dtype=torch.float32` for FP32 diagnostics.
-FP32 real-checkpoint validation passes against an independent dense oracle.
-BF16 generated identical tokens across the tested scheduling modes, but its
-accumulated logit differences exceeded the declared numerical tolerances. Use
-FP32 for the validated numerical baseline; see [validation](https://github.com/hsliuustc0106/vllm-lt/blob/f0dfe5f71b83965a86fbda9cece3cb94dd0389ec/docs/validation.md).
-
-The [roadmap](https://github.com/hsliuustc0106/vllm-lt/issues/2) prioritizes faster Ouro inference: establish a
-performance baseline and qualify BF16, then use profiling to guide runtime,
-CUDA-graph, attention, and KV improvements.
 
 ## Install and run
 
@@ -50,7 +39,7 @@ Choose an available exact device ID from its status output:
 gpu status
 gpu run --gpu-ids <available-id> --timeout 20m --note "vllm-lt Ouro inference" -- \
   python -m vllm_lt.entrypoints.cli \
-  --model ByteDance/Ouro-1.4B --device cuda --dtype bfloat16 \
+  --model ByteDance/Ouro-1.4B --device cuda \
   --attention-backend triton --prompt 'The capital of France is' \
   --prompt '2 + 2 =' --max-tokens 32 --exit-threshold 0.7
 ```
@@ -82,10 +71,11 @@ for output in outputs:
     print(output.token_ids, output.exit_depths, output.finish_reason)
 ```
 
-Use `LLM("ByteDance/Ouro-1.4B", device="cuda", dtype=torch.bfloat16,
+Use `LLM("ByteDance/Ouro-1.4B", device="cuda",
 attention_backend="triton")` inside a reservation for pretrained text prompts.
 When passed an existing model object, `LLM` preserves its dtype. Engine KV storage
 uses the model's dtype.
+
 The facade accepts a list of text prompts or a list of token-ID lists, and one
 `SamplingParams` object or one per prompt. Outputs preserve input order.
 
@@ -107,45 +97,19 @@ flowchart LR
     Cache --> Attention[Torch or Triton paged attention]
 ```
 
-The scheduler owns request state, loop counts, and four work queues. The model
-runner executes each stage; model weights are shared across recurrence depths.
-Refill mode lets a token start its first loop alongside another request's deeper
-loop. No-refill mode drains a recurrent cohort before running its coda and
-starting another cohort. Queue and token budgets apply at stage boundaries.
+Refill interleaves requests at different loop depths; no-refill drains a recurrent
+cohort before starting the next. Prompt chunks run all loops, so the first
+`exit_depths` entry records full prefill depth. Decode uses cumulative gate
+probability, with a minimum of two loops; `exit_threshold=1.0` disables early exit.
 
-Ouro's exit gate emits a conditional probability at each loop. The engine exits
-when `1 - product(1 - sigmoid(gate_i)) >= exit_threshold`, subject to the loop
-bounds. `exit_threshold=1.0` explicitly disables early exit; the default decode
-minimum is two loops. A token's RoPE position stays fixed through all its loops.
+KV pages are separate for each request and depth. Early exit copies each layer's
+final KV into skipped depths. Admission reserves
+`ceil((prompt_tokens + max_tokens - 1) / block_size) * model_loops` pages per request.
+Oversized requests are rejected; temporary pressure queues requests until pages
+are released. The default BF16 Ouro cache uses 768 MiB (256 pages, 16 tokens).
+See [engine design](docs/design.md) for ownership, scheduling, and KV invariants.
 
-Prompt chunks always run all model loops. The final prompt hidden state goes
-directly to coda to predict the first output token. Therefore the first entry in
-`exit_depths` is the full prefill depth; subsequent entries describe adaptive
-decode. This prefill policy is an explicit implementation choice, not a claim to
-reproduce every detail of the paper's experiments.
-
-KV pages are allocated separately for each request and loop depth. On early
-exit, every layer's final KV is copied into skipped deeper depths, implementing
-the paper's **last-exited** semantics. A later token can attend at greater depth
-without encountering unwritten entries. Single-slot shared KV is deliberately
-unsupported because it changes Ouro's attention behavior.
-
-`num_blocks` counts physical pages **across all depths**; each page stores all
-physical transformer layers. Admission reserves
-`ceil((prompt_tokens + max_tokens - 1) / block_size) * model_loops` pages per
-request. Requests too large for the pool are rejected; temporary pressure queues
-requests until pages are released. This guarantees room to finish admitted work,
-at the cost of lower utilization than incremental allocation with preemption.
-KV bytes are `2 * num_blocks * layers * block_size * kv_heads * head_dim * dtype_bytes`.
-With the defaults, Ouro uses 768 MiB of KV storage in BF16 (256 pages, 16 tokens).
-
-The Triton kernel uses an independent page table and causal length for each row,
-GQA head mapping, and FP32 online softmax. It supports head dimensions up to 256;
-selecting it on CPU raises an error. Model configuration validation rejects
-unsupported sliding attention, RoPE scaling, tied embeddings, and other unknown
-architectural fields. See [design](docs/design.md) for ownership and invariants.
-
-## Validation
+## Tests
 
 ```bash
 OMP_NUM_THREADS=1 python -m pytest -q
@@ -157,18 +121,14 @@ gpu run --gpu-ids <available-id> --timeout 10m --note "vllm-lt kernel tests" -- 
   python -m pytest -q tests/test_attention.py --run-gpu
 ```
 
-Tests cover dense-vs-paged model execution, GQA, packed causal prefill, varying
-depths, cache holes, early-exit propagation, fragmented pages, bounded admission,
-EOS/cancellation, refill/no-refill equivalence, checkpoint validation, and sampling
-independence. [Validation notes](https://github.com/hsliuustc0106/vllm-lt/blob/f0dfe5f71b83965a86fbda9cece3cb94dd0389ec/docs/validation.md) record the actual environment
-and checks performed. These correctness checks do not establish serving performance
-or adaptive-depth language-task accuracy.
+Core tests cover model numerics against a dense reference, attention, KV isolation
+and reuse, scheduling, cancellation, checkpoint loading, and sampling.
+The one-off M1/Q1 harnesses and their tests have been removed.
 
-Historical M1 workloads, timing definitions, results, and downloadable evidence
-are available in the
-[archived baseline report](https://github.com/hsliuustc0106/vllm-lt/blob/004b2e8133189656b6d08ebea0e1c43578261b52/docs/benchmarks/m1-20260910.md).
-Further experiment reports are preserved in the
-[release archive](https://github.com/hsliuustc0106/vllm-lt/releases/tag/implementation-notes-archive-20260913).
+Historical [numerical results](https://github.com/hsliuustc0106/vllm-lt/blob/f0dfe5f71b83965a86fbda9cece3cb94dd0389ec/docs/validation.md)
+include passing FP32 comparisons and BF16 logit-tolerance failures. Measurements
+and further reports are preserved in the
+[experiment archive](https://github.com/hsliuustc0106/vllm-lt/releases/tag/implementation-notes-archive-20260913).
 
 ## License
 
