@@ -197,3 +197,30 @@ def test_integer_limits_rejected_before_scheduling(invalid):
     ]:
         with pytest.raises(ValueError, match="positive integer"):
             constructor(**{name: invalid})
+
+
+@pytest.mark.parametrize("mode", ["refill", "no_refill"])
+def test_repeated_short_arrivals_cannot_starve_existing_decode(mode):
+    engine = LLMEngine(tiny_model(), scheduler_config=SchedulerConfig(max_num_seqs=2, mode=mode))
+    engine.add_request("long", [1, 2], SamplingParams(max_tokens=20, ignore_eos=True))
+    while not engine.step():
+        pass
+    # Leave the request at PRELUDE, also covering no_refill's fill phase.
+    recurrent_steps = 0
+    for index in range(12):
+        request_id = f"short-{index}"
+        engine.add_request(request_id, [3, 4], SamplingParams(max_tokens=1, ignore_eos=True))
+        for _ in range(100):
+            engine.step()
+            batch = engine.last_schedule
+            if batch.stage == Stage.RECURRENT and any(
+                item.request.request_id == "long" for item in batch.items
+            ):
+                recurrent_steps += 1
+            if request_id not in engine.scheduler.requests:
+                break
+        else:
+            pytest.fail("short arrival did not finish")
+    assert recurrent_steps >= 11
+    drain(engine)
+    assert engine.cache_manager.num_used_blocks == 0

@@ -32,6 +32,7 @@ class Scheduler:
         self.requests: dict[str, Request] = {}
         self.queues: dict[Stage, deque[str]] = {s: deque() for s in Stage}
         self._no_refill_phase = "fill"
+        self._prefill_since_recurrent = False
 
     def add_request(self, request: Request):
         if request.request_id in self.requests:
@@ -79,6 +80,10 @@ class Scheduler:
             active += 1
 
     def _take(self, stage: Stage) -> SchedulerOutput:
+        if stage == Stage.PREFILL:
+            self._prefill_since_recurrent = True
+        elif stage == Stage.RECURRENT:
+            self._prefill_since_recurrent = False
         budget = self.config.max_num_batched_tokens
         items = []
         queue = self.queues[stage]
@@ -106,6 +111,14 @@ class Scheduler:
                 if q[Stage.CODA]:
                     return self._take(Stage.CODA)
                 self._no_refill_phase = "fill"
+            # Continuous short arrivals must not indefinitely postpone an
+            # existing decode. Allow at most one prefill batch between loops.
+            if self._prefill_since_recurrent:
+                if q[Stage.PRELUDE]:
+                    return self._take(Stage.PRELUDE)
+                if q[Stage.RECURRENT]:
+                    self._no_refill_phase = "core"
+                    return self._take(Stage.RECURRENT)
             self._admit()
             if q[Stage.PREFILL]:
                 return self._take(Stage.PREFILL)
@@ -124,6 +137,8 @@ class Scheduler:
                 len(q[Stage.CODA]) >= self.config.min_coda_batch_size or not q[Stage.RECURRENT]
             ):
                 return self._take(Stage.CODA)
+            if self._prefill_since_recurrent and q[Stage.RECURRENT]:
+                return self._take(Stage.RECURRENT)
             self._admit()
             if q[Stage.PREFILL]:
                 return self._take(Stage.PREFILL)

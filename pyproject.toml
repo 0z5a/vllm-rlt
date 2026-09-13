@@ -13,11 +13,13 @@ dependencies = ["torch>=2.5", "safetensors>=0.4.3", "huggingface-hub>=0.25"]
 
 [project.optional-dependencies]
 text = ["transformers>=4.54"]
+serve = ["aiohttp>=3.11,<4", "transformers>=4.54"]
 triton = ["triton>=3.1; platform_system == 'Linux'"]
 dev = ["pytest>=8", "ruff>=0.9"]
 
 [project.scripts]
 vllm-lt = "vllm_lt.entrypoints.cli:main"
+vllm-lt-serve = "vllm_lt.entrypoints.serve:main"
 
 [tool.setuptools.packages.find]
 include = ["vllm_lt*"]
@@ -27,6 +29,7 @@ license-files = ["LICENSE", "NOTICE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = ["gpu: requires a scheduler-reserved CUDA device"]
 
 [tool.ruff]

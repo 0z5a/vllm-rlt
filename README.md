@@ -12,7 +12,8 @@ paged-attention backend. CPU execution provides a reference backend.
 
 It is a synchronous, single-device implementation. The paper's asynchronous
 lookahead scheduling, CUDA graphs, distributed execution, prefix sharing,
-and preemption are not implemented.
+and preemption are not implemented. A bounded OpenAI completions frontend is
+available; see the [serving guide](docs/serving.md).
 
 BF16 is the default for checkpoint loading and offline inference.
 Use `--dtype float32` or `dtype=torch.float32` for FP32 diagnostics.
@@ -131,6 +132,10 @@ Historical [numerical results](https://github.com/hsliuustc0106/vllm-lt/blob/f0d
 include passing FP32 comparisons and BF16 logit-tolerance failures. Measurements
 and further reports are preserved in the
 [experiment archive](https://github.com/hsliuustc0106/vllm-lt/releases/tag/implementation-notes-archive-20260913).
+
+For end-to-end accuracy, use the [GSM8K evaluation guide](docs/accuracy.md) to
+run the fixed 87-question regression case. Its measured official Transformers
+baseline is **59/87 (67.82%)**, matched by BF16 native inference.
 
 ## License
 
