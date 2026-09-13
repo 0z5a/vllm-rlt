@@ -38,6 +38,7 @@ the changed behavior or claims, and apply their checks proportionally.
 
 | Reference | Read when |
 | --- | --- |
+| [Test quality and review execution](references/test-quality-and-execution.md) | Production or test changes, executable validation, or repeat reviews. Covers regression evidence, source identity, simplification and revalidation. |
 | [Core and interface review](references/core-and-interface.md) | Core behavior or public API, CLI, configuration, outputs or UI changes. Covers why the change is necessary, Plan B, invariants and compatibility. |
 | [A/B evidence](references/ab-evidence.md) | Inference, numerics, memory, measurement logic or accuracy/performance claims are affected. Covers applicable BF16 checks and frozen experiment gates. |
 

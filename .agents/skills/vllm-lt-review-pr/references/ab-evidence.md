@@ -90,6 +90,16 @@ it does not make performance testing mandatory for otherwise unaffected PRs.
 
 ## Validate the evidence
 
+Verify that the intended implementation actually ran on the measured workload.
+Trace flags/defaults through dispatch to the executed path, using existing
+traces, counters, logs or targeted tests. Accepted arguments, successful output
+and capture/setup logs alone do not establish fast-path execution. Distinguish
+a correct fallback from evidence for the claimed optimization. Check warmup
+covers the measured shapes, batch sizes and execution modes; first-use compile,
+capture or allocation costs belong outside warm timing unless explicitly part
+of the declared experiment. Do not require new telemetry when existing evidence
+is sufficient.
+
 The standard accuracy and speed A/B tests both use BF16 weights, ordinary
 activations and KV. Check explicit configuration and actual parameter/cache
 tensor dtypes, not just a CLI default or declared metadata. Full-model FP32 is
