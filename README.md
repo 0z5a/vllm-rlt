@@ -22,7 +22,7 @@ is a diagnostic/reference configuration. The [precision policy](docs/precision-p
 separates BF16 storage/compute from accumulation precision and defines the
 requirements for new validation and benchmark work.
 
-The historical [Q1 run](docs/q1-20260911.md) passed its FP32 comparisons and
+The historical [Q1 run](docs/benchmarks/q1-20260911.md) passed its FP32 comparisons and
 failed its original BF16 contract; the reference discrepancy remains unresolved.
 Those results are retained while BF16 evaluation proceeds under an explicit
 mixed-precision contract. They do not establish BF16 quality or performance.

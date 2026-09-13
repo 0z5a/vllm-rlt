@@ -53,7 +53,7 @@ implementations inside a running Python process.
 
 For reproduction of the frozen 2026-09-11 comparison, use the prepared Q1
 environment and retain **FP32** on both sides. That experiment selected the
-passing FP32 contract from [Q1](q1-20260911.md). Its dtype selection and acceptance
+passing FP32 contract from [Q1](benchmarks/q1-20260911.md). Its dtype selection and acceptance
 gates remain historical; they do not require future M2 work to use FP32.
 
 | Worker order | Excluded work | Measured work |
