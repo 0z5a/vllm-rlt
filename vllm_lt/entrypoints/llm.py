@@ -17,7 +17,7 @@ class LLM:
         tokenizer=None,
         revision=None,
         device="cpu",
-        dtype=torch.float32,
+        dtype=torch.bfloat16,
         cache_config=None,
         scheduler_config=None,
         attention_backend="torch",

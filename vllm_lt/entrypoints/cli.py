@@ -19,7 +19,7 @@ def main():
         "--toy", action="store_true", help="Use a tiny RANDOM model and token ID prompts"
     )
     parser.add_argument("--device", default="cpu")
-    parser.add_argument("--dtype", choices=["float32", "float16", "bfloat16"], default="float32")
+    parser.add_argument("--dtype", choices=["float32", "float16", "bfloat16"], default="bfloat16")
     parser.add_argument("--attention-backend", choices=["torch", "triton"], default="torch")
     parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
     parser.add_argument("--max-tokens", type=int, default=16)
