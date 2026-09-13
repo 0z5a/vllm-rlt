@@ -10,7 +10,7 @@ historical records. This policy does not turn any previous failure into a pass.
 Use original Ouro guidance first: an explicit prescription in the paper, then
 the pinned checkpoint configuration and released inference code. When those
 sources leave accumulation unspecified, record the chosen backend behavior
-and validate it. The [source audit](paper-notes.md#original-ouro-paper-and-precision-guidance)
+and validate it. The [source audit](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/paper-notes.md#original-ouro-paper-and-precision-guidance)
 finds BF16 in the release configuration and explicit FP32 operations in the
 model code; the paper itself does not specify a per-kernel inference recipe.
 Project precision choices must be labeled separately from author guidance.
@@ -98,7 +98,7 @@ BF16 with it; full-model FP32 is an optional sensitivity control. First establis
 native/official fixed-depth accuracy with the original paper's GSM8K 3-shot CoT,
 strict-match, lm-eval-harness protocol. Freeze unspecified task/version/template
 and generation settings explicitly, as detailed in the
-[accuracy source notes](paper-notes.md#accuracy-evidence-and-the-original-evaluation-protocol).
+[accuracy source notes](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/paper-notes.md#accuracy-evidence-and-the-original-evaluation-protocol).
 The existing 4/64 FP32 screen is neither a BF16 accuracy pass nor a reproduction
 of the paper. External speed comparisons use matched BF16 execution and an
 explicit workload-equivalence

@@ -14,7 +14,7 @@ It is a synchronous, single-device implementation. The paper's asynchronous
 lookahead scheduling, CUDA graphs, distributed execution, prefix sharing,
 preemption, and an HTTP server are not implemented. No throughput or task-accuracy
 claims are made. The authors' CDB code and trained lookahead gate were not
-released at the revision inspected; see [paper notes](docs/paper-notes.md).
+released at the revision inspected; see [paper notes](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/paper-notes.md).
 
 BF16 is the primary GPU inference and performance target, with FP32
 accumulation/reductions in numerically sensitive operations. Full-model FP32
@@ -22,12 +22,12 @@ is a diagnostic/reference configuration. The [precision policy](docs/precision-p
 separates BF16 storage/compute from accumulation precision and defines the
 requirements for new validation and benchmark work.
 
-The historical [Q1 run](docs/q1-20260911.md) passed its FP32 comparisons and
+The historical [Q1 run](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/q1-20260911.md) passed its FP32 comparisons and
 failed its original BF16 contract; the reference discrepancy remains unresolved.
 Those results are retained while BF16 evaluation proceeds under an explicit
 mixed-precision contract. They do not establish BF16 quality or performance.
 
-The [roadmap](docs/roadmap.md) prioritizes faster Ouro inference.
+The [roadmap](https://github.com/hsliuustc0106/vllm-lt/issues/2) prioritizes faster Ouro inference.
 BF16 performance and numerical validation proceed together, with profiling
 guiding runtime, CUDA-graph, attention, and KV improvements.
 
@@ -164,7 +164,7 @@ gpu run --gpu-ids <available-id> --timeout 10m --note "vllm-lt kernel tests" -- 
 Tests cover dense-vs-paged model execution, GQA, packed causal prefill, varying
 depths, cache holes, early-exit propagation, fragmented pages, bounded admission,
 EOS/cancellation, refill/no-refill equivalence, checkpoint validation, and sampling
-independence. [Validation notes](docs/validation.md) record the actual environment
+independence. [Validation notes](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/validation.md) record the actual environment
 and checks performed. These correctness checks do not establish serving performance
 or adaptive-depth language-task accuracy.
 
@@ -177,7 +177,7 @@ The [Q1 validation guide](docs/q1-validation.md) describes the independent
 incremental LAST-EXITED oracle, pinned official reference, FP32/BF16 numerical
 comparisons, bounded diagnostics, and separate qualification decision.
 
-The [M3 inactive-row guide](docs/m3-inactive-rows.md) describes the private masked
+The [M3 inactive-row guide](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/m3-inactive-rows.md) describes the private masked
 KV/model boundary and compact-versus-padded correctness checks that precede CUDA
 graph work.
 
