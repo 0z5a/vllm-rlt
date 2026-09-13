@@ -135,6 +135,14 @@ For end-to-end accuracy, use the [GSM8K evaluation guide](docs/accuracy.md) to
 run the fixed 87-question regression case. Its measured official Transformers
 baseline is **59/87 (67.82%)**, matched by BF16 native inference.
 
+## Contributing with Codex
+
+Use [$vllm-lt-contribute](.agents/skills/vllm-lt-contribute/SKILL.md) to plan,
+implement and validate a contribution. Use
+[$vllm-lt-review-pr](.agents/skills/vllm-lt-review-pr/SKILL.md) for a standalone
+review or requested self-review. Both skills live in this repository and share
+the detailed review criteria.
+
 ## License
 
 Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). The native model adapts
