@@ -147,27 +147,6 @@ cleanup do not trigger silent fallback. Experiment adapters require successful
 setup. A process watchdog must bound blocked device calls; the setup deadline is
 checked between phases rather than interrupting a CUDA call at exactly 60 seconds.
 
-## Evidence and qualification
-
-The [milestone evidence record](benchmarks/m3-capture.md) contains the latest device attempt, lifecycle and live-gate checks, archive checksums, and an attempt log. Profiling time and artifact-budget failures keep the graph path unqualified. Historical results do not qualify the current source.
-
-The original numerical and persistent validation adapters explicitly retain their
-frozen 4/8-row and 8-row shapes. They do not qualify the expanded scheduler ladder.
-New experiments must freeze new source, shape coverage and budgets. Do not pool
-samples or relabel a historical fallback-only profile as replay evidence.
-
-A performance plan must prove intended dispatch coverage on CPU before GPU work,
-then confirm actual live-gate coverage in feasibility. Report compact/eager/graph
-comparisons, padding, bucket hits and fallback reasons, setup amortization, and
-arrival-to-token latency. Profiles need actual CUDA launch-to-kernel correlations;
-profile time is excluded from measured inference.
-
-Prefer one executor per resident model/cache. Replacement tests must separately
-freeze a post-close allocated/reserved-memory plateau criterion without dropping
-shared caches. Process-terminal zero memory alone does not prove a plateau.
-Two throughput samples show observed variability, not a confidence interval.
-CPU stand-ins verify transactions; only reserved-device runs verify CUDA replay.
-
 ## Benchmark tooling
 
 Graph benchmarks and numerical validation live in

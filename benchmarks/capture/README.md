@@ -34,6 +34,6 @@ Runtime regression tests retain the failure, fallback and pool-lifetime coverage
 
 Historical 101-execution plans and the owned-pool contract require their recorded
 source snapshots; v2 rejects them. Freeze a new plan for new experiments. See the
-[graph design](../../docs/m3-cuda-graphs.md) and [historical evidence archive](../../docs/benchmarks/m3-capture.md).
+[graph design](../../docs/m3-cuda-graphs.md) and [historical evidence archive](https://github.com/hsliuustc0106/vllm-lt/blob/dbde9121e3847ccfc9f9043ebc57a0bbffb26310/docs/benchmarks/m3-capture.md).
 
 Plans are trusted executable inputs: their interpreter, checkout roots and import paths control worker processes. Never accept plans from third parties. The digest proves self-consistency, not authenticity. Generate plans only from your own verified checkouts and environment. Local worker interrupts retain a manifest and cleanup evidence, then propagate to the caller.
