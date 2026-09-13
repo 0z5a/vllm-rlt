@@ -1,40 +1,17 @@
-"""Single-sequence Q2 adapter for unchanged, pinned official Ouro arithmetic.
+"""Single-sequence cached adapter for unchanged, pinned official Ouro arithmetic.
 
 Only the published cache's Transformers 4.55 interface is adapted. Sampling,
 completion synchronization and detailed cache inspection belong to the host
 driver. No checkpoint, remote code, device discovery or alternate kernels load.
 """
 
-import hashlib
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
-from pathlib import Path
 from typing import Any
 
 import torch
 
-from .official import _initialize_official, _verify_norms, official_provenance
-
-
-def cached_official_provenance(
-    num_hidden_layers: int = 24, dtype: str = "float32"
-) -> dict[str, Any]:
-    """Describe the cached policy separately from Q1's no-cache provenance."""
-    if type(num_hidden_layers) is not int or num_hidden_layers <= 0:
-        raise ValueError("num_hidden_layers must be a positive integer")
-    if dtype not in ("float32", "bfloat16"):
-        raise ValueError("Cached reference supports FP32 or BF16")
-    return {
-        **official_provenance(),
-        "use_cache": True,
-        "dtype": "torch." + dtype,
-        "logits_to_keep": 1,
-        "use_weighted_exit": False,
-        "cache_slots": 4 * num_hidden_layers,
-        "cache_class": "CompatibleUniversalTransformerCache",
-        "cache_shim_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-        "cache_update": "unchanged published append at depth * layers + layer",
-    }
+from .official import _initialize_official, _verify_norms
 
 
 def _cache_class():
