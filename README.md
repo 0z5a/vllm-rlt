@@ -13,16 +13,16 @@ paged-attention backend. CPU execution provides a reference backend.
 It is a synchronous, single-device implementation. The paper's asynchronous
 lookahead scheduling, CUDA graphs, distributed execution, prefix sharing,
 preemption, and an HTTP server are not implemented. Performance measurements cover
-the [frozen FP32 M1 workloads](docs/benchmarks/m1-20260910.md); adaptive-depth
+the [frozen FP32 M1 workloads](https://github.com/hsliuustc0106/vllm-lt/blob/d2f7db20593cccfe666b3c04c3ee50abc8c39af7/docs/benchmarks/m1-20260910.md); adaptive-depth
 task accuracy has not been evaluated. The authors' CDB code and trained lookahead
-gate were not released at the revision inspected; see [paper notes](docs/paper-notes.md).
+gate were not released at the revision inspected; see [paper notes](https://github.com/hsliuustc0106/vllm-lt/blob/d2f7db20593cccfe666b3c04c3ee50abc8c39af7/docs/paper-notes.md).
 
 FP32 real-checkpoint validation passes against an independent dense oracle.
 BF16 generated identical tokens across the tested scheduling modes, but its
 accumulated logit differences exceeded the declared numerical tolerances. Use
-FP32 for the validated numerical baseline; see [validation](docs/validation.md).
+FP32 for the validated numerical baseline; see [validation](https://github.com/hsliuustc0106/vllm-lt/blob/d2f7db20593cccfe666b3c04c3ee50abc8c39af7/docs/validation.md).
 
-The [roadmap](docs/roadmap.md) prioritizes faster Ouro inference: establish a
+The [roadmap](https://github.com/hsliuustc0106/vllm-lt/issues/2) prioritizes faster Ouro inference: establish a
 performance baseline and qualify BF16, then use profiling to guide runtime,
 CUDA-graph, attention, and KV improvements.
 
@@ -156,13 +156,13 @@ gpu run --gpu-ids <available-id> --timeout 10m --note "vllm-lt kernel tests" -- 
 Tests cover dense-vs-paged model execution, GQA, packed causal prefill, varying
 depths, cache holes, early-exit propagation, fragmented pages, bounded admission,
 EOS/cancellation, refill/no-refill equivalence, checkpoint validation, and sampling
-independence. [Validation notes](docs/validation.md) record the actual environment
+independence. [Validation notes](https://github.com/hsliuustc0106/vllm-lt/blob/d2f7db20593cccfe666b3c04c3ee50abc8c39af7/docs/validation.md) record the actual environment
 and checks performed. These correctness checks do not establish serving performance
 or adaptive-depth language-task accuracy.
 
 See the [M1 benchmark guide](docs/benchmarks.md) for workloads, timing definitions,
 reserved execution, and offline reporting, and the
-[baseline report](docs/benchmarks/m1-20260910.md) for results and downloadable evidence.
+[baseline report](https://github.com/hsliuustc0106/vllm-lt/blob/d2f7db20593cccfe666b3c04c3ee50abc8c39af7/docs/benchmarks/m1-20260910.md) for results and downloadable evidence.
 
 For end-to-end accuracy, use the [GSM8K evaluation guide](docs/accuracy.md) to
 run the fixed 87-question regression case. Its measured official Transformers
