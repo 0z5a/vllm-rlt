@@ -21,7 +21,7 @@ from torch.nn import functional as F
 from .config import OURO_MODEL_ID, OURO_REVISION, OuroConfig
 
 if TYPE_CHECKING:
-    from vllm_lt.core.kv_cache_manager import KVCacheManager
+    from vllm_lt.core.kv_cache_manager import KVCacheManager, _PreparedKVBatch
 
 
 class OuroRMSNorm(nn.Module):
@@ -97,9 +97,7 @@ class OuroAttention(nn.Module):
         self,
         hidden: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        request_ids: Sequence[str],
-        depths: Sequence[int],
-        positions: Sequence[int] | torch.Tensor,
+        batch: "_PreparedKVBatch",
         cache: "KVCacheManager",
     ) -> torch.Tensor:
         shape = (hidden.shape[0], -1, self.config.head_dim)
@@ -109,8 +107,8 @@ class OuroAttention(nn.Module):
         cos, sin = position_embeddings
         q = q * cos + _rotate_half(q) * sin
         k = k * cos + _rotate_half(k) * sin
-        cache.write(self.layer_idx, request_ids, depths, positions, k, v)
-        output = cache.attend(self.layer_idx, request_ids, depths, positions, q)
+        cache._write_prepared(self.layer_idx, batch, k, v)
+        output = cache._attend_prepared(self.layer_idx, batch, q)
         return self.o_proj(output.reshape(hidden.shape[0], -1))
 
 
@@ -139,14 +137,10 @@ class OuroDecoderLayer(nn.Module):
         self,
         hidden: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        request_ids: Sequence[str],
-        depths: Sequence[int],
-        positions: Sequence[int] | torch.Tensor,
+        batch: "_PreparedKVBatch",
         cache: "KVCacheManager",
     ) -> torch.Tensor:
-        attention = self.self_attn(
-            self.input_layernorm(hidden), position_embeddings, request_ids, depths, positions, cache
-        )
+        attention = self.self_attn(self.input_layernorm(hidden), position_embeddings, batch, cache)
         hidden = hidden + self.input_layernorm_2(attention)
         return hidden + self.post_attention_layernorm_2(
             self.mlp(self.post_attention_layernorm(hidden))
@@ -205,12 +199,12 @@ class OuroForCausalLM(nn.Module):
         count = hidden.shape[0]
         if count == 0 or not (len(request_ids) == len(depths) == len(positions) == count):
             raise ValueError("recurrent requires matching, nonempty packed metadata")
-        position_ids = torch.as_tensor(positions, device=hidden.device)
-        if position_ids.ndim != 1 or position_ids.dtype not in (torch.int32, torch.int64):
-            raise ValueError("positions must be a one-dimensional integer sequence")
-        position_embeddings = self.model.rotary_emb(hidden, position_ids)
+        # Internal model/cache traversal contract: descriptor ownership and
+        # allocation identity are checked again by every prepared layer call.
+        batch = cache._prepare_batch(request_ids, depths, positions)
+        position_embeddings = self.model.rotary_emb(hidden, batch.position_ids)
         for layer in self.model.layers:
-            hidden = layer(hidden, position_embeddings, request_ids, depths, positions, cache)
+            hidden = layer(hidden, position_embeddings, batch, cache)
         # Norm is inside the recurrence in Ouro; this normalized state is the
         # next loop's input as well as the gate and LM head input.
         hidden = self.model.norm(hidden)
@@ -226,7 +220,7 @@ class OuroForCausalLM(nn.Module):
         *,
         revision: str | None = None,
         device: torch.device | str = "cpu",
-        dtype: torch.dtype = torch.float32,
+        dtype: torch.dtype = torch.bfloat16,
     ) -> "OuroForCausalLM":
         """Stream strictly checked safetensors into a meta model; never execute Hub code.
 

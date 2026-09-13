@@ -159,10 +159,11 @@ The pinned parser timestamps choice events, including empty text. Usage and
 Unicode text can become visible only with a later event, and network buffering
 can deliver several events together. Its latency starts after the client
 concurrency semaphore and ends at the last choice event, excluding client-side
-queueing and the usage/`[DONE]` tail. The offline M1 harness instead timestamps
+queueing and the usage/`[DONE]` tail. The historical offline M1 harness instead timestamps
 engine enqueue/steps and excludes HTTP/tokenization; the values are not
-interchangeable; see the [offline benchmark guide](benchmarks.md) for baseline
-scope and scheduler changes.
+interchangeable. The M1 harness has been removed; see the
+[archived baseline report](https://github.com/hsliuustc0106/vllm-lt/blob/5bee22950357d93e3f7a3c6c87b8fbed004c9296/docs/benchmarks/m1-20260910.md)
+for its measurement scope.
 
 ## Validation
 
