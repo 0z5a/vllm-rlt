@@ -66,6 +66,16 @@ it does not make performance testing mandatory for otherwise unaffected PRs.
 - Capture comparable warmed-up requests with the same BF16 workload and frozen
   controls as the speed test. Record profiler/tool versions, commands, capture
   boundaries and links to traces or exported reports.
+- Include an annotated timeline figure with A (before) above B (after), or side
+  by side. Align the same request/phase start, use the same time scale and units,
+  and show equivalent CPU thread, runtime and GPU stream tracks. Keep labels and
+  the time axis readable; do not resize each trace independently to fill its panel.
+  Show the complete request with prefill/decode boundaries, plus matching zoomed
+  regions when needed to expose the bottleneck. Use boxes/arrows to highlight
+  removed waits, idle gaps, launches or other changed work, with before/after
+  durations and an explanation. Link the original traces behind the figure.
+  A summary table alone does not satisfy this visual comparison requirement;
+  a screenshot alone does not establish causality or an unprofiled speedup.
 - Compare prefill and decode separately. Identify the dominant CPU/GPU work,
   kernel time and launch counts, synchronization, transfers and GPU idle gaps
   where relevant to the change. Report absolute before/after values and deltas,

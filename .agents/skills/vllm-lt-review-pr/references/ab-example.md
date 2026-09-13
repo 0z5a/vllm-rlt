@@ -89,6 +89,22 @@ Tool: `<profiler and exact version>`. Reproduction commands and capture settings
 Both captures cover one warmed-up 128-input/64-output request with the same
 controls as the speed test. Prefill and 63 decode steps have explicit markers.
 
+Required figure in a real report: `profiles/A-vs-B-timeline.png`, linked alongside
+the original traces. Arrange A above B, align request start at 0 ms, and use the
+same milliseconds-per-pixel scale and equivalent CPU/runtime/GPU tracks. Include
+the full request and matching decode zooms; mark prefill/decode boundaries and
+box the synchronization/idle regions that change. Keep the axis and event names
+readable. Do not stretch the shorter B trace to match A's width.
+
+Example caption (synthetic): "A above, B below; matching warmed-up requests.
+Boxed decode gaps total 240 ms in A and 45 ms in B (−195 ms); arrows connect
+representative corresponding gaps. Decode phase wall time is 1920 → 1720 ms.
+Removed host synchronization calls align with reduced GPU idle gaps; kernel
+busy time is nearly unchanged. See linked traces for the remaining decode steps."
+This document supplies the figure specification and caption, not a fabricated
+profiler screenshot. Contributors must attach the figure from their actual A/B
+captures; the following table supplements that figure.
+
 | Profile observation | A | B | B − A |
 | --- | ---: | ---: | ---: |
 | Prefill phase wall time | 95 ms | 86 ms | −9 ms |
