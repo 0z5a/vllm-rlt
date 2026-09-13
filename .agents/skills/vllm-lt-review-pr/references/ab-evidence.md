@@ -6,6 +6,9 @@ Use only the sections relevant to the changed behavior and claims. This is a
 review reference, not a requirement to run the full benchmark for every PR.
 Assess the diff and callers rather than relying only on the PR's category.
 
+For a concrete contributor report, see the [illustrative A/B output](ab-example.md).
+Its numbers are synthetic, not benchmark evidence or universal thresholds.
+
 | PR impact | Appropriate validation |
 | --- | --- |
 | Documentation, review skills, or tests with no runtime or measurement change | Review the content and relevant tests; no accuracy/speed A/B required. |
