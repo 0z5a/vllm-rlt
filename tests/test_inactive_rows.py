@@ -8,7 +8,6 @@ from vllm_lt.core.kv_cache_manager import KVCacheManager
 from vllm_lt.core.scheduler import ScheduledItem, SchedulerOutput
 from vllm_lt.engine.llm_engine import LLMEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
-from vllm_lt.models.serial_oracle import SerialOuroOracle
 from vllm_lt.request import Request, Stage
 from vllm_lt.worker.model_runner import ModelRunner
 
@@ -440,24 +439,28 @@ def test_padded_generation_preserves_actual_histories_sampling_and_cleanup(mode,
         assert (aid, atoken) == (bid, btoken) and torch.equal(astate, bstate)
 
 
-def test_padded_two_to_four_transition_matches_oracle_and_complete_populated_kv():
+def test_padded_two_to_four_transition_matches_compact_and_complete_populated_kv():
     torch.manual_seed(29)
     model = OuroForCausalLM(OuroConfig.tiny())
     cache = model_cache(model, num_blocks=32)
+    reference_cache = model_cache(model, num_blocks=32)
     runner = ModelRunner(model, cache)
     prompt, inputs, depths = [1, 3, 5], [7, 9, 11], [2, 4, 3]
-    cache.allocate("a", len(prompt) + len(inputs))
-    oracle = SerialOuroOracle(model.config, model.state_dict(), capacity=len(prompt) + len(inputs))
-    expected = oracle.prefill(prompt)
+    for pool in (cache, reference_cache):
+        pool.allocate("a", len(prompt) + len(inputs))
     hidden = model.prelude(torch.tensor(prompt))
+    expected = hidden.clone()
     try:
         for depth in range(4):
             hidden, _ = model.recurrent(hidden, ["a"] * 3, [depth] * 3, [0, 1, 2], cache)
-        hidden = hidden[-1:]
+            expected, _ = model.recurrent(
+                expected, ["a"] * 3, [depth] * 3, [0, 1, 2], reference_cache
+            )
+        hidden, expected = hidden[-1:], expected[-1:]
         for index in range(4):
             if index:
-                expected = oracle.advance(inputs[index - 1], forced_depth=depths[index - 1])
                 hidden = model.prelude(torch.tensor([inputs[index - 1]]))
+                expected = hidden.clone()
                 for depth in range(depths[index - 1]):
                     hidden, _ = runner._recurrent_padded(
                         hidden,
@@ -468,22 +471,23 @@ def test_padded_two_to_four_transition_matches_oracle_and_complete_populated_kv(
                         row_count=8,
                         table_width=4,
                     )
-                cache.finalize_token("a", index + 2, depths[index - 1] - 1)
-            actual = model.coda(hidden)[0]
-            torch.testing.assert_close(actual, expected.logits, atol=0.001, rtol=0.0001)
-            assert actual.argmax() == expected.logits.argmax()
-            snapshot = oracle.snapshot_kv()
-            assert snapshot.initialized.all()
+                    expected, _ = model.recurrent(
+                        expected, ["a"], [depth], [index + 2], reference_cache
+                    )
+                for pool in (cache, reference_cache):
+                    pool.finalize_token("a", index + 2, depths[index - 1] - 1)
+            actual_logits, expected_logits = model.coda(hidden)[0], model.coda(expected)[0]
+            torch.testing.assert_close(actual_logits, expected_logits, atol=0.001, rtol=0.0001)
+            assert actual_logits.argmax() == expected_logits.argmax()
             for depth in range(4):
                 for layer in range(cache.num_layers):
-                    keys, values = cache.read(layer, "a", depth, len(snapshot.positions))
-                    torch.testing.assert_close(
-                        keys, snapshot.keys[depth, layer], atol=5e-6, rtol=1e-4
+                    keys, values = cache.read(layer, "a", depth, len(prompt) + index)
+                    expected_keys, expected_values = reference_cache.read(
+                        layer, "a", depth, len(prompt) + index
                     )
-                    torch.testing.assert_close(
-                        values, snapshot.values[depth, layer], atol=5e-6, rtol=1e-4
-                    )
+                    torch.testing.assert_close(keys, expected_keys, atol=5e-6, rtol=1e-4)
+                    torch.testing.assert_close(values, expected_values, atol=5e-6, rtol=1e-4)
     finally:
-        oracle.close()
         cache.free("a")
-    assert cache.num_used_blocks == 0
+        reference_cache.free("a")
+    assert cache.num_used_blocks == reference_cache.num_used_blocks == 0

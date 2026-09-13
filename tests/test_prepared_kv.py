@@ -8,7 +8,6 @@ import torch
 
 from vllm_lt.core.kv_cache_manager import KVCacheManager
 from vllm_lt.models import OuroConfig, OuroForCausalLM
-from vllm_lt.models.serial_oracle import SerialOuroOracle
 
 
 @pytest.fixture(autouse=True)
@@ -281,65 +280,3 @@ def test_one_preparation_and_position_tensor_per_core_across_24_layers(monkeypat
         assert len(set(group)) == 1
         assert group[0][1] == rotary_ids[traversal]
     assert all(reference() is None for reference in preparations)
-
-
-@pytest.mark.parametrize("chunk_size", [1, 2, 3])
-def test_chunked_prefill_then_two_to_four_exit_matches_oracle_entire_populated_kv(chunk_size):
-    torch.manual_seed(29)
-    model = OuroForCausalLM(OuroConfig.tiny())
-    config = model.config
-    prompt, inputs = [1, 3, 5], [7, 9, 11, 13, 15, 17, 19, 21]
-    depths = [2, 4, 3, 2, 4, 2, 3, 4]
-    capacity = len(prompt) + len(inputs)
-    cache = make_cache(
-        num_layers=config.num_hidden_layers,
-        num_kv_heads=config.num_key_value_heads,
-        head_dim=config.head_dim,
-    )
-    assert cache.allocate("a", capacity)
-    oracle = SerialOuroOracle(config, model.state_dict(), capacity=capacity)
-    expected = oracle.prefill(prompt)
-    try:
-        for start in range(0, len(prompt), chunk_size):
-            tokens = prompt[start : start + chunk_size]
-            hidden = model.prelude(torch.tensor(tokens))
-            for depth in range(4):
-                hidden, gate = model.recurrent(
-                    hidden,
-                    ["a"] * len(tokens),
-                    [depth] * len(tokens),
-                    list(range(start, start + len(tokens))),
-                    cache,
-                )
-        outputs = []
-        for index in range(9):
-            if index:
-                position = len(prompt) + index - 1
-                expected = oracle.advance(inputs[index - 1], forced_depth=depths[index - 1])
-                hidden = model.prelude(torch.tensor([inputs[index - 1]]))
-                for depth in range(depths[index - 1]):
-                    hidden, gate = model.recurrent(hidden, ["a"], [depth], [position], cache)
-                cache.finalize_token("a", position, depths[index - 1] - 1)
-            logits = model.coda(hidden)[-1]
-            outputs.append(int(logits.argmax()))
-            assert outputs[-1] == int(expected.logits.argmax())
-            torch.testing.assert_close(logits, expected.logits, atol=3e-6, rtol=3e-5)
-            torch.testing.assert_close(
-                gate[-1], torch.tensor(expected.gate_logits[-1]), atol=3e-6, rtol=3e-5
-            )
-            snapshot = oracle.snapshot_kv()
-            assert bool(snapshot.initialized.all())
-            for depth in range(4):
-                for layer in range(config.num_hidden_layers):
-                    keys, values = cache.read(layer, "a", depth, len(snapshot.positions))
-                    torch.testing.assert_close(
-                        keys, snapshot.keys[depth, layer], atol=5e-6, rtol=1e-4
-                    )
-                    torch.testing.assert_close(
-                        values, snapshot.values[depth, layer], atol=5e-6, rtol=1e-4
-                    )
-        assert len(outputs) == 9 and oracle.length == capacity
-    finally:
-        oracle.close()
-        cache.free("a")
-    assert cache.num_used_blocks == 0

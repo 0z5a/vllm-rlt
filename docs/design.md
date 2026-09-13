@@ -1,12 +1,12 @@
 # vllm-lt engine design
 
-The first version provides a vLLM-style inference API for Ouro-1.4B. Its scheduling unit is a single traversal of the model's shared transformer layers. Request state and KV allocation are owned by this engine rather than delegated to a conventional token-level scheduler.
+The engine schedules one traversal of Ouro's shared transformer layers at a time. It owns request state and depth-aware KV allocation.
 
 ## Components and ownership
 
 ```text
-LLM facade
-    -> engine: request lifecycle, tokenization, output collection
+LLM facade: tokenization, output collection
+    -> engine: request lifecycle
         -> scheduler: admission and stage selection
         -> model runner: execute a selected batch
             -> native Ouro: embedding, recurrent core, output head
@@ -24,7 +24,7 @@ Waiting requests enter prefill after obtaining a complete KV reservation. Prefil
 
 If generation continues, the sampled token enters prelude for embedding, then recurrent execution. After each recurrent pass, the gate either returns that token to recurrent work or routes its final hidden state to coda. Coda computes logits and samples the following token. A completed or cancelled request releases its reservation and persistent state.
 
-This prefill policy deliberately keeps every prompt token at full depth. It is an engineering extension described separately from the paper in [the source notes](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/paper-notes.md). It avoids both reprocessing the last prompt token and treating a generated token as already present in the cache before its forward pass.
+Full-depth prefill is an implementation choice. The last prompt token is not reprocessed, and a sampled token enters KV only after its forward pass.
 
 ## Scheduling modes
 
@@ -38,7 +38,9 @@ Scheduling is synchronous: the engine reads results before deciding the next bat
 
 Ouro's embedding is the prelude. One recurrent operation runs all physical transformer layers and the shared end-of-loop normalization. The normalized hidden state persists for the next loop. Coda applies the LM head to the exited state.
 
-Decode maintains a cumulative exit probability per token. Every loop updates it, including loops before the minimum allowed exit depth. A token exits when the cumulative threshold is reached and the minimum depth is satisfied, or when it reaches the maximum depth. Default adaptive bounds are two through four loops. Threshold `1.0` selects fixed depth explicitly. Token position and its RoPE phase stay unchanged while loop depth advances.
+Decode exits when `1 - product(1 - sigmoid(gate_i)) >= exit_threshold`, subject to the loop bounds. Every loop contributes, including those before the minimum allowed exit depth. Default adaptive bounds are two through four loops; threshold `1.0` selects fixed depth explicitly. Token position and its RoPE phase stay unchanged while loop depth advances.
+
+Checkpoint loading defaults to BF16; explicit dtype overrides are supported. Existing model objects retain their dtype, and engine KV storage uses that same dtype. RMSNorm and RoPE use FP32 intermediates; Triton attention accumulates in FP32.
 
 ## Last-exited paged KV
 
@@ -64,12 +66,6 @@ Unused reserved positions are not valid KV. Attention lengths and block metadata
 
 For the released BF16 Ouro configuration, each token at one depth requires `2 * 24 * 16 * 128 * 2 = 196,608` bytes of KV. Four depths require 768 KiB per token before block rounding. Cache capacity must be explicit rather than inferred from model parameter size.
 
-## Validation and next steps
+## Correctness coverage
 
-BF16 weights, ordinary activations, and KV storage are the primary inference target. Accumulation precision is specified independently: retain FP32 in sensitive reductions, normalization statistics, and positional/probability arithmetic as needed. Full-model FP32 is an optional reference/diagnostic path. See the [precision policy](precision-policy.md) for the operation contracts and implementation follow-up.
-
-The validation boundary is numerical and behavioral correctness. Fixed-depth outputs are compared with an independent reference under justified BF16 error bounds. Adaptive execution is compared with a serial implementation with the same last-exited policy. Exact cache/data-movement invariants are separate from floating-point and decision/quality criteria. Scheduler tests should exercise mixed depths, requests completing at different times, exhausted admission capacity, and cancellation. Cache tests should cover partial blocks, copying skipped depths, isolation, and block reuse.
-
-PyTorch provides a portable attention reference. The historical [preview validation](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/validation.md) and [Q1 results](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/q1-20260911.md) retain their FP32 passes and BF16 failures. The [M2 result](https://github.com/hsliuustc0106/vllm-lt/blob/8ecd1feecacf019feae1c02c12e32dac1bf840a8/docs/benchmarks/m2-20260911.md) establishes a bounded FP32 metadata speedup; BF16 performance remains to be measured. Padded batch rows still need explicit handling before CUDA-graph execution is added.
-
-The [roadmap](https://github.com/hsliuustc0106/vllm-lt/issues/2) prioritizes BF16 measurements alongside numerical and quality evaluation, with profiling selecting runtime, CUDA-graph, attention, and KV work. Asynchronous depth routing additionally requires an available and calibrated lookahead gate; it must not silently reinterpret the released Ouro gate. Serving integrations follow the single-model runtime milestones.
+Core tests compare fixed-depth model execution with a dense reference and packed generation with serial engine execution. They also cover mixed depths, admission pressure, cancellation, partial blocks, skipped-depth copies, isolation, and block reuse. See [test commands and historical results](../README.md#tests).
