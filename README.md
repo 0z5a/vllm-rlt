@@ -17,6 +17,8 @@ the [frozen FP32 M1 workloads](https://github.com/hsliuustc0106/vllm-lt/blob/004
 task accuracy has not been evaluated. The authors' CDB code and trained lookahead
 gate were not released at the revision inspected; see [paper notes](https://github.com/hsliuustc0106/vllm-lt/blob/f0dfe5f71b83965a86fbda9cece3cb94dd0389ec/docs/paper-notes.md).
 
+BF16 is the default for checkpoint loading and offline inference.
+Use `--dtype float32` or `dtype=torch.float32` for FP32 diagnostics.
 FP32 real-checkpoint validation passes against an independent dense oracle.
 BF16 generated identical tokens across the tested scheduling modes, but its
 accumulated logit differences exceeded the declared numerical tolerances. Use
@@ -48,7 +50,7 @@ Choose an available exact device ID from its status output:
 gpu status
 gpu run --gpu-ids <available-id> --timeout 20m --note "vllm-lt Ouro inference" -- \
   python -m vllm_lt.entrypoints.cli \
-  --model ByteDance/Ouro-1.4B --device cuda --dtype float32 \
+  --model ByteDance/Ouro-1.4B --device cuda --dtype bfloat16 \
   --attention-backend triton --prompt 'The capital of France is' \
   --prompt '2 + 2 =' --max-tokens 32 --exit-threshold 0.7
 ```
@@ -66,7 +68,7 @@ from vllm_lt import LLM, CacheConfig, SamplingParams, SchedulerConfig
 from vllm_lt.models import OuroConfig, OuroForCausalLM
 
 # Small CPU example. This model has random weights, not pretrained language ability.
-model = OuroForCausalLM(OuroConfig.tiny())
+model = OuroForCausalLM(OuroConfig.tiny()).bfloat16()
 llm = LLM(
     model,
     cache_config=CacheConfig(num_blocks=64, block_size=4),
@@ -80,8 +82,10 @@ for output in outputs:
     print(output.token_ids, output.exit_depths, output.finish_reason)
 ```
 
-Use `LLM("ByteDance/Ouro-1.4B", device="cuda", dtype=torch.float32,
+Use `LLM("ByteDance/Ouro-1.4B", device="cuda", dtype=torch.bfloat16,
 attention_backend="triton")` inside a reservation for pretrained text prompts.
+When passed an existing model object, `LLM` preserves its dtype. Engine KV storage
+uses the model's dtype.
 The facade accepts a list of text prompts or a list of token-ID lists, and one
 `SamplingParams` object or one per prompt. Outputs preserve input order.
 
