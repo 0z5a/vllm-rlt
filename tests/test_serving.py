@@ -17,17 +17,45 @@ from vllm_lt import CacheConfig, SamplingParams, SchedulerConfig
 from vllm_lt.engine.llm_engine import LLMEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
 from vllm_lt.request import Stage
-from vllm_lt.serving.protocol import CompletionRequest, IncrementalText, ServingError
+from vllm_lt.serving.protocol import CompletionRequest, IncrementalText, ServingError, ServingLimits
 from vllm_lt.serving.server import WORKER, create_app
 from vllm_lt.serving.worker import EngineWorker
 
 
 class TinyTokenizer:
+    all_special_ids = [0]
+
     def encode(self, text):
         return [1 + ord(c) % 63 for c in text]
 
     def decode(self, ids, **kwargs):
         return "".join(chr(64 + token) for token in ids if token != 0)
+
+    def convert_ids_to_tokens(self, token_id):
+        return chr(64 + token_id)
+
+
+class PauseAt:
+    """Hold one engine step while a test exercises HTTP or worker lifecycle."""
+
+    def __init__(self, stage, *, fail=False):
+        self.stage, self.fail = stage, fail
+        self.entered, self.release = threading.Event(), threading.Event()
+        self.engine = None
+
+    def __call__(self, engine):
+        self.engine = engine
+        execute = engine.model_runner.execute
+
+        def pause(batch):
+            if batch.stage == self.stage and not self.entered.is_set():
+                self.entered.set()
+                assert self.release.wait(5)
+                if self.fail:
+                    raise RuntimeError("injected engine failure")
+            return execute(batch)
+
+        engine.model_runner.execute = pause
 
 
 def factory(*, seqs=8, blocks=256, hook=None):
@@ -52,7 +80,7 @@ async def until(predicate):
 
 @asynccontextmanager
 async def client_for(load=factory, **kwargs):
-    app = create_app(load, **kwargs)
+    app = create_app(load, limits=ServingLimits(**kwargs))
     client = TestClient(TestServer(app, handler_cancellation=True))
     await client.start_server()
     try:
@@ -119,7 +147,7 @@ def test_neutral_client_fields_and_extensions():
     assert spec.include_usage and spec.params.max_loops == 3 and spec.params.top_k == 9
 
 
-def test_byte_decoder_unicode_special_tokens_and_final_flush():
+def test_byte_decoder_unicode_special_tokens_and_final_flush(monkeypatch):
     tokenizers = pytest.importorskip("tokenizers")
     transformers = pytest.importorskip("transformers")
     alphabet = sorted(tokenizers.pre_tokenizers.ByteLevel.alphabet())
@@ -129,16 +157,31 @@ def test_byte_decoder_unicode_special_tokens_and_final_flush():
     backend.pre_tokenizer = tokenizers.pre_tokenizers.ByteLevel(add_prefix_space=False)
     backend.decoder = tokenizers.decoders.ByteLevel()
     tokenizer = transformers.PreTrainedTokenizerFast(tokenizer_object=backend, eos_token="<eos>")
-    for text in ["你好🙂 café", "👩🏽‍💻", "hello 🌍", "a � b", "  a  b\n"]:
+    tokenizer.add_tokens(["word🙂"])
+    converted = []
+    convert = tokenizer.convert_ids_to_tokens
+
+    def record(token_id):
+        converted.append(token_id)
+        return convert(token_id)
+
+    monkeypatch.setattr(tokenizer, "convert_ids_to_tokens", record)
+    for text in ["你好🙂 café", "👩🏽‍💻", "hello 🌍", "a � b", "  a  b\n", "word🙂", "a" * 2048]:
         ids = tokenizer.encode(text) + [tokenizer.eos_token_id]
         decoder = IncrementalText(tokenizer)
-        deltas = [decoder.decode(ids[:i], i == len(ids)) for i in range(1, len(ids) + 1)]
+        converted.clear()
+        deltas = [decoder.decode(token, i == len(ids) - 1) for i, token in enumerate(ids)]
         assert "".join(deltas) == text
         assert deltas[-1] == ""
-    ids = tokenizer.encode("🙂")[:1]
-    decoder = IncrementalText(tokenizer)
-    assert decoder.decode(ids, False) == ""
-    assert decoder.decode(ids, True) == tokenizer.decode(ids)
+        assert converted == ids[:-1]  # Each ordinary token is converted once.
+    smile = tokenizer.encode("🙂")
+    cases = [smile[:i] for i in range(1, len(smile))]
+    cases += [[vocab[c]] for c in alphabet]  # All byte values, including invalid UTF-8.
+    for ids in cases:
+        decoder = IncrementalText(tokenizer)
+        deltas = [decoder.decode(token, False) for token in ids]
+        deltas.append(decoder.decode(tokenizer.eos_token_id, True))
+        assert "".join(deltas) == tokenizer.decode(ids)
 
 
 @pytest.mark.parametrize("byte_level", [False, True])
@@ -258,106 +301,19 @@ def test_http_output_matches_direct_and_stream_has_exact_token_events():
                 "length"
             ]
             assert events[-1]["choices"] == [] and events[-1]["usage"] == data["usage"]
-            response = await client.post("/v1/completions", json=body(prompt=""))
-            assert response.status == 400
-            response = await client.post("/v1/completions", json=body(prompt="\ud800"))
-            assert response.status == 400 and worker.ready
-            response = await client.post("/v1/completions", json=body(model="missing"))
-            assert response.status == 404
-            response = await client.post(
-                "/v1/completions", data="{bad", headers={"Content-Type": "application/json"}
-            )
-            assert response.status == 400
             await until(lambda: not worker.channels)
 
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("stream", [False, True])
-@pytest.mark.parametrize("max_tokens", [2, 4])
-def test_decode_anomaly_preserves_other_requests(monkeypatch, stream, max_tokens):
-    from vllm_lt.serving import worker as worker_module
-
-    blocked, release = threading.Event(), threading.Event()
-    engines = []
-
-    class UnstableTokenizer(TinyTokenizer):
-        def decode(self, ids, **kwargs):
-            return "a" if len(ids) == 1 else "b"
-
-    first = True
-
-    def decoder(tokenizer):
-        nonlocal first
-        result = IncrementalText(UnstableTokenizer() if first else tokenizer)
-        first = False
-        return result
-
-    monkeypatch.setattr(worker_module, "IncrementalText", decoder)
-
-    def hook(engine):
-        engines.append(engine)
-        execute = engine.model_runner.execute
-
-        def pause(batch):
-            if batch.stage == Stage.RECURRENT and not blocked.is_set():
-                blocked.set()
-                assert release.wait(5)
-            return execute(batch)
-
-        engine.model_runner.execute = pause
-
+@pytest.mark.parametrize("expired", [False, True])
+def test_shutdown_cleans_http_and_engine_state(caplog, expired):
     async def run():
-        async with client_for(lambda: factory(hook=hook)) as (client, worker):
-            await until(lambda: worker.ready)
-            bad = asyncio.create_task(
-                client.post("/v1/completions", json=body(stream=stream, max_tokens=max_tokens))
-            )
-            try:
-                await until(blocked.is_set)
-                if stream:
-                    response = await bad
-                    assert json.loads((await response.content.readline())[6:])["choices"]
-                good = asyncio.create_task(client.post("/v1/completions", json=body()))
-                await until(lambda: len(worker.channels) == 2)
-                release.set()
-                if stream:
-                    with pytest.raises(ClientPayloadError):
-                        await response.read()
-                else:
-                    response = await bad
-                    assert response.status == 400
-                    assert "rewrote" in (await response.json())["error"]["message"]
-                result = await good
-                assert result.status == 200
-                assert (await result.json())["usage"]["completion_tokens"] == 4
-                await until(lambda: not worker.channels)
-                assert (await client.get("/health")).status == 200
-                assert not worker.decoders and engines[0].cache_manager.num_used_blocks == 0
-            finally:
-                release.set()
-
-    asyncio.run(run())
-
-
-def test_shutdown_deadline_allows_http_cleanup(caplog):
-    async def run():
-        blocked, release = threading.Event(), threading.Event()
-        cleaned = asyncio.Event()
-        engines = []
-
-        def hook(engine):
-            engines.append(engine)
-            execute = engine.model_runner.execute
-
-            def pause(batch):
-                blocked.set()
-                assert release.wait(5)
-                return execute(batch)
-
-            engine.model_runner.execute = pause
-
-        app = create_app(lambda: factory(hook=hook), shutdown_timeout=0.01)
+        pause, cleaned = PauseAt(Stage.PREFILL), asyncio.Event()
+        app = create_app(
+            lambda: factory(hook=pause),
+            limits=ServingLimits(shutdown_timeout=0.01 if expired else 5),
+        )
 
         async def cleanup(app):
             cleaned.set()
@@ -369,17 +325,23 @@ def test_shutdown_deadline_allows_http_cleanup(caplog):
         try:
             await until(lambda: worker.ready)
             channel = worker.submit(CompletionRequest.parse(body(), body()["model"]))
-            await until(blocked.is_set)
-            await asyncio.wait_for(client.close(), 1)
-            assert cleaned.is_set() and not worker.ready and not worker.task.done()
-            assert "shutdown deadline exceeded" in caplog.text
+            await until(pause.entered.is_set)
+            closing = asyncio.create_task(client.close())
+            await until(lambda: worker.stopping)
+            if not expired:
+                pause.release.set()
+            await asyncio.wait_for(closing, 1)
+            assert cleaned.is_set() and not worker.ready
+            if expired:
+                assert not worker.task.done()
+                assert "shutdown deadline exceeded" in caplog.text
         finally:
-            release.set()
+            pause.release.set()
             await asyncio.wait_for(worker.task, 5)
             await client.close()
         with pytest.raises(ServingError, match="shutting down"):
             await channel.receive()
-        assert not worker.channels and engines[0].cache_manager.num_used_blocks == 0
+        assert not worker.channels and pause.engine.cache_manager.num_used_blocks == 0
 
     asyncio.run(run())
 
@@ -409,10 +371,21 @@ def test_http_invalid_admission_and_browser_requests_preserve_readiness():
             del missing_model["model"]
             for payload in [
                 missing_model,
+                body(prompt=""),
+                body(prompt="\ud800"),
                 body(max_tokens=worker.engine.model.config.max_position_embeddings + 1),
                 body(max_loops=worker.engine.model.config.total_ut_steps + 1),
             ]:
                 assert (await client.post("/v1/completions", json=payload)).status == 400
+            assert (await client.post("/v1/completions", json=body(model="missing"))).status == 404
+            response = await client.post(
+                "/v1/completions", data="{bad", headers={"Content-Type": "application/json"}
+            )
+            assert response.status == 400
+            for path in ["/health", "/v1/models", "/v1/completions"]:
+                response = await client.post(path, json=body(), headers={"Host": "attacker.test"})
+                assert response.status == 403
+            assert (await client.get("/health", headers={"Host": "localhost"})).status == 200
             for origin in ["https://example.com", "http://localhost:8000", "null"]:
                 response = await client.post(
                     "/v1/completions", json=body(), headers={"Origin": origin}
@@ -478,7 +451,7 @@ def test_owner_thread_dynamic_batching_cancellation_and_overload():
 
                 setattr(engine, name, check)
 
-        worker = EngineWorker(lambda: factory(hook=hook), max_requests=2, output_buffer=32)
+        worker = EngineWorker(lambda: factory(hook=hook), limits=ServingLimits(max_requests=2))
         worker.start()
         try:
             await until(lambda: worker.ready)
@@ -514,7 +487,7 @@ def test_slow_channel_does_not_block_other_requests():
             engines.append(engine)
             return engine, tokenizer
 
-        worker = EngineWorker(load, output_buffer=1, max_requests=2)
+        worker = EngineWorker(load, limits=ServingLimits(output_buffer=1, max_requests=2))
         worker.start()
         try:
             await until(lambda: worker.ready)
@@ -534,86 +507,70 @@ def test_slow_channel_does_not_block_other_requests():
     asyncio.run(run())
 
 
-def test_disconnect_and_execution_failure_after_first_token():
-    async def run(fail):
-        blocked, release = threading.Event(), threading.Event()
-        engines = []
+@pytest.mark.parametrize(
+    "failure,stream,max_tokens",
+    [("disconnect", True, 4), ("engine", True, 4), ("decode", False, 2), ("decode", True, 4)],
+)
+def test_request_failure_and_disconnect_cleanup(monkeypatch, failure, stream, max_tokens):
+    from vllm_lt.serving import worker as worker_module
 
-        def hook(engine):
-            engines.append(engine)
-            execute = engine.model_runner.execute
+    pause = PauseAt(Stage.RECURRENT, fail=failure == "engine")
 
-            def pause(batch):
-                if batch.stage == Stage.RECURRENT and not blocked.is_set():
-                    blocked.set()
-                    assert release.wait(5)
-                    if fail:
-                        raise RuntimeError("injected engine failure")
-                return execute(batch)
+    class BadTokenizer(TinyTokenizer):
+        calls = 0
 
-            engine.model_runner.execute = pause
+        def convert_ids_to_tokens(self, token_id):
+            self.calls += 1
+            if self.calls == 2:
+                raise ValueError("injected decode failure")
+            return super().convert_ids_to_tokens(token_id)
 
-        try:
-            async with client_for(lambda: factory(hook=hook)) as (client, worker):
-                await until(lambda: worker.ready)
-                response = await client.post(
-                    "/v1/completions", json=body(stream=True, max_tokens=20)
-                )
-                first = await response.content.readline()
-                assert json.loads(first[6:])["choices"]
-                await until(blocked.is_set)
+    if failure == "decode":
+        first = True
+
+        def decoder(tokenizer):
+            nonlocal first
+            result = IncrementalText(BadTokenizer() if first else tokenizer)
+            first = False
+            return result
+
+        monkeypatch.setattr(worker_module, "IncrementalText", decoder)
+
+    async def run():
+        async with client_for(lambda: factory(hook=pause)) as (client, worker):
+            await until(lambda: worker.ready)
+            bad = asyncio.create_task(
+                client.post("/v1/completions", json=body(stream=stream, max_tokens=max_tokens))
+            )
+            try:
+                await until(pause.entered.is_set)
+                if stream:
+                    response = await bad
+                    assert json.loads((await response.content.readline())[6:])["choices"]
                 assert (await client.get("/health")).status == 200
-                if fail:
-                    release.set()
-                    with pytest.raises(ClientPayloadError):
-                        await response.read()
-                    await until(lambda: not worker.ready)
-                    assert (await client.get("/health")).status == 503
-                else:
+                good = asyncio.create_task(client.post("/v1/completions", json=body()))
+                await until(lambda: len(worker.channels) == 2)
+                if failure == "disconnect":
                     response.close()
                     await until(lambda: any(c.cancelled for c in worker.channels.values()))
-                    release.set()
-                    await until(lambda: not worker.channels)
-                    assert (
-                        await client.post("/v1/completions", json=body(max_tokens=1))
-                    ).status == 200
-                await until(lambda: engines[0].cache_manager.num_used_blocks == 0)
-        finally:
-            release.set()
-
-    asyncio.run(run(False))
-    asyncio.run(run(True))
-
-
-def test_shutdown_fails_waiters_and_cleans_up():
-    async def run():
-        blocked, release = threading.Event(), threading.Event()
-        engines = []
-
-        def hook(engine):
-            engines.append(engine)
-            execute = engine.model_runner.execute
-
-            def pause(batch):
-                if batch.stage == Stage.PREFILL:
-                    blocked.set()
-                    assert release.wait(5)
-                return execute(batch)
-
-            engine.model_runner.execute = pause
-
-        worker = EngineWorker(lambda: factory(hook=hook))
-        worker.start()
-        await until(lambda: worker.ready)
-        channel = worker.submit(CompletionRequest.parse(body(), body()["model"]))
-        await until(blocked.is_set)
-        closing = asyncio.create_task(worker.close())
-        await asyncio.sleep(0)
-        release.set()
-        await closing
-        with pytest.raises(ServingError, match="shutting down"):
-            await channel.receive()
-        assert not worker.channels and engines[0].cache_manager.num_used_blocks == 0
+                pause.release.set()
+                if failure != "disconnect":
+                    if stream:
+                        with pytest.raises(ClientPayloadError):
+                            await response.read()
+                    else:
+                        response = await bad
+                        assert response.status == 400
+                        assert "decode failure" in (await response.json())["error"]["message"]
+                result = await good
+                assert result.status == (503 if failure == "engine" else 200)
+                if failure != "engine":
+                    assert (await result.json())["usage"]["completion_tokens"] == 4
+                await until(lambda: not worker.channels)
+                assert (await client.get("/health")).status == (503 if failure == "engine" else 200)
+                assert not worker.decoders and pause.engine.cache_manager.num_used_blocks == 0
+            finally:
+                pause.release.set()
 
     asyncio.run(run())
 

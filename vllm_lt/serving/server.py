@@ -6,7 +6,15 @@ import time
 
 from aiohttp import web
 
-from vllm_lt.serving.protocol import CompletionRequest, ServingError, completion, sse, usage
+from vllm_lt.models.config import OURO_MODEL_ID
+from vllm_lt.serving.protocol import (
+    CompletionRequest,
+    ServingError,
+    ServingLimits,
+    completion,
+    sse,
+    usage,
+)
 from vllm_lt.serving.worker import EngineWorker
 
 logger = logging.getLogger(__name__)
@@ -21,28 +29,24 @@ def error_response(error):
 def create_app(
     factory,
     *,
-    model="ByteDance/Ouro-1.4B",
-    max_requests=64,
-    output_buffer=32,
-    max_body_bytes=1024 * 1024,
-    request_timeout=300,
-    write_timeout=10,
-    shutdown_timeout=30,
+    model=OURO_MODEL_ID,
+    limits=ServingLimits(),
+    allowed_hosts=("localhost",),
 ):
-    for name, value in (
-        ("max_body_bytes", max_body_bytes),
-        ("request_timeout", request_timeout),
-        ("write_timeout", write_timeout),
-        ("shutdown_timeout", shutdown_timeout),
-    ):
-        if value <= 0:
-            raise ValueError(f"{name} must be positive")
-    worker = EngineWorker(factory, max_requests=max_requests, output_buffer=output_buffer)
+    worker = EngineWorker(factory, limits=limits)
+    allowed_hosts = {host.lower() for host in allowed_hosts}
     inflight = 0
 
     @web.middleware
-    async def limits(request, handler):
+    async def guard(request, handler):
         nonlocal inflight
+        try:
+            host = request.url.host
+        except ValueError:
+            return error_response(ServingError.invalid_request("invalid Host header"))
+        local_address = request.transport.get_extra_info("sockname")[0]
+        if host != local_address and host not in allowed_hosts:
+            return error_response(ServingError("unrecognized Host header", 403, "forbidden"))
         if request.path != "/v1/completions":
             return await handler(request)
         if "Origin" in request.headers:
@@ -54,12 +58,12 @@ def create_app(
                 ServingError("Content-Type must be application/json", 415, "unsupported_media_type")
             )
         if not worker.ready:
-            return error_response(ServingError("engine is not ready", 503, "not_ready"))
-        if inflight >= max_requests:
-            return error_response(ServingError("request capacity exhausted", 429, "overloaded"))
+            return error_response(ServingError.not_ready())
+        if inflight >= limits.max_requests:
+            return error_response(ServingError.overloaded())
         inflight += 1
         try:
-            return await asyncio.wait_for(handler(request), request_timeout)
+            return await asyncio.wait_for(handler(request), limits.request_timeout)
         except asyncio.TimeoutError:
             # The handler aborts a prepared stream in its cancellation path.
             return error_response(ServingError("request deadline exceeded", 504, "timeout"))
@@ -70,7 +74,7 @@ def create_app(
         finally:
             inflight -= 1
 
-    app = web.Application(middlewares=[limits], client_max_size=max_body_bytes)
+    app = web.Application(middlewares=[guard], client_max_size=limits.max_body_bytes)
     app[WORKER] = worker
 
     async def health(request):
@@ -94,8 +98,8 @@ def create_app(
             try:
                 body = await request.json()
                 spec = CompletionRequest.parse(body, model)
-            except (ValueError, TypeError, UnicodeError) as exc:
-                raise ServingError(str(exc), 400, "invalid_request_error") from exc
+            except (ValueError, TypeError) as exc:
+                raise ServingError.invalid_request(str(exc)) from exc
             channel = worker.submit(spec)
             created = int(time.time())
             # Admission/tokenizer errors and first-step failures can still use
@@ -118,7 +122,7 @@ def create_app(
                     )
                     if spec.include_usage:
                         data["usage"] = None
-                    await asyncio.wait_for(response.write(sse(data)), write_timeout)
+                    await asyncio.wait_for(response.write(sse(data)), limits.write_timeout)
                 else:
                     texts.append(event.text)
                 if event.finish_reason is not None:
@@ -147,9 +151,9 @@ def create_app(
                 data = completion(
                     channel.request_id, model, created, "", None, token_usage, summary=True
                 )
-                await asyncio.wait_for(response.write(sse(data)), write_timeout)
-            await asyncio.wait_for(response.write(b"data: [DONE]\n\n"), write_timeout)
-            await asyncio.wait_for(response.write_eof(), write_timeout)
+                await asyncio.wait_for(response.write(sse(data)), limits.write_timeout)
+            await asyncio.wait_for(response.write(b"data: [DONE]\n\n"), limits.write_timeout)
+            await asyncio.wait_for(response.write_eof(), limits.write_timeout)
             return response
         except ServingError as exc:
             logger.info(
@@ -180,7 +184,7 @@ def create_app(
         worker.start()
 
     async def stop(app):
-        await worker.close(shutdown_timeout)
+        await worker.close()
 
     app.router.add_get("/health", health)
     app.router.add_get("/v1/models", models)

@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from uuid import uuid4
 
-from vllm_lt.serving.protocol import IncrementalText, ServingError
+from vllm_lt.serving.protocol import IncrementalText, ServingError, ServingLimits
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +53,9 @@ class EngineWorker:
     A channel occupies an admission slot until its HTTP handler releases it.
     """
 
-    def __init__(self, factory, *, max_requests=64, output_buffer=32):
-        if type(max_requests) is not int or max_requests < 1:
-            raise ValueError("max_requests must be a positive integer")
-        if type(output_buffer) is not int or output_buffer < 1:
-            raise ValueError("output_buffer must be a positive integer")
+    def __init__(self, factory, *, limits=ServingLimits()):
         self.factory = factory
-        self.max_requests = max_requests
-        self.output_buffer = output_buffer
+        self.limits = limits
         self.channels = {}
         self.pending = deque()
         self.cancellations = set()
@@ -80,10 +75,10 @@ class EngineWorker:
 
     def submit(self, spec):
         if not self.ready or self.stopping:
-            raise ServingError("engine is not ready", 503, "not_ready")
-        if len(self.channels) >= self.max_requests:
-            raise ServingError("request capacity exhausted", 429, "overloaded")
-        channel = RequestChannel(spec, self.output_buffer)
+            raise ServingError.not_ready()
+        if len(self.channels) >= self.limits.max_requests:
+            raise ServingError.overloaded()
+        channel = RequestChannel(spec, self.limits.output_buffer)
         self.channels[channel.request_id] = channel
         self.pending.append(channel)
         self.wake.set()
@@ -97,13 +92,13 @@ class EngineWorker:
             self.cancellations.add(channel.request_id)
             self.wake.set()
 
-    async def close(self, timeout=30):
+    async def close(self):
         self.stopping = True
         self.ready = False
         self.wake.set()
         try:
             if self.task is not None:
-                await asyncio.wait_for(asyncio.shield(self.task), timeout)
+                await asyncio.wait_for(asyncio.shield(self.task), self.limits.shutdown_timeout)
         except asyncio.TimeoutError:
             logger.warning("shutdown deadline exceeded; a hung engine requires an outer supervisor")
         if self.task is None:
@@ -130,19 +125,17 @@ class EngineWorker:
                 self.engine.add_request(request_id, tokens, channel.spec.params)
                 self.decoders[request_id] = IncrementalText(self.tokenizer)
             except ValueError as exc:
-                failures.append((request_id, ServingError(str(exc), 400, "invalid_request_error")))
+                failures.append((request_id, ServingError.invalid_request(str(exc))))
         events = []
         for output in self.engine.step():
             decoder = self.decoders[output.request_id]
             try:
-                delta = decoder.decode(output.token_ids, output.finished)
+                delta = decoder.decode(output.token_ids[-1], output.finished)
             except ValueError as exc:
                 if not output.finished:
                     self.engine.abort_request(output.request_id)
                 del self.decoders[output.request_id]
-                failures.append(
-                    (output.request_id, ServingError(str(exc), 400, "invalid_request_error"))
-                )
+                failures.append((output.request_id, ServingError.invalid_request(str(exc))))
                 continue
             events.append(
                 (

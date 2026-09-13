@@ -5,6 +5,8 @@ It follows [issue #3](https://github.com/hsliuustc0106/vllm-lt/issues/3).
 A completed baseline is a measurement milestone; it does not require a speedup.
 The [2026-09-10 baseline report](benchmarks/m1-20260910.md) records the first
 completed matrix, acceptance checks, measured variability, and next target.
+The serving fairness guard changes offline prefill/recurrent interleaving;
+reruns need a new timing baseline instead of reusing that frozen measurement.
 
 ## Run a baseline
 

@@ -1,10 +1,29 @@
 """The deliberately small completions contract, independent of HTTP and device code."""
 
+import codecs
 import json
 import math
 from dataclasses import dataclass, fields
 
 from vllm_lt.sampling_params import SamplingParams
+
+
+@dataclass(frozen=True)
+class ServingLimits:
+    max_requests: int = 64
+    output_buffer: int = 32
+    max_body_bytes: int = 1024 * 1024
+    request_timeout: float = 300.0
+    write_timeout: float = 10.0
+    shutdown_timeout: float = 30.0
+
+    def __post_init__(self):
+        for field in fields(self):
+            value = getattr(self, field.name)
+            if field.type is int and type(value) is not int:
+                raise ValueError(f"{field.name} must be a positive integer")
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError(f"{field.name} must be finite and positive")
 
 
 class ServingError(Exception):
@@ -15,6 +34,18 @@ class ServingError(Exception):
 
     def as_dict(self):
         return {"error": {"message": str(self), "type": self.code, "code": self.code}}
+
+    @classmethod
+    def invalid_request(cls, message):
+        return cls(message, 400, "invalid_request_error")
+
+    @classmethod
+    def not_ready(cls):
+        return cls("engine is not ready", 503, "not_ready")
+
+    @classmethod
+    def overloaded(cls):
+        return cls("request capacity exhausted", 429, "overloaded")
 
 
 @dataclass(frozen=True)
@@ -86,7 +117,7 @@ class CompletionRequest:
 
 
 class IncrementalText:
-    """Stable text prefixes for Ouro's byte-level tokenizer.
+    """Decode each sampled ID once, retaining only incomplete UTF-8 bytes.
 
     Cleanup is disabled, matching the released tokenizer. Incomplete UTF-8
     prefixes are withheld until a later token completes them (or final flush).
@@ -94,21 +125,25 @@ class IncrementalText:
     """
 
     def __init__(self, tokenizer):
-        self.tokenizer = tokenizer
-        self.emitted = ""
+        from transformers.models.gpt2.tokenization_gpt2 import bytes_to_unicode
 
-    def decode(self, token_ids, finished):
-        text = self.tokenizer.decode(
-            token_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
-        )
-        stable = text if finished else text.rstrip("\ufffd")
-        if not stable.startswith(self.emitted):
-            raise ValueError(
-                "tokenizer rewrote emitted text; only byte-level decoding is supported"
-            )
-        delta = stable[len(self.emitted) :]
-        self.emitted = stable
-        return delta
+        self.tokenizer = tokenizer
+        self.special_ids = set(tokenizer.all_special_ids)
+        self.byte_decoder = {char: byte for byte, char in bytes_to_unicode().items()}
+        self.utf8 = codecs.getincrementaldecoder("utf-8")(errors="replace")
+
+    def decode(self, token_id, finished):
+        data = b""
+        if token_id not in self.special_ids:
+            token = self.tokenizer.convert_ids_to_tokens(token_id)
+            if token is None:
+                raise ValueError(f"tokenizer has no token for sampled ID {token_id}")
+            try:
+                data = bytes(self.byte_decoder[char] for char in token)
+            except KeyError:
+                # Match ByteLevel's whole-token UTF-8 fallback for added tokens.
+                data = token.encode("utf-8")
+        return self.utf8.decode(data, final=finished)
 
 
 def usage(prompt_tokens, completion_tokens):

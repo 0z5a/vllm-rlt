@@ -39,8 +39,9 @@ actual inference may include lazy library/kernel setup; validate it explicitly.
 `POST /v1/completions` requires `Content-Type: application/json`, `model` and one
 string `prompt`. Requests with an `Origin` header are rejected with 403: this
 frontend supports command-line clients, not browser callers. Other content
-types return 415. Streaming and ordinary JSON responses use the same generation
-and text contract.
+types return 415. All routes reject unrecognized Host headers; accepted hosts
+are the connection's local IP address, `localhost`, and the configured `--host`.
+Streaming and ordinary JSON responses use the same generation and text contract.
 
 ```bash
 curl http://127.0.0.1:8000/v1/completions \
@@ -81,8 +82,8 @@ is appended. When requested, one `choices: []` usage event follows, then
 `data: [DONE]`. Ordinary responses always include usage. Counts come from
 actual prompt/generated IDs, including generated EOS or other hidden special
 tokens, rather than from re-tokenizing the displayed text.
-Decoding currently reprocesses the cumulative token list on the owner thread;
-its total work grows quadratically with output length, bounded by model context.
+The decoder processes each sampled token once, retaining only incomplete UTF-8
+bytes between events. Completed text is never decoded again.
 
 ## Ownership, limits and errors
 
@@ -160,9 +161,8 @@ can deliver several events together. Its latency starts after the client
 concurrency semaphore and ends at the last choice event, excluding client-side
 queueing and the usage/`[DONE]` tail. The offline M1 harness instead timestamps
 engine enqueue/steps and excludes HTTP/tokenization; the values are not
-interchangeable. The scheduler fairness guard also changes offline
-prefill/recurrent interleaving; new runs need their own timing baseline rather
-than reusing frozen M1 timings.
+interchangeable; see the [offline benchmark guide](benchmarks.md) for baseline
+scope and scheduler changes.
 
 ## Validation
 

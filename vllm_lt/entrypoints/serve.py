@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+from dataclasses import asdict
 from functools import partial
 
 import torch
@@ -44,6 +45,7 @@ def load_engine(args):
 def main():
     from aiohttp import web
 
+    from vllm_lt.serving.protocol import ServingLimits
     from vllm_lt.serving.server import create_app
 
     parser = argparse.ArgumentParser(description="Serve one Ouro model with OpenAI completions")
@@ -60,16 +62,14 @@ def main():
     parser.add_argument("--block-size", type=int, default=16)
     parser.add_argument("--max-num-seqs", type=int, default=8)
     parser.add_argument("--max-num-batched-tokens", type=int, default=128)
-    parser.add_argument("--max-requests", type=int, default=64)
-    parser.add_argument("--output-buffer", type=int, default=32)
-    parser.add_argument("--max-body-bytes", type=int, default=1024 * 1024)
-    parser.add_argument("--request-timeout", type=float, default=300)
-    parser.add_argument("--write-timeout", type=float, default=10)
-    parser.add_argument("--shutdown-timeout", type=float, default=30)
+    defaults = asdict(ServingLimits())
+    for name, default in defaults.items():
+        parser.add_argument("--" + name.replace("_", "-"), type=type(default), default=default)
     parser.add_argument("--cpu-threads", type=int, default=1)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
+    limits = ServingLimits(**{name: getattr(args, name) for name in defaults})
     if args.device == "cpu" and args.attention_backend != "torch":
         parser.error("CPU execution requires --attention-backend torch")
     torch.set_num_threads(args.cpu_threads)
@@ -77,19 +77,15 @@ def main():
     app = create_app(
         partial(load_engine, args),
         model=args.served_model_name,
-        max_requests=args.max_requests,
-        output_buffer=args.output_buffer,
-        max_body_bytes=args.max_body_bytes,
-        request_timeout=args.request_timeout,
-        write_timeout=args.write_timeout,
-        shutdown_timeout=args.shutdown_timeout,
+        limits=limits,
+        allowed_hosts=("localhost", args.host),
     )
     web.run_app(
         app,
         host=args.host,
         port=args.port,
         handler_cancellation=True,
-        shutdown_timeout=args.shutdown_timeout,
+        shutdown_timeout=limits.shutdown_timeout,
     )
 
 
