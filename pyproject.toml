@@ -28,6 +28,7 @@ license-files = ["LICENSE", "NOTICE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = ["gpu: requires a scheduler-reserved CUDA device"]
 
 [tool.ruff]

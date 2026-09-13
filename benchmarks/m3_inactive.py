@@ -5,13 +5,13 @@ from copy import deepcopy
 from pathlib import Path
 
 from vllm_lt.models.config import OuroConfig
+from vllm_lt.validation.schema import _digest, _fixture_stats, read_json, write_json
 
 from .m2 import (
     _audit_numerical_view,
     _run_numerical_view,
     build_numerical_plan,
 )
-from .schema import _digest, _fixture_stats, read_json, write_json
 
 PADDING = {"mode": "odd_slots", "row_count": 8, "table_width": 32, "decode_only": True}
 
@@ -183,8 +183,8 @@ def _padding_execution(case, observations):
     """Instance-only runner selection; engine/observer loops remain the shared Q1 driver."""
     import torch
 
-    from . import runner
-    from .native import observe_native
+    from vllm_lt.validation import runner
+    from vllm_lt.validation.native import observe_native
 
     original_engine, original_observer = runner.ValidationEngine, runner.observe_native
     engine_holder = []
@@ -261,7 +261,7 @@ def _padding_execution(case, observations):
 
 
 def execute_model_case(model, view, case, output, budget, dumps, deadline):
-    from .runner import execute_case
+    from vllm_lt.validation.runner import execute_case
 
     observations = []
     with _padding_execution(case, observations):

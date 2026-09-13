@@ -12,13 +12,28 @@ fallback, and end-to-end performance gates pass.
 The baseline is the FP32 metadata implementation in [M2 PR #12](https://github.com/hsliuustc0106/vllm-lt/pull/12).
 Preserve per-request positions and depth tables, full-depth prefill, actual
 synchronous gates, cumulative hazards, LAST-EXITED propagation, lifetime page
-reservation, and scheduler order. Q1's BF16 diagnosis remains open.
+reservation, and scheduler order. This is historical FP32 evidence; new GPU
+comparisons follow the [BF16 precision policy](precision-policy.md).
 
 Padding is private runner state. It cannot manufacture requests, participate in
 coda or sampling, advance an RNG, or change a request waiting in another stage.
 There are no persistent buffers, graph capture/replay, bucket selection, public
 configuration, asynchronous routing, allocator changes, or performance claims
 in this prerequisite.
+
+## Why masked rows
+
+Masked rows keep a single attention launch per layer for mixed valid history
+lengths and provide fixed physical shapes for later graph capture. Grouping rows
+by equal history length would avoid padding work but split attention into more
+launches. The tradeoff here is extra work on padded rows; this PR does not measure
+whether that tradeoff improves performance.
+
+Written-position bookkeeping still calls `allocation.written[depth][layer].add(position)`
+for each live row and layer. Consolidating those updates into the descriptor
+lifecycle belongs to later host-time work and must preserve initialized-prefix
+and duplicate-write checks. The padded Torch backend also uses host indexing and
+mask conversion per layer; it remains a private eager diagnostic path.
 
 ## Borrowed metadata and model boundary
 
@@ -81,6 +96,14 @@ launch savings, or the remaining M3 acceptance criteria.
 
 ## Commands
 
+The M3 experiment harness lives in checkout-only `benchmarks/m3_inactive*.py`,
+alongside M2, and is excluded from the installed runtime package. Run these
+commands from a source checkout. The checked-in JSON contract is authoritative;
+resolved plans and intermediate test logs live with the historical evidence.
+The [result report](benchmarks/m3-inactive-20260911.md) links the frozen protocol
+and release. Reproduce the original run with its archived sources, since source
+and import hashes are part of each plan's identity.
+
 Use the same prepared environment and checkpoint for two clean execution
 checkouts. A restores the five production paths named by
 `benchmarks/fixtures/ouro-m3-inactive-contract.json` from the M2 snapshot; B
@@ -90,7 +113,7 @@ input drift and incompatible dependencies without initializing/querying CUDA or
 loading checkpoint tensors.
 
 ```bash
-python -m vllm_lt.validation.m3_inactive_run probe \
+python -m benchmarks.m3_inactive_run probe \
   --baseline-root /absolute/path/control \
   --candidate-root /absolute/path/candidate \
   --contract /absolute/path/candidate/benchmarks/fixtures/ouro-m3-inactive-contract.json \
@@ -107,10 +130,10 @@ checkouts, source/input hashes and affinity command used for a run.
 ```bash
 gpu run --gpu-ids 7 --nonblock --timeout 1h \
   --note 'vllm-lt M3 inactive-row correctness A/B' -- \
-  python -m vllm_lt.validation.m3_inactive_run run \
+  python -m benchmarks.m3_inactive_run run \
   --plan /absolute/path/m3-plan/plan.json --output /absolute/path/m3-run
 
-python -m vllm_lt.validation.m3_inactive_run report \
+python -m benchmarks.m3_inactive_run report \
   --run-dir /absolute/path/m3-run
 ```
 

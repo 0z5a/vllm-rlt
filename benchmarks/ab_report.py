@@ -3,9 +3,10 @@
 import math
 from pathlib import Path
 
+from vllm_lt.benchmarks.report import _profiles, _run_record
+from vllm_lt.benchmarks.schema import _file_record, read_json, write_json
+
 from .ab_schema import CELLS, WORKERS, equal, execution_view, require, validate_ab_plan
-from .report import _profiles, _run_record
-from .schema import _file_record, read_json, write_json
 
 
 def _finite(value, label, *, positive=False):
@@ -201,7 +202,7 @@ def _audit_profile_structure(profile, implementation):
 
 
 def build_report(output_dir):
-    from vllm_lt.validation.m2 import audit_numerical
+    from benchmarks.m2 import audit_numerical
 
     from .ab import artifact_usage, audit_worker_controls
 

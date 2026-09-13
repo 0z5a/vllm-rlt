@@ -1,6 +1,65 @@
 # Source notes and implementation boundaries
 
-Sources were checked on 2026-09-10. These notes distinguish the published method, the released model, and the engineering choices made for vllm-lt.
+CDB sources were checked on 2026-09-10; original Ouro precision and evaluation
+guidance was checked on 2026-09-12. These notes distinguish the published method,
+the released model, and the engineering choices made for vllm-lt.
+
+## Original Ouro paper and precision guidance
+
+The original Ouro paper is [Zhu et al., *Scaling Latent Reasoning via Looped
+Language Models*, arXiv:2510.25741v5](https://arxiv.org/html/2510.25741v5).
+The CDB paper below is a separate source for scheduling/cache design.
+The inspected Ouro paper mentions BF16 training in its auxiliary experiments
+(Appendix B), but provides no per-kernel inference dtype/accumulation recipe.
+
+For inference, the [pinned release configuration](https://huggingface.co/ByteDance/Ouro-1.4B/blob/574fa66cb8bf5abdc979642d01cf2b79b16bfab1/config.json)
+sets `torch_dtype` to `bfloat16`. Its [Quick Start](https://huggingface.co/ByteDance/Ouro-1.4B/blob/574fa66cb8bf5abdc979642d01cf2b79b16bfab1/README.md)
+loads with `torch_dtype="auto"`. The following explicit boundaries come from
+the [released model code](https://huggingface.co/ByteDance/Ouro-1.4B/blob/574fa66cb8bf5abdc979642d01cf2b79b16bfab1/modeling_ouro.py):
+
+| Operation | Published inference behavior |
+| --- | --- |
+| Projections, MLP, LM head | Model-dtype operands/outputs; no full-model FP32 promotion. Backend accumulation flags are not fixed here. |
+| Eager attention | Native-dtype QK and PV products; softmax explicitly computes in FP32, then casts probabilities back to query dtype before PV. |
+| RMSNorm | FP32 normalization arithmetic, then cast back to input dtype. |
+| RoPE | FP32 phase and trigonometric computation, then cast factors to activation dtype. |
+| Exit distribution | Sigmoid, remaining probability, and CDF use tensors without an explicit FP32 promotion. |
+
+The downloaded model source matches the vendored official reference exactly:
+SHA-256 `c5c68fbb368ce2909c257ae2afc50719be8c91539333d3295e19312c4316f413`.
+The existing [reference source notes](../vllm_lt/validation/reference_code/README.md)
+record the pin, dependency compatibility, and eager adapter scope.
+
+These observations define the initial fidelity baseline. Our paged attention
+retains FP32 score/probability/value intermediates; our runner computes sigmoid
+in FP32 and updates cumulative probability as host Python floats. Those are
+project choices requiring declared comparisons, not author-mandated precision.
+Fused kernels may have different rounding boundaries; document and validate
+such differences without requiring a full-model FP32 fallback. See the
+[precision policy](precision-policy.md).
+
+## Accuracy evidence and the original evaluation protocol
+
+The [existing Q2 screen](https://github.com/hsliuustc0106/vllm-lt/blob/8a0654ad73cf59af4546517fab583b4f002cacf4/docs/benchmarks/q2-fp32-quality-20260911.md)
+used FP32, fixed four loops, a custom zero-shot prompt/parser, and at most 256
+output tokens. It scored 4/64 correct (6.25%); 58 answers were unparseable and
+57 hit the output limit. No paired BF16 task-accuracy result exists in that
+report. Numerical agreement tests do not establish language-task accuracy.
+
+The original paper reports 78.92% GSM8K for Ouro-1.4B at four loops.
+[Appendix C.1 / Table 16](https://arxiv.org/html/2510.25741v5#A3.T16)
+specifies strict match, **3-shot CoT**, and **lm-eval-harness**. Our screen does
+not reproduce that protocol, so the two scores are not a controlled comparison
+and their difference does not identify a dtype or engine defect.
+
+A successor accuracy evaluation must start from those published settings and
+the pinned BF16 release. Freeze the harness/task revision, three demonstrations,
+prompt formatting, extraction rules, EOS/stop behavior, and token limits before
+execution; identify details not specified by the paper as project choices.
+Compare native and official fixed-four-loop BF16 under the same protocol,
+then assess adaptive behavior separately. Size context/output budgets for the
+few-shot protocol instead of inheriting the old 512/256 limits. Retain the old
+4/64 result; a bounded subset is a regression screen, not full-paper replication.
 
 ## Continuous depth batching
 

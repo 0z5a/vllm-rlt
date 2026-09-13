@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from vllm_lt.benchmarks import ab
-from vllm_lt.benchmarks.ab_schema import equal, require
+from benchmarks import ab
+from benchmarks.ab_schema import equal, require
 from vllm_lt.benchmarks.schema import _file_record, read_json, write_json
 
 from .m3_inactive import audit_model_rows

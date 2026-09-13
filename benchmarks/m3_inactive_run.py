@@ -7,8 +7,9 @@ import signal
 import time
 from pathlib import Path
 
-from vllm_lt.benchmarks import ab, runner
-from vllm_lt.benchmarks.ab_schema import RUNTIME_VARIABLES, affinity_snapshot, equal, require
+from benchmarks import ab
+from benchmarks.ab_schema import RUNTIME_VARIABLES, affinity_snapshot, equal, require
+from vllm_lt.benchmarks import runner
 from vllm_lt.benchmarks.schema import read_json
 
 from .m3_inactive import run_model_rows
@@ -237,7 +238,7 @@ def run(plan, *, output_dir):
                     worker,
                     output_dir,
                     deadline,
-                    module="vllm_lt.validation.m3_inactive_run",
+                    module="benchmarks.m3_inactive_run",
                     active_deadline=active_deadline,
                 )
             finally:

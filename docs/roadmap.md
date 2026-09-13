@@ -6,11 +6,17 @@ last-exited KV contracts. Keep the vLLM-style separation between the engine,
 scheduler, runner, model, and attention backend. Loop-level scheduling and
 depth-aware cache management remain owned by vllm-lt.
 
+Precision requirements were revised on 2026-09-12: **BF16 is the primary
+inference and performance target**, with FP32 accumulation/intermediates in
+selected numerically sensitive operations. Full-model FP32 is an optional
+diagnostic/reference path. The [precision policy](precision-policy.md) governs
+new work; dated contracts and acceptance results keep their original meaning.
+
 This roadmap records the priority agreed on 2026-09-10. Optimization order
 after the first baseline is conditional on profiling. Set timing and
 performance targets using the measurements from each completed milestone.
 
-## Starting point
+## Historical preview starting point
 
 The preview at `fd3e45b71a9cb53421fdbb08ed2474ece37f3f92` loads real weights,
 implements full-depth chunked prefill, synchronous refill/no-refill decoding,
@@ -28,19 +34,22 @@ throughput improvement or task-quality result yet. See the
 | Milestone | Deliverable | Completion criterion |
 | --- | --- | --- |
 | M0 — preview | Current synchronous engine and validation record | Implemented; draft PR remains under review, with BF16 limitations recorded. |
-| M1 — baseline, next | Reproducible benchmark, bounded profiler captures, and bottleneck report | Correct timing and replay accounting, raw results, variability, and a ranked next optimization. No speedup required. |
-| Q1 — numerical qualification, parallel with M1 | Expanded FP32/BF16 diagnostics and independent adaptive-history oracle | A documented numerical acceptance decision; BF16 remains experimental until it passes justified criteria. |
+| M1 — baseline | BF16 benchmark, bounded profiler captures, and bottleneck report | Explicit accumulation policy, correct timing/replay accounting, raw results, variability, and a ranked next optimization. Retain the historical FP32 baseline. |
+| Q1 — numerical validation, parallel with M1 | BF16 kernel/model comparisons and independent adaptive-history oracle; optional FP32 diagnostics | Justified BF16 fidelity/decision criteria, exact state invariants, and a separately reported investigation of historical failures. |
 | M2 — reduce host overhead | Reuse batch metadata across layers; batch result transfers where profiling supports it | Preserve outputs, gates, cache isolation, and sampling state; demonstrate the declared end-to-end benefit. |
 | M3 — recurrent CUDA graphs | Safe inactive rows, persistent buffers, then capture one recurrent traversal | Eager/graph equivalence, safe slot reuse, bounded graph memory, and measured benefit including routing overhead. |
 | M4 — attention and KV efficiency | One measured attention or KV bottleneck per PR | Improve the chosen workload within declared latency, correctness, and memory guardrails. |
 | Q2 — quality and comparison | Bounded task-quality screen and equivalent cached external baseline | State which dtype/depth policy is qualified and which speed/quality comparisons are supported. |
 | M5 — asynchronous routing, later | Evaluate the paper's lookahead method only after the synchronous baseline is fast | Available or separately trained/calibrated gate, held-out quality evidence, and benefit over the optimized synchronous engine. |
 
-M1 and Q1 can proceed independently using FP32 as the numerical baseline.
+M1 and Q1 proceed together with BF16 as the primary target. An open historical
+reference diagnosis does not block bounded BF16 profiling, optimization A/B,
+or quality data collection after each run's functional prerequisites pass.
 M2–M4 retain synchronous gating initially. Attention work can precede graphs if
-M1 identifies it as the larger cost. Q2 depends on Q1 for BF16 promotion and is
-required before publishing adaptive speed/quality claims. Serving, more models,
-distributed inference, quantization, speculative decoding, and prefix sharing
+M1 identifies it as the larger cost. Numerical qualification and Q2 quality
+qualification are reported separately; both must support adaptive speed/quality
+claims. Serving, more models, distributed inference, quantization,
+speculative decoding, and prefix sharing
 are deferred until the single-model performance case is established.
 
 ## M1: first benchmark and profiler PR
@@ -62,14 +71,17 @@ Start with this bounded suite, using the pinned checkpoint/tokenizer revision
 | W4 | 8, simultaneous | Alternating 64 / 32 and 128 / 64 | Frozen output IDs and mixed exit depths 2/3/4; refill versus no-refill. |
 | W5 | Same requests as W4 | Same lengths and output IDs | Replay with depth four everywhere; uniform-depth control. |
 
-Use frozen token IDs, greedy selection, `ignore_eos=True`, FP32, Triton
-attention, full-depth prefill, and one device. Initial configuration:
+Use frozen token IDs, greedy selection, `ignore_eos=True`, BF16, Triton
+attention, an explicit accumulation policy, full-depth prefill, and one device.
+The historical FP32 schema/contract needs a versioned successor before this
+BF16 workflow is executable; see [implementation follow-up](precision-policy.md#implementation-follow-up).
+Initial configuration:
 `block_size=16`, `num_blocks=1024`, `max_num_seqs=8`,
 `max_num_batched_tokens=128`, and `min_coda_batch_size=1`. W1–W3 use refill.
 Run W4 and W5 under both refill and no-refill; within each workload, change
 only scheduling mode. Confirm capacity from the actual model configuration in
-the CPU probe: this pool alone uses 6 GiB
-in FP32, in addition to weights, activations, and runtime allocations.
+the CPU probe: this pool alone uses 3 GiB in BF16 (6 GiB in the historical
+FP32 runs), in addition to weights, activations, and runtime allocations.
 
 The replay path must execute the same declared model, gate, coda, cache, and
 result-transfer work in both modes, then impose the frozen token/exit trace
@@ -153,19 +165,31 @@ Separate implementation fidelity, adaptive KV semantics, and task quality:
    exit followed by deeper execution, chunk/block boundaries, mixed batches,
    cancellation, and reuse. Full-depth dense recomputation and the official
    model's adaptive output selection do not reproduce this cache history.
-3. **Quality screen.** Predeclare a pinned, deterministic 64-example GSM8K
-   subset, prompt template, exact answer parser, maximum 512 prompt tokens and
-   256 generated tokens, and disjoint feasibility examples. Record exclusions,
+3. **Quality screen.** Follow the original Ouro paper's GSM8K **3-shot CoT**,
+   strict-match, lm-eval-harness settings and pinned BF16 release. Freeze the
+   harness/task revision, demonstrations, formatting, parser, and generation
+   settings where the paper is silent. Predeclare a deterministic 64-example
+   paired native/official fixed-depth screen and disjoint feasibility examples;
+   a full-paper replication requires its full evaluation scope. Set context
+   and output budgets for the few-shot protocol, replacing the historical
+   zero-shot screen's 512/256 limits in a new contract. Record exclusions,
    truncation, paired answer accuracy, disagreements, realized depths, and
-   uncertainty. Compare fixed-depth FP32 with fixed-depth BF16 first, then
-   fixed-depth with adaptive BF16 at threshold 0.7 and minimum two loops if
-   BF16 is qualified. This is an initial regression screen; broader quality
-   claims need a separately budgeted evaluation. Do not tune the gate on the
+   uncertainty. See the [protocol/source comparison](paper-notes.md#accuracy-evidence-and-the-original-evaluation-protocol).
+   Use fixed-depth BF16 as the primary baseline, then compare it
+   with adaptive BF16 at threshold 0.7 and minimum two loops. Add fixed-depth
+   FP32 only for a separately stated sensitivity question. Data collection can
+   proceed alongside numerical diagnosis; qualification must report both
+   numerical and quality outcomes. This is an initial regression screen;
+   broader quality claims need a separately budgeted evaluation. Do not tune the gate on the
    evaluation examples.
 
-Retain the original BF16 failure at `atol=0.25, rtol=0.02`. Any revised tolerance
-needs independent justification and must be declared before the new comparison;
-matching a few greedy continuations is insufficient. Decide arithmetic
+Retain the original BF16 failure at `atol=0.25, rtol=0.02` under its original
+contract. Successor kernel/model and decision criteria follow the
+[precision policy](precision-policy.md#validation-requirements); bounds need
+independent justification before the new comparison. Bitwise or universal
+top-1 equality across different arithmetic paths is not a general requirement;
+exact structural invariants and metadata-only A/B checks remain mandatory.
+Matching a few greedy continuations is insufficient. Decide arithmetic
 acceptance and task-quality acceptance separately. Predeclare a maximum
 acceptable quality loss and use a paired uncertainty interval; if the small
 screen cannot exclude unacceptable loss, report it as inconclusive and retain
@@ -246,11 +270,14 @@ follow demonstrated needs rather than blocking the Ouro runtime work.
 
 ## Immediate backlog
 
-1. **Next PR:** M1 benchmark/profiler harness and FP32 baseline report.
-2. **Parallel PR:** Q1 BF16 diagnosis and serial last-exited oracle; define the
-   numerical acceptance contract before promoting BF16.
-3. **Following PR:** the highest-impact measured runtime change, with metadata
-   reuse the initial candidate. Choose attention first if the profile warrants it.
+1. Add a versioned BF16 benchmark/validation workflow with explicit accumulation
+   settings, preserving the historical FP32 contracts and reports.
+2. Freeze justified BF16 numerical/decision criteria and investigate the original
+   Q1 discrepancies with independent, same-state comparisons. Keep exact cache,
+   lifecycle, and metadata-only A/B invariants.
+3. Measure metadata reuse with matched BF16 baseline/candidate runs and profile
+   its costs. Collect fixed-depth/adaptive BF16 quality evidence separately;
+   use these results to select further runtime or attention work.
 
 Each completed milestone updates this roadmap with its commit, artifact links,
 acceptance outcome, and the next evidence-backed decision. New workload families

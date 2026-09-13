@@ -5,7 +5,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
-from vllm_lt.benchmarks.ab_schema import (
+from benchmarks.ab_schema import (
     IMPORT_MODULES,
     RUNTIME_VARIABLES,
     _harness,
@@ -19,9 +19,9 @@ from vllm_lt.benchmarks.ab_schema import (
 )
 from vllm_lt.benchmarks.schema import _constants, _file_record, _integer, _keys, _model_files, _text
 from vllm_lt.models import OuroConfig
+from vllm_lt.validation.schema import _digest, _file_records, _validate_dependencies, read_json
 
 from .m3_inactive import PADDING, build_model_plan, validate_model_plan
-from .schema import _digest, _file_records, _validate_dependencies, read_json
 
 INPUTS = {
     "suite": "benchmarks/fixtures/ouro-q1.json",

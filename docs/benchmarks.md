@@ -1,6 +1,11 @@
 # Ouro M1 benchmark
 
-The M1 harness measures the synchronous FP32 Ouro engine on one reserved GPU.
+New benchmarks target BF16 inference with explicitly recorded accumulation
+precision; see the [precision policy](precision-policy.md). BF16 profiling and
+optimization comparisons can proceed alongside Q1 diagnosis. This guide's
+commands reproduce the historical FP32 M1 contract on one reserved GPU.
+The current schema enforces FP32: a versioned BF16 contract and harness support
+are required before using these commands for new BF16 comparisons.
 It follows [issue #3](https://github.com/hsliuustc0106/vllm-lt/issues/3).
 A completed baseline is a measurement milestone; it does not require a speedup.
 The [2026-09-10 baseline report](benchmarks/m1-20260910.md) records the first
@@ -59,8 +64,9 @@ A 600-second guard applies to each workload and a two-hour deadline covers the
 whole process, including preparation and teardown. The scheduler enforces the
 outer limit even if a device call blocks. An incomplete suite remains visible.
 
-One model stays resident. Each execution creates and destroys a fresh engine
-and 6 GiB KV pool outside its timer. Allocator and compiled caches persist.
+For this historical FP32 contract, one model stays resident. Each execution
+creates and destroys a fresh engine and 6 GiB KV pool outside its timer.
+Allocator and compiled caches persist.
 No shared cache is cleared; process-local cuBLAS cleanup happens only at final
 teardown. Active requests and reserved KV pages must return to zero after each
 execution; persistent model/pool/allocator bytes are reported separately.

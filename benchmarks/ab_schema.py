@@ -6,10 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from vllm_lt.models.config import OuroConfig
-from vllm_lt.validation.schema import _file_records, _validate_dependencies, dependency_manifest
-
-from .schema import (
+from vllm_lt.benchmarks.schema import (
     _constants,
     _digest,
     _file_record,
@@ -23,6 +20,8 @@ from .schema import (
     _workload_stats,
     read_json,
 )
+from vllm_lt.models.config import OuroConfig
+from vllm_lt.validation.schema import _file_records, _validate_dependencies, dependency_manifest
 
 CELLS = (
     "W1-refill",
@@ -34,54 +33,27 @@ CELLS = (
     "W5-no_refill",
 )
 WORKERS = ("N-A", "N-B", "A1", "B1", "B2", "A2", "P-A", "P-B")
-DIFF_PATHS = ("vllm_lt/core/kv_cache_manager.py", "vllm_lt/models/ouro.py")
 IMPORT_MODULES = (
-    "vllm_lt.benchmarks.ab_schema",
+    "benchmarks.ab",
+    "benchmarks.ab_schema",
+    "benchmarks.ab_report",
+    "benchmarks.m2",
     "vllm_lt.benchmarks.runner",
     "vllm_lt.core.kv_cache_manager",
     "vllm_lt.models.ouro",
     "vllm_lt.validation.runner",
 )
-LIMITS = {
-    "total_timeout_s": 7200,
-    "case_timeout_s": 600,
-    "workers": 8,
-    "model_loads": 8,
-    "executions": 105,
-    "numerical_executions": 27,
-    "feasibility_executions": 14,
-    "warmup_executions": 32,
-    "measured_executions": 28,
-    "profile_executions": 4,
-    "profile_decode_outputs": 16,
-    "profile_trace_bytes_max": 2 * 1024**3,
-    "profile_total_bytes_max": 4 * 1024**3,
-    "artifact_bytes_max": 12 * 1024**3,
-}
-ACCEPTANCE = {
-    "target_cell": "W1-refill",
-    "target_ratio_min": 1.1,
-    "control_ratio_min": 0.95,
-    "peak_increase_bytes_max": 64 * 1024**2,
-    "setup_increase_ns_max": 100_000_000,
-    "variation": "min-B-strictly-greater-than-max-A",
-    "numerical": "all-required-reference-and-base-candidate-exact-gates",
-}
+# The checked-in contract is the authority for this fixed experiment. Keep its
+# values in one place; resolved plans may fill in only the host-specific controls.
+CONTRACT_PATH = Path(__file__).resolve().parent / "fixtures/ouro-m2-contract.json"
+CONTRACT = read_json(CONTRACT_PATH)
+DIFF_PATHS = tuple(CONTRACT["production_diff_paths"])
+LIMITS = CONTRACT["limits"]
+ACCEPTANCE = CONTRACT["acceptance"]
 CONTROL_CONSTANTS = {
-    "cpu_threads": 1,
-    "interop_threads": 1,
-    "seed": 0,
-    "numa_policy": "inherit-verified-parent-binding",
-    "residency_policy": "one-fresh-worker-one-model-one-engine",
-    "cache_policy": "fresh-engine-preserve-worker-allocator",
-    "environment_policy": "same-prepared-environment-all-workers",
+    key: value for key, value in CONTRACT["controls"].items() if key not in ("gpu_ids", "affinity")
 }
-INPUTS = {
-    "benchmark_suite": "benchmarks/fixtures/ouro-m1.json",
-    "benchmark_contract": "benchmarks/fixtures/ouro-m1-contract.json",
-    "numerical_suite": "benchmarks/fixtures/ouro-q1.json",
-    "numerical_contract": "benchmarks/fixtures/ouro-q1-contract.json",
-}
+INPUTS = CONTRACT["inputs"]
 RUNTIME_VARIABLES = (
     "OMP_NUM_THREADS",
     "MKL_NUM_THREADS",
@@ -214,7 +186,7 @@ def probe_checkout(root):
     root = Path(root).resolve()
     env = dict(os.environ, PYTHONPATH=str(root))
     raw = subprocess.check_output(
-        [sys.executable, "-m", "vllm_lt.benchmarks.ab", "source-probe"],
+        [sys.executable, "-m", "benchmarks.ab", "source-probe"],
         cwd=root,
         env=env,
         text=True,
@@ -225,7 +197,7 @@ def probe_checkout(root):
 
 
 def read_json_string(raw):
-    from .schema import _finite_float, _object_pairs, _reject_constant
+    from vllm_lt.benchmarks.schema import _finite_float, _object_pairs, _reject_constant
 
     return json.loads(
         raw,
@@ -236,7 +208,7 @@ def read_json_string(raw):
 
 
 def _harness(source):
-    prefixes = ("vllm_lt/benchmarks/", "vllm_lt/validation/", "benchmarks/fixtures/")
+    prefixes = ("vllm_lt/benchmarks/", "vllm_lt/validation/", "benchmarks/")
     files = [
         row
         for row in source["files"]
@@ -365,7 +337,7 @@ def validate_model_config(config):
 
 
 def make_ab_plan(*, baseline_root, candidate_root, contract_path, model_path, gpu_ids, affinity):
-    from vllm_lt.validation.m2 import build_numerical_plan
+    from benchmarks.m2 import build_numerical_plan
 
     contract_path, model_path = Path(contract_path).resolve(), Path(model_path).resolve()
     contract = read_json(contract_path)
@@ -442,7 +414,7 @@ def make_ab_plan(*, baseline_root, candidate_root, contract_path, model_path, gp
 
 
 def validate_ab_plan(plan):
-    from vllm_lt.validation.m2 import validate_numerical_plan
+    from benchmarks.m2 import validate_numerical_plan
 
     _keys(
         plan,

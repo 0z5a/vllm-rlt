@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from vllm_lt.benchmarks import ab_schema as schema
+from benchmarks import ab_schema as schema
 from vllm_lt.benchmarks.schema import _digest, _file_record, read_json, write_json
 from vllm_lt.models import OuroConfig
 
@@ -62,7 +62,13 @@ def ab_plan(tmp_path, monkeypatch):
                     contents["provenance"]["tokenizer"][field] = tokenizer[field]
             (root / relative).parent.mkdir(parents=True, exist_ok=True)
             write_json(root / relative, contents)
-        for relative in [*schema.DIFF_PATHS, "vllm_lt/benchmarks/ab.py"]:
+        for relative in [
+            *schema.DIFF_PATHS,
+            "benchmarks/ab.py",
+            "benchmarks/ab_schema.py",
+            "benchmarks/ab_report.py",
+            "benchmarks/m2.py",
+        ]:
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(key if relative in schema.DIFF_PATHS else "same common harness")
@@ -148,7 +154,20 @@ def test_rehashed_invalid_contracts_and_rows_are_rejected(ab_plan, mutate):
         schema.validate_ab_plan(plan)
 
 
-@pytest.mark.parametrize("change", ["weight", "input", "source", "affinity", "environment"])
+@pytest.mark.parametrize(
+    "change",
+    [
+        "weight",
+        "input",
+        "source",
+        "affinity",
+        "environment",
+        "benchmarks/ab.py",
+        "benchmarks/ab_schema.py",
+        "benchmarks/ab_report.py",
+        "benchmarks/m2.py",
+    ],
+)
 def test_runtime_verification_detects_frozen_control_drift(ab_plan, monkeypatch, change):
     if change == "weight":
         (Path(ab_plan["model_path"]) / "model.safetensors").write_bytes(b"changed")
@@ -160,6 +179,10 @@ def test_runtime_verification_detects_frozen_control_drift(ab_plan, monkeypatch,
         altered = deepcopy(AFFINITY)
         altered["numactl_show"]["membind"] = "0"
         monkeypatch.setattr(schema, "affinity_snapshot", lambda: altered)
+    elif change.startswith("benchmarks/"):
+        # Even a matching edit on both sides invalidates an already frozen plan.
+        for implementation in ab_plan["implementations"].values():
+            (Path(implementation["root"]) / change).write_text("changed shared harness")
     else:
         monkeypatch.setenv("OMP_NUM_THREADS", "changed")
     with pytest.raises(ValueError):
@@ -193,7 +216,7 @@ def test_active_numa_policy_is_distinct_from_cpuset_allowance(monkeypatch):
 
 
 def test_rehashed_embedded_input_cannot_differ_from_original_file(ab_plan):
-    from vllm_lt.validation.m2 import build_numerical_plan
+    from benchmarks.m2 import build_numerical_plan
     from vllm_lt.validation.schema import FIXTURE_HASH_FIELDS
 
     changed = deepcopy(ab_plan)

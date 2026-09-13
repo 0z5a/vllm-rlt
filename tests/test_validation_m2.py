@@ -10,8 +10,8 @@ from pathlib import Path
 import pytest
 import torch
 
+from benchmarks import m2
 from vllm_lt.models import OuroConfig, OuroForCausalLM
-from vllm_lt.validation import m2
 from vllm_lt.validation.diagnostics import DiagnosticDump, SpoolBudget, TensorSpool
 from vllm_lt.validation.evidence import ComparisonStream, boundary_key
 from vllm_lt.validation.schema import _digest, read_json, write_json

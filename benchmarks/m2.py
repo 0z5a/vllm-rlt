@@ -10,8 +10,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from vllm_lt.models.config import OuroConfig
-
-from .schema import (
+from vllm_lt.validation.schema import (
     _digest,
     _fixture_stats,
     _validate_contract,
@@ -230,7 +229,7 @@ def _save_ledger(folder, ledger):
 
 
 def _restore_budget(folder, view, ledger):
-    from .diagnostics import SpoolBudget, TensorSpool
+    from vllm_lt.validation.diagnostics import SpoolBudget, TensorSpool
 
     limits = view["contract"]["limits"]
     budget = SpoolBudget(limits["cumulative_spool_written_bytes"], limits["group_spool_bytes"])
@@ -270,8 +269,8 @@ def _run_numerical_view(
     model, view, implementation_id, output_dir, deadline_ns, *, execute=None, after_case=None
 ):
     """Shared execution for a caller-validated frozen A/B numerical view."""
-    from .diagnostics import DiagnosticDump, SpoolBudget
-    from .runner import execute_case
+    from vllm_lt.validation.diagnostics import DiagnosticDump, SpoolBudget
+    from vllm_lt.validation.runner import execute_case
 
     if implementation_id not in ("A", "B"):
         raise ValueError("implementation_id must be A or B")
@@ -432,7 +431,7 @@ def audit_numerical(output_dir, parent_plan):
 
 def _audit_numerical_view(output_dir, view):
     """Audit a caller-validated A/B view without loading a checkpoint or device."""
-    from .report import _audit_case, _audit_comparison, _audit_raw_evidence
+    from vllm_lt.validation.report import _audit_case, _audit_comparison, _audit_raw_evidence
 
     folder = Path(output_dir) / "numerical"
     result = {

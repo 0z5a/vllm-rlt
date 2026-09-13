@@ -30,7 +30,7 @@ def _digest(value):
 
 
 def _read(path):
-    from .schema import read_json
+    from vllm_lt.validation.schema import read_json
 
     return read_json(path)
 
@@ -284,8 +284,7 @@ def run_kernel_evaluation(plan, evaluation_id, output_dir, *, device, deadline_n
     import torch
 
     from vllm_lt.kernels.paged_attention import torch_paged_attention, triton_paged_attention
-
-    from .diagnostics import SpoolBudget, TensorSpool
+    from vllm_lt.validation.diagnostics import SpoolBudget, TensorSpool
 
     validate_kernel_plan(plan)
     row = next(item for item in plan["execution_order"] if item["evaluation_id"] == evaluation_id)
@@ -482,7 +481,7 @@ def audit_kernel_outputs(output_dir, plan):
     """Read raw typed outputs and reconstruct fixture/full-cache hashes without CUDA."""
     import torch
 
-    from .diagnostics import TensorSpool
+    from vllm_lt.validation.diagnostics import TensorSpool
 
     validate_kernel_plan(plan)
     root, config = Path(output_dir), plan["config"]

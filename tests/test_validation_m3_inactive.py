@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 import torch
 
+from benchmarks import m3_inactive as m3
 from vllm_lt.models import OuroConfig, OuroForCausalLM
-from vllm_lt.validation import m3_inactive as m3
 from vllm_lt.validation.schema import read_json, write_json
 
 ROOT = Path(__file__).resolve().parents[1]

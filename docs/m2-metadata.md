@@ -1,5 +1,13 @@
 # M2: reuse KV metadata across a recurrent traversal
 
+New M2 comparisons target BF16 inputs/storage with the same accumulation policy
+on both sides, following the [precision policy](precision-policy.md). Exact
+BF16 baseline/candidate regression checks for this metadata-only change can
+proceed while Q1's independent-reference diagnosis remains open. This guide
+describes the FP32 experiment contract; historical reproduction uses the frozen
+source, while the current commands require a new plan. A versioned BF16
+contract and harness update remain required for BF16 execution.
+
 [M2 #5](https://github.com/hsliuustc0106/vllm-lt/issues/5) selects the repeated
 metadata work identified in [M1's profile](benchmarks/m1-20260910.md). Its W1
 capture contains 64 recurrent traversals, 1,536 physical-layer calls and 6,144
@@ -29,7 +37,9 @@ readback and fixed-depth gate-transfer removal are unselected, out of scope.
 ## Frozen comparison workflow
 
 The checked-in `benchmarks/fixtures/ouro-m2-contract.json` fixes the candidate,
-input references, exact run budget and numeric gates. A CPU probe resolves the
+input references, exact run budget and numeric gates. It is the single source
+for the A/B schema's limits, acceptance rules and fixed controls; it is an
+executable input, not a generated run artifact. A CPU probe resolves the
 actual A/B source commits, common harness bytes, local model/tokenizer contents,
 one physical GPU ID and CPU/NUMA policy before execution. Null template controls
 cannot produce an executable plan. Both execution checkouts must be clean;
@@ -41,9 +51,10 @@ inference executor, timing boundaries and offline metric reconstruction.
 It verifies source/import paths and controls in each worker. It never switches
 implementations inside a running Python process.
 
-Use the prepared Q1 environment for both sides and retain **FP32**. The
-[Q1 result](q1-20260911.md) passes every required FP32 comparison; BF16 remains
-unqualified and Q1's causal-diagnosis criterion remains open.
+For reproduction of the frozen 2026-09-11 comparison, use the prepared Q1
+environment and retain **FP32** on both sides. That experiment selected the
+passing FP32 contract from [Q1](q1-20260911.md). Its dtype selection and acceptance
+gates remain historical; they do not require future M2 work to use FP32.
 
 | Worker order | Excluded work | Measured work |
 | --- | --- | --- |
@@ -104,6 +115,12 @@ automatically. The offline report preserves missing/invalid evidence.
 
 ## Commands
 
+Run the repository-only A/B tools from the checkout root with
+`python -m benchmarks.ab`. The controller, schema, report and M2 numerical
+subset live in `benchmarks/`; they are excluded from the installed package.
+Shared benchmark execution, validation and comparison utilities remain in
+`vllm_lt`.
+
 First verify scheduler status and choose an available exact physical ID. Run
 the CPU probe under the same explicit CPU/NUMA policy as the reservation's
 controller. The CPU/node values below were verified on the recorded host;
@@ -111,7 +128,7 @@ resolve suitable values before running on another host.
 
 ```bash
 numactl --physcpubind=56-63 --membind=1 -- env OMP_NUM_THREADS=1 \
-  python -m vllm_lt.benchmarks.ab probe \
+  python -m benchmarks.ab probe \
   --baseline-root /path/to/clean/A --candidate-root /path/to/clean/B \
   --contract benchmarks/fixtures/ouro-m2-contract.json \
   --model-path /path/to/prepared/ouro-1.4b \
@@ -120,13 +137,20 @@ numactl --physcpubind=56-63 --membind=1 -- env OMP_NUM_THREADS=1 \
 gpu run --gpu-ids <same-physical-id> --timeout 2h \
   --note 'vllm-lt M2 frozen metadata A/B' -- \
   numactl --physcpubind=56-63 --membind=1 -- env OMP_NUM_THREADS=1 \
-  python -m vllm_lt.benchmarks.ab run \
+  python -m benchmarks.ab run \
   --plan artifacts/m2-plan/plan.json --output artifacts/m2-run
 
-python -m vllm_lt.benchmarks.ab report --run-dir artifacts/m2-run
+python -m benchmarks.ab report --run-dir artifacts/m2-run
 ```
 
 Use new output directories and commit the resolved source/control contract
 before device execution. The report's performance result is separate from
 manual profile attribution and the criterion-by-criterion adoption decision.
 Numerical or structural completion alone cannot close M2.
+
+The published 2026-09-11 evidence records the original module paths and harness
+hashes. Audit that historical run with its frozen candidate commit
+`2ef43db91655f7f575a3cabee6609a35faadaf0a` and the release's reproduction
+instructions. New plans use the repository-only commands above and must freeze
+both execution checkouts with the same relocated harness. Resolved plans and
+host-specific run notes belong in the output directory, outside source docs.

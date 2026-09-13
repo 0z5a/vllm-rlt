@@ -8,7 +8,7 @@ import weakref
 import pytest
 import torch
 
-from vllm_lt.validation import m3_inactive_kernels as kernels
+from benchmarks import m3_inactive_kernels as kernels
 from vllm_lt.validation.diagnostics import SpoolBudget, TensorSpool
 
 

@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+from test_attention import dense_attention
 
 from vllm_lt.kernels.paged_attention import torch_paged_attention, triton_paged_attention
 
@@ -118,8 +119,6 @@ def test_reserved_masked_scatter_and_attention_preserve_strided_neighbors():
 @pytest.mark.parametrize("groups", [1, 3])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
 def test_masked_dim_buckets_match_independent_dense_attention(head_dim, groups, dtype):
-    from torch.nn import functional as F
-
     torch.manual_seed(271)
     keys = torch.randn(4, 16, 2, head_dim, device="cuda", dtype=dtype)
     values = torch.randn_like(keys)
@@ -137,11 +136,7 @@ def test_masked_dim_buckets_match_independent_dense_attention(head_dim, groups, 
     for row, blocks, count in [(1, [1, 3, 0], 35), (3, [2], 1)]:
         k = keys[blocks].reshape(-1, 2, head_dim)[:count]
         v = values[blocks].reshape(-1, 2, head_dim)[:count]
-        expected = F.scaled_dot_product_attention(
-            q[row].float()[None, :, None],
-            k.float().repeat_interleave(groups, dim=1).transpose(0, 1)[None],
-            v.float().repeat_interleave(groups, dim=1).transpose(0, 1)[None],
-        )[0, :, 0].to(dtype)
+        expected = dense_attention(q[row], k, v)
         tolerance = 2e-2 if dtype == torch.bfloat16 else 2e-3 if dtype == torch.float16 else 2e-5
         torch.testing.assert_close(actual[row], expected, atol=tolerance, rtol=tolerance)
     assert torch.isfinite(actual).all()
