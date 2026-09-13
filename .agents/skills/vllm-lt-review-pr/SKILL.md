@@ -31,95 +31,18 @@ correctness, reference fidelity, accuracy, speed and memory qualification.
   verified Git SHA; do not keep treating an integrated prerequisite as open.
   Preserve the requested snapshot for an ongoing review.
 
-## Explain core and user-interface changes and Plan B
+## Load relevant references
 
-For changes to core behavior in scheduling, engine/request ownership, KV,
-model execution or kernels, or to user-facing interfaces (Python API, HTTP API,
-CLI, configuration, outputs or an interactive UI), explicitly assess the design
-choice before the implementation details. Keep the explanation proportional
-to the change:
+Read the diff and its callers to select references. Load only those relevant to
+the changed behavior or claims, and apply their checks proportionally.
 
-- **Why change:** name the concrete failure, measured bottleneck or required
-  capability. Cite the reproducer, profile or requirement; distinguish evidence
-  from a hypothesis. Explain why the existing design cannot adequately handle it
-  and why the affected core module or public interface must change instead of
-  solving the problem within the existing contract.
-- **Chosen approach:** connect the proposed mechanism to that problem and state
-  the invariants, complexity and compatibility costs it introduces.
-- **Plan B:** compare at least one credible alternative, such as a narrower fix,
-  reuse of an existing mechanism, or retaining the current implementation while
-  gathering evidence. Explain its correctness, performance and maintenance
-  tradeoffs, why it was not selected, and what evidence would favor it instead.
-  If no viable alternative is apparent, explain the constraints; do not invent one.
-  Discuss an existing fallback or rollback where relevant, without requiring a
-  second implementation merely to demonstrate an alternative.
-
-Use the PR's rationale when supported, and label reviewer-proposed alternatives
-as such. Missing rationale or unresolved tradeoffs are design questions, not
-automatically proven bugs. Surface them prominently when they affect whether
-the core or interface change is justified.
-
-For user-facing changes, show a concrete before/after call, command or user flow.
-Check existing callers/clients, defaults, accepted inputs, response/output schemas,
-errors and streaming behavior where affected. Identify breaking changes and the
-migration or compatibility path; verify help text, documentation and examples
-match the implementation. Compare a compatible extension or opt-in behavior as
-Plan B when viable, and explain any added complexity. For an interactive UI,
-also check the affected navigation, loading/error states and accessibility.
-Use a targeted client test or interaction check for the changed contract rather
-than treating internal unit tests alone as proof of compatibility.
-
-## Follow the changed behavior
-
-Read the changed code with its callers, ownership and failure paths. Use the
-reviewed checkout's `docs/design.md`, `docs/serving.md`, `docs/accuracy.md` and
-`docs/benchmarks.md` where relevant. Treat archived reports as dated evidence.
-If `docs/ab-tests.md` and `benchmarks/ab.py` exist in the reviewed snapshot,
-inspect their actual contract and validators; do not assume a local proposed
-workflow has merged. Resolve stale documentation against code and explicit
-current requirements rather than treating every historical statement as a gate.
-
-| Changed area | Review focus |
+| Reference | Read when |
 | --- | --- |
-| `request.py`, `core/scheduler.py`, `engine/llm_engine.py` | Stage/progress ownership, one in-flight decode token per request, full-depth chunked prefill, exactly one first output from final prefill, refill/cohort routing, bounded progress, admission and cancellation. |
-| `core/kv_cache_manager.py`, attention kernels | Per-request/depth block tables and causal lengths; populated versus merely reserved KV; partial pages, mixed depths, skipped-depth propagation and reuse. |
-| `models/`, `worker/model_runner.py`, sampling | Shared-core recurrence and normalization, position/RoPE unchanged across a token's loops, cumulative gate updates even before minimum exit depth, forced maximum-depth exit, coda/logit selection and request-local RNG progression. |
-| `serving/`, entrypoints | Worker ownership, real readiness, queue/admission bounds, disconnects, timeout/error propagation, streaming token/usage accounting and shutdown. |
-| `benchmarks/`, `vllm_lt/benchmarks/`, result documentation | Frozen controls, source/protocol provenance, complete coverage, timing/accounting, paired gates and honest handling of failed evidence. |
+| [Core and interface review](references/core-and-interface.md) | Core behavior or public API, CLI, configuration, outputs or UI changes. Covers why the change is necessary, Plan B, invariants and compatibility. |
+| [A/B evidence](references/ab-evidence.md) | Inference, numerics, memory, measurement logic or accuracy/performance claims are affected. Covers applicable BF16 checks and frozen experiment gates. |
 
-Specific invariants to trace when touched:
-
-- Last-exited KV copies each layer's final computed token K/V to skipped deeper
-  depths, preserving shallower state and neighboring tokens. A whole-page alias
-  is not equivalent when adjacent tokens exited at different depths.
-- Reservation covers executable positions, excluding the last sampled token
-  when it has no forward pass. Full-depth prefill still needs all model depths
-  even when decode has a smaller loop limit. Incremental allocation needs an
-  explicit progress/ownership argument; release must wait for dependent work.
-- Inactive/padded rows must not read uninitialized KV or mutate live KV, RNG,
-  outputs or hidden state. Persistent buffers/graphs additionally need stable
-  addresses, slot lifetime, synchronization, valid fallback and bounded memory.
-- Streaming counts actual generated IDs, including empty-text token events;
-  usage and termination markers are not additional tokens. An interrupted
-  stream must not be accepted as a successful short response by the pinned
-  benchmark client. Slow-client/error cleanup must preserve other requests.
-- Readiness means model, tokenizer and engine are initialized. Validate the
-  first real request; compilation/warmup and process-to-readiness are separate
-  measurements. Refill alone does not imply asynchronous host/device overlap.
-
-## Select accuracy and performance checks
-
-Select validation according to the PR's actual impact and claims. Documentation,
-skill and other changes outside runtime/measurement paths do not need accuracy
-or speed A/B. Correctness-only PRs need relevant regression checks, not a
-speedup. Explain any performance concern from the changed path rather than
-requiring a benchmark merely because a core or user-facing file changed.
-
-Read [A/B evidence](references/ab-evidence.md) when a PR changes inference,
-numerics, memory, measurement logic, or makes accuracy/performance claims.
-It contains the applicability guide, monitoring checklist and evidence rules;
-apply only the relevant checks. Standard A/B uses BF16, and acceptance limits
-come from the frozen experiment contract, not a universal review threshold.
+No A/B is required for unaffected runtime/measurement paths. Correctness-only
+changes need relevant regression checks, not a speedup.
 
 ## Validate and deliver
 
@@ -137,12 +60,8 @@ to this change. Exclude speculative risks, unrelated backlog and style-only
 feedback. In repeat reviews, verify fixes at the new snapshot and avoid reposting
 resolved findings.
 
-For core behavior or user-facing interface changes, open with a short assessment
-of why the change is needed and its Plan B, including any unresolved design
-question. Then give
-findings in priority order, followed by a brief validation/scope note and the
-reviewed SHA. For other changes, lead directly with findings.
-If there are none, say so without implying unrun accuracy,
-speed or GPU gates passed. Use verified PR diff links or absolute local file
-links. Draft/post comments only within the user's explicit authorization; select
-reviewers from actual ownership evidence rather than inventing owners.
+Follow the applicable reference's reporting emphasis, then give findings in
+priority order and a brief validation/scope note with the reviewed SHA. If there
+are no findings, say so without implying unrun gates passed. Use verified PR
+diff links or absolute local file links. Draft/post comments only within the
+user's explicit authorization; select reviewers from actual ownership evidence.
