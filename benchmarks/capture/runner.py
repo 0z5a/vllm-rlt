@@ -133,6 +133,8 @@ def run_worker(plan, *, worker_id, output_dir, deadline_ns):
             "incomplete" if isinstance(exc, (TimeoutError, KeyboardInterrupt)) else "failed"
         )
         manifest["failures"].append({"type": type(exc).__name__, "message": str(exc)})
+        if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+            raise
     finally:
         model = None
         if ready or runner.torch.cuda.is_initialized():

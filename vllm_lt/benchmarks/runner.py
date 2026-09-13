@@ -284,7 +284,7 @@ def _execute(model, plan, run, workload, output_dir, deadline, *, execution_adap
     adapter_result = None
     if execution_adapter is not None:
         try:
-            adapter_result = execution_adapter.finish(engine, capture, setup_ns=setup_ns)
+            adapter_result = execution_adapter.finish(engine, capture)
         except BaseException as exc:
             status = "failed"
             failures.append({"type": "execution_adapter_cleanup", "message": str(exc)})

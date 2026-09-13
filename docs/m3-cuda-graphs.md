@@ -49,7 +49,7 @@ share it; the current executor does not require a separate `compilation/` packag
 ```python
 engine._enable_recurrent_graph(use_graphs=True)  # before request admission
 # Reuse this engine/model/cache and its captured graphs across request waves.
-engine.model_runner._close_recurrent_graph()  # after completion or safe abort
+engine.close()  # after completion or safe abort
 ```
 
 `use_graphs=False` runs the same padded tensor body eagerly. Comparing it with
@@ -125,7 +125,7 @@ failure settlement preserves secondary diagnostics without repeating a sync.
 
 Setup precedes admission. It saves four scratch pages from the actual KV pool,
 seeds preceding history, and runs three eager warmups, one capture recording and
-one verification replay per bucket. It verifies finite physical outputs and
+one verification replay per bucket. It requires the maximum absolute warmup/replay difference for both hidden outputs and gate logits to be at most `1e-5` (FP32), plus finite physical outputs and
 positive-zero inactive rows, then restores saved bytes and exact free-list order.
 The default three-bucket ladder records three graphs and executes twelve setup
 traversals. Capture recording itself does not execute the recorded kernels.
@@ -149,18 +149,7 @@ checked between phases rather than interrupting a CUDA call at exactly 60 second
 
 ## Evidence and qualification
 
-The [September 12 evidence summary](benchmarks/m3-capture-review-evidence-20260912/README.md) records the
-stream diagnostic, a 17-cycle fixed-concurrency memory plateau and live-gate
-correctness across all three default buckets. The post-review performance
-[screen](benchmarks/m3-capture-review-20260912.md) is a separate frozen experiment;
-its measured gates pass, while profiler time and artifact-budget failures leave
-overall qualification incomplete.
-
-Historical experiments remain bound to their original source and contracts:
-
-- [First stopped attempt](benchmarks/m3-capture-stopped-20260911.md).
-- [Owned-pool attempt](benchmarks/m3-capture-owned-20260911.md), whose W4 window
-  contains only fallback and does not qualify mixed-batch graph replay.
+The [milestone evidence record](benchmarks/m3-capture.md) contains the latest device attempt, lifecycle and live-gate checks, archive checksums, and an attempt log. Profiling time and artifact-budget failures keep the graph path unqualified. Historical results do not qualify the current source.
 
 The original numerical and persistent validation adapters explicitly retain their
 frozen 4/8-row and 8-row shapes. They do not qualify the expanded scheduler ladder.
@@ -186,3 +175,7 @@ Graph benchmarks and numerical validation live in
 runtime package. Run `python -m benchmarks.capture --help` from the repository
 root. Generated plans, traces, results and logs belong in external experiment
 storage or the ignored `artifacts/` directory.
+
+Metadata uses one packed device buffer and one pinned host buffer per bucket on CUDA (ordinary host storage in CPU tests). Disjoint typed views retain the kernel shapes. One asynchronous copy is ordered on the execution stream before replay; the lease and gate readback prevent staging reuse while DMA is pending. Allocation generations reject stale decode tickets; preceding KV history is validated once before submission. Full tensor signatures are checked at setup; dispatch checks object identity and borrowed-view identity. Executor-private tensors, weights and cache pools must not be resized or rebound during the executor lifetime.
+
+`engine.close()` releases partial setup resources after an OOM or compilation failure and may be retried if synchronization or graph reset failed. It is terminal for the installed graph executor and never revives a quarantined cache. Errors during host `_update` bookkeeping also permanently fail the executor: finalization may have submitted additional device work, so settlement must precede request-page release.

@@ -34,6 +34,7 @@ from vllm_lt.benchmarks.schema import (
 from vllm_lt.models.config import OuroConfig
 from vllm_lt.validation.schema import _file_records, _validate_dependencies
 from vllm_lt.worker.decode_buffers import DecodeBucketLayout
+from vllm_lt.worker.graph_diagnostics import SETUP_WARMUPS
 
 IMPORT_MODULES = (
     *ab.IMPORT_MODULES,
@@ -49,10 +50,12 @@ CONTROLS = {
     k: v for k, v in DEFAULT_CONTRACT["controls"].items() if k not in ("gpu_ids", "affinity")
 }
 LIMITS = DEFAULT_CONTRACT["limits"]
+PAIR_PREFIX = "M3-capture"
 
 
 def validate_contract(contract, *, resolved=False):
     _keys(contract, DEFAULT_CONTRACT, name="capture contract")
+    equal(contract["graph_limits"], GRAPH_LIMITS, "runtime graph limit defaults")
     equal(
         [contract["schema_version"], contract["artifact_type"]],
         [2, "m3_capture_contract"],
@@ -132,14 +135,12 @@ def _source_controls(implementations):
 
 
 def execution_rows(suite, contract, stats, numerical):
-    workers, rows = ab.execution_rows(suite, contract, stats, numerical)
+    workers, rows = ab.execution_rows(suite, contract, stats, numerical, pair_prefix=PAIR_PREFIX)
     cases = {c["case_id"]: c for c in numerical["execution_order"]}
     for row in rows:
         row["use_graphs"] = row["implementation_id"] == "B"
         if row["kind"] == "numerical":
             row.update(kind="model", phase=cases[row["execution_id"]]["phase"])
-        elif row["pair_id"] is not None:
-            row["pair_id"] = row["pair_id"].replace("M2-", "M3-capture-", 1)
     # The graph prerequisite precedes benchmark feasibility in each numerical worker.
     rows.sort(key=lambda r: (WORKERS.index(r["worker_id"]), r["kind"] == "benchmark"))
     for worker in workers:
@@ -185,9 +186,9 @@ def resource_estimates(numerical, rows, scheduler):
         "artifact_bytes_upper_bound": total,
         "graph_owning_B_executions": graph_cases,
         "capture_recordings": captures,
-        "warmup_device_traversals": captures * 3,
+        "warmup_device_traversals": captures * SETUP_WARMUPS,
         "verification_device_traversals": captures,
-        "total_device_scratch_traversals": captures * 4,
+        "total_device_scratch_traversals": captures * (SETUP_WARMUPS + 1),
         "capture_semantics": "recording-does-not-execute-captured-device-kernels",
     }
 

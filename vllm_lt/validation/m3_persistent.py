@@ -265,6 +265,35 @@ def run_model_rows(model, parent, implementation, output_dir, deadline_ns, *, af
     )
 
 
+def _check_storage_inventory(tensors, staging, layouts, *, device):
+    """Validate packed metadata spans and independently owned output buffers."""
+    owners = set()
+    for inventory, location in ((tensors, device), (staging, "cpu")):
+        metadata = [inventory[name] for name in _METADATA]
+        packed_ptr = metadata[0]["storage_ptr"]
+        packed_size = sum(value["size_bytes"] for value in metadata)
+        offset = 0
+        for name in _METADATA:
+            value = inventory[name]
+            _check_descriptor(value, *layouts[name], device=location)
+            _require(
+                value["storage_ptr"] == packed_ptr
+                and value["storage_bytes"] == packed_size
+                and value["data_ptr"] == packed_ptr + offset,
+                "packed metadata spans overlap or leave gaps",
+            )
+            offset += value["size_bytes"]
+        _require(packed_ptr not in owners, "owned buffers alias each other")
+        owners.add(packed_ptr)
+        for name, value in inventory.items():
+            if name in _METADATA:
+                continue
+            _check_descriptor(value, *layouts[name], device=location, owned=True)
+            _require(value["storage_ptr"] not in owners, "owned buffers alias each other")
+            owners.add(value["storage_ptr"])
+    return owners
+
+
 def _check_descriptor(value, shape, dtype, *, device=None, owned=False):
     _equal(
         sorted(value),
@@ -423,11 +452,9 @@ def _audit_storage_case(case, evidence, hidden_size, *, expected_device="cuda:0"
                     sorted(_METADATA),
                     "persistent staging inventory differs",
                 )
-                for name, desc in snapshot["tensors"].items():
-                    _check_descriptor(desc, *layouts[name], device=device, owned=True)
-                for name, desc in snapshot["staging_tensors"].items():
-                    _require(name in layouts, "unexpected staging tensor")
-                    _check_descriptor(desc, *layouts[name], device="cpu", owned=True)
+                _check_storage_inventory(
+                    snapshot["tensors"], snapshot["staging_tensors"], layouts, device=device
+                )
                 _require(
                     snapshot["device_payload_bytes"]
                     == sum(x["size_bytes"] for x in snapshot["tensors"].values()),
@@ -442,10 +469,6 @@ def _audit_storage_case(case, evidence, hidden_size, *, expected_device="cuda:0"
                     snapshot["device_payload_bytes"] <= STORAGE_EVIDENCE["device_payload_bytes_max"]
                     and snapshot["cpu_staging_bytes"] == STORAGE_EVIDENCE["cpu_staging_bytes"],
                     "persistent storage exceeds frozen byte bounds",
-                )
-                pointers = [item["storage_ptr"] for item in snapshot["tensors"].values()]
-                _require(
-                    len(set(pointers)) == len(pointers), "owned persistent tensors alias each other"
                 )
                 inventory = {
                     name: snapshot[name]

@@ -4,7 +4,13 @@ import math
 import re
 from pathlib import Path
 
-from vllm_lt.benchmarks.ab_report import _finite, _memory
+from benchmarks.capture.schema import PAIR_PREFIX
+from vllm_lt.benchmarks.ab_report import (
+    _finite,
+    _memory,
+    audit_worker_launches,
+    audit_worker_lifetime,
+)
 from vllm_lt.benchmarks.ab_schema import WORKERS, equal, require
 from vllm_lt.benchmarks.report import _event_problems, _profiles, _read_events, _run_record
 from vllm_lt.benchmarks.schema import _file_record, read_json, write_json
@@ -42,7 +48,7 @@ def _capture_pair(arow, brow, pair, acceptance):
 def pair_results(plan, records):
     from vllm_lt.benchmarks.ab_report import pair_results as shared_pairs
 
-    return shared_pairs(plan, records, pair_prefix="M3-capture", pair_extra=_capture_pair)
+    return shared_pairs(plan, records, pair_prefix=PAIR_PREFIX, pair_extra=_capture_pair)
 
 
 def audit_capture_record(
@@ -320,13 +326,7 @@ def _audit_workers(root, plan, manifest, report, *, workers=None):
     if manifest["ended_ns"] >= manifest["deadline_ns"]:
         report["hard_failures"].append({"scope": "global", "reason": "whole experiment deadline"})
     launches = manifest["workers"]
-    equal(
-        [row["worker_id"] for row in launches],
-        list(WORKERS)[: len(launches)],
-        "worker launch order",
-    )
-    if manifest["status"] == "complete":
-        equal(len(launches), 8, "eight actual launches")
+    audit_worker_launches(manifest)
     actual = {p.name for p in (root / "workers").glob("*") if p.is_dir()}
     require(actual <= {r["worker_id"] for r in launches}, "unplanned worker artifacts")
     previous, completed = None, []
@@ -366,19 +366,7 @@ def _audit_workers(root, plan, manifest, report, *, workers=None):
                 "running worker contradicts terminal fields",
             )
             equal(child["deadline_ns"], manifest["deadline_ns"], "interrupted worker deadline")
-            require(
-                manifest["started_ns"]
-                <= launch["launched_ns"]
-                <= child["started_ns"]
-                <= launch["returned_ns"]
-                <= manifest["ended_ns"],
-                "interrupted worker launch lifetime",
-            )
-            if index:
-                require(
-                    launches[index - 1]["returned_ns"] <= launch["launched_ns"],
-                    "overlapping workers",
-                )
+            audit_worker_lifetime(manifest, index, child, interrupted=True)
             # Validate retained controls when setup reached them, but never supply
             # a missing process-completion or CUDA-cleanup boundary from a result.
             if child.get("environment") is not None:
@@ -420,31 +408,8 @@ def _audit_workers(root, plan, manifest, report, *, workers=None):
         )
         require(not success or child["model_loads"] == 1, "successful worker model load")
         equal(child["deadline_ns"], manifest["deadline_ns"], "worker deadline")
-        require(
-            manifest["started_ns"]
-            <= launch["launched_ns"]
-            <= child["started_ns"]
-            <= child["ended_ns"]
-            <= launch["returned_ns"]
-            <= manifest["ended_ns"],
-            "worker process lifetime",
-        )
-        if index:
-            require(
-                launches[index - 1]["returned_ns"] <= launch["launched_ns"], "overlapping workers"
-            )
+        audit_worker_lifetime(manifest, index, child)
         if worker["worker_id"] == "A1":
-            require(
-                launches[index - 1]["returned_ns"]
-                <= manifest["numerical_gate_ns"]
-                < launch["launched_ns"],
-                "correctness gate must precede timed workers",
-            )
-            require(
-                manifest["numerical_gate"]["complete"] is True
-                and manifest["numerical_gate"]["passed"] is True,
-                "failed pre-timing gate",
-            )
             gate_path = root / "numerical-gate.json"
             equal(read_json(gate_path), manifest["numerical_gate"], "persisted pre-timing gate")
             _anchor(root, gate_path, report["hashes"])
@@ -488,6 +453,7 @@ def _audit_workers(root, plan, manifest, report, *, workers=None):
 
 def _audit_chronology(root, plan, workers, reports, records, hashes):
     """Bind every planned kind into one serial timeline, including excluded cases."""
+    case_timeout_ns = plan["contract"]["limits"]["case_timeout_s"] * 10**9
     by_id = {row["run_id"]: row for row in records}
     previous = {}
     for row in plan["execution_order"]:
@@ -501,7 +467,7 @@ def _audit_chronology(root, plan, workers, reports, records, hashes):
             result = by_id[eid]["result"]
             require(result is not None, "missing benchmark lifetime")
             start, end = result["case_started_ns"], result["case_completed_ns"]
-            deadline = min(worker["deadline_ns"], start + 600 * 10**9)
+            deadline = min(worker["deadline_ns"], start + case_timeout_ns)
             marker = root / "runs" / eid / "started.json"
             equal(
                 read_json(marker),
@@ -533,12 +499,12 @@ def _audit_chronology(root, plan, workers, reports, records, hashes):
             and end < deadline,
             "mixed execution chronology",
         )
-        equal(deadline, min(worker["deadline_ns"], start + 600 * 10**9), "whole case deadline")
+        equal(deadline, min(worker["deadline_ns"], start + case_timeout_ns), "whole case deadline")
         previous[row["worker_id"]] = end
         _anchor(root, marker, hashes)
 
 
-def _audit_failed_benchmark(root, row, result, report, workers):
+def _audit_failed_benchmark(root, row, result, report, workers, *, case_timeout_ns):
     """Validate a producer-recorded failed execution without inventing final metrics."""
     for key, value in row.items():
         equal(result.get(key), value, f"failed benchmark identity {key}")
@@ -571,9 +537,11 @@ def _audit_failed_benchmark(root, row, result, report, workers):
         "failed run is not the worker's next planned execution",
     )
     require(worker["started_ns"] <= start <= worker["ended_ns"], "failed run outside worker")
-    equal(deadline, min(worker["deadline_ns"], start + 600 * 10**9), "failed run global deadline")
+    equal(
+        deadline, min(worker["deadline_ns"], start + case_timeout_ns), "failed run global deadline"
+    )
     require(
-        type(start) is int and type(deadline) is int and 0 < deadline - start <= 600 * 10**9,
+        type(start) is int and type(deadline) is int and 0 < deadline - start <= case_timeout_ns,
         "failed benchmark start/deadline",
     )
     events = folder / "events.jsonl"
@@ -690,7 +658,14 @@ def build_report(output_dir):
                 report["records"].append(record)
                 continue
             try:
-                _audit_failed_benchmark(root, row, result, report, workers)
+                _audit_failed_benchmark(
+                    root,
+                    row,
+                    result,
+                    report,
+                    workers,
+                    case_timeout_ns=plan["contract"]["limits"]["case_timeout_s"] * 10**9,
+                )
                 record["valid_failed_execution"] = True
                 report["missing"].append(f"{row['run_id']}: no complete timing observation")
             except (OSError, ValueError, KeyError, TypeError) as error:
@@ -711,7 +686,15 @@ def build_report(output_dir):
                 _memory(result, plan["workload_stats"][row["workload_id"]]["pool_bytes"])
                 require("after_engine_release" in result["memory"], "missing engine release memory")
                 capture = result["capture"]
-                equal(capture["setup_ns"], result["setup_ns"], "separate setup accounting")
+                setup = capture["initial"]["setup"]
+                executor_ns = setup["finished_ns"] - setup["started_ns"]
+                require(
+                    0
+                    <= executor_ns
+                    <= result["setup_ns"]
+                    <= result["arrival_ns"] - result["case_started_ns"],
+                    "executor setup must fit excluded engine setup and pre-arrival lifetime",
+                )
                 record["capture_summary"] = audit_capture_record(
                     capture,
                     row,

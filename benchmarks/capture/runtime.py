@@ -29,7 +29,7 @@ class GraphCapture(Capture):
             raise
 
     def _install_graph_wrappers(self):
-        executor = self.engine.model_runner._decode_executor
+        executor = self.engine.model_runner.decode_executor
         original = executor.recurrent
         self.saved.append(
             (executor, "recurrent", "recurrent" in vars(executor), vars(executor).get("recurrent"))
@@ -38,18 +38,7 @@ class GraphCapture(Capture):
         def dispatch(hidden, request_ids, depths, positions, **kwargs):
             if not self.active:
                 return original(hidden, request_ids, depths, positions, **kwargs)
-            count = len(request_ids)
-            width = executor.cache._prepare_host_batch(request_ids, depths, positions).width
-            bucket, reason = executor.layout.select(count, width)
-            supported = bool(count) and reason is None and executor.cache.backend == "triton"
-            bucket = bucket if supported else None
-            kind = (
-                "empty"
-                if not count
-                else "compact"
-                if not supported
-                else ("replay" if executor.use_graphs else "eager")
-            )
+            bucket, kind = executor.preview_dispatch(request_ids, positions)
             dispatch_id = executor.counters["calls"] + 1
             label = f"vllm_lt::graph_dispatch::{dispatch_id}::bucket::{bucket or 0}::{kind}"
             with torch.profiler.record_function(label):
@@ -159,7 +148,7 @@ class ExecutionAdapter:
             engine.model_runner._enable_recurrent_graph(
                 use_graphs=self.use_graphs, limits=self.graph_limits
             )
-            executor = engine.model_runner._decode_executor
+            executor = engine.model_runner.decode_executor
             require(
                 executor is not None,
                 "graph setup declined its budget; frozen A/B qualification requires the executor",
@@ -168,7 +157,7 @@ class ExecutionAdapter:
             self.initial = executor.snapshot()
             write_json(run_dir / "graph-setup.json", self.initial)
         except BaseException as primary:
-            executor = engine.model_runner._decode_executor
+            executor = engine.model_runner.decode_executor
             evidence = {"error": {"type": type(primary).__name__, "message": str(primary)}}
             evidence["runner_setup"] = engine.model_runner._graph_snapshot()
             if executor is not None:
@@ -186,8 +175,8 @@ class ExecutionAdapter:
             self._failure_record(run_dir / "graph-setup-failure.json", evidence, primary)
             raise
 
-    def finish(self, engine, capture, *, setup_ns):
-        executor = engine.model_runner._decode_executor
+    def finish(self, engine, capture):
+        executor = engine.model_runner.decode_executor
         final = executor.snapshot()
         executor.close()
         closed = executor.snapshot()
@@ -199,7 +188,6 @@ class ExecutionAdapter:
             "initial": self.initial,
             "final": final,
             "closed": closed,
-            "setup_ns": setup_ns,
             "cleanup": {"closed": True},
             "profile_dispatches": capture.dispatches if capture is not None else [],
         }
@@ -213,7 +201,7 @@ class ExecutionAdapter:
             return
         engine = self.engine
         evidence = {"primary": {"type": type(primary).__name__, "message": str(primary)}}
-        executor = engine.model_runner._decode_executor
+        executor = engine.model_runner.decode_executor
         try:
             if executor is not None and executor.status != "closed":
                 executor.settle_failure(primary)

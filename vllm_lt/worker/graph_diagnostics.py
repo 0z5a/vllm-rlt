@@ -6,6 +6,11 @@ from dataclasses import asdict, dataclass
 
 import torch
 
+SETUP_WARMUPS = 3
+SCRATCH_PAGES = 4
+SCRATCH_TOKENS = 2
+REPLAY_ATOL = 1e-5
+
 _MEMORY_LIMITS = {
     "retained_allocated_bytes": "graph_retained_allocated_bytes",
     "retained_reserved_bytes": "graph_retained_reserved_bytes",

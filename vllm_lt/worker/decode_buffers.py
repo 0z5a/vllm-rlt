@@ -5,7 +5,7 @@ from math import prod
 
 import torch
 
-from vllm_lt.core.kv_cache_manager import _metadata_payload_bytes
+from vllm_lt.core.kv_cache_manager import _metadata_payload_bytes, decode_live_rows
 
 
 @dataclass(frozen=True)
@@ -62,5 +62,7 @@ def allocate_bucket(cache, layout, rows, hidden_size):
             for name, (shape, dtype) in tensor_specifications(rows, hidden_size).items()
         },
     }
-    tensors["live_indices"].copy_(torch.arange(1, rows, 2, device=cache.device, dtype=torch.long))
+    tensors["live_indices"].copy_(
+        torch.tensor(decode_live_rows(rows // 2), device=cache.device, dtype=torch.long)
+    )
     return {"metadata": metadata, "tensors": tensors}

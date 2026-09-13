@@ -282,7 +282,7 @@ def _source_controls(implementations):
     return harness, differences
 
 
-def execution_rows(suite, contract, stats, numerical):
+def execution_rows(suite, contract, stats, numerical, *, pair_prefix="M2"):
     workloads = {row["workload_id"]: row for row in suite["workloads"]}
     rows, workers = [], []
     shared_hash = _digest(contract)
@@ -304,7 +304,7 @@ def execution_rows(suite, contract, stats, numerical):
                 "mode": mode,
                 "phase": phase,
                 "repetition": repetition,
-                "pair_id": f"M2-{cell}-{repetition}" if phase == "measured" else None,
+                "pair_id": f"{pair_prefix}-{cell}-{repetition}" if phase == "measured" else None,
                 "instrumentation": {"feasibility": "validation", "profile": "profile"}.get(
                     phase, "timing"
                 ),

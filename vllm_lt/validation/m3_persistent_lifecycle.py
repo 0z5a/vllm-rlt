@@ -1150,15 +1150,14 @@ def _owned_layout(initial, expected_device):
     )
     device = initial["tensors"]["hidden_in"]["device"]
     _require(device == expected_device, "persistent evidence is from the wrong execution device")
-    for name, (shape, dtype) in layout.items():
-        _pointer(initial["tensors"][name], shape, dtype, device=device, snapshot=True)
-        if name in _METADATA:
-            _pointer(initial["staging_tensors"][name], shape, dtype, device="cpu", snapshot=True)
-    for group in (initial["tensors"], initial["staging_tensors"]):
-        _require(
-            len({row["storage_ptr"] for row in group.values()}) == len(group),
-            "persistent storage aliases",
-        )
+    from .m3_persistent import _check_storage_inventory
+
+    _check_storage_inventory(
+        initial["tensors"],
+        initial["staging_tensors"],
+        {name: (shape, dtype.removeprefix("torch.")) for name, (shape, dtype) in layout.items()},
+        device=device,
+    )
     return device
 
 

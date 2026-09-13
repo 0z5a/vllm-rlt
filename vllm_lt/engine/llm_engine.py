@@ -41,6 +41,14 @@ class LLMEngine:
             raise RuntimeError("graph setup must precede request admission")
         self.model_runner._enable_recurrent_graph(use_graphs=use_graphs, limits=limits)
 
+    def close(self):
+        """Release graph resources, including partial setup; failed close is retryable.
+
+        This is terminal for a configured graph executor. It does not revive a
+        quarantined cache or discard requests whose completion is unknown.
+        """
+        self.model_runner._close_recurrent_graph()
+
     def add_request(
         self,
         request_id: str,

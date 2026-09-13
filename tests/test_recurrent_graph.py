@@ -358,3 +358,103 @@ def test_engine_update_failure_preserves_commit_and_only_frees_after_completion(
             engine.abort_request("a")
         runtime.main.failure = None
     runner._close_recurrent_graph()
+
+
+@pytest.mark.parametrize("output", ["hidden_out", "gate_out"])
+def test_setup_rejects_finite_wrong_replay_and_engine_close_releases_it(model, monkeypatch, output):
+    engine = LLMEngine(model, cache_config=CacheConfig(num_blocks=160))
+    runtime = fake_runtime(monkeypatch, engine.cache_manager)
+    replay = FakeGraph.replay
+
+    def corrupt(graph):
+        replay(graph)
+        engine.model_runner.decode_executor.buckets[4]["tensors"][output][1] += 0.01
+
+    monkeypatch.setattr(FakeGraph, "replay", corrupt)
+    with pytest.raises(RuntimeError, match="replay differs from warmup"):
+        engine._enable_recurrent_graph(use_graphs=True)
+    executor = engine.model_runner.decode_executor
+    assert executor.status == "failed"
+    assert not engine.cache_manager._allocations
+    engine.close()
+    engine.close()
+    assert executor.status == "closed"
+    assert all(ref() is None for ref in runtime.pool_refs)
+    assert ("release_stream", "setup") in runtime.events
+
+
+@pytest.mark.parametrize(
+    "mutation, message",
+    [
+        ("pool", "cache pool identity"),
+        ("storage", "bucket storage identity"),
+        ("view", "view metadata"),
+    ],
+)
+def test_changed_bucket_ownership_rejected_before_replay(model, monkeypatch, mutation, message):
+    cache = make_cache(model)
+    fake_runtime(monkeypatch, cache)
+    executor = RecurrentGraphExecutor(model, cache, use_graphs=True)
+    executor.setup()
+    cache.allocate("a", 2)
+    bucket = executor.buckets[4]
+    if mutation == "pool":
+        cache.key_cache = cache.key_cache.clone()
+    elif mutation == "storage":
+        bucket["tensors"]["hidden_in"] = bucket["tensors"]["hidden_in"].clone()
+    else:
+        bucket["metadata"].tensors["active"] = bucket["metadata"].tensors["active"].clone()
+    replays = executor.counters["replays"]
+    with pytest.raises(RuntimeError, match=message):
+        executor.recurrent(torch.ones(1, model.config.hidden_size), ["a"], [0], [0])
+    assert executor.counters["replays"] == replays
+    executor.close()
+
+
+@torch.inference_mode()
+def test_setup_checks_full_signatures_but_dispatch_only_checks_identity(model, monkeypatch):
+    cache = make_cache(model)
+    fake_runtime(monkeypatch, cache)
+    executor = RecurrentGraphExecutor(model, cache, use_graphs=False)
+    executor.setup()
+    bucket = executor.buckets[4]
+    original_shape = bucket["tensors"]["hidden_in"].shape
+    bucket["tensors"]["hidden_in"].transpose_(0, 1)
+    with pytest.raises(RuntimeError, match="storage signature"):
+        executor._check_bucket(bucket, full=True)
+    bucket["tensors"]["hidden_in"].transpose_(0, 1)
+    assert bucket["tensors"]["hidden_in"].shape == original_shape
+    cache.allocate("a", 2)
+    monkeypatch.setattr(graph_module, "_signature", lambda _: pytest.fail("hot-path signature"))
+    executor.recurrent(torch.ones(1, model.config.hidden_size), ["a"], [0], [0])
+    executor.close()
+
+
+def test_empty_scheduled_recurrent_batch_never_starts_completion(model):
+    runner = ModelRunner(model, make_cache(model))
+    runner._enable_recurrent_graph(use_graphs=False)
+    assert runner.execute(SchedulerOutput(Stage.RECURRENT, [])) == []
+    assert runner.decode_executor.status == "ready"
+    assert runner.decode_executor.counters["completed"] == 0
+    runner._close_recurrent_graph()
+
+
+def test_close_rejects_inflight_and_cleanup_errors_reach_executor(model, monkeypatch):
+    cache = make_cache(model)
+    fake_runtime(monkeypatch, cache)
+    runner = ModelRunner(model, cache)
+    runner._enable_recurrent_graph(use_graphs=True)
+    executor = runner.decode_executor
+    cache.allocate("a", 2)
+    executor.recurrent(
+        torch.ones(1, model.config.hidden_size), ["a"], [0], [0], defer_completion=True
+    )
+    with pytest.raises(RuntimeError, match="close requires completed"):
+        executor.close()
+    assert executor.status == "in_flight" and executor.pool_owner is not None
+    executor.settle_failure(RuntimeError("primary"))
+    runner._record_cleanup_failure(RuntimeError("cleanup"))
+    assert executor.failure["secondary"][-1]["message"] == "cleanup"
+    with pytest.raises(RuntimeError, match="quarantined"):
+        cache.allocate("b", 2)
+    executor.close()

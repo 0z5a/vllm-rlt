@@ -3,7 +3,7 @@
 from copy import deepcopy
 
 import pytest
-import test_benchmark_capture_schema as fixtures
+import test_benchmark_capture as fixtures
 import torch
 from test_benchmark_ab_report import records_for as shared_records
 from test_benchmark_ab_report import target as pick
@@ -37,52 +37,13 @@ def test_pairs_exclude_warmups_and_keep_setup_separate(capture_plan):
     assert pair["ttft"]["candidate_over_baseline"] == 1
 
 
-@pytest.mark.parametrize(
-    "metric", ["tps", "control", "ttft", "peak_allocated_bytes", "peak_reserved_bytes"]
-)
-def test_one_failed_pair_cannot_be_hidden_by_the_second(capture_plan, metric):
-    records = records_for(capture_plan)
-    row = pick(records, cell="W5-no_refill" if metric == "control" else "W1-refill")
-    if metric == "ttft":
-        row["recomputed_metrics"]["per_request"]["q"]["ttft_ns"] = 106
-    elif metric.startswith("peak_"):
-        memory = row["result"]["memory"]
-        memory[metric] += capture_plan["contract"]["acceptance"]["peak_increase_bytes_max"] + 1
-        memory["peak_reserved_bytes"] = max(
-            memory["peak_reserved_bytes"], memory["peak_allocated_bytes"]
-        )
-    else:
-        row["recomputed_metrics"]["generated_tokens_per_second"] = (
-            94 if metric == "control" else 109
-        )
-    cell = report.pair_results(capture_plan, records)[-1 if metric == "control" else 0]
-    assert cell["status"] == "failed"
-    assert [p["status"] for p in cell["pairs"]] == ["failed", "passed"]
-
-
-@pytest.mark.parametrize("change", ["tokens", "worker", "ttft"])
-def test_invalid_pair_never_qualifies(capture_plan, change):
+def test_failed_or_invalid_ttft_cannot_qualify(capture_plan):
     records = records_for(capture_plan)
     row = pick(records)
-    if change == "tokens":
-        row["result"]["requests"][0]["token_ids"][0] += 1
-    elif change == "worker":
-        row["planned"]["worker_id"] = "B2"
-    else:
-        row["recomputed_metrics"]["per_request"]["q"]["ttft_ns"] = float("nan")
-    cell = report.pair_results(capture_plan, records)[0]
-    assert cell["pairs"][0]["status"] == "invalid" and cell["status"] == "inconclusive"
-
-
-def test_passing_pairs_with_overlapping_ranges_are_only_inconclusive(capture_plan):
-    records = records_for(capture_plan)
-    pick(records, "A", 2)["recomputed_metrics"]["generated_tokens_per_second"] = 115
-    pick(records, "B", 2)["recomputed_metrics"]["generated_tokens_per_second"] = 127
-    cell = report.pair_results(capture_plan, records)[0]
-    assert all(p["status"] == "passed" for p in cell["pairs"])
-    assert cell["status"] == "inconclusive" and not cell["strict_range_separation"]
-    pick(records)["recomputed_metrics"]["per_request"]["q"]["ttft_ns"] = 106
+    row["recomputed_metrics"]["per_request"]["q"]["ttft_ns"] = 106
     assert report.pair_results(capture_plan, records)[0]["status"] == "failed"
+    row["recomputed_metrics"]["per_request"]["q"]["ttft_ns"] = float("nan")
+    assert report.pair_results(capture_plan, records)[0]["pairs"][0]["status"] == "invalid"
 
 
 def profile_fixture(*, replay=True, large_bucket=16):

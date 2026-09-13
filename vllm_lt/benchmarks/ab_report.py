@@ -8,6 +8,41 @@ from .report import _profiles, _run_record
 from .schema import _file_record, read_json, write_json
 
 
+def audit_worker_launches(manifest):
+    launches = manifest["workers"]
+    equal(
+        [row["worker_id"] for row in launches],
+        list(WORKERS)[: len(launches)],
+        "worker launch order",
+    )
+    if manifest["status"] == "complete":
+        equal(len(launches), len(WORKERS), "eight actual launches")
+
+
+def audit_worker_lifetime(manifest, index, child, *, interrupted=False):
+    launches = manifest["workers"]
+    launch = launches[index]
+    times = [manifest["started_ns"], launch["launched_ns"], child["started_ns"]]
+    if not interrupted:
+        times.append(child["ended_ns"])
+    times.extend([launch["returned_ns"], manifest["ended_ns"]])
+    require(all(a <= b for a, b in zip(times, times[1:])), "worker process lifetime")
+    if index:
+        require(launches[index - 1]["returned_ns"] <= launch["launched_ns"], "overlapping workers")
+    if child["worker_id"] == "A1":
+        require(
+            launches[index - 1]["returned_ns"]
+            <= manifest["numerical_gate_ns"]
+            < launch["launched_ns"],
+            "correctness gate must precede timed workers",
+        )
+        require(
+            manifest["numerical_gate"]["complete"] is True
+            and manifest["numerical_gate"]["passed"] is True,
+            "failed pre-timing gate",
+        )
+
+
 def _finite(value, label, *, positive=False):
     require(
         type(value) in (int, float)
@@ -268,15 +303,9 @@ def build_report(output_dir):
         )
         previous = None
         launches = manifest["workers"]
-        if manifest["status"] == "complete":
-            equal(len(launches), 8, "eight actual worker launches")
+        audit_worker_launches(manifest)
         actual_workers = {path.name for path in (output_dir / "workers").glob("*") if path.is_dir()}
         require(actual_workers <= set(WORKERS), "unplanned worker artifacts")
-        equal(
-            [row["worker_id"] for row in launches],
-            list(WORKERS)[: len(launches)],
-            "actual worker launch order",
-        )
         for index, launch in enumerate(launches):
             worker = plan["workers"][index]
             path = output_dir / "workers" / worker["worker_id"] / "manifest.json"
@@ -305,31 +334,7 @@ def build_report(output_dir):
             )
             equal(child["model_loads"], 1, "one model load per worker")
             equal(child["deadline_ns"], manifest["deadline_ns"], "worker global deadline")
-            require(
-                manifest["started_ns"]
-                <= launch["launched_ns"]
-                <= child["started_ns"]
-                <= child["ended_ns"]
-                <= launch["returned_ns"]
-                <= manifest["ended_ns"],
-                "worker clock ordering is inconsistent",
-            )
-            if index:
-                require(
-                    launches[index - 1]["returned_ns"] <= launch["launched_ns"],
-                    "worker processes overlap",
-                )
-            if worker["worker_id"] == "A1":
-                require(
-                    launches[index - 1]["returned_ns"]
-                    <= manifest["numerical_gate_ns"]
-                    < launch["launched_ns"],
-                    "numerical gate did not precede measured-worker launch",
-                )
-                require(
-                    manifest["numerical_gate"]["complete"] and manifest["numerical_gate"]["passed"],
-                    "timing started without numerical qualification",
-                )
+            audit_worker_lifetime(manifest, index, child)
             audit_worker_controls(plan, child, previous)
             previous = child
         report["artifact_usage"] = artifact_usage(output_dir, plan["contract"]["limits"])

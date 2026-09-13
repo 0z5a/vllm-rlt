@@ -15,6 +15,7 @@ from vllm_lt.models import OuroForCausalLM
 from vllm_lt.models.reference import dense_reference
 from vllm_lt.models.serial_oracle import ExitPolicy, SerialOuroOracle
 from vllm_lt.sampling_params import SamplingParams
+from vllm_lt.validation.schema import PROJECTION
 
 from .diagnostics import DiagnosticDump, SpoolBudget, TensorSpool
 from .evidence import ComparisonStream, boundary_key
@@ -378,7 +379,7 @@ def _check_trace(case, fixture, traces):
 def execute_case(model, plan, case, output, budget, dumps, deadline):
     """One execution; CPU tiny models exercise this same driver before GPU use."""
     projection = case.get("boundary_projection")
-    if projection not in (None, "loop_gate_logits_full_kv_v1"):
+    if projection not in (None, PROJECTION):
         raise ValueError("unknown numerical boundary projection")
     output = Path(output)
     folder = output / "cases" / case["case_id"]

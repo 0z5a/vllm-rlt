@@ -38,6 +38,11 @@ def _metadata_payload_bytes(row_count=8, table_width=32):
     )
 
 
+def decode_live_rows(count):
+    """Interleave live rows with inactive sentinels in persistent storage."""
+    return tuple(range(1, 2 * count, 2))
+
+
 @dataclass
 class _WrittenPositions:
     # Common in-order writes only advance a scalar. Keep sparse writes until
@@ -82,6 +87,8 @@ class _MetadataStorage:
     owner: "KVCacheManager"
     tensors: dict[str, torch.Tensor]
     staging: dict[str, torch.Tensor]
+    packed: torch.Tensor
+    packed_staging: torch.Tensor
     capacity: tuple[int, int] = (8, 32)
     generation: int = 0
     in_use: bool = False
@@ -112,12 +119,14 @@ class _PreparedKVBatch:
     writable: bool
     storage: _MetadataStorage | None = None
     generation: int | None = None
+    allocation_generation: int | None = None
 
 
 @dataclass(eq=False)
 class _DecodeTraversal:
     owner: "KVCacheManager"
     host: _HostKVBatch
+    allocation_generation: int
     batch: _PreparedKVBatch | None = None
     state: str = "begun"
 
@@ -214,6 +223,7 @@ class KVCacheManager:
         self.device = self.key_cache.device
         self._free_blocks = list(reversed(range(num_blocks)))
         self._allocations: dict[str, _Allocation] = {}
+        self._allocation_generation = 0
         self._quarantine_reason: str | None = None
 
     def _require_usable(self) -> None:
@@ -273,6 +283,7 @@ class KVCacheManager:
             tables,
             [[_WrittenPositions() for _ in range(self.num_layers)] for _ in range(self.max_loops)],
         )
+        self._allocation_generation += 1
         return True
 
     def free(self, request_id: str) -> None:
@@ -280,6 +291,7 @@ class KVCacheManager:
         self._require_usable()
         allocation = self._allocations.pop(request_id, None)
         if allocation is not None:
+            self._allocation_generation += 1
             for table in allocation.block_tables:
                 self._free_blocks.extend(reversed(table))
 
@@ -475,15 +487,28 @@ class KVCacheManager:
             raise ValueError("persistent table_width must be a positive integer")
         row_count = int(row_count)
         specifications = _metadata_specifications(row_count, table_width)
-        staging = {
-            name: torch.empty(shape, dtype=dtype, device="cpu", pin_memory=False)
-            for name, (shape, dtype) in specifications.items()
-        }
-        tensors = {
-            name: torch.empty(shape, dtype=dtype, device=self.device)
-            for name, (shape, dtype) in specifications.items()
-        }
-        return _MetadataStorage(self, tensors, staging, capacity=(row_count, table_width))
+        size = _metadata_payload_bytes(row_count, table_width)
+        packed_staging = torch.empty(
+            size, dtype=torch.uint8, device="cpu", pin_memory=self.device.type == "cuda"
+        )
+        packed = torch.empty(size, dtype=torch.uint8, device=self.device)
+
+        def views(buffer):
+            offset, result = 0, {}
+            for name, (shape, dtype) in specifications.items():
+                width = prod(shape) * torch.empty((), dtype=dtype, device="cpu").element_size()
+                result[name] = buffer[offset : offset + width].view(dtype).reshape(shape)
+                offset += width
+            return result
+
+        return _MetadataStorage(
+            self,
+            views(packed),
+            views(packed_staging),
+            packed,
+            packed_staging,
+            capacity=(row_count, table_width),
+        )
 
     def _prepare_into(self, storage: _MetadataStorage, host: _HostKVBatch) -> _PreparedKVBatch:
         """Borrow fixed tensors for exactly one generation, after all host checks."""
@@ -500,12 +525,12 @@ class KVCacheManager:
         for request_id, allocation in host.allocations:
             if self._allocations.get(request_id) is not allocation:
                 raise RuntimeError(f"stale host KV batch for request {request_id!r}")
-        live_rows = tuple(2 * index + 1 for index in range(len(host.rows)))
+        live_rows = decode_live_rows(len(host.rows))
         # All metadata tails are initialized, including addresses never consumed
-        # by inactive kernels. Fixed unpinned staging never aliases device storage.
-        staging = storage.staging
+        # by inactive kernels. The lease prevents staging reuse before completion.
+        staging = {name: tensor.numpy() for name, tensor in storage.staging.items()}
         for name, tensor in staging.items():
-            tensor.fill_(-1 if name in {"write_blocks", "write_offsets", "block_tables"} else 0)
+            tensor.fill(-1 if name in {"write_blocks", "write_offsets", "block_tables"} else 0)
         for row, (allocation, depth, position) in zip(live_rows, host.rows):
             staging["active"][row] = True
             staging["position_ids"][row] = position
@@ -514,13 +539,12 @@ class KVCacheManager:
                 position // self.block_size
             ]
             staging["write_offsets"][row] = position % self.block_size
-            for column, page in enumerate(allocation.block_tables[depth][:table_width]):
-                staging["block_tables"][row, column] = page
+            table = allocation.block_tables[depth][:table_width]
+            staging["block_tables"][row, : len(table)] = table
         storage.generation += 1
         storage.in_use = True
         try:
-            for name, tensor in storage.tensors.items():
-                tensor.copy_(staging[name], non_blocking=False)
+            storage.packed.copy_(storage.packed_staging, non_blocking=self.device.type == "cuda")
         except BaseException:
             storage.failed = True
             raise
@@ -533,6 +557,7 @@ class KVCacheManager:
             writable=host.writable,
             storage=storage,
             generation=storage.generation,
+            allocation_generation=self._allocation_generation,
             **storage.tensors,
         )
 
@@ -575,13 +600,18 @@ class KVCacheManager:
     def _begin_decode_traversal(self, host: _HostKVBatch) -> _DecodeTraversal:
         """Validate every preceding layer before any metadata copy or KV write."""
         self._validate_decode_host(host)
-        return _DecodeTraversal(self, host)
+        return _DecodeTraversal(self, host, self._allocation_generation)
+
+    def _check_decode_ticket(self, ticket):
+        self._require_usable()
+        if ticket.allocation_generation != self._allocation_generation:
+            raise RuntimeError("stale decode allocation generation")
 
     def _bind_decode_traversal(self, ticket: _DecodeTraversal, batch: _PreparedKVBatch) -> None:
         """Bind the actual newly prepared lease, not its previous generation."""
         if ticket.owner is not self or ticket.state != "begun":
             raise RuntimeError("decode transaction is foreign or already bound")
-        self._validate_decode_host(ticket.host)
+        self._check_decode_ticket(ticket)
         self._require_live_batch(batch)
         if (
             batch.storage is None
@@ -610,10 +640,16 @@ class KVCacheManager:
             raise RuntimeError("decode commit requires confirmed device completion")
         batch = ticket.batch
         try:
-            self._require_live_batch(batch)
+            self._require_usable()
+            if (
+                batch.storage.failed
+                or not batch.storage.in_use
+                or batch.storage.generation != batch.generation
+            ):
+                raise RuntimeError("stale or failed persistent KV generation")
             if batch.storage.transaction is not ticket:
                 raise RuntimeError("decode transaction does not own this metadata lease")
-            self._validate_decode_host(ticket.host)
+            self._check_decode_ticket(ticket)
             for allocation, depth, position in ticket.host.rows:
                 for layer in range(self.num_layers):
                     allocation.written[depth][layer].add(position)
@@ -691,8 +727,11 @@ class KVCacheManager:
                 or storage.generation != batch.generation
             ):
                 raise RuntimeError("stale or failed persistent KV generation")
+            if batch.allocation_generation != self._allocation_generation:
+                raise RuntimeError("stale prepared KV allocation generation")
             if any(getattr(batch, name) is not tensor for name, tensor in storage.tensors.items()):
                 raise ValueError("persistent descriptor changed its borrowed tensor storage")
+            return
         for request_id, allocation in batch.allocations:
             if self._allocations.get(request_id) is not allocation:
                 raise RuntimeError(f"stale prepared KV batch for request {request_id!r}")

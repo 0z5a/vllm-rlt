@@ -130,7 +130,16 @@ def test_complete_projected_eager_replay_and_backend_fallback_cpu_pipeline(compl
 
 
 @pytest.mark.parametrize(
-    "change", ["missing", "captured_pointer", "pool_alias", "counter", "request_alias", "cleanup"]
+    "change",
+    [
+        "missing",
+        "captured_pointer",
+        "pool_alias",
+        "counter",
+        "request_alias",
+        "cleanup",
+        "replay_mismatch",
+    ],
 )
 def test_rehashed_or_missing_replay_pointer_lifetime_evidence_cannot_qualify(completed_run, change):
     output, parent, _ = completed_run
@@ -153,6 +162,8 @@ def test_rehashed_or_missing_replay_pointer_lifetime_evidence_cannot_qualify(com
         events[0]["request_hidden"][0]["storage_ptr"] = events[0]["after"]["buckets"]["4"][
             "tensors"
         ]["hidden_out"]["storage_ptr"]
+    elif change == "replay_mismatch":
+        value["graph_lifecycle"]["setup"]["buckets"]["4"]["verification"]["max_abs_diff"] = [0.1, 0]
     elif change == "cleanup":
         value["graph_lifecycle"]["after_close"]["buckets"] = value["graph_lifecycle"]["setup"][
             "buckets"
@@ -170,7 +181,7 @@ def test_post_setup_failure_keeps_primary_and_records_failed_close(monkeypatch):
         def _enable_recurrent_graph(self, **kwargs):
             from types import SimpleNamespace
 
-            self._decode_executor = SimpleNamespace()
+            self.decode_executor = SimpleNamespace()
 
         def _graph_snapshot(self):
             return {"enabled": True}

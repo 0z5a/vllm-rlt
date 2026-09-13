@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 
 from vllm_lt.benchmarks.schema import _finite_float, _object_pairs, _reject_constant
+from vllm_lt.validation.schema import PROJECTION
 
 from .evidence import accumulate, boundary_key, compare_behavior, empty_summary
 from .schema import _digest, _file_record, read_json, validate_plan_integrity, write_json
@@ -139,7 +140,7 @@ def _expected_boundaries(case, fixture, traces, config):
     """Exact candidate keys/shapes follow executed traces; live counts are never padded."""
     projection = case.get("boundary_projection")
     _require(
-        projection in (None, "loop_gate_logits_full_kv_v1"),
+        projection in (None, PROJECTION),
         "unknown numerical boundary projection",
     )
     result = {}

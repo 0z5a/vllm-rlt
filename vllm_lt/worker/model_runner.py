@@ -8,6 +8,7 @@ from vllm_lt.core.scheduler import SchedulerOutput
 from vllm_lt.request import Request, Stage
 from vllm_lt.worker.decode_buffers import DecodeBucketLayout, allocate_bucket
 from vllm_lt.worker.graph_diagnostics import (
+    GraphLimits,
     _bucket_snapshot,
     _description,
     _error,
@@ -27,6 +28,11 @@ class ModelRunner:
         self._persistent_stream = None
         self._inside_execute = False
         self._persistent_lease = None
+
+    @property
+    def decode_executor(self):
+        """Current private executor, exposed for lifecycle and diagnostics."""
+        return self._decode_executor
 
     def _require_decode_unconfigured(self):
         self.cache_manager._require_usable()
@@ -49,7 +55,8 @@ class ModelRunner:
             raise ValueError("persistent model and KV cache must use the same device")
         width = self.model.config.hidden_size
         payload_bytes, staging_bytes = self._decode_layout.payload_bytes(width)
-        if payload_bytes > 1024 * 1024 or staging_bytes > 16 * 1024:
+        limits = GraphLimits()
+        if payload_bytes > limits.common_payload_bytes or staging_bytes > limits.cpu_staging_bytes:
             raise ValueError("persistent decode exceeds its 1 MiB tensor / 16 KiB staging cap")
         setup_stream = (
             torch.cuda.current_stream(self.device) if self.device.type == "cuda" else None
@@ -272,6 +279,8 @@ class ModelRunner:
 
     def _execute_batch(self, batch: SchedulerOutput):
         requests = [item.request for item in batch.items]
+        if not requests:
+            return [] if batch.stage in (Stage.RECURRENT, Stage.CODA) else None
         if batch.stage == Stage.PREFILL:
             ids, positions, tokens = [], [], []
             for item in batch.items:

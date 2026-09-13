@@ -7,20 +7,27 @@ only returned loop/gate outputs, eager coda logits, and completed KV are observe
 import math
 from contextlib import ExitStack, contextmanager
 from copy import deepcopy
+from dataclasses import asdict
 from pathlib import Path
 
+from vllm_lt.core.kv_cache_manager import decode_live_rows
 from vllm_lt.models.config import OuroConfig
 from vllm_lt.request import Stage
 from vllm_lt.validation import m3_persistent
 from vllm_lt.validation.m2 import _audit_numerical_view, _run_numerical_view, build_numerical_plan
-from vllm_lt.validation.schema import _digest, read_json, write_json
+from vllm_lt.validation.schema import PROJECTION, _digest, read_json, write_json
+from vllm_lt.worker.decode_buffers import DecodeBucketLayout
+from vllm_lt.worker.graph_diagnostics import REPLAY_ATOL, SCRATCH_PAGES, SETUP_WARMUPS, GraphLimits
 
-PROJECTION = "loop_gate_logits_full_kv_v1"
 OPERATIONS = ("loop_hidden", "gate_logits", "logits", "populated_kv")
-BUCKETS = {"row_counts": [4, 8], "table_width": 32, "max_live_rows": 4, "mapping": "odd"}
-GRAPH_LIMITS = read_json(Path(__file__).parent / "fixtures/ouro-m3-capture-contract.json")[
-    "graph_limits"
-]
+NUMERICAL_LAYOUT = DecodeBucketLayout()
+BUCKETS = {
+    "row_counts": list(NUMERICAL_LAYOUT.row_counts),
+    "table_width": NUMERICAL_LAYOUT.table_width,
+    "max_live_rows": NUMERICAL_LAYOUT.max_num_seqs,
+    "mapping": "odd",
+}
+GRAPH_LIMITS = asdict(GraphLimits())
 
 EVIDENCE = {
     "projection": PROJECTION,
@@ -178,7 +185,7 @@ def build_model_plan(suite, contract, model_config):
     limits = plan["contract"]["limits"]
     _require(
         len(plan["execution_order"]) == 15 and len(plan["comparison_order"]) == 31,
-        "capture numerical matrix differs from15 cases/31 streams",
+        "capture numerical matrix differs from 15 cases/31 streams",
     )
     _require(
         largest <= limits["group_spool_bytes"]
@@ -196,7 +203,7 @@ def validate_model_plan(plan):
     )
     _require(
         _digest(plan) == _digest(expected),
-        "capture plan differs from frozen projected15-case subset",
+        "capture plan differs from frozen projected 15-case subset",
     )
 
 
@@ -320,7 +327,7 @@ def observe_projected(engine, sink, *, on_completed_kv=None, observations=None):
                 )
                 selected = event["after"]["last_dispatch"].get("bucket_id")
                 if selected is not None:
-                    bucket = runner._decode_executor.buckets[selected]
+                    bucket = runner.decode_executor.buckets[selected]
                     tensors = bucket["tensors"]
                     live = event["after"]["last_dispatch"]["live_rows"]
                     active = torch.zeros(
@@ -370,20 +377,19 @@ def _execution(case, observations, lifecycle, limits):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             engines.append(self)
-            from vllm_lt.worker.decode_buffers import DecodeBucketLayout
 
             # This frozen numerical contract qualifies the original 4/8-row
             # shapes. New scheduler-sized experiments use their own plan.
-            self.model_runner._decode_layout = DecodeBucketLayout(max_num_seqs=4)
+            self.model_runner._decode_layout = NUMERICAL_LAYOUT
             self.model_runner._enable_recurrent_graph(
                 use_graphs=case["implementation_id"] == "B", limits=limits
             )
             lifecycle["setup"] = self.model_runner._graph_snapshot()
             _require(
-                self.model_runner._decode_executor is not None,
+                self.model_runner.decode_executor is not None,
                 "graph setup declined its budget; qualification requires the executor",
             )
-            self.model_runner._decode_executor.record_dispatch_tensors = True
+            self.model_runner.decode_executor.record_dispatch_tensors = True
 
     runner.ValidationEngine = CaptureEngine
     runner.observe_native = lambda *args, **kwargs: observe_projected(
@@ -525,7 +531,7 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
     _require(
         [setup_record[k] for k in ("warmups", "captures", "verification_replays")]
         == (
-            [3 * len(rows_inventory), len(rows_inventory), len(rows_inventory)]
+            [SETUP_WARMUPS * len(rows_inventory), len(rows_inventory), len(rows_inventory)]
             if replay
             else [0, 0, 0]
         ),
@@ -544,7 +550,7 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
             + [
                 (phase, rows)
                 for rows in rows_inventory
-                for phase in ("warmup", "warmup", "warmup", "capture", "verification_replay")
+                for phase in (*("warmup",) * SETUP_WARMUPS, "capture", "verification_replay")
             ]
             + [("scratch_restore", None)]
         )
@@ -562,7 +568,7 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
             previous = phase["finished_ns"]
         scratch = setup_record["scratch"]
         expected_bytes = (
-            4
+            SCRATCH_PAGES
             * block_size
             * config["num_hidden_layers"]
             * config["num_key_value_heads"]
@@ -572,7 +578,7 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
         )
         _require(
             scratch["restored"]
-            and len(set(scratch["pages"])) == 4
+            and len(set(scratch["pages"])) == SCRATCH_PAGES
             and scratch["saved_cpu_bytes"] == expected_bytes,
             "scratch bytes or ownership restoration differs",
         )
@@ -609,14 +615,11 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
             and set(bucket["staging_tensors"]) == set(m3_persistent._METADATA),
             "missing owned graph tensor inventory",
         )
-        for key, descriptor in bucket["tensors"].items():
-            m3_persistent._check_descriptor(
-                descriptor, *layouts[key], device=expected_device, owned=True
-            )
-            _require(descriptor["storage_ptr"] not in owned, "graph buckets alias owned storage")
-            owned.add(descriptor["storage_ptr"])
-        for key, descriptor in bucket["staging_tensors"].items():
-            m3_persistent._check_descriptor(descriptor, *layouts[key], device="cpu", owned=True)
+        bucket_owners = m3_persistent._check_storage_inventory(
+            bucket["tensors"], bucket["staging_tensors"], layouts, device=expected_device
+        )
+        _require(not (owned & bucket_owners), "graph buckets alias owned storage")
+        owned.update(bucket_owners)
         _require(
             bool(bucket["graph_id"]) is replay, "required graph missing or eager baseline captured"
         )
@@ -644,6 +647,17 @@ def _audit_graph_setup(setup, config, *, replay, block_size, expected_device="cu
                 bucket["verification"]["finite"]
                 and bucket["verification"]["inactive_positive_zero"],
                 "scratch replay physical output verification absent",
+            )
+            differences = bucket["verification"]["max_abs_diff"]
+            _require(
+                len(differences) == 2
+                and all(
+                    type(value) in (int, float)
+                    and math.isfinite(value)
+                    and 0 <= value <= REPLAY_ATOL
+                    for value in differences
+                ),
+                "scratch replay differs from warmup",
             )
     payload = sum(d["size_bytes"] for b in stable.values() for d in b["tensors"].values())
     staging = sum(d["size_bytes"] for b in stable.values() for d in b["staging_tensors"].values())
@@ -829,7 +843,7 @@ def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
             )
             _require(dispatch["ticket_state"] == "cancelled", "fallback ticket was not cancelled")
         else:
-            selected = "4" if count <= 2 else "8"
+            selected = str(NUMERICAL_LAYOUT.select(count, 0)[0])
             visits[selected] += 1
             _require(
                 dispatch["kind"] == ("replay" if replay else "eager")
@@ -837,9 +851,9 @@ def _audit_graph_case(case, evidence, config, *, expected_device="cuda:0"):
                 "missing required replay or wrong bucket selection",
             )
             _require(
-                dispatch["live_rows"] == list(range(1, count * 2, 2))
+                dispatch["live_rows"] == list(decode_live_rows(count))
                 and dispatch["row_count"] == int(selected)
-                and dispatch["table_width"] == 32,
+                and dispatch["table_width"] == NUMERICAL_LAYOUT.table_width,
                 "actual physical row mapping differs",
             )
             _require(

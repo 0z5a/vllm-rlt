@@ -5,11 +5,17 @@ from dataclasses import asdict
 
 import torch
 
+from vllm_lt.core.kv_cache_manager import decode_live_rows
+
 from .capture_resources import _CudaRuntime as _CudaRuntime
 from .capture_resources import _make_runtime
 from .decode_buffers import DecodeBucketLayout, allocate_bucket
 from .graph_diagnostics import (
     _MEMORY_LIMITS,
+    REPLAY_ATOL,
+    SCRATCH_PAGES,
+    SCRATCH_TOKENS,
+    SETUP_WARMUPS,
     CaptureBudgetExceeded,
     GraphLimits,
     _description,
@@ -61,7 +67,11 @@ class RecurrentGraphExecutor:
         if (
             use_graphs
             and cache.backend == "triton"
-            and (cache.max_loops != 4 or cache.num_free_blocks < 4 or cache.block_size < 2)
+            and (
+                cache.max_loops != SCRATCH_PAGES
+                or cache.num_free_blocks < SCRATCH_PAGES
+                or cache.block_size < SCRATCH_TOKENS
+            )
         ):
             raise ValueError("graph setup requires four scratch depth pages and two token slots")
         self.layout = layout if layout is not None else DecodeBucketLayout()
@@ -99,6 +109,7 @@ class RecurrentGraphExecutor:
             "memory_deltas": None,
         }
         self._scratch = None
+        self._pool_tensors = (cache.key_cache, cache.value_cache)
         self._pool_signature = (_signature(cache.key_cache), _signature(cache.value_cache))
         self._weights = tuple(model.parameters())
 
@@ -164,6 +175,7 @@ class RecurrentGraphExecutor:
                 self._clear(bucket)
                 if self.cache.backend == "triton":
                     bucket["view"] = self.cache._make_tensor_decode_view(metadata)
+                bucket["owned_tensors"] = tuple(tensors.items())
                 bucket["signature"] = {name: _signature(value) for name, value in tensors.items()}
             if self.runtime is not None:
                 self.stream.synchronize()
@@ -180,6 +192,8 @@ class RecurrentGraphExecutor:
                     dict.fromkeys(_MEMORY_LIMITS, 0) if self.runtime is not None else None
                 )
             for bucket in self.buckets.values():
+                if bucket["view"] is not None:
+                    self._check_bucket(bucket, full=True)
                 bucket["setup_generation"] = bucket["metadata"].generation
             self._check_setup_time()
             self.setup_record["status"], self.status = "complete", "ready"
@@ -215,7 +229,7 @@ class RecurrentGraphExecutor:
             raise RuntimeError("graph scratch requires an empty request allocator")
         free = tuple(cache._free_blocks)
         request_id = "__vllm_lt_graph_setup__"
-        if not cache.allocate(request_id, 2):
+        if not cache.allocate(request_id, SCRATCH_TOKENS):
             raise RuntimeError("graph scratch reservation failed")
         allocation = cache._allocations[request_id]
         pages = [page for table in allocation.block_tables for page in table]
@@ -244,7 +258,10 @@ class RecurrentGraphExecutor:
                 record["before_hashes"].append(
                     {"component": component, "page": page, "sha256": _hash(saved)}
                 )
-        if len(pages) != 4 or record["saved_cpu_bytes"] != cache.bytes_per_block * 4:
+        if (
+            len(pages) != SCRATCH_PAGES
+            or record["saved_cpu_bytes"] != cache.bytes_per_block * SCRATCH_PAGES
+        ):
             raise RuntimeError("scratch page or byte accounting differs")
         seed = torch.arange(
             cache.num_kv_heads * cache.head_dim, device=self.device, dtype=torch.float32
@@ -283,6 +300,7 @@ class RecurrentGraphExecutor:
         # Refactor tripwire: changes to free() side effects must update this exact
         # rollback and its scratch-byte/allocator-order ownership tests together.
         del cache._allocations[scratch["request_id"]]
+        cache._allocation_generation += 1
         cache._free_blocks[:] = scratch["free"]
         record["free_list_after"] = list(cache._free_blocks)
         record["restored"] = record["free_list_after"] == record["free_list_before"]
@@ -349,7 +367,7 @@ class RecurrentGraphExecutor:
                     self.model.config.hidden_size, device=self.device, dtype=torch.float32
                 )
                 bucket["tensors"]["hidden_in"][1].copy_((values.remainder(17) - 8) / 16)
-                for _ in range(3):
+                for _ in range(SETUP_WARMUPS):
                     self._phase("warmup", rows, lambda: self._tensor_body(bucket))
                     self.setup_record["warmups"] += 1
                 self.setup_stream.synchronize()
@@ -376,12 +394,15 @@ class RecurrentGraphExecutor:
                         raise RuntimeError(
                             "graph setup verification produced invalid physical output"
                         )
+                differences = [float((a - b).abs().max()) for a, b in zip(warm, actual)]
+                if not all(diff <= REPLAY_ATOL for diff in differences):
+                    raise RuntimeError("graph setup replay differs from warmup")
                 bucket["verification"] = {
                     "finite": True,
                     "inactive_positive_zero": True,
                     "warmup_sha256": [_hash(value) for value in warm],
                     "replay_sha256": [_hash(value) for value in actual],
-                    "max_abs_diff": [float((a - b).abs().max()) for a, b in zip(warm, actual)],
+                    "max_abs_diff": differences,
                 }
                 self.cache._commit_decode_traversal(self.ticket, completion_confirmed=True)
                 self.cache._release_prepared(self.batch)
@@ -417,19 +438,53 @@ class RecurrentGraphExecutor:
         if self.stream is not None:
             self.stream.synchronize()
 
-    def _check_bucket(self, bucket):
+    def _check_bucket(self, bucket, *, full=False):
         if (
-            _signature(self.cache.key_cache),
-            _signature(self.cache.value_cache),
-        ) != self._pool_signature:
+            self.cache.key_cache is not self._pool_tensors[0]
+            or self.cache.value_cache is not self._pool_tensors[1]
+        ):
             raise RuntimeError("captured cache pool identity changed")
-        if {name: _signature(value) for name, value in bucket["tensors"].items()} != bucket[
-            "signature"
-        ]:
+        if any(bucket["tensors"].get(name) is not value for name, value in bucket["owned_tensors"]):
+            raise RuntimeError("decode bucket storage identity changed")
+        if (
+            full
+            and (
+                _signature(self.cache.key_cache),
+                _signature(self.cache.value_cache),
+            )
+            != self._pool_signature
+        ):
+            raise RuntimeError("captured cache pool identity changed")
+        if (
+            full
+            and {name: _signature(value) for name, value in bucket["tensors"].items()}
+            != bucket["signature"]
+        ):
             raise RuntimeError("decode bucket storage signature changed")
         for name, value in bucket["metadata"].tensors.items():
             if value is not bucket["tensors"][name] or getattr(bucket["view"], name) is not value:
                 raise RuntimeError("tensor view metadata no longer matches the borrowed storage")
+
+    def dispatch_route(self, count, width):
+        """Read-only routing shared by execution and excluded profiling."""
+        rows, reason = self.layout.select(count, width)
+        if self.cache.backend != "triton":
+            reason = "backend"
+        kind = (
+            "empty"
+            if not count
+            else "compact"
+            if reason
+            else "replay"
+            if self.use_graphs
+            else "eager"
+        )
+        return (None if reason or not count else rows), reason, kind
+
+    def preview_dispatch(self, request_ids, positions):
+        width = max((position // self.cache.block_size + 1 for position in positions), default=0)
+        rows, _, kind = self.dispatch_route(len(request_ids), width)
+        return rows, kind
 
     @torch.inference_mode()
     def recurrent(self, hidden, request_ids, depths, positions, *, defer_completion=False):
@@ -447,24 +502,16 @@ class RecurrentGraphExecutor:
         count = len(host.rows)
         # Reject holes before selecting a fallback or copying a single input byte.
         ticket = self.cache._begin_decode_traversal(host) if count else None
-        rows, reason = self.layout.select(count, host.width)
-        if self.cache.backend != "triton":
-            reason = "backend"
+        rows, reason, kind = self.dispatch_route(count, host.width)
         self.counters["calls"] += 1
         self.last_publication = None
         self.last_dispatch = {
             "dispatch_id": self.counters["calls"],
-            "kind": "empty"
-            if not count
-            else "compact"
-            if reason
-            else "replay"
-            if self.use_graphs
-            else "eager",
+            "kind": kind,
             "request_ids": list(request_ids),
             "depths": list(depths),
             "positions": list(positions),
-            "live_rows": list(range(count)) if reason else list(range(1, 2 * count, 2)),
+            "live_rows": list(range(count)) if reason else list(decode_live_rows(count)),
             "row_count": 0 if not count else count if reason else rows,
             "table_width": 0 if not count else host.width if reason else self.layout.table_width,
             "bucket_id": None if reason or not count else rows,
@@ -630,6 +677,7 @@ class RecurrentGraphExecutor:
             self.runtime.release_stream(self.setup_stream)
             self.setup_stream = None
         self._weights = ()
+        self._pool_tensors = ()
         self.ticket = self.batch = self.active_bucket = None
         self.model = self.cache = None
         self.status = "closed"
