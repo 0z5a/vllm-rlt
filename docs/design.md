@@ -66,7 +66,7 @@ For the released BF16 Ouro configuration, each token at one depth requires `2 * 
 
 ## Validation and next steps
 
-BF16 weights, ordinary activations, and KV storage are the primary inference target. Accumulation precision is specified independently: retain FP32 in sensitive reductions, normalization statistics, and positional/probability arithmetic as needed. Full-model FP32 is an optional reference/diagnostic path. See the [precision policy](precision-policy.md) for the operation contracts and implementation follow-up.
+BF16 weights, ordinary activations, and KV storage are the primary inference target. Accumulation precision is specified independently: retain FP32 in sensitive reductions, normalization statistics, and positional/probability arithmetic as needed. Full-model FP32 is an optional reference/diagnostic path. See the [precision policy](precision-policy.md) for the operation contracts.
 
 The validation boundary is numerical and behavioral correctness. Fixed-depth outputs are compared with an independent reference under justified BF16 error bounds. Adaptive execution is compared with a serial implementation with the same last-exited policy. Exact cache/data-movement invariants are separate from floating-point and decision/quality criteria. Scheduler tests should exercise mixed depths, requests completing at different times, exhausted admission capacity, and cancellation. Cache tests should cover partial blocks, copying skipped depths, isolation, and block reuse.
 

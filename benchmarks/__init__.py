@@ -1,1 +1,1 @@
-"""Repository-only experiment tools; not part of the installed vllm_lt package."""
+"""Reusable observation, profiling and replay helpers for offline measurements."""

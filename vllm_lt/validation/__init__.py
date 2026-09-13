@@ -1,1 +1,1 @@
-"""Bounded numerical qualification; separate from production inference."""
+"""Independent references, tensor comparisons and native execution observers."""

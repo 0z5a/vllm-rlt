@@ -168,14 +168,11 @@ independence. [Validation notes](docs/validation/initial-20260910.md) record the
 and checks performed. These correctness checks do not establish serving performance
 or adaptive-depth language-task accuracy.
 
-The [M1 benchmark guide](docs/benchmarks.md) describes historical FP32 replay,
-reserved execution, and offline reports. New comparisons require the
-[BF16 workflow](docs/precision-policy.md#implementation-follow-up); the frozen
-FP32 benchmark contracts are retained for reproduction.
-
-The [Q1 validation guide](docs/q1-validation.md) describes the independent
-incremental LAST-EXITED oracle, pinned official reference, FP32/BF16 numerical
-comparisons, bounded diagnostics, and separate qualification decision.
+The [results index](docs/benchmarks.md) links completed experiments and their
+archived reproduction harness. The current checkout retains reusable profiling,
+replay, independent reference and tensor-comparison helpers; historical M1/Q1/M2
+controllers, fixed contracts and their dedicated tests have been removed.
+New comparisons follow the [precision policy](docs/precision-policy.md).
 
 ## License
 

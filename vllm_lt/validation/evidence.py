@@ -16,7 +16,40 @@ from .diagnostics import (
     compare,
     comparison_json,
 )
-from .schema import read_json, write_json
+
+
+def _reject_constant(value):
+    raise ValueError(f"nonfinite JSON value: {value}")
+
+
+def _finite_float(value):
+    number = float(value)
+    if not math.isfinite(number):
+        _reject_constant(value)
+    return number
+
+
+def _object_pairs(pairs):
+    result = {}
+    for name, value in pairs:
+        if name in result:
+            raise ValueError(f"duplicate JSON field: {name}")
+        result[name] = value
+    return result
+
+
+def _read_json(path):
+    return json.loads(
+        Path(path).read_text(encoding="utf-8"),
+        parse_constant=_reject_constant,
+        parse_float=_finite_float,
+        object_pairs_hook=_object_pairs,
+    )
+
+
+def _write_json(path, value):
+    """Write only finite UTF-8 JSON; directory ownership belongs to the caller."""
+    Path(path).write_text(json.dumps(value, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
 
 def boundary_key(metadata):
@@ -406,7 +439,7 @@ class ComparisonStream:
 
     def finish(self, traces=None):
         if self.comparison["family"] not in ("original", "official"):
-            reference_result = read_json(
+            reference_result = _read_json(
                 self.output / "cases" / self.comparison["reference_case_id"] / "result.json"
             )
             if self.comparison["comparison_kind"] != "bf16_fp32_sensitivity":
@@ -449,4 +482,4 @@ class ComparisonStream:
             self.file.close()
         self.reference.close()
         self.summary.update(sha256=self.digest.hexdigest(), size_bytes=self.size)
-        write_json(self.path.with_suffix(".summary.json"), self.summary)
+        _write_json(self.path.with_suffix(".summary.json"), self.summary)
