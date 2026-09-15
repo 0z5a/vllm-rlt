@@ -1,7 +1,8 @@
-import math
+from dataclasses import replace
 
-from vllm_lt.config import CacheConfig, SchedulerConfig
+from vllm_lt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_lt.core.kv_cache_manager import KVCacheManager
+from vllm_lt.core.memory import plan_cache
 from vllm_lt.core.scheduler import Scheduler
 from vllm_lt.request import Request, RequestOutput, Stage
 from vllm_lt.sampling_params import SamplingParams
@@ -9,29 +10,63 @@ from vllm_lt.worker.model_runner import ModelRunner
 
 
 class LLMEngine:
-    """Single-device synchronous engine with continuous loop-level batching."""
+    """Single-device loop-level engine with synchronous or pipelined scheduling."""
 
     def __init__(
-        self, model, *, cache_config=None, scheduler_config=None, attention_backend="torch"
+        self,
+        model,
+        *,
+        cache_config=None,
+        scheduler_config=None,
+        attention_backend="torch",
+        exit_config=None,
+        execution_config=None,
     ):
         self.model = model
         cache_config = cache_config or CacheConfig()
         scheduler_config = scheduler_config or SchedulerConfig()
         parameter = next(model.parameters())
         config = model.config
+        self.exit_config = exit_config or ExitConfig()
+        self.execution_config = execution_config or ExecutionConfig()
+        if self.execution_config.async_scheduling:
+            # Pinned reusable inputs avoid blocking per-step metadata transfers.
+            self.execution_config = replace(self.execution_config, static_buffers=True)
+            if self.exit_config.mode not in ("ouro_delayed", "random_lookahead", "trace"):
+                raise ValueError(
+                    "async scheduling requires ouro_delayed, random_lookahead or trace exit mode"
+                )
+            if parameter.device.type == "cuda" and attention_backend != "triton":
+                raise ValueError("CUDA async scheduling requires the Triton attention backend")
+        num_blocks, self.memory_plan = plan_cache(
+            model, cache_config, scheduler_config, self.execution_config, attention_backend
+        )
         self.cache_manager = KVCacheManager(
             num_layers=config.num_hidden_layers,
             num_kv_heads=config.num_key_value_heads,
             head_dim=config.head_dim,
             max_loops=config.total_ut_steps,
-            num_blocks=cache_config.num_blocks,
+            num_blocks=num_blocks,
+            layout=cache_config.layout,
             block_size=cache_config.block_size,
             device=parameter.device,
             dtype=parameter.dtype,
             backend=attention_backend,
         )
         self.scheduler = Scheduler(scheduler_config, self.cache_manager)
-        self.model_runner = ModelRunner(model, self.cache_manager)
+        self.model_runner = ModelRunner(
+            model,
+            self.cache_manager,
+            exit_config=self.exit_config,
+            execution_config=self.execution_config,
+            scheduler_config=scheduler_config,
+        )
+        self._exit_traces = {
+            key: tuple(values) for key, values in (self.exit_config.depths_by_request or {}).items()
+        }
+        self._signals = {}
+        self._pending_coda = []
+        self._inflight = []
         self.last_schedule = None
 
     def add_request(
@@ -51,11 +86,24 @@ class LLMEngine:
         max_loops = params.max_loops or config.total_ut_steps
         if max_loops > config.total_ut_steps or params.min_loops > max_loops:
             raise ValueError("requested loop bounds exceed the model's supported depth")
+        if self.exit_config.mode == "trace":
+            trace = self._exit_traces.get(request_id, ())
+            if (
+                len(trace) < params.max_tokens
+                or trace[0] != config.total_ut_steps
+                or any(
+                    type(d) is not int or not params.min_loops <= d <= max_loops
+                    for d in trace[1 : params.max_tokens]
+                )
+            ):
+                raise ValueError(
+                    "exit trace must cover every output and obey prefill/decode bounds"
+                )
         capacity = len(prompt_token_ids) + params.max_tokens - 1
         if capacity > config.max_position_embeddings:
             raise ValueError("prompt plus decode positions exceed the model context length")
         cache = self.cache_manager
-        required = math.ceil(capacity / cache.block_size) * cache.max_loops
+        required = cache.required_blocks(capacity)
         if required > cache.num_blocks:
             raise ValueError(
                 f"request requires {required} KV blocks but cache has {cache.num_blocks}; "
@@ -67,12 +115,29 @@ class LLMEngine:
         return self.scheduler.has_unfinished_requests
 
     def abort_request(self, request_id: str) -> RequestOutput:
+        self.model_runner.release(request_id)
+        self._signals.pop(request_id, None)
         return RequestOutput.from_request(self.scheduler.abort(request_id))
 
     def step(self) -> list[RequestOutput]:
+        if self.execution_config.async_scheduling:
+            try:
+                return self._step_async()
+            except Exception:
+                # A submission can fail before recording an event. Drain owned
+                # streams before invalidating requests or recycling any memory.
+                self.model_runner.synchronize()
+                for rid in list(self.scheduler.requests):
+                    self.abort_request(rid)
+                self._signals.clear()
+                self._pending_coda.clear()
+                self._inflight.clear()
+                raise
         batch = self.scheduler.schedule()
         self.last_schedule = batch
         if batch is None:
+            if self.has_unfinished_requests():
+                raise RuntimeError("scheduler made no progress")
             return []
         try:
             result = self.model_runner.execute(batch)
@@ -81,13 +146,15 @@ class LLMEngine:
             # A failed execution may have partially written KV; invalidate the affected requests.
             for item in batch.items:
                 if item.request.request_id in self.scheduler.requests:
-                    self.scheduler.abort(item.request.request_id)
+                    self.abort_request(item.request.request_id)
             raise
 
     def _update(self, batch, result) -> list[RequestOutput]:
         outputs = []
         for index, item in enumerate(batch.items):
             request = item.request
+            if self.scheduler.requests.get(request.request_id) is not request:
+                continue  # A coda completion can arrive after cancellation and ID reuse.
             params = request.sampling_params
             if batch.stage == Stage.PREFILL:
                 request.num_prefilled_tokens += item.token_count
@@ -99,15 +166,20 @@ class LLMEngine:
             elif batch.stage == Stage.PRELUDE:
                 request.loops_done = 0
                 request.remaining_probability = 1.0
+                request.pending_exit_depth = None
+                self._signals.pop(request.request_id, None)
                 self.scheduler.enqueue(request, Stage.RECURRENT)
             elif batch.stage == Stage.RECURRENT:
                 request.loops_done += 1
-                # Ouro learns a conditional hazard at each depth, not a direct exit CDF.
-                request.remaining_probability *= 1.0 - result[index]
-                if self._should_exit(request):
-                    self.cache_manager.finalize_token(
-                        request.request_id, request.position, request.loops_done - 1
-                    )
+                if self.exit_config.mode == "trace":
+                    should_exit = self._trace_exit(request)
+                elif self.exit_config.mode == "ouro":
+                    request.remaining_probability *= 1.0 - result[index]
+                    should_exit = self._should_exit(request)
+                else:
+                    should_exit = self._delayed_exit(request, result[index])
+                if should_exit:
+                    self.model_runner.finalize(request)
                     self.scheduler.enqueue(request, Stage.CODA)
                 else:
                     self.scheduler.enqueue(request, Stage.RECURRENT)
@@ -118,9 +190,9 @@ class LLMEngine:
                 eos = self.model.config.eos_token_id
                 eos_ids = eos if isinstance(eos, (tuple, list)) else [eos]
                 if token_id in eos_ids and not params.ignore_eos:
-                    self.scheduler.finish(request, "stop")
+                    self._finish(request, "stop")
                 elif len(request.generated_token_ids) >= params.max_tokens:
-                    self.scheduler.finish(request, "length")
+                    self._finish(request, "length")
                 else:
                     self.scheduler.enqueue(request, Stage.PRELUDE)
                 outputs.append(RequestOutput.from_request(request))
@@ -136,3 +208,103 @@ class LLMEngine:
             and 1.0 - request.remaining_probability >= params.exit_threshold
         )
         return request.loops_done >= max_loops or reached_threshold
+
+    def _finish(self, request, reason):
+        self.model_runner.release(request.request_id)
+        self._signals.pop(request.request_id, None)
+        self.scheduler.finish(request, reason)
+
+    def _trace_exit(self, request):
+        target = self._exit_traces[request.request_id][len(request.generated_token_ids)]
+        return request.loops_done >= target
+
+    def _delayed_exit(self, request, score):
+        params = request.sampling_params
+        maximum = params.max_loops or self.model.config.total_ut_steps
+        if request.loops_done >= maximum or request.pending_exit_depth == request.loops_done:
+            return True
+        target = request.loops_done + 1
+        if self._delayed_signal(request, score, request.loops_done):
+            request.pending_exit_depth = target
+        return False
+
+    def _delayed_signal(self, request, score, signal_depth):
+        """Consume each signal once; Ouro's minimum applies to the trigger round."""
+        params = request.sampling_params
+        if self.exit_config.mode == "ouro_delayed":
+            request.remaining_probability *= 1.0 - score
+            score = 1.0 - request.remaining_probability
+            eligible_depth = signal_depth
+        else:
+            eligible_depth = signal_depth + 1
+        return (
+            params.exit_threshold < 1
+            and eligible_depth >= params.min_loops
+            and score >= params.exit_threshold
+        )
+
+    def _collect_coda(self, wait=False):
+        outputs = []
+        pending = []
+        for ticket in self._pending_coda:
+            if ticket.ready() or wait:
+                outputs.extend(self._update(ticket.batch, ticket.collect()))
+                wait = False
+            else:
+                pending.append(ticket)
+        self._pending_coda = pending
+        return outputs
+
+    def _step_async(self):
+        # Hold readback buffers until their DMA completes, even for discarded scores.
+        self._inflight = [t for t in self._inflight if not t.ready()]
+        no_refill = self.scheduler.config.mode == "no_refill"
+        outputs = self._collect_coda(wait=no_refill)
+        batch = self.scheduler.schedule()
+        self.last_schedule = batch
+        if batch is None:
+            if self._pending_coda:
+                outputs.extend(self._collect_coda(wait=True))
+            elif self.has_unfinished_requests():
+                raise RuntimeError("scheduler made no progress")
+            return outputs
+        ticket = self.model_runner.submit(batch)
+        self._inflight.append(ticket)
+        if batch.stage == Stage.CODA:
+            self._pending_coda.append(ticket)
+        elif batch.stage != Stage.RECURRENT:
+            self._update(batch, None)
+        else:
+            # Submit r FIRST. While the GPU runs r, consume r-1's signal to
+            # determine whether this token may enter r+1. No speculative extra loop.
+            for index, item in enumerate(batch.items):
+                request = item.request
+                previous = self._signals.pop(request.request_id, None)
+                request.loops_done += 1
+                params = request.sampling_params
+                maximum = params.max_loops or self.model.config.total_ut_steps
+                should_exit = (
+                    self._trace_exit(request)
+                    if self.exit_config.mode == "trace"
+                    else request.loops_done >= maximum
+                )
+                if previous is not None and not should_exit:
+                    old_ticket, old_index, position, signal_depth = previous
+                    if position != request.position or signal_depth != request.loops_done - 1:
+                        raise RuntimeError("stale lookahead signal")
+                    score = old_ticket.collect()[old_index]
+                    should_exit = self._delayed_signal(request, score, signal_depth)
+                if should_exit:
+                    request.pending_exit_depth = request.loops_done
+                    self.model_runner.finalize(request)
+                    self.scheduler.enqueue(request, Stage.CODA)
+                else:
+                    if self.exit_config.mode in ("ouro_delayed", "random_lookahead"):
+                        self._signals[request.request_id] = (
+                            ticket,
+                            index,
+                            request.position,
+                            request.loops_done,
+                        )
+                    self.scheduler.enqueue(request, Stage.RECURRENT)
+        return outputs

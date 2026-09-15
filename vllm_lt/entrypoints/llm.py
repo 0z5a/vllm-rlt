@@ -21,6 +21,8 @@ class LLM:
         cache_config=None,
         scheduler_config=None,
         attention_backend="torch",
+        exit_config=None,
+        execution_config=None,
     ):
         self._tokenizer_source = None
         if isinstance(model, str):
@@ -41,6 +43,8 @@ class LLM:
             cache_config=cache_config,
             scheduler_config=scheduler_config,
             attention_backend=attention_backend,
+            exit_config=exit_config,
+            execution_config=execution_config,
         )
         self._next_request_id = 0
 

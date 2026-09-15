@@ -90,7 +90,7 @@ def _paged_attention_kernel(
         maximum = next_maximum
     tl.store(
         OUT + row * out_batch_stride + head * out_head_stride + dims * out_dim_stride,
-        accumulator / normalizer,
+        accumulator / tl.maximum(normalizer, 1.0e-30),
         mask=dims < HEAD_DIM,
     )
 

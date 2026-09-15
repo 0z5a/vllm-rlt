@@ -192,7 +192,9 @@ class OuroForCausalLM(nn.Module):
         depths: Sequence[int],
         positions: Sequence[int] | torch.Tensor,
         cache: "KVCacheManager",
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        *,
+        compute_gate: bool = True,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Execute one full shared core; depths are zero-based cache namespaces."""
         if hidden.ndim != 2 or hidden.shape[1] != self.config.hidden_size:
             raise ValueError("recurrent expects hidden with shape [N, hidden_size]")
@@ -202,13 +204,17 @@ class OuroForCausalLM(nn.Module):
         # Internal model/cache traversal contract: descriptor ownership and
         # allocation identity are checked again by every prepared layer call.
         batch = cache._prepare_batch(request_ids, depths, positions)
+        return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
+
+    def recurrent_prepared(self, hidden, batch, cache, *, compute_gate=True):
+        """Run core with runner-owned metadata, including inactive padding rows."""
         position_embeddings = self.model.rotary_emb(hidden, batch.position_ids)
         for layer in self.model.layers:
             hidden = layer(hidden, position_embeddings, batch, cache)
         # Norm is inside the recurrence in Ouro; this normalized state is the
         # next loop's input as well as the gate and LM head input.
         hidden = self.model.norm(hidden)
-        return hidden, self.model.early_exit_gate(hidden).squeeze(-1)
+        return hidden, self.model.early_exit_gate(hidden).squeeze(-1) if compute_gate else None
 
     def coda(self, hidden: torch.Tensor) -> torch.Tensor:
         return self.lm_head(hidden)

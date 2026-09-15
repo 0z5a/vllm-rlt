@@ -24,7 +24,10 @@ class Request:
     generated_token_ids: list[int] = field(default_factory=list)
     exit_depths: list[int] = field(default_factory=list)
     num_prefilled_tokens: int = 0
+    # Host progress; in async mode an event confirms submitted GPU work is done.
     loops_done: int = 0
+    pending_exit_depth: int | None = None
+    admission_bypasses: int = 0
     remaining_probability: float = 1.0
     hidden_state: torch.Tensor | None = field(default=None, repr=False)
     generator: torch.Generator | None = field(default=None, repr=False)

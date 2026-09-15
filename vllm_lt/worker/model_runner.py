@@ -1,79 +1,364 @@
-"""Stage execution; the scheduler never invokes a whole-token model forward."""
+"""Stage execution, random lookahead signals and event-owned CUDA submissions."""
+
+import math
+from contextlib import nullcontext
+from dataclasses import dataclass
 
 import torch
 
+from vllm_lt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_lt.core.scheduler import SchedulerOutput
 from vllm_lt.request import Request, Stage
+from vllm_lt.worker.buffers import Workspace
+
+
+@dataclass
+class ReadbackSlot:
+    storage: torch.Tensor
+    leased: bool = False
+    event: object = None
+
+
+@dataclass
+class Submission:
+    batch: SchedulerOutput
+    values: torch.Tensor | None
+    event: object = None
+    cached: list | None = None
+    slot: ReadbackSlot | None = None
+
+    def __del__(self):
+        if self.slot is not None:
+            self.slot.leased = False
+
+    def ready(self):
+        return self.event is None or self.event.query()
+
+    def collect(self):
+        if self.event is not None:
+            self.event.synchronize()
+        if self.cached is None and self.values is not None:
+            self.cached = self.values.tolist()
+            self.values = None
+            if self.slot is not None:
+                self.slot.leased = False
+                self.slot = None
+        return self.cached
 
 
 class ModelRunner:
-    def __init__(self, model, cache_manager):
+    def __init__(
+        self,
+        model,
+        cache_manager,
+        *,
+        exit_config=None,
+        execution_config=None,
+        scheduler_config=None,
+    ):
         self.model = model.eval()
         self.cache_manager = cache_manager
-        self.device = next(model.parameters()).device
+        parameter = next(model.parameters())
+        self.device = parameter.device
+        self.exit_config = exit_config or ExitConfig()
+        self.execution_config = execution_config or ExecutionConfig()
+        scheduler = scheduler_config or SchedulerConfig()
+        self.lookahead_head = None
+        if self.exit_config.mode == "random_lookahead":
+            # Keep auxiliary random weights separate from the strict base checkpoint.
+            # CPU RNG isolation also makes initialization independent of device count.
+            with torch.random.fork_rng(devices=[]):
+                generator = torch.Generator(device="cpu").manual_seed(self.exit_config.seed)
+                head = torch.nn.Linear(model.config.hidden_size, 1, device="cpu")
+                torch.nn.init.normal_(
+                    head.weight, std=model.config.initializer_range, generator=generator
+                )
+                torch.nn.init.zeros_(head.bias)
+            self.lookahead_head = head.to(device=self.device, dtype=parameter.dtype).eval()
+            self.lookahead_head.requires_grad_(False)
+        self.core_stream = self.boundary_stream = None
+        if self.execution_config.async_scheduling and self.device.type == "cuda":
+            self.core_stream = torch.cuda.Stream(device=self.device)
+            self.boundary_stream = (
+                torch.cuda.Stream(device=self.device)
+                if self.execution_config.multi_stream
+                else self.core_stream
+            )
+            for stream in (self.core_stream, self.boundary_stream):
+                stream.wait_stream(torch.cuda.current_stream(self.device))
+        self.readback_slots = []
+        if self.execution_config.async_scheduling and self.device.type == "cuda":
+            # cudaHostAlloc during submission can serialize streams. Allocate all
+            # readback storage before work starts, retaining leases until consumed.
+            for dtype in (torch.float32, torch.int64):
+                for _ in range(scheduler.max_num_seqs + 2):
+                    self.readback_slots.append(
+                        ReadbackSlot(
+                            torch.empty(
+                                scheduler.max_num_batched_tokens, dtype=dtype, pin_memory=True
+                            )
+                        )
+                    )
+        self.events = {}
+        self.workspaces = {}
+        self.workspace_index = {"core": 0, "boundary": 0}
+        self.state_slots = {}
+        self.free_state_slots = list(reversed(range(scheduler.max_num_seqs)))
+        self.states = None
+        self.last_effective_size = self.last_submitted_size = 0
+        if self.execution_config.static_buffers:
+            rows = scheduler.max_num_batched_tokens
+            if self.execution_config.pad_to_power_of_two:
+                rows = 1 << (rows - 1).bit_length()
+            width = math.ceil(model.config.max_position_embeddings / cache_manager.block_size)
+            for group in ("core", "boundary"):
+                self.workspaces[group] = [
+                    Workspace(rows, width, model.config.hidden_size, self.device, parameter.dtype)
+                    for _ in range(2)
+                ]
+            self.states = torch.empty(
+                (scheduler.max_num_seqs, model.config.hidden_size),
+                device=self.device,
+                dtype=parameter.dtype,
+            )
+            # Buffers allocated after stream creation must be visible there too.
+            for stream in (self.core_stream, self.boundary_stream):
+                if stream is not None:
+                    stream.wait_stream(torch.cuda.current_stream(self.device))
+
+    def _size(self, count):
+        size = count
+        if self.execution_config.pad_to_power_of_two:
+            size = 1 << (count - 1).bit_length()
+        self.last_effective_size, self.last_submitted_size = count, size
+        return size
+
+    def _workspace(self, group):
+        if not self.workspaces:
+            return None
+        index = self.workspace_index[group]
+        self.workspace_index[group] = 1 - index
+        workspace = self.workspaces[group][index]
+        workspace.acquire()
+        return workspace
+
+    def _save(self, request, state):
+        if self.states is None:
+            request.hidden_state = state.clone()
+        else:
+            rid = request.request_id
+            if rid not in self.state_slots:
+                self.state_slots[rid] = self.free_state_slots.pop()
+            request.hidden_state = self.states[self.state_slots[rid]]
+            request.hidden_state.copy_(state)
+
+    def _gather(self, requests, workspace, size):
+        if workspace is None:
+            return torch.stack([r.hidden_state for r in requests])
+        hidden = workspace.hidden[:size]
+        hidden.zero_()
+        for row, request in enumerate(requests):
+            hidden[row].copy_(request.hidden_state)
+        return hidden
+
+    def _core(self, hidden, ids, depths, positions, workspace, size):
+        if workspace is None:
+            return self.model.recurrent(
+                hidden,
+                ids,
+                depths,
+                positions,
+                self.cache_manager,
+                compute_gate=self.exit_config.mode in ("ouro", "ouro_delayed"),
+            )
+        batch = workspace.prepare(self.cache_manager, ids, depths, positions, size)
+        return self.model.recurrent_prepared(
+            hidden,
+            batch,
+            self.cache_manager,
+            compute_gate=self.exit_config.mode in ("ouro", "ouro_delayed"),
+        )
+
+    def _prefill(self, batch):
+        if self.cache_manager.layout == "shared":
+            # Define chunk-invariant shared semantics: complete all loops of each
+            # position before advancing that request. Parallelize across requests.
+            for offset in range(max(i.token_count for i in batch.items)):
+                active = [i for i in batch.items if offset < i.token_count]
+                ids = [i.request.request_id for i in active]
+                positions = [i.token_start + offset for i in active]
+                tokens = [i.request.prompt_token_ids[p] for i, p in zip(active, positions)]
+                hidden = self._prefill_tokens(ids, positions, tokens)
+                for row, item in enumerate(active):
+                    self._save(item.request, hidden[row])
+            return
+        ids, positions, tokens = [], [], []
+        for item in batch.items:
+            start, count, request = item.token_start, item.token_count, item.request
+            ids.extend([request.request_id] * count)
+            positions.extend(range(start, start + count))
+            tokens.extend(request.prompt_token_ids[start : start + count])
+        hidden = self._prefill_tokens(ids, positions, tokens)
+        offset = 0
+        for item in batch.items:
+            offset += item.token_count
+            self._save(item.request, hidden[offset - 1])
+
+    def _prefill_tokens(self, ids, positions, tokens):
+        size = self._size(len(tokens))
+        workspace = self._workspace("core")
+        tensor = (
+            workspace.tokens(tokens, size)
+            if workspace
+            else torch.tensor(tokens, device=self.device, dtype=torch.long)
+        )
+        hidden = self.model.prelude(tensor)
+        for depth in range(self.model.config.total_ut_steps):
+            # Same workspace metadata can be refilled only once previous DMA is done.
+            if workspace:
+                workspace.acquire()
+            hidden, _ = self._core(hidden, ids, [depth] * len(ids), positions, workspace, size)
+            if workspace:
+                workspace.release()
+        return hidden
 
     @torch.inference_mode()
-    def execute(self, batch: SchedulerOutput):
-        requests = [item.request for item in batch.items]
+    def _execute(self, batch):
+        requests = [i.request for i in batch.items]
         if batch.stage == Stage.PREFILL:
-            ids, positions, tokens = [], [], []
-            for item in batch.items:
-                start, count, request = item.token_start, item.token_count, item.request
-                ids.extend([request.request_id] * count)
-                positions.extend(range(start, start + count))
-                tokens.extend(request.prompt_token_ids[start : start + count])
-            hidden = self.model.prelude(torch.tensor(tokens, device=self.device, dtype=torch.long))
-            # Every prompt token reaches the model's full depth, independently of decode policy.
-            for depth in range(self.model.config.total_ut_steps):
-                hidden, _ = self.model.recurrent(
-                    hidden, ids, [depth] * len(ids), positions, self.cache_manager
-                )
-            offset = 0
-            for item in batch.items:
-                offset += item.token_count
-                item.request.hidden_state = hidden[offset - 1].clone()
+            self._prefill(batch)
             return None
+        size = self._size(len(requests))
+        group = "core" if batch.stage == Stage.RECURRENT else "boundary"
+        workspace = self._workspace(group)
         if batch.stage == Stage.PRELUDE:
-            token_ids = torch.tensor(
-                [r.input_token_id for r in requests], device=self.device, dtype=torch.long
+            ids = [r.input_token_id for r in requests]
+            tokens = (
+                workspace.tokens(ids, size)
+                if workspace
+                else torch.tensor(ids, device=self.device, dtype=torch.long)
             )
-            hidden = self.model.prelude(token_ids)
+            hidden = self.model.prelude(tokens)
             for request, state in zip(requests, hidden):
-                request.hidden_state = state
-            return None
-        hidden = torch.stack([r.hidden_state for r in requests])
-        if batch.stage == Stage.RECURRENT:
-            hidden, gate_logits = self.model.recurrent(
-                hidden,
-                [r.request_id for r in requests],
-                [r.loops_done for r in requests],
-                [r.position for r in requests],
-                self.cache_manager,
+                self._save(request, state)
+            result = None
+        else:
+            hidden = self._gather(requests, workspace, size)
+            if batch.stage == Stage.RECURRENT:
+                hidden, logits = self._core(
+                    hidden,
+                    [r.request_id for r in requests],
+                    [r.loops_done for r in requests],
+                    [r.position for r in requests],
+                    workspace,
+                    size,
+                )
+                for request, state in zip(requests, hidden):
+                    self._save(request, state)
+                if self.lookahead_head is not None:
+                    logits = self.lookahead_head(hidden).squeeze(-1)
+                result = logits[: len(requests)].float().sigmoid() if logits is not None else None
+            elif batch.stage == Stage.CODA:
+                logits = self.model.coda(hidden)
+                result = torch.stack(
+                    [self._sample_tensor(row, r) for row, r in zip(logits, requests)]
+                )
+            else:
+                raise ValueError(f"unsupported execution stage {batch.stage}")
+        if workspace:
+            workspace.release()
+        return result
+
+    def execute(self, batch: SchedulerOutput):
+        # Baseline explicitly synchronizes signals; delayed routing can be tested here.
+        result = self._execute(batch)
+        return result.cpu().tolist() if result is not None else None
+
+    def _readback_slot(self, result):
+        for slot in self.readback_slots:
+            if slot.storage.dtype == result.dtype and not slot.leased:
+                if slot.event is not None:
+                    slot.event.synchronize()
+                slot.leased = True
+                return slot
+        raise RuntimeError("readback buffers exhausted; retire completed submissions")
+
+    def submit(self, batch: SchedulerOutput):
+        stream = (
+            self.core_stream
+            if batch.stage in (Stage.PREFILL, Stage.RECURRENT)
+            else self.boundary_stream
+        )
+        with torch.cuda.stream(stream) if stream is not None else nullcontext():
+            for item in batch.items:
+                event = self.events.get(item.request.request_id)
+                if stream is not None and event is not None:
+                    stream.wait_event(event)
+                hidden = item.request.hidden_state
+                if stream is not None and hidden is not None:
+                    hidden.record_stream(stream)
+            result = self._execute(batch)
+            event = None
+            slot = None
+            if self.device.type == "cuda":
+                if result is not None:
+                    slot = self._readback_slot(result)
+                    host = slot.storage[: result.numel()].view(result.shape)
+                    host.copy_(result, non_blocking=True)
+                    result = host
+                event = torch.cuda.Event()
+                event.record(torch.cuda.current_stream(self.device))
+                if slot is not None:
+                    slot.event = event
+                for item in batch.items:
+                    self.events[item.request.request_id] = event
+            return Submission(batch, result, event, slot=slot)
+
+    def finalize(self, request):
+        # The final core event must precede copies and coda on the boundary stream.
+        stream = self.boundary_stream
+        with torch.cuda.stream(stream) if stream is not None else nullcontext():
+            event = self.events.get(request.request_id)
+            if stream is not None and event is not None:
+                stream.wait_event(event)
+            self.cache_manager.finalize_token(
+                request.request_id, request.position, request.loops_done - 1
             )
-            for request, state in zip(requests, hidden):
-                request.hidden_state = state
-            # This is explicitly synchronous. A stock gate cannot act as the paper's lookahead gate.
-            return gate_logits.float().sigmoid().cpu().tolist()
-        if batch.stage == Stage.CODA:
-            logits = self.model.coda(hidden)
-            return [self._sample(row, request) for row, request in zip(logits, requests)]
-        raise ValueError(f"unsupported execution stage {batch.stage}")
+            if stream is not None:
+                event = torch.cuda.Event()
+                event.record(stream)
+                self.events[request.request_id] = event
+
+    def release(self, request_id):
+        event = self.events.pop(request_id, None)
+        if event is not None:
+            event.synchronize()
+        slot = self.state_slots.pop(request_id, None)
+        if slot is not None:
+            self.free_state_slots.append(slot)
+
+    def synchronize(self):
+        for stream in (self.core_stream, self.boundary_stream):
+            if stream is not None:
+                stream.synchronize()
 
     def _sample(self, logits: torch.Tensor, request: Request) -> int:
+        return int(self._sample_tensor(logits, request).item())
+
+    def _sample_tensor(self, logits: torch.Tensor, request: Request):
         params = request.sampling_params
         if params.temperature == 0:
-            return int(logits.argmax().item())
+            return logits.argmax()
         logits = logits.float() / params.temperature
         if params.top_k > 0:
             threshold = logits.topk(min(params.top_k, logits.numel())).values[-1]
             logits = logits.masked_fill(logits < threshold, -torch.inf)
         if params.top_p < 1:
             sorted_logits, indices = logits.sort(descending=True)
-            cumulative = sorted_logits.softmax(-1).cumsum(-1)
-            remove = cumulative > params.top_p
+            remove = sorted_logits.softmax(-1).cumsum(-1) > params.top_p
             remove[1:] = remove[:-1].clone()
             remove[0] = False
             logits = logits.scatter(0, indices, sorted_logits.masked_fill(remove, -torch.inf))
         if request.generator is None:
             request.generator = torch.Generator(device=self.device).manual_seed(params.seed)
-        return int(torch.multinomial(logits.softmax(-1), 1, generator=request.generator).item())
+        return torch.multinomial(logits.softmax(-1), 1, generator=request.generator).squeeze(0)

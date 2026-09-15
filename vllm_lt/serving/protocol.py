@@ -125,11 +125,13 @@ class IncrementalText:
     """
 
     def __init__(self, tokenizer):
-        from transformers.models.gpt2.tokenization_gpt2 import bytes_to_unicode
-
         self.tokenizer = tokenizer
         self.special_ids = set(tokenizer.all_special_ids)
-        self.byte_decoder = {char: byte for byte, char in bytes_to_unicode().items()}
+        # ByteLevel's byte alphabet is stable; avoid Transformers' private helper.
+        visible = list(range(33, 127)) + list(range(161, 173)) + list(range(174, 256))
+        self.byte_decoder = {chr(byte): byte for byte in visible}
+        for offset, byte in enumerate(b for b in range(256) if b not in visible):
+            self.byte_decoder[chr(256 + offset)] = byte
         self.utf8 = codecs.getincrementaldecoder("utf-8")(errors="replace")
 
     def decode(self, token_id, finished):

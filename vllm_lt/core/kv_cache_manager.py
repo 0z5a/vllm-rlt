@@ -1,12 +1,8 @@
-"""Depth-indexed physical KV pages with LAST-EXITED token propagation.
+"""Paged KV with LAST-EXITED or SHARED physical storage planes.
 
-Each request owns a separate block table for every recurrence depth. When a
-token exits, its final K/V states are copied into all deeper planes. Subsequent
-tokens may therefore loop further without encountering holes or reading the
-wrong depth's history. These are physical copies, not cross-depth aliases.
-
-The initial admission policy reserves a request's complete token budget at all
-depths. It is conservative, but admitted requests cannot deadlock on KV growth.
+LAST-EXITED copies the last computed per-layer KV into skipped deeper planes.
+SHARED overwrites a single plane and needs no exit copies. Both layouts reserve
+all positions for a request's lifetime so admitted work cannot deadlock on growth.
 """
 
 from collections.abc import Sequence
@@ -85,6 +81,7 @@ class KVCacheManager:
         device: str | torch.device = "cpu",
         dtype: torch.dtype = torch.float32,
         backend: str = "torch",
+        layout: str = "last_exited",
     ):
         for name, value in (
             ("num_layers", num_layers),
@@ -101,6 +98,10 @@ class KVCacheManager:
             raise ValueError("backend must be 'torch' or 'triton'")
         if dtype not in {torch.float32, torch.float16, torch.bfloat16}:
             raise ValueError("KV dtype must be float32, float16, or bfloat16")
+        if layout not in {"last_exited", "shared"}:
+            raise ValueError("unsupported KV layout")
+        self.layout = layout
+        self.storage_depths = max_loops if layout == "last_exited" else 1
         self.device = torch.device(device)
         self.dtype = dtype
         self.backend = backend
@@ -138,7 +139,7 @@ class KVCacheManager:
     def required_blocks(self, max_tokens: int) -> int:
         if not isinstance(max_tokens, Integral) or isinstance(max_tokens, bool) or max_tokens <= 0:
             raise ValueError("max_tokens must be a positive integer")
-        return ((max_tokens + self.block_size - 1) // self.block_size) * self.max_loops
+        return ((max_tokens + self.block_size - 1) // self.block_size) * self.storage_depths
 
     def allocate(self, request_id: str, max_tokens: int) -> bool:
         """Reserve all depths atomically; return False only for temporary pressure."""
@@ -153,15 +154,18 @@ class KVCacheManager:
             )
         if required > self.num_free_blocks:
             return False
-        pages_per_depth = required // self.max_loops
+        pages_per_depth = required // self.storage_depths
         tables = tuple(
             tuple(self._free_blocks.pop() for _ in range(pages_per_depth))
-            for _ in range(self.max_loops)
+            for _ in range(self.storage_depths)
         )
         self._allocations[request_id] = _Allocation(
             int(max_tokens),
             tables,
-            [[_WrittenPositions() for _ in range(self.num_layers)] for _ in range(self.max_loops)],
+            [
+                [_WrittenPositions() for _ in range(self.num_layers)]
+                for _ in range(self.storage_depths)
+            ],
         )
         return True
 
@@ -174,7 +178,10 @@ class KVCacheManager:
 
     def get_block_table(self, request_id: str, depth: int) -> tuple[int, ...]:
         self._validate_depth(depth)
-        return self._get_allocation(request_id).block_tables[depth]
+        return self._get_allocation(request_id).block_tables[self._plane(depth)]
+
+    def _plane(self, depth: int) -> int:
+        return depth if self.layout == "last_exited" else 0
 
     def _get_allocation(self, request_id: str) -> _Allocation:
         try:
@@ -233,7 +240,7 @@ class KVCacheManager:
         rows = tuple(self._validate_rows(request_ids, depths, positions))
         addresses = [
             (
-                allocation.block_tables[depth][position // self.block_size],
+                allocation.block_tables[self._plane(depth)][position // self.block_size],
                 position % self.block_size,
             )
             for allocation, depth, position in rows
@@ -245,7 +252,7 @@ class KVCacheManager:
         width = max((position // self.block_size + 1 for _, _, position in rows), default=0)
         tables = []
         for allocation, depth, _ in rows:
-            table = allocation.block_tables[depth][:width]
+            table = allocation.block_tables[self._plane(depth)][:width]
             tables.append(list(table) + [-1] * (width - len(table)))
         allocations = dict(zip(request_ids, (allocation for allocation, _, _ in rows)))
         return _PreparedKVBatch(
@@ -317,17 +324,17 @@ class KVCacheManager:
         self._require_live_batch(batch)
         if not batch.writable:
             raise ValueError("a read-only prepared KV batch cannot be written")
-        self._validate_tensor(k, len(batch.rows), "k")
-        self._validate_tensor(v, len(batch.rows), "v")
+        self._validate_tensor(k, len(batch.position_ids), "k")
+        self._validate_tensor(v, len(batch.position_ids), "v")
         if not batch.rows:
             return
-        self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k
-        self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v
+        self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k[: len(batch.rows)]
+        self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v[: len(batch.rows)]
         for allocation, depth, position in batch.rows:
-            allocation.written[depth][layer].add(position)
+            allocation.written[self._plane(depth)][layer].add(position)
 
     def _require_prefix(self, allocation, layer, depth, length):
-        written = allocation.written[depth][layer]
+        written = allocation.written[self._plane(depth)][layer]
         if length > written.prefix:
             raise RuntimeError(
                 f"uninitialized KV history at layer {layer}, depth {depth}, "
@@ -355,7 +362,7 @@ class KVCacheManager:
     ) -> torch.Tensor:
         self._validate_layer(layer)
         self._require_live_batch(batch)
-        self._validate_tensor(q, len(batch.rows), "q", query=True)
+        self._validate_tensor(q, len(batch.position_ids), "q", query=True)
         if not batch.rows:
             return torch.empty_like(q)
         for allocation, depth, position in batch.rows:
@@ -376,27 +383,26 @@ class KVCacheManager:
         self._validate_depth(exit_depth)
         self._validate_position(allocation, position)
         for layer in range(self.num_layers):
-            if position not in allocation.written[exit_depth][layer]:
+            if position not in allocation.written[self._plane(exit_depth)][layer]:
                 raise RuntimeError(
                     "cannot finalize a token before every layer has written its exit depth"
                 )
+        if self.layout == "shared":
+            return
         logical_page, offset = divmod(position, self.block_size)
-        source = allocation.block_tables[exit_depth][logical_page]
+        source = allocation.block_tables[self._plane(exit_depth)][logical_page]
         destinations = [
-            allocation.block_tables[depth][logical_page]
+            allocation.block_tables[self._plane(depth)][logical_page]
             for depth in range(exit_depth + 1, self.max_loops)
         ]
-        if destinations:
-            destination_indices = torch.tensor(destinations, device=self.device, dtype=torch.long)
-            self.key_cache[destination_indices, :, offset] = self.key_cache[
-                source, :, offset
-            ].unsqueeze(0)
-            self.value_cache[destination_indices, :, offset] = self.value_cache[
-                source, :, offset
-            ].unsqueeze(0)
+        # Basic-index copies avoid a blocking host->device index tensor on the
+        # boundary stream. That transfer would serialize final core and routing.
+        for destination in destinations:
+            self.key_cache[destination, :, offset].copy_(self.key_cache[source, :, offset])
+            self.value_cache[destination, :, offset].copy_(self.value_cache[source, :, offset])
         for depth in range(exit_depth + 1, self.max_loops):
             for layer in range(self.num_layers):
-                allocation.written[depth][layer].add(position)
+                allocation.written[self._plane(depth)][layer].add(position)
 
     @torch.no_grad()
     def read(self, layer: int, request_id: str, depth: int, length: int | None = None):
@@ -405,7 +411,7 @@ class KVCacheManager:
         self._validate_depth(depth)
         allocation = self._get_allocation(request_id)
         if length is None:
-            length = allocation.written[depth][layer].prefix
+            length = allocation.written[self._plane(depth)][layer].prefix
         if (
             not isinstance(length, Integral)
             or isinstance(length, bool)
@@ -414,7 +420,9 @@ class KVCacheManager:
             raise ValueError("read length exceeds the request's reserved token budget")
         self._require_prefix(allocation, layer, depth, length)
         positions = torch.arange(length, device=self.device)
-        table = torch.tensor(allocation.block_tables[depth], device=self.device, dtype=torch.long)
+        table = torch.tensor(
+            allocation.block_tables[self._plane(depth)], device=self.device, dtype=torch.long
+        )
         blocks = table[positions // self.block_size]
         offsets = positions % self.block_size
         return self.key_cache[blocks, layer, offsets], self.value_cache[blocks, layer, offsets]
