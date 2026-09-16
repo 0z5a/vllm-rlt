@@ -357,6 +357,7 @@ class LLMEngine:
         else:
             # Submit r FIRST. While the GPU runs r, consume r-1's signal to
             # determine whether this token may enter r+1. No speculative extra loop.
+            exited = []
             for index, item in enumerate(batch.items):
                 request = item.request
                 previous = self._signals.pop(request.request_id, None)
@@ -376,7 +377,7 @@ class LLMEngine:
                     should_exit = self._delayed_signal(request, score, signal_depth)
                 if should_exit:
                     request.pending_exit_depth = request.loops_done
-                    self.model_runner.finalize(request)
+                    exited.append(request)
                     self.scheduler.enqueue(request, Stage.CODA)
                 else:
                     if (
@@ -390,4 +391,5 @@ class LLMEngine:
                             request.loops_done,
                         )
                     self.scheduler.enqueue(request, Stage.RECURRENT)
+            self.model_runner.finalize_many(exited)
         return outputs

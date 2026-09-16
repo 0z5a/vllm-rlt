@@ -204,7 +204,9 @@ def test_cpu_prepare_finishes_while_previous_gpu_forward_is_inflight(monkeypatch
     engine.add_request("a", [2], params)
     drain(engine)
     assert observations == [True]
-    assert not runner.workspaces and runner.states is None
+    assert not runner.workspaces
+    assert runner.states is runner.async_state.hidden
+    assert not runner.async_state.owners
     assert len(runner.submission_events) <= 3
 
 

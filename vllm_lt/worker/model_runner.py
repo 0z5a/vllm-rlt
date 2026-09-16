@@ -10,7 +10,7 @@ import torch
 from vllm_lt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_lt.core.scheduler import SchedulerOutput
 from vllm_lt.request import Request, Stage
-from vllm_lt.worker.buffers import InputStaging, Workspace
+from vllm_lt.worker.buffers import Workspace
 from vllm_lt.worker.cuda_graph import RecurrentGraphs
 
 
@@ -29,7 +29,7 @@ class PreparedExecution:
     output_indices: tuple[int, ...]
     token_tensors: tuple[torch.Tensor, ...] = ()
     kv: object = None
-    staging: InputStaging | None = None
+    routing: object = None
 
 
 @dataclass
@@ -135,14 +135,6 @@ class ModelRunner:
         # Two core rounds plus one interleaved boundary stage can be in flight.
         # Prepare the next batch BEFORE retiring the oldest submission.
         self.submission_events = deque()
-        self.input_staging = []
-        self.staging_index = 0
-        if self.core_stream is not None:
-            rows = scheduler.max_num_batched_tokens
-            if self.execution_config.pad_to_power_of_two:
-                rows = 1 << (rows - 1).bit_length()
-            width = math.ceil(model.config.max_position_embeddings / cache_manager.block_size)
-            self.input_staging = [InputStaging(rows, width) for _ in range(4)]
         self.events = {}
         self.workspaces = {}
         self.workspace_index = {"core": 0, "boundary": 0}
@@ -170,6 +162,22 @@ class ModelRunner:
                 if stream is not None:
                     stream.wait_stream(torch.cuda.current_stream(self.device))
 
+        self.async_state = None
+        if self.core_stream is not None:
+            from vllm_lt.worker.async_state import AsyncState
+
+            rows = scheduler.max_num_batched_tokens
+            if self.execution_config.pad_to_power_of_two:
+                rows = 1 << (rows - 1).bit_length()
+            self.async_state = AsyncState(
+                cache_manager, model.config, scheduler, rows, use_uva=not torch.version.hip
+            )
+            self.states = self.async_state.hidden
+            self.state_slots = self.async_state.slots
+            self.free_state_slots = self.async_state.free
+            for stream in (self.core_stream, self.boundary_stream, self.copy_stream):
+                stream.wait_stream(torch.cuda.current_stream(self.device))
+
     def _size(self, count):
         size = count
         if self.execution_config.pad_to_power_of_two:
@@ -187,7 +195,9 @@ class ModelRunner:
         return workspace
 
     def _save(self, request, state):
-        if self.states is None:
+        if self.states is None or (
+            self.async_state is not None and request.request_id not in self.async_state.owners
+        ):
             request.hidden_state = state.clone()
         else:
             rid = request.request_id
@@ -195,6 +205,15 @@ class ModelRunner:
                 self.state_slots[rid] = self.free_state_slots.pop()
             request.hidden_state = self.states[self.state_slots[rid]]
             request.hidden_state.copy_(state)
+
+    def _save_batch(self, requests, hidden, routing):
+        if routing is None:
+            for request, state in zip(requests, hidden):
+                self._save(request, state)
+            return
+        routing.scatter(hidden)
+        for request in requests:
+            request.hidden_state = self.states[self.state_slots[request.request_id]]
 
     def _gather(self, requests, workspace, size):
         if workspace is None:
@@ -291,18 +310,21 @@ class ModelRunner:
             tokens = tuple(r.input_token_tensor for r in requests)
             if any(t is None for t in tokens):
                 raise RuntimeError("async prelude requires the preceding device sample")
-        kv = staging = None
-        if batch.stage == Stage.RECURRENT:
-            ids = [r.request_id for r in requests]
-            if self.input_staging:
-                staging = self.input_staging[self.staging_index]
-                self.staging_index = (self.staging_index + 1) % len(self.input_staging)
-                kv = staging.prepare(
-                    self.cache_manager, ids, depths, positions, self._size(len(ids))
-                )
-            elif not self.workspaces:
-                kv = self.cache_manager._prepare_batch(ids, depths, positions)
-        return PreparedExecution(batch, depths, positions, indices, tokens, kv, staging)
+        if self.async_state is not None:
+            routing, kv = self.async_state.prepare(
+                requests,
+                depths,
+                positions,
+                self._size(len(requests)),
+                recurrent=batch.stage == Stage.RECURRENT,
+            )
+            return PreparedExecution(batch, depths, positions, indices, tokens, kv, routing=routing)
+        kv = None
+        if batch.stage == Stage.RECURRENT and not self.workspaces:
+            kv = self.cache_manager._prepare_batch(
+                [r.request_id for r in requests], depths, positions
+            )
+        return PreparedExecution(batch, depths, positions, indices, tokens, kv)
 
     @torch.inference_mode()
     def _execute(self, batch, prepared=None):
@@ -312,16 +334,21 @@ class ModelRunner:
             return None
         size = self._size(len(requests))
         group = "core" if batch.stage == Stage.RECURRENT else "boundary"
-        workspace = self._workspace(group)
+        routing = prepared.routing if prepared is not None else None
+        workspace = None if routing is not None else self._workspace(group)
         if batch.stage == Stage.PRELUDE:
             if prepared is not None:
                 # Feed the sampled GPU IDs directly to embedding. No .item(),
                 # .tolist(), or CPU token roundtrip on the dependency path.
-                tokens = torch.stack(prepared.token_tensors)
+                tokens = (
+                    routing.gather(tokens=True)
+                    if routing is not None
+                    else torch.stack(prepared.token_tensors)
+                )
                 if tokens.is_cuda:
                     for tensor in prepared.token_tensors:
                         tensor.record_stream(torch.cuda.current_stream(self.device))
-                if size > len(requests):
+                if routing is None and size > len(requests):
                     tokens = torch.cat((tokens, tokens.new_zeros(size - len(requests))))
                 for request in requests:
                     request.input_token_tensor = None
@@ -333,16 +360,15 @@ class ModelRunner:
                     else torch.tensor(ids, device=self.device, dtype=torch.long)
                 )
             hidden = self.model.prelude(tokens)
-            for request, state in zip(requests, hidden):
-                self._save(request, state)
+            self._save_batch(requests, hidden, routing)
             result = None
         else:
-            hidden = self._gather(requests, workspace, size)
+            hidden = (
+                routing.gather() if routing is not None else self._gather(requests, workspace, size)
+            )
             if batch.stage == Stage.RECURRENT:
                 if self.graphs is not None:
                     kv = prepared.kv if prepared is not None else None
-                    if kv is not None and prepared.staging is not None:
-                        kv = prepared.staging.transfer(kv, self.device)
                     if kv is None:
                         kv = self.cache_manager._prepare_batch(
                             [r.request_id for r in requests],
@@ -352,8 +378,6 @@ class ModelRunner:
                     hidden, logits = self.graphs.run(hidden[: len(requests)], kv)
                 elif prepared is not None and prepared.kv is not None:
                     kv = prepared.kv
-                    if prepared.staging is not None:
-                        kv = prepared.staging.transfer(kv, self.device)
                     hidden, logits = self.model.recurrent_prepared(
                         hidden,
                         kv,
@@ -369,8 +393,7 @@ class ModelRunner:
                         workspace,
                         size,
                     )
-                for request, state in zip(requests, hidden):
-                    self._save(request, state)
+                self._save_batch(requests, hidden, routing)
                 if self.lookahead_head is not None:
                     logits = self.lookahead_head(hidden).squeeze(-1)
                 result = logits[: len(requests)].float().sigmoid() if logits is not None else None
@@ -379,6 +402,8 @@ class ModelRunner:
                 result = torch.stack(
                     [self._sample_tensor(row, r) for row, r in zip(logits, requests)]
                 )
+                if routing is not None:
+                    routing.scatter(result, tokens=True)
             else:
                 raise ValueError(f"unsupported execution stage {batch.stage}")
         if workspace:
@@ -410,16 +435,13 @@ class ModelRunner:
             if batch.stage in (Stage.PREFILL, Stage.RECURRENT)
             else self.boundary_stream
         )
-        if prepared.staging is not None and stream is not self.copy_stream:
-            # Metadata is independent of the current hidden/KV computation.
-            # In multi-stream mode its H2D can run alongside the previous core.
+        if prepared.routing is not None:
+            if prepared.routing.imports:
+                self.copy_stream.wait_stream(torch.cuda.current_stream(self.device))
             with torch.cuda.stream(self.copy_stream):
-                kv = prepared.staging.transfer(prepared.kv, self.device)
-            stream.wait_event(prepared.staging.event)
-            # Five fields share just these two allocation storages.
-            kv.position_ids.record_stream(stream)
-            kv.block_tables.record_stream(stream)
-            prepared = replace(prepared, kv=kv, staging=None)
+                kv = prepared.routing.transfer(prepared.kv)
+            stream.wait_event(prepared.routing.ready_event)
+            prepared = replace(prepared, kv=kv)
         with torch.cuda.stream(stream) if stream is not None else nullcontext():
             for item in batch.items:
                 event = self.events.get(item.request.request_id)
@@ -428,7 +450,11 @@ class ModelRunner:
                 hidden = item.request.hidden_state
                 if stream is not None and hidden is not None:
                     hidden.record_stream(stream)
-            result = self._execute(batch, prepared)
+            try:
+                result = self._execute(batch, prepared)
+            finally:
+                if prepared.routing is not None:
+                    prepared.routing.record_done()
             device_values = result
             event = None
             slot = None
@@ -455,6 +481,68 @@ class ModelRunner:
                 output_indices=prepared.output_indices,
             )
 
+    def finalize_many(self, requests):
+        if not requests:
+            return
+        if self.async_state is None or self.cache_manager.layout == "shared":
+            for request in requests:
+                self.finalize(request)
+            return
+        from vllm_lt.kernels.routing import finalize_kernel
+
+        cache = self.cache_manager
+        copies = []
+        for request in requests:
+            depth = request.loops_done - 1
+            allocation = cache._get_allocation(request.request_id)
+            for layer in range(cache.num_layers):
+                if request.position not in allocation.written[depth][layer]:
+                    raise RuntimeError("cannot finalize before every layer has written KV")
+            if depth + 1 < cache.max_loops:
+                copies.append(request)
+        if not copies:
+            return
+        bank, _ = self.async_state.prepare(
+            copies,
+            [r.loops_done - 1 for r in copies],
+            [r.position for r in copies],
+            len(copies),
+            finalize=True,
+        )
+        with torch.cuda.stream(self.boundary_stream):
+            for request in copies:
+                event = self.events.get(request.request_id)
+                if event is not None:
+                    self.boundary_stream.wait_event(event)
+            bank.descriptor = (
+                bank.host
+                if self.async_state.use_uva
+                else bank.host[: bank.count].to(self.device, non_blocking=True)
+            )
+            channels = cache.num_kv_heads * cache.head_dim
+            finalize_kernel[
+                (len(copies), cache.max_loops, math.ceil(cache.num_layers * channels / 256))
+            ](
+                bank.descriptor,
+                self.async_state.tables,
+                cache.key_cache,
+                cache.value_cache,
+                self.async_state.width,
+                cache.max_loops,
+                cache.block_size,
+                cache.num_layers,
+                channels,
+                *cache.key_cache.stride()[:3],
+                256,
+            )
+            bank.record_done()
+            for request in copies:
+                self.events[request.request_id] = bank.done
+                allocation = cache._get_allocation(request.request_id)
+                for depth in range(request.loops_done, cache.max_loops):
+                    for layer in range(cache.num_layers):
+                        allocation.written[depth][layer].add(request.position)
+
     def finalize(self, request):
         # The final core event must precede copies and coda on the boundary stream.
         stream = self.boundary_stream
@@ -474,6 +562,9 @@ class ModelRunner:
         event = self.events.pop(request_id, None)
         if event is not None:
             event.synchronize()
+        if self.async_state is not None:
+            self.async_state.release(request_id)
+            return
         slot = self.state_slots.pop(request_id, None)
         if slot is not None:
             self.free_state_slots.append(slot)

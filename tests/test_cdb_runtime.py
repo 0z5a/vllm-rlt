@@ -589,7 +589,7 @@ def test_cuda_dynamic_async_respects_buffers_and_matches_sync(layout, multi_stre
     actual = LLM(base, execution_config=execution, **common)
     assert actual.engine.execution_config == execution
     assert actual.engine.model_runner.workspaces == {}
-    assert actual.engine.model_runner.states is None
+    assert actual.engine.model_runner.states is actual.engine.model_runner.async_state.hidden
     result = actual.generate(prompts, params)
     assert [(o.token_ids, o.exit_depths) for o in result] == [
         (o.token_ids, o.exit_depths) for o in expected

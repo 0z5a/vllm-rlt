@@ -1,7 +1,6 @@
 """Reusable stage inputs and metadata; padding never acquires a KV address."""
 
 import math
-from dataclasses import replace
 
 import torch
 
@@ -9,16 +8,22 @@ from vllm_lt.core.kv_cache_manager import _PreparedKVBatch
 
 
 def execution_buffer_bytes(config, scheduler, cache, execution, element_size):
-    if not execution.static_buffers:
-        return 0
     rows = scheduler.max_num_batched_tokens
     if execution.pad_to_power_of_two:
         rows = 1 << (rows - 1).bit_length()
     width = math.ceil(config.max_position_embeddings / cache.block_size)
-    # Two banks each for core and boundary execution, plus persistent request states.
-    return 4 * rows * (config.hidden_size * element_size + 4 * width + 36) + (
-        scheduler.max_num_seqs * config.hidden_size * element_size
-    )
+    hidden = config.hidden_size * element_size
+    total = 0
+    if execution.static_buffers:
+        # Existing prefill/eager workspaces remain separate from async banks.
+        total += 4 * rows * (hidden + 4 * width + 36) + scheduler.max_num_seqs * hidden
+    if execution.async_scheduling:
+        planes = config.total_ut_steps if cache.layout == "last_exited" else 1
+        # Four routing banks, including capacity for an H2D descriptor fallback.
+        total += 4 * rows * (hidden + 4 * width + 68)
+        total += scheduler.max_num_seqs * (hidden + 8 + planes * width * 4)
+        total += 2 * scheduler.max_num_seqs * 24  # fallback exit descriptors
+    return total
 
 
 class Workspace:
@@ -89,70 +94,3 @@ class Workspace:
             context_lengths=self.gpu["lengths"][:size],
             writable=True,
         )
-
-
-class InputStaging:
-    """Pinned host DMA inputs, independent of static device execution buffers.
-
-    Each submission owns fresh device metadata. A host bank can be overwritten
-    after its H2D event, without waiting for the model forward to complete.
-    """
-
-    def __init__(self, rows, width):
-        self.event = None
-        # Two contiguous copies instead of one transfer per metadata field.
-        self.longs = torch.empty(3 * rows, dtype=torch.int64, pin_memory=True)
-        self.ints = torch.empty(rows * (width + 1), dtype=torch.int32, pin_memory=True)
-
-    def prepare(self, cache, ids, depths, positions, size):
-        if self.event is not None:
-            self.event.synchronize()  # Only H2D ownership, never the forward event.
-        rows = tuple(cache._validate_rows(ids, depths, positions))
-        addresses = [
-            (a.block_tables[cache._plane(d)][p // cache.block_size], p % cache.block_size)
-            for a, d, p in rows
-        ]
-        if len(set(addresses)) != len(addresses):
-            raise ValueError("duplicate KV write addresses")
-        n = len(rows)
-        width = max((p // cache.block_size + 1 for _, _, p in rows), default=0)
-        longs = [p for _, _, p in rows] + [0] * (size - n)
-        longs.extend(b for b, _ in addresses)
-        longs.extend(o for _, o in addresses)
-        tables = []
-        for a, d, _ in rows:
-            table = a.block_tables[cache._plane(d)][:width]
-            tables.extend(table)
-            tables.extend([-1] * (width - len(table)))
-        tables.extend([-1] * ((size - n) * width))
-        ints = tables + [p + 1 for _, _, p in rows] + [0] * (size - n)
-        self.longs[: len(longs)].copy_(torch.tensor(longs, dtype=torch.int64))
-        self.ints[: len(ints)].copy_(torch.tensor(ints, dtype=torch.int32))
-        return _PreparedKVBatch(
-            owner=cache,
-            rows=rows,
-            allocations=tuple(dict(zip(ids, (a for a, _, _ in rows))).items()),
-            position_ids=self.longs[:size],
-            write_blocks=self.longs[size : size + n],
-            write_offsets=self.longs[size + n : size + 2 * n],
-            block_tables=self.ints[: size * width].view(size, width),
-            context_lengths=self.ints[size * width : size * (width + 1)],
-            writable=True,
-        )
-
-    def transfer(self, batch, device):
-        size, width = batch.block_tables.shape
-        n = len(batch.rows)
-        longs = self.longs[: size + 2 * n].to(device, non_blocking=True)
-        ints = self.ints[: size * (width + 1)].to(device, non_blocking=True)
-        result = replace(
-            batch,
-            position_ids=longs[:size],
-            write_blocks=longs[size : size + n],
-            write_offsets=longs[size + n : size + 2 * n],
-            block_tables=ints[: size * width].view(size, width),
-            context_lengths=ints[size * width :],
-        )
-        self.event = torch.cuda.Event()
-        self.event.record(torch.cuda.current_stream(device))
-        return result
