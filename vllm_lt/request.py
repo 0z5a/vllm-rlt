@@ -35,6 +35,7 @@ class Request:
     hidden_state: torch.Tensor | None = field(default=None, repr=False)
     generator: torch.Generator | None = field(default=None, repr=False)
     finish_reason: str | None = None
+    exit_trace: tuple[int, ...] = field(default=(), repr=False)
 
     @property
     def num_scheduled_outputs(self) -> int:

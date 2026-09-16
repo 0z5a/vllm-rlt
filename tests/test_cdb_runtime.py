@@ -595,3 +595,30 @@ def test_cuda_dynamic_async_respects_buffers_and_matches_sync(layout, multi_stre
         (o.token_ids, o.exit_depths) for o in expected
     ]
     assert actual.engine.cache_manager.num_used_blocks == 0
+
+
+@pytest.mark.gpu
+def test_cuda_memory_plan_reclaims_allocator_residue_on_recreation():
+    import gc
+
+    base = model().to(device="cuda", dtype=torch.bfloat16)
+    options = dict(
+        cache_config=CacheConfig(block_size=2, memory_reserve_bytes=0),
+        scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=3),
+        attention_backend="triton",
+    )
+    first = LLMEngine(base, **options)
+    budget = first.memory_plan["kv_budget_bytes"]
+    blocks = first.cache_manager.num_blocks
+    del first
+    gc.collect()
+    # Leave a large unused allocator segment, as a released KV pool would.
+    residue = torch.empty(64 * 1024 * 1024, dtype=torch.uint8, device="cuda")
+    del residue
+    torch.cuda.synchronize()
+    assert torch.cuda.memory_reserved() - torch.cuda.memory_allocated() >= 64 * 1024 * 1024
+    second = LLMEngine(base, **options)
+    assert second.cache_manager.num_blocks == blocks
+    assert abs(second.memory_plan["kv_budget_bytes"] - budget) < 16 * 1024 * 1024
+    second.add_request("recreated", [1, 2], SamplingParams(max_tokens=2, ignore_eos=True))
+    assert len(drain(second)["recreated"].token_ids) == 2

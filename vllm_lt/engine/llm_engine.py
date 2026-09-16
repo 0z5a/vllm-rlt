@@ -81,6 +81,8 @@ class LLMEngine:
         request_id: str,
         prompt_token_ids: list[int],
         sampling_params: SamplingParams | None = None,
+        *,
+        trace_id: str | None = None,
     ):
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
@@ -93,8 +95,17 @@ class LLMEngine:
         max_loops = params.max_loops or config.total_ut_steps
         if max_loops > config.total_ut_steps or params.min_loops > max_loops:
             raise ValueError("requested loop bounds exceed the model's supported depth")
+        if trace_id is not None:
+            if not isinstance(trace_id, str) or not trace_id:
+                raise ValueError("trace_id must be a nonempty string")
+            if self.exit_config.mode != "trace":
+                raise ValueError("trace_id requires trace exit mode")
+        trace = ()
         if self.exit_config.mode == "trace":
-            trace = self._exit_traces.get(request_id, ())
+            key = request_id if trace_id is None else trace_id
+            if key not in self._exit_traces:
+                raise ValueError(f"unknown exit trace: {key!r}; specify a configured trace_id")
+            trace = self._exit_traces[key]
             if (
                 len(trace) < params.max_tokens
                 or trace[0] != config.total_ut_steps
@@ -116,7 +127,9 @@ class LLMEngine:
                 f"request requires {required} KV blocks but cache has {cache.num_blocks}; "
                 "increase num_blocks or reduce prompt/max_tokens"
             )
-        self.scheduler.add_request(Request(request_id, list(prompt_token_ids), params))
+        self.scheduler.add_request(
+            Request(request_id, list(prompt_token_ids), params, exit_trace=trace)
+        )
 
     def has_unfinished_requests(self) -> bool:
         return self.scheduler.has_unfinished_requests
@@ -222,7 +235,7 @@ class LLMEngine:
         self.scheduler.finish(request, reason)
 
     def _trace_exit(self, request):
-        target = self._exit_traces[request.request_id][request.num_scheduled_outputs]
+        target = request.exit_trace[request.num_scheduled_outputs]
         return request.loops_done >= target
 
     def _delayed_exit(self, request, score):

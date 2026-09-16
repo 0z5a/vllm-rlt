@@ -122,7 +122,8 @@ class EngineWorker:
                 continue
             try:
                 tokens = self.tokenizer.encode(channel.spec.prompt)
-                self.engine.add_request(request_id, tokens, channel.spec.params)
+                options = {"trace_id": channel.spec.trace_id} if channel.spec.trace_id else {}
+                self.engine.add_request(request_id, tokens, channel.spec.params, **options)
                 self.decoders[request_id] = IncrementalText(self.tokenizer)
             except ValueError as exc:
                 failures.append((request_id, ServingError.invalid_request(str(exc))))

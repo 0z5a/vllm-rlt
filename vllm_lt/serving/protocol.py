@@ -54,6 +54,7 @@ class CompletionRequest:
     params: SamplingParams
     stream: bool = False
     include_usage: bool = False
+    trace_id: str | None = None
 
     @classmethod
     def parse(cls, body, model):
@@ -72,7 +73,11 @@ class CompletionRequest:
             "suffix": None,
             "logit_bias": None,
         }
-        allowed = params_keys | neutral.keys() | {"model", "prompt", "stream", "stream_options"}
+        allowed = (
+            params_keys
+            | neutral.keys()
+            | {"model", "prompt", "stream", "stream_options", "trace_id"}
+        )
         if unknown := body.keys() - allowed:
             raise ValueError(f"unsupported fields: {', '.join(sorted(unknown))}")
         if not isinstance(body.get("model"), str) or not body["model"]:
@@ -113,7 +118,10 @@ class CompletionRequest:
                 raise ValueError(f"{key} must be a finite number")
         if "ignore_eos" in params and type(params["ignore_eos"]) is not bool:
             raise ValueError("ignore_eos must be a boolean")
-        return cls(body["prompt"], SamplingParams(**params), stream, include_usage)
+        trace_id = body.get("trace_id")
+        if "trace_id" in body and (not isinstance(trace_id, str) or not trace_id):
+            raise ValueError("trace_id must be a nonempty string")
+        return cls(body["prompt"], SamplingParams(**params), stream, include_usage, trace_id)
 
 
 class IncrementalText:

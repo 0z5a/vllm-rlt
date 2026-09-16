@@ -37,6 +37,11 @@ def plan_cache(model, cache, scheduler, execution, backend):
     if device.type != "cuda":
         return 256, {"source": "cpu_default", "bytes_per_block": per_block}
     torch.cuda.synchronize(device)
+    # Return unused allocator segments before measuring driver-free memory.
+    # In particular, a previous engine may have left its KV pool cached here.
+    # Live allocations and non-releasable segments remain reserved.
+    with torch.cuda.device(device):
+        torch.cuda.empty_cache()
     free_before, total = torch.cuda.mem_get_info(device)
     reserved = torch.cuda.memory_reserved(device)
     allocated = torch.cuda.memory_allocated(device)
