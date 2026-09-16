@@ -103,7 +103,9 @@ class FlashPagedAttention:
                 max_seqlen_q=1,
                 max_seqlen_k=block_tables.shape[1] * key_cache.shape[1],
                 causal=True,
-                num_splits=0,
+                # Auto splitting depends on batch size and changes BF16 reductions.
+                # Keep the partition fixed across scheduler batch compositions.
+                num_splits=1,
             )
         else:
             page_argument = "block_table" if self.generation == 2 else "page_table"

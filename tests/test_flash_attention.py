@@ -168,3 +168,22 @@ def test_flash_prefill_ragged_prefixes_depths_and_causal_mask(dtype):
         torch.testing.assert_close(
             actual, expected, atol=0.015 if dtype == torch.bfloat16 else 0.002, rtol=0.02
         )
+
+
+@pytest.mark.gpu
+def test_fa4_decode_same_queries_match_across_batch_sizes():
+    if torch.cuda.get_device_capability()[0] not in (9, 10, 12):
+        pytest.skip("FA4 requires Hopper or newer")
+    generator = torch.Generator(device="cuda").manual_seed(1234)
+    dtype = torch.bfloat16
+    # Ouro geometry and long enough prefixes to exercise auto-SplitKV selection.
+    keys = torch.randn(260, 2, 16, 4, 128, generator=generator, device="cuda", dtype=dtype)[:, 1]
+    values = torch.randn(260, 2, 16, 4, 128, generator=generator, device="cuda", dtype=dtype)[:, 1]
+    q = torch.randn(4, 16, 128, generator=generator, device="cuda", dtype=dtype)
+    tables = torch.arange(260, device="cuda", dtype=torch.int32).view(4, 65)
+    lengths = torch.tensor([1025, 1029, 1025, 1031], device="cuda", dtype=torch.int32)
+    attention = FlashPagedAttention(q.device, dtype, 128, 16, "flash_attn_4")
+    together = attention(q, keys, values, tables, lengths)
+    for rows in ([2, 3], [3, 0], [1]):
+        separate = attention(q[rows], keys, values, tables[rows], lengths[rows])
+        torch.testing.assert_close(separate, together[rows], rtol=0, atol=0)
