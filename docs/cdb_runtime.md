@@ -9,8 +9,8 @@ Implemented 2026-09-15 against base commit `6e8abbc405e1`. CUDA graphs and Hugin
 | SHARED KV | `core/kv_cache_manager.py`: one physical storage plane, overwrites at every loop; finalization validates without copying | Shared overwrite/read/free tests; chunk/batch invariance; CUDA comparison |
 | Random lookahead head | `worker/model_runner.py`: separate frozen linear head, independent CPU seed; base checkpoint untouched | Same seed reproduces weights; CPU/CUDA RNG preservation; base state names unchanged |
 | Delayed exit routing | `engine/llm_engine.py`: synchronous pending depth or async previous-submission signal | Signal at round 2 exits after round 3; final hidden and all depth bounds checked |
-| CPU/GPU pipeline | `_step_async()` submits round r before collecting round r-1 signals | Submission-order test; GPU outputs/depths compared with sync |
-| Multiple CUDA streams | `ModelRunner.submit/finalize/release`: core/boundary streams and per-request completion events | CUDA cancellation/reuse; event test demonstrates overlap with artificially extended core |
+| CPU/GPU pipeline | CPU input preparation, GPU sampled-token feedback, submitted-output placeholders and bounded in-flight execution | Delayed delivery/EOS, snapshot depths, GPU prepare/H2D overlap; see [complete pipeline](async_scheduling.md) |
+| Multiple CUDA streams | `ModelRunner.submit/finalize/release`: core/boundary/input-copy streams and per-request completion events | CUDA cancellation/reuse; event test demonstrates overlap with artificially extended core |
 | Reusable execution buffers | `worker/buffers.py`, runner state pool and readback leases | Static/dynamic comparison; slot reuse; readback ownership; GPU tests |
 | Power-of-two padding | Inactive rows have zero context, no KV write address, no sampling/routing | Free-page sentinels; padded/unpadded outputs; torch/Triton attention regression |
 | Automatic KV capacity | `core/memory.py`: CUDA peak probe, memory fraction, headroom, overlap/static budget, useful-capacity cap | CPU byte-budget checks; actual CUDA profiling and admission tests |
@@ -44,7 +44,7 @@ llm = LLM(
 
 The default exit mode remains `ouro`, with the original cumulative hazard policy. For random lookahead, sigmoid is a direct score for exiting after one more loop, not a hazard/CDF. `SamplingParams.exit_threshold` compares this score directly. Threshold 1 disables adaptive exit; `max_loops` always caps execution. Adaptive lookahead cannot exit before round 2, although an explicitly configured hard maximum of 1 is honored. All prompt tokens still run the model's full depth.
 
-Async execution requires `ouro_delayed`, `random_lookahead` or `trace`. It automatically enables reusable static inputs to avoid blocking device metadata transfers. CPU supports the same scheduling state machine for tests, with immediately completed operations; it does not simulate GPU parallel execution. `multi_stream=False` shares the core stream for controlled comparisons.
+Async execution requires `ouro_delayed`, `random_lookahead` or `trace`. Static buffers are optional and are no longer enabled implicitly by async scheduling. Without them, device inputs, metadata and request states use dynamic allocation; pinned host input staging and readback storage remain preallocated for safe DMA ownership. CPU supports the same scheduling state machine for tests, with immediately completed operations; it does not simulate GPU parallel execution. `multi_stream=False` shares the core stream for controlled comparisons.
 
 CLI flags are shared by offline and serving entrypoints:
 
@@ -65,7 +65,11 @@ SHARED reduces physical planes from `total_ut_steps` to one; block accounting an
 
 ## Submission lifetime and overlap
 
-`Submission` retains its result/readback storage until completion. For lookahead, the engine launches the next required loop before collecting the previous signal. The current loop is guaranteed necessary under this signal convention, so the pipeline does not intentionally execute an extra speculative loop. Coda submissions remain pending while other requests can run recurrent work.
+The completed decode pipeline and current validation are documented in
+[async scheduling](async_scheduling.md). That document supersedes the earlier
+CPU-token-delivery-dependent refill behavior.
+
+`Submission` retains its result/readback storage until completion. For lookahead, the engine launches the next required loop before collecting the previous signal. The current loop is guaranteed necessary under this signal convention, so the pipeline does not intentionally execute an extra speculative loop. Coda CPU delivery remains pending while GPU samples already feed the next prelude/core. At most one output per request may await delivery; delayed EOS can discard next-token work, with KV reclamation protected by completion events.
 
 Request hidden states and events enforce cross-stream dependencies. The host loop counter represents submitted progress in the async path; an event establishes that the corresponding GPU state is actually complete. Finalization waits on the last core event, and coda waits on finalization. Cancellation/completion waits on the request's last event before recycling its KV and hidden slot. Partial submission failures drain owned streams before cleanup. Old coda results are rejected by Request object identity after ID reuse; previous signals also carry position and depth.
 
@@ -130,7 +134,7 @@ heuristic, not a trained predictor of the next round's exit quality.
 Synchronous execution stores a pending exit depth. Async submits round r+1
 before collecting round r's signal, accumulating each consumed hazard once.
 Both modes use the same policy. Select both with `--exit-mode ouro_delayed`;
-add `--async-scheduling` for async, which automatically enables static buffers.
+add `--async-scheduling` for async. Static buffers require `--static-buffers`.
 CUDA async requires `--attention-backend triton`. Padding is optional; use
 `--static-buffers --pad-to-power-of-two` to enable it.
 

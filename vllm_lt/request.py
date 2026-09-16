@@ -23,6 +23,9 @@ class Request:
     stage: Stage = Stage.WAITING
     generated_token_ids: list[int] = field(default_factory=list)
     exit_depths: list[int] = field(default_factory=list)
+    # Scheduling advances before coda's CPU output delivery.
+    num_output_placeholders: int = 0
+    input_token_tensor: torch.Tensor | None = field(default=None, repr=False)
     num_prefilled_tokens: int = 0
     # Host progress; in async mode an event confirms submitted GPU work is done.
     loops_done: int = 0
@@ -34,8 +37,12 @@ class Request:
     finish_reason: str | None = None
 
     @property
+    def num_scheduled_outputs(self) -> int:
+        return len(self.generated_token_ids) + self.num_output_placeholders
+
+    @property
     def position(self) -> int:
-        return len(self.prompt_token_ids) + len(self.generated_token_ids) - 1
+        return len(self.prompt_token_ids) + self.num_scheduled_outputs - 1
 
     @property
     def input_token_id(self) -> int:

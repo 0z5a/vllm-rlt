@@ -45,10 +45,16 @@ class Scheduler:
         self.queues[stage].append(request.request_id)
 
     def finish(self, request: Request, reason: str):
+        # A delayed EOS can stop a request already queued for its next stage.
+        for queue in self.queues.values():
+            while request.request_id in queue:
+                queue.remove(request.request_id)
         self.cache_manager.free(request.request_id)
         request.stage = Stage.FINISHED
         request.finish_reason = reason
         request.hidden_state = None
+        request.input_token_tensor = None
+        request.num_output_placeholders = 0
         request.generator = None
         self.requests.pop(request.request_id)
 
@@ -114,7 +120,7 @@ class Scheduler:
             budget -= count
         return SchedulerOutput(stage, items)
 
-    def schedule(self) -> SchedulerOutput | None:
+    def schedule(self, *, prefer_recurrent=False) -> SchedulerOutput | None:
         if not self.requests:
             return None
         q = self.queues
@@ -149,6 +155,10 @@ class Scheduler:
                 self._no_refill_phase = "core"
                 return self._take(Stage.RECURRENT)
         else:
+            # In multi-stream execution, give an independent core batch one
+            # turn alongside newly submitted boundary work, then refill it.
+            if prefer_recurrent and q[Stage.RECURRENT]:
+                return self._take(Stage.RECURRENT)
             # A prelude created by coda runs immediately, returning tokens to the core.
             if q[Stage.PRELUDE]:
                 return self._take(Stage.PRELUDE)

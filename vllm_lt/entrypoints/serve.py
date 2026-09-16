@@ -62,7 +62,12 @@ def main():
     parser.add_argument("--served-model-name", default=OURO_MODEL_ID)
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
-    parser.add_argument("--attention-backend", choices=["torch", "triton"], default="triton")
+    parser.add_argument(
+        "--attention-backend",
+        type=str.lower,
+        choices=["torch", "triton", "flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4"],
+        default="triton",
+    )
     parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
     parser.add_argument("--num-blocks", type=int, help="Override automatic KV sizing")
     parser.add_argument("--block-size", type=int, default=16)

@@ -11,6 +11,7 @@ from numbers import Integral
 
 import torch
 
+from vllm_lt.kernels.flash_attention import FLASH_BACKENDS, FlashPagedAttention
 from vllm_lt.kernels.paged_attention import torch_paged_attention, triton_paged_attention
 
 
@@ -94,8 +95,8 @@ class KVCacheManager:
             if not isinstance(value, Integral) or isinstance(value, bool) or value <= 0:
                 raise ValueError(f"{name} must be a positive integer")
             setattr(self, name, int(value))
-        if backend not in {"torch", "triton"}:
-            raise ValueError("backend must be 'torch' or 'triton'")
+        if backend not in {"torch", "triton", *FLASH_BACKENDS}:
+            raise ValueError("unknown attention backend")
         if dtype not in {torch.float32, torch.float16, torch.bfloat16}:
             raise ValueError("KV dtype must be float32, float16, or bfloat16")
         if layout not in {"last_exited", "shared"}:
@@ -109,6 +110,14 @@ class KVCacheManager:
             raise ValueError("the Triton attention backend requires a CUDA or ROCm device")
         if backend == "triton" and self.head_dim > 256:
             raise ValueError("the Triton attention backend supports head_dim <= 256")
+        self.attention = (
+            FlashPagedAttention(self.device, dtype, head_dim, block_size, backend)
+            if backend in FLASH_BACKENDS
+            else triton_paged_attention
+            if backend == "triton"
+            else torch_paged_attention
+        )
+        self.attention_info = getattr(self.attention, "info", {"backend": backend})
         shape = (num_blocks, num_layers, block_size, num_kv_heads, head_dim)
         self.key_cache = torch.empty(shape, device=self.device, dtype=dtype)
         self.value_cache = torch.empty_like(self.key_cache)
@@ -367,8 +376,7 @@ class KVCacheManager:
             return torch.empty_like(q)
         for allocation, depth, position in batch.rows:
             self._require_prefix(allocation, layer, depth, position + 1)
-        attention = triton_paged_attention if self.backend == "triton" else torch_paged_attention
-        return attention(
+        return self.attention(
             q,
             self.key_cache[:, layer],
             self.value_cache[:, layer],

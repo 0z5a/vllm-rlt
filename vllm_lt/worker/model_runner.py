@@ -1,15 +1,16 @@
 """Stage execution, random lookahead signals and event-owned CUDA submissions."""
 
 import math
+from collections import deque
 from contextlib import nullcontext
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import torch
 
 from vllm_lt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_lt.core.scheduler import SchedulerOutput
 from vllm_lt.request import Request, Stage
-from vllm_lt.worker.buffers import Workspace
+from vllm_lt.worker.buffers import InputStaging, Workspace
 
 
 @dataclass
@@ -19,6 +20,17 @@ class ReadbackSlot:
     event: object = None
 
 
+@dataclass(frozen=True)
+class PreparedExecution:
+    batch: SchedulerOutput
+    depths: tuple[int, ...]
+    positions: tuple[int, ...]
+    output_indices: tuple[int, ...]
+    token_tensors: tuple[torch.Tensor, ...] = ()
+    kv: object = None
+    staging: InputStaging | None = None
+
+
 @dataclass
 class Submission:
     batch: SchedulerOutput
@@ -26,6 +38,9 @@ class Submission:
     event: object = None
     cached: list | None = None
     slot: ReadbackSlot | None = None
+    device_values: torch.Tensor | None = None
+    depths: tuple[int, ...] = ()
+    output_indices: tuple[int, ...] = ()
 
     def __del__(self):
         if self.slot is not None:
@@ -35,6 +50,8 @@ class Submission:
         return self.event is None or self.event.query()
 
     def collect(self):
+        if self.cached is not None:
+            return self.cached
         if self.event is not None:
             self.event.synchronize()
         if self.cached is None and self.values is not None:
@@ -76,7 +93,7 @@ class ModelRunner:
                 torch.nn.init.zeros_(head.bias)
             self.lookahead_head = head.to(device=self.device, dtype=parameter.dtype).eval()
             self.lookahead_head.requires_grad_(False)
-        self.core_stream = self.boundary_stream = None
+        self.core_stream = self.boundary_stream = self.copy_stream = None
         if self.execution_config.async_scheduling and self.device.type == "cuda":
             self.core_stream = torch.cuda.Stream(device=self.device)
             self.boundary_stream = (
@@ -84,14 +101,19 @@ class ModelRunner:
                 if self.execution_config.multi_stream
                 else self.core_stream
             )
-            for stream in (self.core_stream, self.boundary_stream):
+            self.copy_stream = (
+                torch.cuda.Stream(device=self.device)
+                if self.execution_config.multi_stream
+                else self.core_stream
+            )
+            for stream in (self.core_stream, self.boundary_stream, self.copy_stream):
                 stream.wait_stream(torch.cuda.current_stream(self.device))
         self.readback_slots = []
         if self.execution_config.async_scheduling and self.device.type == "cuda":
             # cudaHostAlloc during submission can serialize streams. Allocate all
             # readback storage before work starts, retaining leases until consumed.
             for dtype in (torch.float32, torch.int64):
-                for _ in range(scheduler.max_num_seqs + 2):
+                for _ in range(scheduler.max_num_seqs + 4):
                     self.readback_slots.append(
                         ReadbackSlot(
                             torch.empty(
@@ -99,6 +121,17 @@ class ModelRunner:
                             )
                         )
                     )
+        # Two core rounds plus one interleaved boundary stage can be in flight.
+        # Prepare the next batch BEFORE retiring the oldest submission.
+        self.submission_events = deque()
+        self.input_staging = []
+        self.staging_index = 0
+        if self.core_stream is not None:
+            rows = scheduler.max_num_batched_tokens
+            if self.execution_config.pad_to_power_of_two:
+                rows = 1 << (rows - 1).bit_length()
+            width = math.ceil(model.config.max_position_embeddings / cache_manager.block_size)
+            self.input_staging = [InputStaging(rows, width) for _ in range(4)]
         self.events = {}
         self.workspaces = {}
         self.workspace_index = {"core": 0, "boundary": 0}
@@ -222,8 +255,32 @@ class ModelRunner:
                 workspace.release()
         return hidden
 
+    def prepare(self, batch):
+        """Snapshot CPU routing/addresses while the preceding GPU work runs."""
+        requests = [i.request for i in batch.items]
+        depths = tuple(r.loops_done for r in requests)
+        positions = tuple(r.position for r in requests)
+        indices = tuple(r.num_scheduled_outputs for r in requests)
+        tokens = ()
+        if batch.stage == Stage.PRELUDE:
+            tokens = tuple(r.input_token_tensor for r in requests)
+            if any(t is None for t in tokens):
+                raise RuntimeError("async prelude requires the preceding device sample")
+        kv = staging = None
+        if batch.stage == Stage.RECURRENT:
+            ids = [r.request_id for r in requests]
+            if self.input_staging:
+                staging = self.input_staging[self.staging_index]
+                self.staging_index = (self.staging_index + 1) % len(self.input_staging)
+                kv = staging.prepare(
+                    self.cache_manager, ids, depths, positions, self._size(len(ids))
+                )
+            elif not self.workspaces:
+                kv = self.cache_manager._prepare_batch(ids, depths, positions)
+        return PreparedExecution(batch, depths, positions, indices, tokens, kv, staging)
+
     @torch.inference_mode()
-    def _execute(self, batch):
+    def _execute(self, batch, prepared=None):
         requests = [i.request for i in batch.items]
         if batch.stage == Stage.PREFILL:
             self._prefill(batch)
@@ -232,12 +289,24 @@ class ModelRunner:
         group = "core" if batch.stage == Stage.RECURRENT else "boundary"
         workspace = self._workspace(group)
         if batch.stage == Stage.PRELUDE:
-            ids = [r.input_token_id for r in requests]
-            tokens = (
-                workspace.tokens(ids, size)
-                if workspace
-                else torch.tensor(ids, device=self.device, dtype=torch.long)
-            )
+            if prepared is not None:
+                # Feed the sampled GPU IDs directly to embedding. No .item(),
+                # .tolist(), or CPU token roundtrip on the dependency path.
+                tokens = torch.stack(prepared.token_tensors)
+                if tokens.is_cuda:
+                    for tensor in prepared.token_tensors:
+                        tensor.record_stream(torch.cuda.current_stream(self.device))
+                if size > len(requests):
+                    tokens = torch.cat((tokens, tokens.new_zeros(size - len(requests))))
+                for request in requests:
+                    request.input_token_tensor = None
+            else:
+                ids = [r.input_token_id for r in requests]
+                tokens = (
+                    workspace.tokens(ids, size)
+                    if workspace
+                    else torch.tensor(ids, device=self.device, dtype=torch.long)
+                )
             hidden = self.model.prelude(tokens)
             for request, state in zip(requests, hidden):
                 self._save(request, state)
@@ -245,14 +314,25 @@ class ModelRunner:
         else:
             hidden = self._gather(requests, workspace, size)
             if batch.stage == Stage.RECURRENT:
-                hidden, logits = self._core(
-                    hidden,
-                    [r.request_id for r in requests],
-                    [r.loops_done for r in requests],
-                    [r.position for r in requests],
-                    workspace,
-                    size,
-                )
+                if prepared is not None and prepared.kv is not None:
+                    kv = prepared.kv
+                    if prepared.staging is not None:
+                        kv = prepared.staging.transfer(kv, self.device)
+                    hidden, logits = self.model.recurrent_prepared(
+                        hidden,
+                        kv,
+                        self.cache_manager,
+                        compute_gate=self.exit_config.mode in ("ouro", "ouro_delayed"),
+                    )
+                else:
+                    hidden, logits = self._core(
+                        hidden,
+                        [r.request_id for r in requests],
+                        [r.loops_done for r in requests],
+                        [r.position for r in requests],
+                        workspace,
+                        size,
+                    )
                 for request, state in zip(requests, hidden):
                     self._save(request, state)
                 if self.lookahead_head is not None:
@@ -284,11 +364,26 @@ class ModelRunner:
         raise RuntimeError("readback buffers exhausted; retire completed submissions")
 
     def submit(self, batch: SchedulerOutput):
+        prepared = self.prepare(batch)
+        while self.submission_events and self.submission_events[0].query():
+            self.submission_events.popleft()
+        if len(self.submission_events) >= 3:
+            self.submission_events.popleft().synchronize()
         stream = (
             self.core_stream
             if batch.stage in (Stage.PREFILL, Stage.RECURRENT)
             else self.boundary_stream
         )
+        if prepared.staging is not None and stream is not self.copy_stream:
+            # Metadata is independent of the current hidden/KV computation.
+            # In multi-stream mode its H2D can run alongside the previous core.
+            with torch.cuda.stream(self.copy_stream):
+                kv = prepared.staging.transfer(prepared.kv, self.device)
+            stream.wait_event(prepared.staging.event)
+            # Five fields share just these two allocation storages.
+            kv.position_ids.record_stream(stream)
+            kv.block_tables.record_stream(stream)
+            prepared = replace(prepared, kv=kv, staging=None)
         with torch.cuda.stream(stream) if stream is not None else nullcontext():
             for item in batch.items:
                 event = self.events.get(item.request.request_id)
@@ -297,7 +392,8 @@ class ModelRunner:
                 hidden = item.request.hidden_state
                 if stream is not None and hidden is not None:
                     hidden.record_stream(stream)
-            result = self._execute(batch)
+            result = self._execute(batch, prepared)
+            device_values = result
             event = None
             slot = None
             if self.device.type == "cuda":
@@ -312,7 +408,16 @@ class ModelRunner:
                     slot.event = event
                 for item in batch.items:
                     self.events[item.request.request_id] = event
-            return Submission(batch, result, event, slot=slot)
+                self.submission_events.append(event)
+            return Submission(
+                batch,
+                result,
+                event,
+                slot=slot,
+                device_values=device_values,
+                depths=prepared.depths,
+                output_indices=prepared.output_indices,
+            )
 
     def finalize(self, request):
         # The final core event must precede copies and coda on the boundary stream.
@@ -338,7 +443,7 @@ class ModelRunner:
             self.free_state_slots.append(slot)
 
     def synchronize(self):
-        for stream in (self.core_stream, self.boundary_stream):
+        for stream in (self.core_stream, self.boundary_stream, self.copy_stream):
             if stream is not None:
                 stream.synchronize()
 

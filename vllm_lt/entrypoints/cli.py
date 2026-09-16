@@ -21,7 +21,12 @@ def main():
     )
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--dtype", choices=["float32", "float16", "bfloat16"], default="bfloat16")
-    parser.add_argument("--attention-backend", choices=["torch", "triton"], default="torch")
+    parser.add_argument(
+        "--attention-backend",
+        type=str.lower,
+        choices=["torch", "triton", "flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4"],
+        default="torch",
+    )
     parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
     parser.add_argument("--max-tokens", type=int, default=16)
     parser.add_argument("--max-loops", type=int, default=4)

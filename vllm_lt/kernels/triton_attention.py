@@ -60,7 +60,9 @@ def _paged_attention_kernel(
             TABLES + row * table_stride + positions // PAGE_SIZE,
             mask=valid_tokens,
             other=0,
-        )
+        ).to(tl.int64)
+        # Physical IDs fit in int32, but ID * block_stride can exceed 2**31
+        # elements in a large KV pool. Promote BEFORE multiplying, for K and V.
         offsets = positions % PAGE_SIZE
         keys = tl.load(
             K

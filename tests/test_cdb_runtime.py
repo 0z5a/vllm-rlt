@@ -388,8 +388,14 @@ def test_pending_coda_does_not_block_other_recurrent_work(monkeypatch):
     else:
         pytest.fail("fast coda was not submitted")
     engine.step()
+    # The pending sample can already re-enter prelude on device. Its next
+    # recurrent batch includes BOTH requests, without waiting for CPU delivery.
+    assert engine.last_schedule.stage == Stage.PRELUDE
+    assert engine.last_schedule.items[0].request.request_id == "fast"
+    assert not held.complete
+    engine.step()
     assert engine.last_schedule.stage == Stage.RECURRENT
-    assert engine.last_schedule.items[0].request.request_id == "slow"
+    assert {i.request.request_id for i in engine.last_schedule.items} == {"fast", "slow"}
     assert not held.complete
     held.complete = True
     drain(engine)
@@ -463,7 +469,7 @@ def test_cuda_boundary_and_core_can_overlap(monkeypatch):
         cache_config=CacheConfig(32, 2),
         scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=2),
         exit_config=ExitConfig("random_lookahead"),
-        execution_config=ExecutionConfig(async_scheduling=True),
+        execution_config=ExecutionConfig(async_scheduling=True, static_buffers=True),
         attention_backend="triton",
     )
     # Warm the exact batch shapes, kernels and allocator before testing topology.
@@ -480,7 +486,7 @@ def test_cuda_boundary_and_core_can_overlap(monkeypatch):
     origin.record()
     origin.synchronize()
 
-    def execute(batch):
+    def execute(batch, prepared=None):
         label = None
         if batch.stage == Stage.CODA and len(batch.items) == 1:
             request = batch.items[0].request
@@ -499,7 +505,7 @@ def test_cuda_boundary_and_core_can_overlap(monkeypatch):
         start.record()
         if batch.stage == Stage.RECURRENT:
             torch.cuda._sleep(30_000_000)
-        result = original(batch)
+        result = original(batch, prepared)
         end.record()
         if label:
             intervals[label] = start, end
@@ -560,3 +566,32 @@ def test_ouro_delayed_reuses_gate_and_accumulates_hazards(
     actual = llm.generate([[2, 3]], params)[0]
     assert actual.exit_depths == [4, depth, depth, depth]
     assert actual.token_ids == expected.token_ids
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("layout", ["last_exited", "shared"])
+@pytest.mark.parametrize("multi_stream", [False, True])
+@pytest.mark.parametrize("exit_mode", ["random_lookahead", "ouro_delayed"])
+def test_cuda_dynamic_async_respects_buffers_and_matches_sync(layout, multi_stream, exit_mode):
+    base = model().to(device="cuda", dtype=torch.bfloat16)
+    common = dict(
+        cache_config=CacheConfig(64, 2, layout),
+        exit_config=ExitConfig(exit_mode, 17),
+        scheduler_config=SchedulerConfig(max_num_batched_tokens=3, prefill_chunk_size=2),
+        attention_backend="triton",
+    )
+    prompts = [[2, 3, 4], [5], [6, 7]]
+    params = [
+        SamplingParams(max_tokens=5, exit_threshold=q, ignore_eos=True) for q in (0.0, 0.5, 1.0)
+    ]
+    expected = LLM(base, **common).generate(prompts, params)
+    execution = ExecutionConfig(async_scheduling=True, multi_stream=multi_stream)
+    actual = LLM(base, execution_config=execution, **common)
+    assert actual.engine.execution_config == execution
+    assert actual.engine.model_runner.workspaces == {}
+    assert actual.engine.model_runner.states is None
+    result = actual.generate(prompts, params)
+    assert [(o.token_ids, o.exit_depths) for o in result] == [
+        (o.token_ids, o.exit_depths) for o in expected
+    ]
+    assert actual.engine.cache_manager.num_used_blocks == 0

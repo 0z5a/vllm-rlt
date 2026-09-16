@@ -4,6 +4,7 @@ from vllm_lt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerCo
 from vllm_lt.core.kv_cache_manager import KVCacheManager
 from vllm_lt.core.memory import plan_cache
 from vllm_lt.core.scheduler import Scheduler
+from vllm_lt.kernels.flash_attention import FLASH_BACKENDS
 from vllm_lt.request import Request, RequestOutput, Stage
 from vllm_lt.sampling_params import SamplingParams
 from vllm_lt.worker.model_runner import ModelRunner
@@ -30,14 +31,15 @@ class LLMEngine:
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
         if self.execution_config.async_scheduling:
-            # Pinned reusable inputs avoid blocking per-step metadata transfers.
-            self.execution_config = replace(self.execution_config, static_buffers=True)
             if self.exit_config.mode not in ("ouro_delayed", "random_lookahead", "trace"):
                 raise ValueError(
                     "async scheduling requires ouro_delayed, random_lookahead or trace exit mode"
                 )
-            if parameter.device.type == "cuda" and attention_backend != "triton":
-                raise ValueError("CUDA async scheduling requires the Triton attention backend")
+            if parameter.device.type == "cuda" and attention_backend not in (
+                "triton",
+                *FLASH_BACKENDS,
+            ):
+                raise ValueError("CUDA async scheduling requires Triton or FlashAttention")
         num_blocks, self.memory_plan = plan_cache(
             model, cache_config, scheduler_config, self.execution_config, attention_backend
         )
@@ -67,6 +69,7 @@ class LLMEngine:
         self._signals = {}
         self._pending_coda = []
         self._inflight = []
+        self._overlap_boundary = False
         self.last_schedule = None
 
     def add_request(
@@ -215,7 +218,7 @@ class LLMEngine:
         self.scheduler.finish(request, reason)
 
     def _trace_exit(self, request):
-        target = self._exit_traces[request.request_id][len(request.generated_token_ids)]
+        target = self._exit_traces[request.request_id][request.num_scheduled_outputs]
         return request.loops_done >= target
 
     def _delayed_exit(self, request, score):
@@ -243,12 +246,38 @@ class LLMEngine:
             and score >= params.exit_threshold
         )
 
+    def _deliver_coda(self, ticket):
+        outputs = []
+        result = ticket.collect()
+        for index, item in enumerate(ticket.batch.items):
+            request = item.request
+            if self.scheduler.requests.get(request.request_id) is not request:
+                continue
+            if ticket.output_indices[index] != len(request.generated_token_ids):
+                raise RuntimeError("out-of-order coda delivery")
+            if request.num_output_placeholders != 1:
+                raise RuntimeError("invalid pending output count")
+            request.num_output_placeholders -= 1
+            token_id = result[index]
+            request.generated_token_ids.append(token_id)
+            # Current loops_done may already describe the NEXT token.
+            request.exit_depths.append(ticket.depths[index])
+            params = request.sampling_params
+            eos = self.model.config.eos_token_id
+            eos_ids = eos if isinstance(eos, (tuple, list)) else [eos]
+            if token_id in eos_ids and not params.ignore_eos:
+                self._finish(request, "stop")
+            elif len(request.generated_token_ids) >= params.max_tokens:
+                self._finish(request, "length")
+            outputs.append(RequestOutput.from_request(request))
+        return outputs
+
     def _collect_coda(self, wait=False):
         outputs = []
         pending = []
         for ticket in self._pending_coda:
             if ticket.ready() or wait:
-                outputs.extend(self._update(ticket.batch, ticket.collect()))
+                outputs.extend(self._deliver_coda(ticket))
                 wait = False
             else:
                 pending.append(ticket)
@@ -258,9 +287,15 @@ class LLMEngine:
     def _step_async(self):
         # Hold readback buffers until their DMA completes, even for discarded scores.
         self._inflight = [t for t in self._inflight if not t.ready()]
-        no_refill = self.scheduler.config.mode == "no_refill"
-        outputs = self._collect_coda(wait=no_refill)
-        batch = self.scheduler.schedule()
+        outputs = self._collect_coda()
+        batch = self.scheduler.schedule(
+            # If the preceding core is still running, boundary work can overlap
+            # the independent next core. Once it has completed, refill first:
+            # splitting on a briefly pending coda readback fragments the batch.
+            prefer_recurrent=self._overlap_boundary
+            and any(t.batch.stage == Stage.RECURRENT and not t.ready() for t in self._inflight)
+        )
+        self._overlap_boundary = False
         self.last_schedule = batch
         if batch is None:
             if self._pending_coda:
@@ -268,10 +303,38 @@ class LLMEngine:
             elif self.has_unfinished_requests():
                 raise RuntimeError("scheduler made no progress")
             return outputs
+        if batch.stage == Stage.CODA:
+            # Bound speculation to one output per request. Its next prelude and
+            # core may run before delivery (including a possible EOS), but never
+            # sample another token until that output's stop decision is known.
+            while any(i.request.num_output_placeholders for i in batch.items):
+                outputs.extend(self._collect_coda(wait=True))
+            batch = replace(
+                batch,
+                items=[
+                    i
+                    for i in batch.items
+                    if self.scheduler.requests.get(i.request.request_id) is i.request
+                ],
+            )
+            self.last_schedule = batch
+            if not batch.items:
+                return outputs
         ticket = self.model_runner.submit(batch)
         self._inflight.append(ticket)
         if batch.stage == Stage.CODA:
             self._pending_coda.append(ticket)
+            runner = self.model_runner
+            self._overlap_boundary = (
+                runner.boundary_stream is not None
+                and runner.boundary_stream is not runner.core_stream
+            )
+            for index, item in enumerate(batch.items):
+                request = item.request
+                request.num_output_placeholders += 1
+                if request.num_scheduled_outputs < request.sampling_params.max_tokens:
+                    request.input_token_tensor = ticket.device_values[index]
+                    self.scheduler.enqueue(request, Stage.PRELUDE)
         elif batch.stage != Stage.RECURRENT:
             self._update(batch, None)
         else:
@@ -299,7 +362,10 @@ class LLMEngine:
                     self.model_runner.finalize(request)
                     self.scheduler.enqueue(request, Stage.CODA)
                 else:
-                    if self.exit_config.mode in ("ouro_delayed", "random_lookahead"):
+                    if (
+                        self.exit_config.mode in ("ouro_delayed", "random_lookahead")
+                        and params.exit_threshold < 1
+                    ):
                         self._signals[request.request_id] = (
                             ticket,
                             index,
