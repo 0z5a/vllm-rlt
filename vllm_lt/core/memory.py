@@ -94,7 +94,15 @@ def plan_cache(model, cache, scheduler, execution, backend):
     )
     budget = min(free_before, int(total * cache.gpu_memory_utilization) - reserved)
     concurrent_peak = peak * (2 if execution.async_scheduling and execution.multi_stream else 1)
-    budget -= concurrent_peak + context_scratch + buffers + metadata + cache.memory_reserve_bytes
+    graph_reserve = execution.cuda_graph_memory_reserve_bytes if execution.cuda_graphs else 0
+    budget -= (
+        concurrent_peak
+        + context_scratch
+        + buffers
+        + metadata
+        + cache.memory_reserve_bytes
+        + graph_reserve
+    )
     # More blocks than all concurrent full-context requests can use only waste
     # memory, particularly for tiny-model GPU tests with very small pages.
     useful_blocks = (
@@ -109,6 +117,7 @@ def plan_cache(model, cache, scheduler, execution, backend):
         profile_peak_bytes=peak,
         concurrent_peak_bytes=concurrent_peak,
         max_useful_blocks=useful_blocks,
+        cuda_graph_reserve_bytes=graph_reserve,
         static_buffer_bytes=buffers,
         context_scratch_bytes=context_scratch,
         kv_budget_bytes=int(budget),

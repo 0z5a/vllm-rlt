@@ -30,6 +30,10 @@ class LLMEngine:
         config = model.config
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
+        if self.execution_config.cuda_graphs and (
+            parameter.device.type != "cuda" or attention_backend not in ("triton", *FLASH_BACKENDS)
+        ):
+            raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
         if self.execution_config.async_scheduling:
             if self.exit_config.mode not in ("ouro_delayed", "random_lookahead", "trace"):
                 raise ValueError(

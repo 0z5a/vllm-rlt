@@ -61,6 +61,8 @@ class _PreparedKVBatch:
     block_tables: torch.Tensor
     context_lengths: torch.Tensor
     writable: bool
+    cu_seqlens_q: torch.Tensor | None = None
+    max_seqlen_q: int = 1
 
 
 class KVCacheManager:
@@ -244,6 +246,7 @@ class KVCacheManager:
         positions: Sequence[int] | torch.Tensor,
         *,
         for_write: bool = True,
+        packed_prefill: bool = False,
     ) -> _PreparedKVBatch:
         """Build layer-independent addresses once; do not initialize any KV slot."""
         rows = tuple(self._validate_rows(request_ids, depths, positions))
@@ -259,8 +262,32 @@ class KVCacheManager:
                 "a write batch cannot contain duplicate request/depth/position addresses"
             )
         width = max((position // self.block_size + 1 for _, _, position in rows), default=0)
+        table_rows = rows
+        cumulative = None
+        max_query = 1
+        if packed_prefill:
+            if self.layout != "last_exited" or getattr(self.attention, "generation", None) != 4:
+                raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
+            # Group only consecutive positions of one request/depth. The last
+            # position supplies the causal key length for the whole query chunk.
+            ends, cumulative, seen = [], [0], set()
+            for index, (allocation, depth, position) in enumerate(rows):
+                key = (id(allocation), depth)
+                if index and key == (id(rows[index - 1][0]), rows[index - 1][1]):
+                    if position != rows[index - 1][2] + 1:
+                        raise ValueError("packed prefill positions must be contiguous")
+                    ends[-1] = (allocation, depth, position)
+                    cumulative[-1] = index + 1
+                else:
+                    if key in seen:
+                        raise ValueError("packed prefill request/depth must form one sequence")
+                    seen.add(key)
+                    ends.append((allocation, depth, position))
+                    cumulative.append(index + 1)
+            table_rows = ends
+            max_query = max((b - a for a, b in zip(cumulative, cumulative[1:])), default=1)
         tables = []
-        for allocation, depth, _ in rows:
+        for allocation, depth, _ in table_rows:
             table = allocation.block_tables[self._plane(depth)][:width]
             tables.append(list(table) + [-1] * (width - len(table)))
         allocations = dict(zip(request_ids, (allocation for allocation, _, _ in rows)))
@@ -278,12 +305,20 @@ class KVCacheManager:
                 [offset for _, offset in addresses], device=self.device, dtype=torch.long
             ),
             block_tables=torch.tensor(tables, device=self.device, dtype=torch.int32).reshape(
-                len(rows), width
+                len(table_rows), width
             ),
             context_lengths=torch.tensor(
-                [position + 1 for _, _, position in rows], device=self.device, dtype=torch.int32
+                [position + 1 for _, _, position in table_rows],
+                device=self.device,
+                dtype=torch.int32,
             ),
             writable=for_write,
+            cu_seqlens_q=(
+                torch.tensor(cumulative, device=self.device, dtype=torch.int32)
+                if cumulative is not None
+                else None
+            ),
+            max_seqlen_q=max_query,
         )
 
     def _require_live_batch(self, batch: _PreparedKVBatch) -> None:
@@ -376,6 +411,16 @@ class KVCacheManager:
             return torch.empty_like(q)
         for allocation, depth, position in batch.rows:
             self._require_prefix(allocation, layer, depth, position + 1)
+        if batch.cu_seqlens_q is not None:
+            return self.attention.prefill(
+                q,
+                self.key_cache[:, layer],
+                self.value_cache[:, layer],
+                batch.block_tables,
+                batch.context_lengths,
+                batch.cu_seqlens_q,
+                batch.max_seqlen_q,
+            )
         return self.attention(
             q,
             self.key_cache[:, layer],

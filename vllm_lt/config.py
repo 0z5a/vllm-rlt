@@ -87,10 +87,26 @@ class ExecutionConfig:
     multi_stream: bool = True
     static_buffers: bool = False
     pad_to_power_of_two: bool = False
+    cuda_graphs: bool = False
+    cuda_graph_max_batch_size: int = 128
+    cuda_graph_max_graphs: int = 16
+    cuda_graph_memory_reserve_bytes: int = 1024**3
 
     def __post_init__(self):
-        for name in ("async_scheduling", "multi_stream", "static_buffers", "pad_to_power_of_two"):
+        for name in (
+            "async_scheduling",
+            "multi_stream",
+            "static_buffers",
+            "pad_to_power_of_two",
+            "cuda_graphs",
+        ):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be a boolean")
+        for name in (
+            "cuda_graph_max_batch_size",
+            "cuda_graph_max_graphs",
+            "cuda_graph_memory_reserve_bytes",
+        ):
+            _positive(name, getattr(self, name))
         if self.pad_to_power_of_two and not self.static_buffers:
             raise ValueError("padding requires static_buffers")

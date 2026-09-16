@@ -11,6 +11,7 @@ from vllm_lt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_lt.core.scheduler import SchedulerOutput
 from vllm_lt.request import Request, Stage
 from vllm_lt.worker.buffers import InputStaging, Workspace
+from vllm_lt.worker.cuda_graph import RecurrentGraphs
 
 
 @dataclass
@@ -80,6 +81,16 @@ class ModelRunner:
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
         scheduler = scheduler_config or SchedulerConfig()
+        self.graphs = (
+            RecurrentGraphs(
+                model,
+                cache_manager,
+                self.execution_config,
+                self.exit_config.mode in ("ouro", "ouro_delayed"),
+            )
+            if self.execution_config.cuda_graphs
+            else None
+        )
         self.lookahead_head = None
         if self.exit_config.mode == "random_lookahead":
             # Keep auxiliary random weights separate from the strict base checkpoint.
@@ -238,6 +249,20 @@ class ModelRunner:
             self._save(item.request, hidden[offset - 1])
 
     def _prefill_tokens(self, ids, positions, tokens):
+        cache = self.cache_manager
+        if cache.layout == "last_exited" and getattr(cache.attention, "generation", None) == 4:
+            # Prefill has genuinely ragged query sequences. Do not pad token rows
+            # or reuse decode's per-query, model-max-width static page tables.
+            tensor = torch.tensor(tokens, device=self.device, dtype=torch.long)
+            hidden = self.model.prelude(tensor)
+            for depth in range(self.model.config.total_ut_steps):
+                metadata = cache._prepare_batch(
+                    ids, [depth] * len(ids), positions, packed_prefill=True
+                )
+                hidden, _ = self.model.recurrent_prepared(
+                    hidden, metadata, cache, compute_gate=False
+                )
+            return hidden
         size = self._size(len(tokens))
         workspace = self._workspace("core")
         tensor = (
@@ -314,7 +339,18 @@ class ModelRunner:
         else:
             hidden = self._gather(requests, workspace, size)
             if batch.stage == Stage.RECURRENT:
-                if prepared is not None and prepared.kv is not None:
+                if self.graphs is not None:
+                    kv = prepared.kv if prepared is not None else None
+                    if kv is not None and prepared.staging is not None:
+                        kv = prepared.staging.transfer(kv, self.device)
+                    if kv is None:
+                        kv = self.cache_manager._prepare_batch(
+                            [r.request_id for r in requests],
+                            [r.loops_done for r in requests],
+                            [r.position for r in requests],
+                        )
+                    hidden, logits = self.graphs.run(hidden[: len(requests)], kv)
+                elif prepared is not None and prepared.kv is not None:
                     kv = prepared.kv
                     if prepared.staging is not None:
                         kv = prepared.staging.transfer(kv, self.device)

@@ -22,6 +22,14 @@ def add_runtime_args(parser):
     parser.add_argument("--exit-trace", help="JSON file with depths_by_request")
     parser.add_argument("--lookahead-seed", type=int, default=0)
     parser.add_argument("--async-scheduling", action="store_true")
+    parser.add_argument(
+        "--cuda-graphs",
+        action="store_true",
+        help="Capture decode recurrent cores; prefill and sampling remain eager",
+    )
+    parser.add_argument("--cuda-graph-max-batch-size", type=int, default=128)
+    parser.add_argument("--cuda-graph-max-graphs", type=int, default=16)
+    parser.add_argument("--cuda-graph-memory-reserve-bytes", type=int, default=1024**3)
     parser.add_argument("--single-stream", action="store_true")
     parser.add_argument("--static-buffers", action="store_true")
     parser.add_argument("--pad-to-power-of-two", action="store_true")
@@ -54,6 +62,10 @@ def runtime_configs(args):
             else None,
         ),
         execution_config=ExecutionConfig(
+            cuda_graphs=args.cuda_graphs,
+            cuda_graph_max_batch_size=args.cuda_graph_max_batch_size,
+            cuda_graph_max_graphs=args.cuda_graph_max_graphs,
+            cuda_graph_memory_reserve_bytes=args.cuda_graph_memory_reserve_bytes,
             async_scheduling=args.async_scheduling,
             multi_stream=not args.single_stream,
             static_buffers=args.static_buffers,

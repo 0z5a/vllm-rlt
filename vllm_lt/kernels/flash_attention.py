@@ -1,7 +1,7 @@
 """Official FlashAttention paged kernels; no FlashInfer or KV gathering.
 
-Every query row is a length-one sequence with its own depth-specific page
-mapping and visible prefix length, including rows from chunked prefill.
+Decode uses independent single-query rows. FA4 prefill uses packed query
+sequences with one depth-specific page table per contiguous request chunk.
 """
 
 import importlib
@@ -54,6 +54,38 @@ class FlashPagedAttention:
             version=package_version,
         )
         logging.getLogger(__name__).warning("Attention implementation: %s", self.info)
+
+    def prefill(
+        self,
+        q,
+        key_cache,
+        value_cache,
+        block_tables,
+        context_lengths,
+        cu_seqlens_q,
+        max_seqlen_q,
+    ):
+        """Attend packed chunks to their prefixes with bottom-right causal alignment.
+
+        Each sequence's keys end at its final query position. Thus the causal
+        offset is prefix_length = seqlen_k - seqlen_q, including nonzero prefixes.
+        K/V have already been written by the cache manager; no gathering is needed.
+        """
+        if self.generation != 4:
+            raise ValueError("packed paged prefill requires FlashAttention-4")
+        out = self.kernel(
+            q,
+            key_cache,
+            value_cache,
+            cu_seqlens_q=cu_seqlens_q,
+            seqused_k=context_lengths,
+            page_table=block_tables,
+            max_seqlen_q=max_seqlen_q,
+            max_seqlen_k=block_tables.shape[1] * key_cache.shape[1],
+            causal=True,
+            num_splits=1,
+        )
+        return out[0] if isinstance(out, tuple) else out
 
     def __call__(self, q, key_cache, value_cache, block_tables, context_lengths):
         if q.shape[0] == 0:

@@ -98,3 +98,73 @@ def test_flash_sync_async_mixed_depths(layout, static):
         assert engine.cache_manager.num_used_blocks == 0
         outputs.append(finished)
     assert all(value == outputs[0] for value in outputs)
+
+
+def test_packed_prefill_metadata_groups_queries_and_rejects_gaps():
+    from types import SimpleNamespace
+
+    from vllm_lt.core.kv_cache_manager import KVCacheManager
+
+    cache = KVCacheManager(1, 1, 8, 32, 4, 2)
+    cache.attention = SimpleNamespace(generation=4)
+    cache.allocate("a", 20)
+    cache.allocate("b", 20)
+    batch = cache._prepare_batch(
+        ["a"] * 3 + ["b"] * 2, [0] * 3 + [1] * 2, [7, 8, 9, 3, 4], packed_prefill=True
+    )
+    assert batch.block_tables.shape == (2, 3)
+    assert batch.context_lengths.tolist() == [10, 5]
+    assert batch.cu_seqlens_q.tolist() == [0, 3, 5]
+    assert batch.max_seqlen_q == 3
+    assert batch.position_ids.tolist() == [7, 8, 9, 3, 4]
+    assert len(batch.write_blocks) == 5
+    with pytest.raises(ValueError, match="contiguous"):
+        cache._prepare_batch(["a", "a"], [0, 0], [1, 3], packed_prefill=True)
+    with pytest.raises(ValueError, match="one sequence"):
+        cache._prepare_batch(["a", "b", "a"], [0, 0, 0], [1, 1, 2], packed_prefill=True)
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+def test_flash_prefill_ragged_prefixes_depths_and_causal_mask(dtype):
+    from vllm_lt.core.kv_cache_manager import KVCacheManager
+
+    torch.manual_seed(712)
+    cache = KVCacheManager(2, 2, 64, 80, 16, 4, "cuda", dtype, "flash_attn")
+    if cache.attention.generation != 4:
+        pytest.skip("packed paged prefill is FA4-specific")
+    # Fragment physical allocation and cross page boundaries at unequal depths.
+    for rid in ["hole", "a", "b", "c"]:
+        cache.allocate(rid, 65)
+    cache.free("hole")
+    ids, depths, positions = [], [], []
+    for rid, depth, prefix, count in [("a", 0, 0, 19), ("b", 2, 17, 7), ("c", 3, 31, 18)]:
+        for layer in range(2):
+            if prefix:
+                kv = torch.randn(prefix, 2, 64, device="cuda", dtype=dtype)
+                cache.write(layer, [rid] * prefix, [depth] * prefix, list(range(prefix)), kv, -kv)
+        ids.extend([rid] * count)
+        depths.extend([depth] * count)
+        positions.extend(range(prefix, prefix + count))
+    batch = cache._prepare_batch(ids, depths, positions, packed_prefill=True)
+    flat = cache._prepare_batch(ids, depths, positions)
+    assert batch.block_tables.shape[0] == 3
+    assert flat.block_tables.shape[0] == len(ids)
+    for layer in range(2):
+        k = torch.randn(len(ids), 2, 64, device="cuda", dtype=dtype)
+        v = torch.randn_like(k)
+        q = torch.randn(len(ids), 4, 64, device="cuda", dtype=dtype)
+        cache._write_prepared(layer, batch, k, v)
+        # All chunk keys (including future positions) exist before attention.
+        # A per-token prefix oracle detects wrong causal/prefix alignment.
+        expected = torch_paged_attention(
+            q,
+            cache.key_cache[:, layer],
+            cache.value_cache[:, layer],
+            flat.block_tables,
+            flat.context_lengths,
+        )
+        actual = cache._attend_prepared(layer, batch, q)
+        torch.testing.assert_close(
+            actual, expected, atol=0.015 if dtype == torch.bfloat16 else 0.002, rtol=0.02
+        )
