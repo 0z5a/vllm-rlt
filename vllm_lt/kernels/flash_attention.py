@@ -15,9 +15,17 @@ FLASH_BACKENDS = ("flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4")
 
 def select_version(capability, backend):
     major, minor = capability
-    automatic = 4 if major in (10, 12) else 3 if major == 9 else 2
+    # The pinned FA4 release accepts SM12 only without paged KV. Both adapter
+    # paths require page tables, so reject before import or KV capacity probing.
+    if major == 12 and backend in ("flash_attn", "flash_attn_4"):
+        raise ValueError(
+            f"Paged FlashAttention-4 is not supported on SM{major}{minor} by "
+            "flash-attn-4==4.0.0b30; use --attention-backend triton until a "
+            "compatible paged implementation is available."
+        )
+    automatic = 4 if major == 10 else 3 if major == 9 else 2
     selected = automatic if backend == "flash_attn" else int(backend.rsplit("_", 1)[1])
-    supported = {2: major in (8, 9), 3: major == 9, 4: major in (9, 10, 12)}
+    supported = {2: major in (8, 9), 3: major == 9, 4: major in (9, 10)}
     if not supported[selected]:
         raise ValueError(f"FlashAttention-{selected} is not supported on SM{major}{minor}")
     return selected

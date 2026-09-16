@@ -13,10 +13,29 @@ from vllm_lt.models import OuroConfig, OuroForCausalLM
 
 
 @pytest.mark.parametrize(
-    "sm,expected", [((8, 0), 2), ((8, 9), 2), ((9, 0), 3), ((10, 0), 4), ((10, 3), 4), ((12, 0), 4)]
+    "sm,expected", [((8, 0), 2), ((8, 9), 2), ((9, 0), 3), ((10, 0), 4), ((10, 3), 4)]
 )
 def test_architecture_selection(sm, expected):
     assert select_version(sm, "flash_attn") == expected
+
+
+@pytest.mark.parametrize("sm", [(12, 0), (12, 1)])
+@pytest.mark.parametrize("backend", ["flash_attn", "flash_attn_4"])
+def test_sm12_paged_backend_rejected_before_import(monkeypatch, sm, backend):
+    from vllm_lt.kernels import flash_attention
+
+    monkeypatch.setattr(torch.version, "hip", None)
+    monkeypatch.setattr(torch.cuda, "get_device_capability", lambda device: sm)
+
+    def unexpected_import(name):
+        pytest.fail(f"unsupported architecture reached dependency import: {name}")
+
+    monkeypatch.setattr(flash_attention.importlib, "import_module", unexpected_import)
+    message = r"Paged FlashAttention-4.*SM12.*use --attention-backend triton"
+    with pytest.raises(ValueError, match=message):
+        select_version(sm, backend)
+    with pytest.raises(ValueError, match=message):
+        FlashPagedAttention(torch.device("cuda"), torch.bfloat16, 128, 16, backend)
 
 
 def test_unsupported_architecture_and_dtype():
@@ -172,8 +191,8 @@ def test_flash_prefill_ragged_prefixes_depths_and_causal_mask(dtype):
 
 @pytest.mark.gpu
 def test_fa4_decode_same_queries_match_across_batch_sizes():
-    if torch.cuda.get_device_capability()[0] not in (9, 10, 12):
-        pytest.skip("FA4 requires Hopper or newer")
+    if torch.cuda.get_device_capability()[0] not in (9, 10):
+        pytest.skip("Pinned paged FA4 requires SM9 or SM10")
     generator = torch.Generator(device="cuda").manual_seed(1234)
     dtype = torch.bfloat16
     # Ouro geometry and long enough prefixes to exercise auto-SplitKV selection.
