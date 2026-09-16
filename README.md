@@ -149,18 +149,3 @@ the published Ouro architecture and preserves upstream attribution.
 The `ouro_delayed` exit mode reuses the checkpoint gate with cumulative-hazard
 decisions delayed by one loop, in sync or async execution. See
 [configuration and serving commands](docs/cdb_runtime.md#reusing-the-trained-ouro-gate-ouro_delayed).
-
-Validation guides: [functional checks and reproducible logs](docs/functional_validation.md)
-and [real-model performance baseline plan](docs/performance_baseline.md).
-
-Measured baseline: [Ouro fixed-depth engine results (2026-09-15)](docs/performance_results_20260915.md).
-
-Dynamic-buffer comparison: [S / AS / AM results](docs/performance_dynamic_results_20260915.md).
-
-Complete decode pipeline: [async scheduling implementation and validation](docs/async_scheduling.md).
-
-Official paged FlashAttention (FA2/FA3/FA4 by GPU architecture) is available with
-`--attention-backend FLASH_ATTN`. See [setup, constraints, and validation](docs/flash_attention.md).
-
-All functional checks, performance sweeps, profiling results, and known gaps are
-indexed in [the consolidated test report](docs/testing_summary_20260915.md).
