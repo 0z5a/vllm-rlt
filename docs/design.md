@@ -20,7 +20,7 @@ Each request has at most one token undergoing autoregressive decoding. Different
 
 ## Request lifecycle
 
-Waiting requests enter prefill after obtaining a complete KV reservation. Prefill embeds a prompt chunk and executes its complete recurrent depth before moving to another chunk. Causal attention uses the earlier chunks' depth-specific KV. After the last chunk, the final prompt hidden state enters coda and produces the first generated token.
+Waiting requests enter prefill after obtaining a complete KV reservation. LAST-EXITED prefill embeds a prompt chunk and executes its complete recurrent depth before moving to another chunk. SHARED prefill completes one position at all depths before advancing each request, batching across requests; this preserves chunk invariance. Causal attention uses the selected layout's history. After the last chunk, the final prompt hidden state enters coda and produces the first generated token.
 
 If generation continues, the sampled token enters prelude for embedding, then recurrent execution. After each recurrent pass, the gate either returns that token to recurrent work or routes its final hidden state to coda. Coda computes logits and samples the following token. A completed or cancelled request releases its reservation and persistent state.
 
@@ -32,7 +32,11 @@ Refill scheduling allows newly prepared decode tokens to join continuing recurre
 
 No-refill holds a decode cohort. Tokens leave its recurrent batch when they exit, but its coda waits until the remaining cohort finishes. The next cohort starts after that boundary. Both modes use the same model, gate, and cache semantics.
 
-Scheduling is synchronous: the engine reads results before deciding the next batch. Refill describes queue behavior, not asynchronous host/device overlap. There is no lookahead gate or CUDA-graph execution in this version.
+Synchronous execution remains the default. Optional random lookahead or trace replay
+supports a pipeline that submits the next required loop before consuming the previous
+signal, and allows boundary stages on another CUDA stream. Async mode uses pinned,
+reusable inputs and event-protected resource lifetimes. CUDA graphs are deferred.
+See [CDB runtime details](cdb_runtime.md) for implementation, semantics and validation.
 
 ## Gate and model contract
 
@@ -60,11 +64,11 @@ The initial allocator reserves enough blocks for every input position the reques
 model.total_ut_steps * ceil((prompt_tokens + max_tokens - 1) / block_size)
 ```
 
-The depth factor is the model's full prefill depth, even when a request sets a lower decode loop limit. Admission waits until this full reservation fits. A request that cannot fit even in an empty cache must fail with an actionable capacity error. An admitted request can then reach completion without requesting additional blocks; this prevents admission from consuming space needed to finish existing requests. The cost is conservative memory use. Prefix sharing, eviction, swapping, and incremental reservation are outside this version.
+The depth factor is the model's full prefill depth, even when a request sets a lower decode loop limit. SHARED uses one physical plane and omits the depth multiplier. Admission can bypass temporarily blocked requests within configured scan and fairness limits. A protected long request waits until this full reservation fits. A request that cannot fit even in an empty cache must fail with an actionable capacity error. An admitted request can then reach completion without requesting additional blocks; this prevents admission from consuming space needed to finish existing requests. The cost is conservative memory use. Prefix sharing, eviction, swapping, and incremental reservation are outside this version.
 
 Unused reserved positions are not valid KV. Attention lengths and block metadata must exclude them. Release occurs only after task-owned execution no longer references a request's blocks; reusing a block must not expose a previous request's contents.
 
-For the released BF16 Ouro configuration, each token at one depth requires `2 * 24 * 16 * 128 * 2 = 196,608` bytes of KV. Four depths require 768 KiB per token before block rounding. Cache capacity must be explicit rather than inferred from model parameter size.
+For the released BF16 Ouro configuration, each token at one depth requires `2 * 24 * 16 * 128 * 2 = 196,608` bytes of KV. Four depths require 768 KiB per token before block rounding. Cache capacity is either explicitly overridden or profiled from actual CUDA memory and execution limits, not inferred solely from model parameter size.
 
 ## Correctness coverage
 

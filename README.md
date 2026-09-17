@@ -10,10 +10,16 @@ chunked prefill, adaptive decode, refill/no-refill scheduling, greedy and
 seeded top-k/top-p sampling, streaming engine steps, cancellation, and a Triton
 paged-attention backend. CPU execution provides a reference backend.
 
-It is a synchronous, single-device implementation. The paper's asynchronous
-lookahead scheduling, CUDA graphs, distributed execution, prefix sharing,
-and preemption are not implemented. A bounded OpenAI completions frontend is
-available; see the [serving guide](docs/serving.md).
+The default is synchronous, single-device execution with the original Ouro gate.
+Optional random lookahead or exit-trace replay enables pipelined scheduling,
+CUDA core/boundary streams, reusable buffers and power-of-two padding. Both
+LAST-EXITED and SHARED KV layouts are available, with automatic CUDA KV sizing,
+bounded admission bypass and configurable prefill chunks. The lookahead head is
+untrained and is intended for runtime validation. See the
+[runtime implementation and checks](docs/cdb_runtime.md).
+CUDA graphs, Huginn, distillation, distributed execution, prefix sharing and
+preemption remain outside this version. A bounded OpenAI completions frontend
+is available; see the [serving guide](docs/serving.md).
 
 BF16 is the default for checkpoint loading and offline inference.
 Use `--dtype float32` or `dtype=torch.float32` for FP32 diagnostics.
@@ -139,3 +145,7 @@ baseline is **59/87 (67.82%)**, matched by BF16 native inference.
 
 Apache-2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). The native model adapts
 the published Ouro architecture and preserves upstream attribution.
+
+The `ouro_delayed` exit mode reuses the checkpoint gate with cumulative-hazard
+decisions delayed by one loop, in sync or async execution. See
+[configuration and serving commands](docs/cdb_runtime.md#reusing-the-trained-ouro-gate-ouro_delayed).

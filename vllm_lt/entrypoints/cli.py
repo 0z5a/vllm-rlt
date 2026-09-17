@@ -4,7 +4,8 @@ from dataclasses import asdict
 
 import torch
 
-from vllm_lt import LLM, CacheConfig, SamplingParams, SchedulerConfig
+from vllm_lt import LLM, SamplingParams, SchedulerConfig
+from vllm_lt.entrypoints.runtime_args import add_runtime_args, runtime_configs
 from vllm_lt.models import OuroConfig, OuroForCausalLM
 
 
@@ -20,7 +21,12 @@ def main():
     )
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--dtype", choices=["float32", "float16", "bfloat16"], default="bfloat16")
-    parser.add_argument("--attention-backend", choices=["torch", "triton"], default="torch")
+    parser.add_argument(
+        "--attention-backend",
+        type=str.lower,
+        choices=["torch", "triton", "flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4"],
+        default="torch",
+    )
     parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
     parser.add_argument("--max-tokens", type=int, default=16)
     parser.add_argument("--max-loops", type=int, default=4)
@@ -30,8 +36,9 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-num-seqs", type=int, default=8)
     parser.add_argument("--max-num-batched-tokens", type=int, default=128)
-    parser.add_argument("--num-blocks", type=int, default=256)
+    parser.add_argument("--num-blocks", type=int, help="Override automatic KV sizing")
     parser.add_argument("--block-size", type=int, default=16)
+    add_runtime_args(parser)
     args = parser.parse_args()
     if args.toy and args.prompt:
         parser.error("--toy uses built-in token ID prompts; omit --prompt")
@@ -48,11 +55,16 @@ def main():
         revision=args.revision,
         device=args.device,
         dtype=getattr(torch, args.dtype),
-        cache_config=CacheConfig(num_blocks=args.num_blocks, block_size=args.block_size),
+        **runtime_configs(args),
         scheduler_config=SchedulerConfig(
             max_num_seqs=args.max_num_seqs,
             max_num_batched_tokens=args.max_num_batched_tokens,
             mode=args.mode,
+            prefill_chunk_size=getattr(args, "prefill_chunk_size", 128),
+            max_prefill_batches_before_decode=getattr(args, "max_prefill_batches_before_decode", 1),
+            admission_scan_limit=getattr(args, "admission_scan_limit", 64),
+            max_admission_bypasses=getattr(args, "max_admission_bypasses", 8),
+            min_coda_batch_size=getattr(args, "min_coda_batch_size", 1),
         ),
         attention_backend=args.attention_backend,
     )

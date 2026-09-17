@@ -7,8 +7,9 @@ from functools import partial
 
 import torch
 
-from vllm_lt.config import CacheConfig, SchedulerConfig
+from vllm_lt.config import SchedulerConfig
 from vllm_lt.engine.llm_engine import LLMEngine
+from vllm_lt.entrypoints.runtime_args import add_runtime_args, runtime_configs
 from vllm_lt.models.config import OURO_MODEL_ID, OURO_REVISION
 from vllm_lt.models.ouro import OuroForCausalLM
 
@@ -31,11 +32,16 @@ def load_engine(args):
     )
     engine = LLMEngine(
         model,
-        cache_config=CacheConfig(num_blocks=args.num_blocks, block_size=args.block_size),
+        **runtime_configs(args),
         scheduler_config=SchedulerConfig(
             max_num_seqs=args.max_num_seqs,
             max_num_batched_tokens=args.max_num_batched_tokens,
             mode=args.mode,
+            prefill_chunk_size=getattr(args, "prefill_chunk_size", 128),
+            max_prefill_batches_before_decode=getattr(args, "max_prefill_batches_before_decode", 1),
+            admission_scan_limit=getattr(args, "admission_scan_limit", 64),
+            max_admission_bypasses=getattr(args, "max_admission_bypasses", 8),
+            min_coda_batch_size=getattr(args, "min_coda_batch_size", 1),
         ),
         attention_backend=args.attention_backend,
     )
@@ -56,9 +62,14 @@ def main():
     parser.add_argument("--served-model-name", default=OURO_MODEL_ID)
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
-    parser.add_argument("--attention-backend", choices=["torch", "triton"], default="triton")
+    parser.add_argument(
+        "--attention-backend",
+        type=str.lower,
+        choices=["torch", "triton", "flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4"],
+        default="triton",
+    )
     parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
-    parser.add_argument("--num-blocks", type=int, default=512)
+    parser.add_argument("--num-blocks", type=int, help="Override automatic KV sizing")
     parser.add_argument("--block-size", type=int, default=16)
     parser.add_argument("--max-num-seqs", type=int, default=8)
     parser.add_argument("--max-num-batched-tokens", type=int, default=128)
@@ -68,6 +79,7 @@ def main():
     parser.add_argument("--cpu-threads", type=int, default=1)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    add_runtime_args(parser)
     args = parser.parse_args()
     limits = ServingLimits(**{name: getattr(args, name) for name in defaults})
     if args.device == "cpu" and args.attention_backend != "torch":

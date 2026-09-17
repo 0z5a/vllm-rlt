@@ -54,6 +54,7 @@ class CompletionRequest:
     params: SamplingParams
     stream: bool = False
     include_usage: bool = False
+    trace_id: str | None = None
 
     @classmethod
     def parse(cls, body, model):
@@ -72,7 +73,11 @@ class CompletionRequest:
             "suffix": None,
             "logit_bias": None,
         }
-        allowed = params_keys | neutral.keys() | {"model", "prompt", "stream", "stream_options"}
+        allowed = (
+            params_keys
+            | neutral.keys()
+            | {"model", "prompt", "stream", "stream_options", "trace_id"}
+        )
         if unknown := body.keys() - allowed:
             raise ValueError(f"unsupported fields: {', '.join(sorted(unknown))}")
         if not isinstance(body.get("model"), str) or not body["model"]:
@@ -113,7 +118,10 @@ class CompletionRequest:
                 raise ValueError(f"{key} must be a finite number")
         if "ignore_eos" in params and type(params["ignore_eos"]) is not bool:
             raise ValueError("ignore_eos must be a boolean")
-        return cls(body["prompt"], SamplingParams(**params), stream, include_usage)
+        trace_id = body.get("trace_id")
+        if "trace_id" in body and (not isinstance(trace_id, str) or not trace_id):
+            raise ValueError("trace_id must be a nonempty string")
+        return cls(body["prompt"], SamplingParams(**params), stream, include_usage, trace_id)
 
 
 class IncrementalText:
@@ -125,11 +133,13 @@ class IncrementalText:
     """
 
     def __init__(self, tokenizer):
-        from transformers.models.gpt2.tokenization_gpt2 import bytes_to_unicode
-
         self.tokenizer = tokenizer
         self.special_ids = set(tokenizer.all_special_ids)
-        self.byte_decoder = {char: byte for byte, char in bytes_to_unicode().items()}
+        # ByteLevel's byte alphabet is stable; avoid Transformers' private helper.
+        visible = list(range(33, 127)) + list(range(161, 173)) + list(range(174, 256))
+        self.byte_decoder = {chr(byte): byte for byte in visible}
+        for offset, byte in enumerate(b for b in range(256) if b not in visible):
+            self.byte_decoder[chr(256 + offset)] = byte
         self.utf8 = codecs.getincrementaldecoder("utf-8")(errors="replace")
 
     def decode(self, token_id, finished):

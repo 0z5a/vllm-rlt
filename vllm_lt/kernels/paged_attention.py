@@ -22,6 +22,9 @@ def torch_paged_attention(
     head_groups = q.shape[1] // key_cache.shape[2]
     scale = 1.0 / math.sqrt(q.shape[-1])
     for row, length in enumerate(context_lengths.tolist()):
+        if length == 0:
+            output[row].zero_()
+            continue
         token_positions = torch.arange(length, device=q.device)
         blocks = block_tables[row, token_positions // block_size]
         offsets = token_positions % block_size

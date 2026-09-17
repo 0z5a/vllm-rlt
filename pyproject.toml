@@ -9,11 +9,13 @@ description = "Loop-level continuous batching for Ouro language models"
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.10"
-dependencies = ["torch>=2.5", "safetensors>=0.4.3", "huggingface-hub>=0.25"]
+dependencies = ["numpy>=1.24", "torch>=2.5", "safetensors>=0.4.3", "huggingface-hub>=0.25"]
 
 [project.optional-dependencies]
 text = ["transformers>=4.54"]
 serve = ["aiohttp>=3.11,<4", "transformers>=4.54"]
+flash-attn = ["flash-attn>=2.8.3"]
+flash-attn4 = ["flash-attn-4==4.0.0b30"]
 triton = ["triton>=3.1; platform_system == 'Linux'"]
 dev = ["pytest>=8", "ruff>=0.9"]
 

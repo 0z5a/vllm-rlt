@@ -649,3 +649,58 @@ def test_write_deadline_aborts_socket_without_blocking_other_clients(monkeypatch
             assert worker.ready
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("value", [None, "", 1, [], True])
+def test_invalid_trace_id(value):
+    with pytest.raises(ValueError, match="trace_id"):
+        CompletionRequest.parse(body(trace_id=value), "ByteDance/Ouro-1.4B")
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_http_trace_selection_and_concurrent_reuse(asynchronous):
+    from vllm_lt.config import ExecutionConfig, ExitConfig
+
+    async def run():
+        completed = []
+
+        def load():
+            engine = LLMEngine(
+                OuroForCausalLM(OuroConfig.tiny()),
+                cache_config=CacheConfig(num_blocks=256, block_size=2),
+                exit_config=ExitConfig("trace", depths_by_request={"A": [4, 2, 3, 2]}),
+                execution_config=ExecutionConfig(async_scheduling=asynchronous),
+            )
+            step = engine.step
+
+            def record():
+                outputs = step()
+                completed.extend(o for o in outputs if o.finished)
+                return outputs
+
+            engine.step = record
+            return engine, TinyTokenizer()
+
+        async with client_for(load) as (client, worker):
+            await until(lambda: worker.ready)
+            for extra in ({}, {"trace_id": "missing"}, {"trace_id": "A", "max_tokens": 5}):
+                response = await client.post("/v1/completions", json=body(**extra))
+                assert response.status == 400
+            responses = await asyncio.gather(
+                *(client.post("/v1/completions", json=body(trace_id="A")) for _ in range(2))
+            )
+            assert all(r.status == 200 for r in responses)
+            results = [await r.json() for r in responses]
+            assert len({r["id"] for r in results}) == 2
+            assert all(r["id"].startswith("cmpl-") for r in results)
+            assert len(completed) == 2
+            assert all(o.exit_depths == [4, 2, 3, 2] for o in completed)
+            assert worker.engine.cache_manager.num_used_blocks == 0
+
+        async with client_for() as (client, worker):
+            await until(lambda: worker.ready)
+            response = await client.post("/v1/completions", json=body(trace_id="A"))
+            assert response.status == 400
+            assert "trace exit mode" in (await response.json())["error"]["message"]
+
+    asyncio.run(run())
