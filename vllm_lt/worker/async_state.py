@@ -132,6 +132,7 @@ class AsyncState:
             device=cache.device,
         )
         self.slots = {}
+        self.table_versions = {}
         self.owners = {}
         self.free = list(reversed(range(scheduler.max_num_seqs)))
         self.banks = [RoutingBank(self, rows) for _ in range(4)]
@@ -146,7 +147,12 @@ class AsyncState:
         if rid in self.slots:
             if self.owners[rid] != (id(request), id(allocation)):
                 raise RuntimeError("request slot reused before retiring its previous owner")
-            return self.slots[rid]
+            slot = self.slots[rid]
+            if self.table_versions.get(rid) != allocation.block_tables:
+                table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
+                bank.uploads.append((slot, table))
+                self.table_versions[rid] = allocation.block_tables
+            return slot
         if not self.free:
             raise RuntimeError("no retired request state slots")
         slot = self.free.pop()
@@ -154,6 +160,7 @@ class AsyncState:
         self.owners[rid] = (id(request), id(allocation))
         table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
         bank.uploads.append((slot, table))
+        self.table_versions[rid] = allocation.block_tables
         if request.hidden_state is not None:
             bank.imports.append((slot, request.hidden_state))
             request.hidden_state = self.hidden[slot]
@@ -202,6 +209,7 @@ class AsyncState:
         return bank, batch
 
     def release(self, rid):
+        self.table_versions.pop(rid, None)
         self.owners.pop(rid, None)
         slot = self.slots.pop(rid, None)
         if slot is not None:

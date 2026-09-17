@@ -34,6 +34,8 @@ def load_engine(args):
         model,
         **runtime_configs(args),
         scheduler_config=SchedulerConfig(
+            policy=getattr(args, "scheduling_policy", "fcfs"),
+            enable_preemption=getattr(args, "enable_preemption", False),
             max_num_seqs=args.max_num_seqs,
             max_num_batched_tokens=args.max_num_batched_tokens,
             mode=args.mode,

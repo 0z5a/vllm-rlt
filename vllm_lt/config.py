@@ -16,8 +16,18 @@ class CacheConfig:
     gpu_memory_utilization: float = 0.9
     kv_cache_memory_bytes: int | None = None
     memory_reserve_bytes: int = 256 * 1024 * 1024
+    enable_prefix_caching: bool = False
+    incremental_allocation: bool = False
+    watermark: float = 0.0
 
     def __post_init__(self):
+        for name in ("enable_prefix_caching", "incremental_allocation"):
+            if type(getattr(self, name)) is not bool:
+                raise ValueError(f"{name} must be a boolean")
+        if not 0 <= self.watermark < 1:
+            raise ValueError("watermark must be in [0, 1)")
+        if self.enable_prefix_caching and self.layout != "last_exited":
+            raise ValueError("prefix caching requires last_exited KV")
         if self.num_blocks is not None:
             _positive("num_blocks", self.num_blocks)
         _positive("block_size", self.block_size)
@@ -46,6 +56,8 @@ class SchedulerConfig:
     max_admission_bypasses: int = 8
     prefill_chunk_size: int = 128
     max_prefill_batches_before_decode: int = 1
+    policy: str = "fcfs"
+    enable_preemption: bool = False
 
     def __post_init__(self):
         for name in (
@@ -58,6 +70,10 @@ class SchedulerConfig:
             "max_prefill_batches_before_decode",
         ):
             _positive(name, getattr(self, name))
+        if type(self.enable_preemption) is not bool:
+            raise ValueError("enable_preemption must be a boolean")
+        if self.policy not in ("fcfs", "priority"):
+            raise ValueError("policy must be fcfs or priority")
         if self.mode not in ("refill", "no_refill"):
             raise ValueError("mode must be 'refill' or 'no_refill'")
 
@@ -91,9 +107,11 @@ class ExecutionConfig:
     cuda_graph_max_batch_size: int = 128
     cuda_graph_max_graphs: int = 16
     cuda_graph_memory_reserve_bytes: int = 1024**3
+    prefill_uva: bool = False
 
     def __post_init__(self):
         for name in (
+            "prefill_uva",
             "async_scheduling",
             "multi_stream",
             "static_buffers",
