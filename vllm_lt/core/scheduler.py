@@ -31,6 +31,9 @@ class Scheduler:
         self.cache_manager = cache_manager
         self.requests: dict[str, Request] = {}
         self.queues: dict[Stage, deque[str]] = {s: deque() for s in Stage}
+        self.protected = set()
+        self.preempt_callback = None
+        self.resume_callback = None
         self._no_refill_phase = "fill"
         self._prefill_batches_since_recurrent = 0
 
@@ -73,23 +76,80 @@ class Scheduler:
         return bool(self.requests)
 
     def _admit(self):
-        active = sum(r.stage != Stage.WAITING for r in self.requests.values())
+        active = sum(
+            r.stage not in (Stage.WAITING, Stage.RECEIVING) for r in self.requests.values()
+        )
         waiting = self.queues[Stage.WAITING]
+        if self.config.policy == "priority":
+            ordered = sorted(waiting, key=lambda rid: self.requests[rid].sampling_params.priority)
+            waiting.clear()
+            waiting.extend(ordered)
         deferred = []
         # Scan a bounded window, preserving relative order of waiting items.
         for _ in range(min(len(waiting), self.config.admission_scan_limit)):
             if active >= self.config.max_num_seqs:
-                break
+                if not (
+                    self.config.policy == "priority"
+                    and self.preempt_callback
+                    and waiting
+                    and self.preempt_callback(self.requests[waiting[0]], priority_only=True)
+                ):
+                    break
+                active -= 1
             request_id = waiting.popleft()
             request = self.requests[request_id]
             capacity = len(request.prompt_token_ids) + request.sampling_params.max_tokens - 1
-            if not self.cache_manager.allocate(request_id, capacity):
+            cache = self.cache_manager
+            restored = self.resume_callback(request) if self.resume_callback else None
+            if restored is not None:
+                if restored:
+                    active += 1
+                else:
+                    deferred.append(request_id)
+                continue
+            prefix = cache.lookup_prefix(request.prompt_token_ids)
+            hit = len(prefix) * cache.block_size
+            initial = min(len(request.prompt_token_ids), hit + self.config.prefill_chunk_size)
+            if not cache.incremental_allocation:
+                initial = capacity
+            # Without pressure preemption, reserve future growth for all admitted
+            # requests; with it, preserve at least every in-flight prompt.
+            reserve_outputs = cache.incremental_allocation and not self.preempt_callback
+            reserved = sum(
+                max(
+                    0,
+                    cache.required_blocks(
+                        len(r.prompt_token_ids)
+                        + (r.sampling_params.max_tokens - 1 if reserve_outputs else 0)
+                    )
+                    - len(cache._get_allocation(r.request_id).block_tables[0])
+                    * cache.storage_depths,
+                )
+                for r in self.requests.values()
+                if r.stage == Stage.PREFILL
+                or (reserve_outputs and r.stage not in (Stage.WAITING, Stage.RECEIVING))
+            )
+            required = (
+                cache.required_blocks(
+                    len(request.prompt_token_ids)
+                    if cache.incremental_allocation and not reserve_outputs
+                    else capacity
+                )
+                - len(prefix) * cache.storage_depths
+            )
+            headroom = cache.watermark if active else 0
+            cached_claim = sum(cache._refs[b] == 1 for group in prefix for b in group)
+            fits = required + reserved + headroom + cached_claim <= cache.num_free_blocks
+            if not fits or not cache.allocate(
+                request_id, capacity, initial_tokens=initial, prefix=prefix
+            ):
                 deferred.append(request_id)
                 if request.admission_bypasses >= self.config.max_admission_bypasses:
                     break  # Protect this request while existing work drains.
                 continue
             for blocked_id in deferred:
                 self.requests[blocked_id].admission_bypasses += 1
+            request.num_prefilled_tokens = hit
             self.enqueue(request, Stage.PREFILL)
             active += 1
             if any(
@@ -107,7 +167,9 @@ class Scheduler:
         budget = self.config.max_num_batched_tokens
         items = []
         queue = self.queues[stage]
-        while queue and budget and len(items) < self.config.max_num_seqs:
+        remaining = len(queue)
+        while queue and budget and len(items) < self.config.max_num_seqs and remaining:
+            remaining -= 1
             request = self.requests[queue.popleft()]
             if stage == Stage.PREFILL:
                 start = request.num_prefilled_tokens
@@ -116,11 +178,22 @@ class Scheduler:
                 )
             else:
                 start, count = 0, 1
+            frontier = start + count if stage == Stage.PREFILL else request.position + 1
+            if stage in (Stage.PREFILL, Stage.PRELUDE, Stage.RECURRENT):
+                if not self.cache_manager.ensure_capacity(request.request_id, frontier):
+                    if not (self.preempt_callback and self.preempt_callback(request)):
+                        queue.append(request.request_id)
+                        continue
+                    if not self.cache_manager.ensure_capacity(request.request_id, frontier):
+                        queue.append(request.request_id)
+                        continue
+            self.protected.add(request.request_id)
             items.append(ScheduledItem(request, start, count))
             budget -= count
-        return SchedulerOutput(stage, items)
+        return SchedulerOutput(stage, items) if items else None
 
     def schedule(self, *, prefer_recurrent=False) -> SchedulerOutput | None:
+        self.protected.clear()
         if not self.requests:
             return None
         q = self.queues

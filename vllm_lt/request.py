@@ -8,6 +8,7 @@ from vllm_lt.sampling_params import SamplingParams
 
 class Stage(str, Enum):
     WAITING = "waiting"
+    RECEIVING = "receiving"
     PREFILL = "prefill"
     PRELUDE = "prelude"
     RECURRENT = "recurrent"

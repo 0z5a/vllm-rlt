@@ -157,6 +157,9 @@ class EngineWorker:
         if self.engine is not None:
             for request_id in list(self.engine.scheduler.requests):
                 self.engine.abort_request(request_id)
+            close = getattr(self.engine, "close", None)
+            if close is not None:
+                close()
             logger.info(
                 "engine cleanup: requests=%d kv_blocks=%d",
                 len(self.engine.scheduler.requests),

@@ -9,6 +9,12 @@ from vllm_lt.config import CacheConfig, ExecutionConfig, ExitConfig
 
 
 def add_runtime_args(parser):
+    parser.add_argument("--enable-prefix-caching", action="store_true")
+    parser.add_argument("--incremental-kv", action="store_true")
+    parser.add_argument("--kv-watermark", type=float, default=0.0)
+    parser.add_argument("--scheduling-policy", choices=["fcfs", "priority"], default="fcfs")
+    parser.add_argument("--enable-preemption", action="store_true")
+    parser.add_argument("--prefill-uva", action="store_true")
     parser.add_argument("--kv-layout", choices=["last_exited", "shared"], default="last_exited")
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.9)
     parser.add_argument("--kv-cache-memory-bytes", type=int)
@@ -47,6 +53,9 @@ def runtime_configs(args):
     args = SimpleNamespace(**(vars(parser.parse_args([])) | vars(args)))
     return dict(
         cache_config=CacheConfig(
+            enable_prefix_caching=args.enable_prefix_caching,
+            incremental_allocation=args.incremental_kv,
+            watermark=args.kv_watermark,
             num_blocks=args.num_blocks,
             block_size=args.block_size,
             layout=args.kv_layout,
@@ -62,6 +71,7 @@ def runtime_configs(args):
             else None,
         ),
         execution_config=ExecutionConfig(
+            prefill_uva=args.prefill_uva,
             cuda_graphs=args.cuda_graphs,
             cuda_graph_max_batch_size=args.cuda_graph_max_batch_size,
             cuda_graph_max_graphs=args.cuda_graph_max_graphs,

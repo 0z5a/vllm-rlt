@@ -91,6 +91,8 @@ class ModelRunner:
             if self.execution_config.cuda_graphs
             else None
         )
+        self._prefill_banks = None
+        self._prefill_bank_index = 0
         self.lookahead_head = None
         if self.exit_config.mode == "random_lookahead":
             # Keep auxiliary random weights separate from the strict base checkpoint.
@@ -272,15 +274,33 @@ class ModelRunner:
         if cache.layout == "last_exited" and getattr(cache.attention, "generation", None) == 4:
             # Prefill has genuinely ragged query sequences. Do not pad token rows
             # or reuse decode's per-query, model-max-width static page tables.
-            tensor = torch.tensor(tokens, device=self.device, dtype=torch.long)
+            bank = None
+            if self.execution_config.prefill_uva:
+                from vllm_lt.worker.prefill_metadata import PrefillMetadataBank
+
+                if self._prefill_banks is None:
+                    self._prefill_banks = [PrefillMetadataBank(cache) for _ in range(3)]
+                bank = self._prefill_banks[self._prefill_bank_index]
+                self._prefill_bank_index = (self._prefill_bank_index + 1) % len(self._prefill_banks)
+            tensor = (
+                bank.prepare(ids, positions, tokens)
+                if bank
+                else torch.tensor(tokens, device=self.device, dtype=torch.long)
+            )
             hidden = self.model.prelude(tensor)
             for depth in range(self.model.config.total_ut_steps):
-                metadata = cache._prepare_batch(
-                    ids, [depth] * len(ids), positions, packed_prefill=True
+                metadata = (
+                    bank.metadata(depth)
+                    if bank
+                    else cache._prepare_batch(
+                        ids, [depth] * len(ids), positions, packed_prefill=True
+                    )
                 )
                 hidden, _ = self.model.recurrent_prepared(
                     hidden, metadata, cache, compute_gate=False
                 )
+            if bank:
+                bank.release()
             return hidden
         size = self._size(len(tokens))
         workspace = self._workspace("core")

@@ -58,7 +58,16 @@ class LLMEngine:
             device=parameter.device,
             dtype=parameter.dtype,
             backend=attention_backend,
+            enable_prefix_caching=cache_config.enable_prefix_caching,
+            incremental_allocation=cache_config.incremental_allocation,
+            watermark=cache_config.watermark,
         )
+        if self.execution_config.prefill_uva and (
+            parameter.device.type != "cuda"
+            or cache_config.layout != "last_exited"
+            or getattr(self.cache_manager.attention, "generation", None) != 4
+        ):
+            raise ValueError("prefill_uva requires CUDA FA4 with last_exited KV")
         self.scheduler = Scheduler(scheduler_config, self.cache_manager)
         self.model_runner = ModelRunner(
             model,
@@ -75,6 +84,12 @@ class LLMEngine:
         self._inflight = []
         self._overlap_boundary = False
         self.last_schedule = None
+        from vllm_lt.engine.preemption import PreemptionManager
+
+        self.preemption = PreemptionManager(self)
+        if scheduler_config.enable_preemption:
+            self.scheduler.preempt_callback = self.preemption.preempt
+            self.scheduler.resume_callback = self.preemption.resume
 
     def add_request(
         self,
@@ -135,6 +150,8 @@ class LLMEngine:
         return self.scheduler.has_unfinished_requests
 
     def abort_request(self, request_id: str) -> RequestOutput:
+        if hasattr(self, "preemption"):
+            self.preemption.snapshots.pop(request_id, None)
         self.model_runner.release(request_id)
         self._signals.pop(request_id, None)
         return RequestOutput.from_request(self.scheduler.abort(request_id))
@@ -156,7 +173,8 @@ class LLMEngine:
         batch = self.scheduler.schedule()
         self.last_schedule = batch
         if batch is None:
-            if self.has_unfinished_requests():
+            # PD imports wait for external KV completion; yield to the IPC loop.
+            if any(r.stage != Stage.RECEIVING for r in self.scheduler.requests.values()):
                 raise RuntimeError("scheduler made no progress")
             return []
         try:
@@ -178,6 +196,13 @@ class LLMEngine:
             params = request.sampling_params
             if batch.stage == Stage.PREFILL:
                 request.num_prefilled_tokens += item.token_count
+                event = self.model_runner.events.get(request.request_id)
+                self.cache_manager.publish_prefix(
+                    request.request_id,
+                    request.prompt_token_ids,
+                    request.num_prefilled_tokens,
+                    event,
+                )
                 if request.num_prefilled_tokens == len(request.prompt_token_ids):
                     request.loops_done = self.model.config.total_ut_steps
                     self.scheduler.enqueue(request, Stage.CODA)
@@ -231,6 +256,7 @@ class LLMEngine:
 
     def _finish(self, request, reason):
         self.model_runner.release(request.request_id)
+        self.cache_manager.poll_prefixes()
         self._signals.pop(request.request_id, None)
         self.scheduler.finish(request, reason)
 
@@ -315,9 +341,10 @@ class LLMEngine:
         self._overlap_boundary = False
         self.last_schedule = batch
         if batch is None:
+            # PD imports wait for external KV completion; yield to the IPC loop.
             if self._pending_coda:
                 outputs.extend(self._collect_coda(wait=True))
-            elif self.has_unfinished_requests():
+            elif any(r.stage != Stage.RECEIVING for r in self.scheduler.requests.values()):
                 raise RuntimeError("scheduler made no progress")
             return outputs
         if batch.stage == Stage.CODA:

@@ -1,10 +1,14 @@
 """Paged KV with LAST-EXITED or SHARED physical storage planes.
 
 LAST-EXITED copies the last computed per-layer KV into skipped deeper planes.
-SHARED overwrites a single plane and needs no exit copies. Both layouts reserve
-all positions for a request's lifetime so admitted work cannot deadlock on growth.
+SHARED overwrites a single plane and needs no exit copies. Optional incremental
+allocation separates logical capacity from physical pages. Immutable full-depth
+prompt blocks can be shared through the prefix cache.
 """
 
+import hashlib
+import struct
+from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from numbers import Integral
@@ -42,6 +46,8 @@ class _Allocation:
     max_tokens: int
     block_tables: tuple[tuple[int, ...], ...]
     written: list[list[_WrittenPositions]]
+    transfer_leases: set[str] = field(default_factory=set)
+    release_requested: bool = False
 
 
 @dataclass(frozen=True, eq=False)
@@ -85,6 +91,9 @@ class KVCacheManager:
         dtype: torch.dtype = torch.float32,
         backend: str = "torch",
         layout: str = "last_exited",
+        enable_prefix_caching: bool = False,
+        incremental_allocation: bool = False,
+        watermark: float = 0.0,
     ):
         for name, value in (
             ("num_layers", num_layers),
@@ -127,10 +136,21 @@ class KVCacheManager:
         self.device = self.key_cache.device
         self._free_blocks = list(reversed(range(num_blocks)))
         self._allocations: dict[str, _Allocation] = {}
+        self.enable_prefix_caching = enable_prefix_caching
+        self.incremental_allocation = incremental_allocation
+        self.watermark = int(watermark * num_blocks)
+        self._refs = [0] * num_blocks
+        self._prefixes = OrderedDict()
+        self._pending_prefixes = []
+        self.prefix_hits = self.prefix_queries = 0
+        if enable_prefix_caching and layout != "last_exited":
+            raise ValueError("prefix caching requires last_exited KV")
 
     @property
     def num_free_blocks(self) -> int:
-        return len(self._free_blocks)
+        return len(self._free_blocks) + sum(
+            self._refs[b] == 1 for blocks in self._prefixes.values() for b in blocks
+        )
 
     @property
     def num_used_blocks(self) -> int:
@@ -152,8 +172,77 @@ class KVCacheManager:
             raise ValueError("max_tokens must be a positive integer")
         return ((max_tokens + self.block_size - 1) // self.block_size) * self.storage_depths
 
-    def allocate(self, request_id: str, max_tokens: int) -> bool:
-        """Reserve all depths atomically; return False only for temporary pressure."""
+    def _drop_refs(self, blocks):
+        for b in blocks:
+            self._refs[b] -= 1
+            assert self._refs[b] >= 0
+            if not self._refs[b]:
+                self._free_blocks.append(b)
+
+    def _claim(self, count):
+        while len(self._free_blocks) < count and self._prefixes:
+            _, blocks = self._prefixes.popitem(last=False)
+            self._drop_refs(blocks)
+        if len(self._free_blocks) < count:
+            return None
+        blocks = [self._free_blocks.pop() for _ in range(count)]
+        for b in blocks:
+            assert self._refs[b] == 0
+            self._refs[b] = 1
+        return blocks
+
+    def _prefix_keys(self, tokens):
+        digest = b""
+        for start in range(0, len(tokens) // self.block_size * self.block_size, self.block_size):
+            values = tokens[start : start + self.block_size]
+            digest = hashlib.sha256(digest + struct.pack(f"<{len(values)}q", *values)).digest()
+            yield digest
+
+    def poll_prefixes(self):
+        pending, self._pending_prefixes = self._pending_prefixes, []
+        for rid, allocation, tokens, length, event in pending:
+            if self._allocations.get(rid) is not allocation:
+                continue
+            if event is not None and not event.query():
+                self._pending_prefixes.append((rid, allocation, tokens, length, event))
+                continue
+            self.publish_prefix(rid, tokens, length)
+
+    def publish_prefix(self, rid, tokens, length, event=None):
+        if not self.enable_prefix_caching:
+            return
+        allocation = self._get_allocation(rid)
+        if event is not None:
+            self._pending_prefixes.append((rid, allocation, tuple(tokens), length, event))
+            return
+        # Keep the final prompt token private: recompute its hidden state on a hit.
+        length = min(length, len(tokens) - 1)
+        for index, key in enumerate(self._prefix_keys(tokens[:length])):
+            if key in self._prefixes:
+                continue
+            end = (index + 1) * self.block_size
+            if any(w.prefix < end for plane in allocation.written for w in plane):
+                break
+            blocks = tuple(t[index] for t in allocation.block_tables)
+            for b in blocks:
+                self._refs[b] += 1
+            self._prefixes[key] = blocks
+
+    def lookup_prefix(self, tokens):
+        if not self.enable_prefix_caching:
+            return ()
+        self.poll_prefixes()
+        found = []
+        for key in self._prefix_keys(tokens[:-1]):
+            blocks = self._prefixes.get(key)
+            if blocks is None:
+                break
+            self._prefixes.move_to_end(key)
+            found.append(blocks)
+        return tuple(found)
+
+    def allocate(self, request_id: str, max_tokens: int, *, initial_tokens=None, prefix=()) -> bool:
+        """Reserve a logical capacity; acquire physical pages for the current frontier."""
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
         if request_id in self._allocations:
@@ -163,29 +252,87 @@ class KVCacheManager:
             raise ValueError(
                 f"request needs {required} physical KV blocks, but the pool has {self.num_blocks}"
             )
-        if required > self.num_free_blocks:
+        initial_tokens = max_tokens if initial_tokens is None else initial_tokens
+        if not 0 < initial_tokens <= max_tokens:
+            raise ValueError("invalid initial KV frontier")
+        pages = (initial_tokens + self.block_size - 1) // self.block_size
+        if len(prefix) > pages:
+            raise ValueError("prefix exceeds initial KV frontier")
+        claimed = [b for group in prefix for b in group]
+        for b in claimed:
+            self._refs[b] += 1
+        fresh = self._claim((pages - len(prefix)) * self.storage_depths)
+        if fresh is None:
+            self._drop_refs(claimed)
             return False
-        pages_per_depth = required // self.storage_depths
+        tail = pages - len(prefix)
         tables = tuple(
-            tuple(self._free_blocks.pop() for _ in range(pages_per_depth))
-            for _ in range(self.storage_depths)
+            tuple(g[d] for g in prefix) + tuple(fresh[d * tail : (d + 1) * tail])
+            for d in range(self.storage_depths)
         )
+        length = len(prefix) * self.block_size
         self._allocations[request_id] = _Allocation(
             int(max_tokens),
             tables,
             [
-                [_WrittenPositions() for _ in range(self.num_layers)]
+                [_WrittenPositions(prefix=length) for _ in range(self.num_layers)]
                 for _ in range(self.storage_depths)
             ],
+        )
+        self.prefix_queries += 1
+        self.prefix_hits += length
+        return True
+
+    def ensure_capacity(self, request_id, tokens):
+        allocation = self._get_allocation(request_id)
+        if not 0 < tokens <= allocation.max_tokens:
+            raise ValueError("KV growth exceeds logical capacity")
+        pages = (tokens + self.block_size - 1) // self.block_size
+        extra = pages - len(allocation.block_tables[0])
+        if extra <= 0:
+            return True
+        blocks = self._claim(extra * self.storage_depths)
+        if blocks is None:
+            return False
+        allocation.block_tables = tuple(
+            t + tuple(blocks[d * extra : (d + 1) * extra])
+            for d, t in enumerate(allocation.block_tables)
         )
         return True
 
     def free(self, request_id: str) -> None:
-        """Release only this request's pages; repeated cleanup is harmless."""
+        allocation = self._allocations.get(request_id)
+        if allocation is not None and allocation.transfer_leases:
+            allocation.release_requested = True
+            return
         allocation = self._allocations.pop(request_id, None)
         if allocation is not None:
-            for table in allocation.block_tables:
-                self._free_blocks.extend(reversed(table))
+            self._drop_refs(b for table in allocation.block_tables for b in reversed(table))
+
+    def pin_transfer(self, request_id: str, transfer_id: str):
+        allocation = self._get_allocation(request_id)
+        if allocation.release_requested:
+            raise RuntimeError("cannot transfer KV scheduled for release")
+        allocation.transfer_leases.add(transfer_id)
+
+    def unpin_transfer(self, request_id: str, transfer_id: str):
+        allocation = self._get_allocation(request_id)
+        allocation.transfer_leases.discard(transfer_id)
+        if allocation.release_requested and not allocation.transfer_leases:
+            self.free(request_id)
+
+    def mark_imported_prefix(self, request_id: str, length: int, *, start=0):
+        """Publish received KV only after the connector confirms remote writes are complete."""
+        allocation = self._get_allocation(request_id)
+        if type(length) is not int or not 0 < length <= allocation.max_tokens:
+            raise ValueError("imported prefix exceeds reserved capacity")
+        if allocation.release_requested:
+            raise RuntimeError("cannot activate cancelled KV")
+        if any(w.prefix != start or w.pending for plane in allocation.written for w in plane):
+            raise RuntimeError("KV prefix was already initialized")
+        for plane in allocation.written:
+            for written in plane:
+                written.prefix = length
 
     def get_block_table(self, request_id: str, depth: int) -> tuple[int, ...]:
         self._validate_depth(depth)

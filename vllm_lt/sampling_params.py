@@ -13,8 +13,11 @@ class SamplingParams:
     max_loops: int | None = None
     exit_threshold: float = 1.0
     ignore_eos: bool = False
+    priority: int = 0
 
     def __post_init__(self):
+        if type(self.priority) is not int:
+            raise ValueError("priority must be an integer")
         for name in ("max_tokens", "min_loops", "max_loops"):
             value = getattr(self, name)
             if name == "max_loops" and value is None:
