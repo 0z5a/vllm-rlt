@@ -16,6 +16,12 @@ class Stage(str, Enum):
     FINISHED = "finished"
 
 
+class FinishReason(str, Enum):
+    STOP = "stop"
+    LENGTH = "length"
+    ABORT = "abort"
+
+
 @dataclass
 class Request:
     request_id: str
@@ -35,7 +41,7 @@ class Request:
     remaining_probability: float = 1.0
     hidden_state: torch.Tensor | None = field(default=None, repr=False)
     generator: torch.Generator | None = field(default=None, repr=False)
-    finish_reason: str | None = None
+    finish_reason: FinishReason | None = None
     exit_trace: tuple[int, ...] = field(default=(), repr=False)
 
     @property
@@ -69,5 +75,7 @@ class RequestOutput:
             token_ids=list(request.generated_token_ids),
             exit_depths=list(request.exit_depths),
             finished=request.stage == Stage.FINISHED,
-            finish_reason=request.finish_reason,
+            finish_reason=request.finish_reason.value
+            if request.finish_reason is not None
+            else None,
         )

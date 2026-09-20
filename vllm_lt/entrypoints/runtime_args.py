@@ -55,7 +55,7 @@ def runtime_configs(args):
         cache_config=CacheConfig(
             enable_prefix_caching=args.enable_prefix_caching,
             incremental_allocation=args.incremental_kv,
-            watermark=args.kv_watermark,
+            watermark_ratio=args.kv_watermark,
             num_blocks=args.num_blocks,
             block_size=args.block_size,
             layout=args.kv_layout,

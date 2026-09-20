@@ -93,7 +93,7 @@ class KVCacheManager:
         layout: str = "last_exited",
         enable_prefix_caching: bool = False,
         incremental_allocation: bool = False,
-        watermark: float = 0.0,
+        watermark_ratio: float = 0.0,
     ):
         for name, value in (
             ("num_layers", num_layers),
@@ -138,7 +138,7 @@ class KVCacheManager:
         self._allocations: dict[str, _Allocation] = {}
         self.enable_prefix_caching = enable_prefix_caching
         self.incremental_allocation = incremental_allocation
-        self.watermark = int(watermark * num_blocks)
+        self.watermark_blocks = int(watermark_ratio * num_blocks)
         self._refs = [0] * num_blocks
         self._prefixes = OrderedDict()
         self._pending_prefixes = []

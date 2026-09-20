@@ -97,7 +97,7 @@ def test_lossless_preemption_preserves_looped_history():
             e.step()
         if suspend:
             e.add_request("b", [5], SamplingParams(max_tokens=1))
-            e.scheduler.protected.clear()
+            e.scheduler.selected_request_ids.clear()
             assert e.preemption.preempt(e.scheduler.requests["b"])
             assert "a" in e.preemption.snapshots
         results.append(finish(e)["a"])

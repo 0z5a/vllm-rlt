@@ -97,7 +97,7 @@ class PDWorker:
             depths=self.cache.storage_depths,
             max_seqs=self.limit,
             active_limit=self.active_limit,
-            watermark_blocks=self.cache.watermark,
+            watermark_blocks=self.cache.watermark_blocks,
         )
 
     def send(self, kind, **fields):

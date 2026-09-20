@@ -149,3 +149,8 @@ the published Ouro architecture and preserves upstream attribution.
 The `ouro_delayed` exit mode reuses the checkpoint gate with cumulative-hazard
 decisions delayed by one loop, in sync or async execution. See
 [configuration and serving commands](docs/cdb_runtime.md#reusing-the-trained-ouro-gate-ouro_delayed).
+
+## Runtime design notes
+
+- [Scheduler responsibilities, cases, control flow, and refactoring checklist (Chinese)](docs/scheduler_walkthrough.md)
+- [SHARED and LAST_EXITED KV computation examples (Chinese)](docs/kv_layout_computation.md)
