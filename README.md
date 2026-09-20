@@ -152,5 +152,5 @@ decisions delayed by one loop, in sync or async execution. See
 
 ## Runtime design notes
 
-- [Scheduler responsibilities, cases, control flow, and refactoring checklist (Chinese)](docs/scheduler_walkthrough.md)
-- [SHARED and LAST_EXITED KV computation examples (Chinese)](docs/kv_layout_computation.md)
+- [Scheduler responsibilities, cases, control flow, and refactoring checklist](docs/scheduler_walkthrough.md)
+- [SHARED and LAST_EXITED KV computation examples](docs/kv_layout_computation.md)
