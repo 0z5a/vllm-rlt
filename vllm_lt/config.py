@@ -18,14 +18,14 @@ class CacheConfig:
     memory_reserve_bytes: int = 256 * 1024 * 1024
     enable_prefix_caching: bool = False
     incremental_allocation: bool = False
-    watermark: float = 0.0
+    watermark_ratio: float = 0.0
 
     def __post_init__(self):
         for name in ("enable_prefix_caching", "incremental_allocation"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be a boolean")
-        if not 0 <= self.watermark < 1:
-            raise ValueError("watermark must be in [0, 1)")
+        if not 0 <= self.watermark_ratio < 1:
+            raise ValueError("watermark_ratio must be in [0, 1)")
         if self.enable_prefix_caching and self.layout != "last_exited":
             raise ValueError("prefix caching requires last_exited KV")
         if self.num_blocks is not None:

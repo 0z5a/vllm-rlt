@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 from vllm_lt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_lt.models import OuroConfig
-from vllm_lt.request import Request, RequestOutput, Stage
+from vllm_lt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_lt.sampling_params import SamplingParams
 
 from .config import PDConfig
@@ -393,7 +393,7 @@ class PDEngine:
             else:
                 self._send(w.p, "cancel", tid=w.tid)
         request.stage = Stage.FINISHED
-        request.finish_reason = "abort"
+        request.finish_reason = FinishReason.ABORT
         return RequestOutput.from_request(request)
 
     def has_unfinished_requests(self):
