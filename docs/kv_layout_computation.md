@@ -333,4 +333,3 @@ shared：     ceil(T/B) 个物理块
 当前缓存池按 `num_blocks` 预分配。相同 `num_blocks` 下，两种布局分配的 KV tensor 字节数相同；shared 的优势表现为同一个池可容纳更多 token。last_exited 提前退出并不会自动释放对应的深层存储，因为这些位置仍需保存补齐后的历史。
 
 shared 减少存储需求和补齐复制，但当前 prefill 的同请求位置串行化可能影响性能，不能仅凭布局断言一定更快。两种布局改变 Attention 的历史输入，不能作为无损互换的内存优化。
-
