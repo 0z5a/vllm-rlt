@@ -1,4 +1,4 @@
-<h1 align="center">vllm-lt</h1>
+<h1 align="center">vllm-rlt</h1>
 
 <p align="center">
   <strong>Loop-level continuous batching for recurrent language models.</strong>
@@ -16,14 +16,14 @@
 
 ## About
 
-**vllm-lt** is a standalone inference and serving engine for recurrent language
+**vllm-rlt** is a standalone inference and serving engine for recurrent language
 models, currently supporting **ByteDance/Ouro-1.4B**. It brings continuous
 batching to individual recurrent loops, allowing requests at different loop
 depths to share a batch as they work toward their next token.
 
 Recurrent models reuse a shared transformer core multiple times per token.
 With adaptive early exit, different tokens can require different amounts of
-computation. vllm-lt schedules work at these loop boundaries and manages KV
+computation. vllm-rlt schedules work at these loop boundaries and manages KV
 state by recurrence depth, so requests can leave and refill the batch without
 waiting for an entire cohort to finish.
 
@@ -122,7 +122,7 @@ FlashAttention and NIXL are optional; see the
 ### Offline inference
 
 ```bash
-vllm-lt \
+vllm-rlt \
   --model ByteDance/Ouro-1.4B \
   --device cuda \
   --attention-backend triton \
@@ -140,7 +140,7 @@ code and safetensors, without `trust_remote_code`.
 To check the installation without downloading weights or using a GPU:
 
 ```bash
-OMP_NUM_THREADS=1 vllm-lt --toy --max-tokens 4 --exit-threshold 0.7
+OMP_NUM_THREADS=1 vllm-rlt --toy --max-tokens 4 --exit-threshold 0.7
 ```
 
 The toy model is tiny and randomly initialized; it checks engine execution,
@@ -150,7 +150,7 @@ reservation system and set device visibility for the allocated GPUs.
 ### Python API
 
 ```python
-from vllm_lt import LLM, SamplingParams
+from vllm_rlt import LLM, SamplingParams
 
 llm = LLM(
     "ByteDance/Ouro-1.4B",
@@ -188,7 +188,7 @@ For dynamic arrivals and step-by-step output, use `llm.engine.add_request(...)`,
 Start a resident model:
 
 ```bash
-vllm-lt-serve \
+vllm-rlt-serve \
   --model ByteDance/Ouro-1.4B \
   --device cuda \
   --attention-backend triton \
@@ -379,7 +379,7 @@ baseline and validate relevant throughput, latency, and memory behavior.
 
 ## Acknowledgments
 
-vllm-lt builds on the published Ouro architecture and the ideas in
+vllm-rlt builds on the published Ouro architecture and the ideas in
 [Continuous Depth Batching](https://arxiv.org/abs/2608.09444). Its engine and
 Python API organization are inspired by [vLLM](https://github.com/vllm-project/vllm).
 See [NOTICE](NOTICE) for upstream model attribution.
@@ -403,7 +403,7 @@ Batching](https://arxiv.org/abs/2608.09444)
 }
 ```
 
-The paper's measurements are separate from the vllm-lt performance baselines
+The paper's measurements are separate from the vllm-rlt performance baselines
 reported above.
 
 ## License
