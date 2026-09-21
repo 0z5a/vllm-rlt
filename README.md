@@ -408,3 +408,9 @@ reported above.
 ## License
 
 [Apache License 2.0](LICENSE).
+
+Contributions to vllm-rlt are welcome! Whether you are reporting a bug,
+improving documentation, testing a new workload, or working on the runtime,
+we would love to hear from you. Open an issue to share ideas or send a pull
+request to get involved. The [refactoring roadmap](https://github.com/hsliuustc0106/vllm-lt/issues/32)
+is a good place to explore ongoing work.
