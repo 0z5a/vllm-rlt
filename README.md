@@ -1,6 +1,13 @@
 <h1 align="center">vllm-rlt</h1>
 
 <p align="center">
+  <a href="https://arxiv.org/abs/2608.09444"><img src="https://img.shields.io/badge/arXiv-2608.09444-b31b1b?style=flat-square&amp;logo=arxiv&amp;logoColor=white" alt="Paper: arXiv 2608.09444"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-2563eb?style=flat-square" alt="License: Apache 2.0"></a>
+  <a href="pyproject.toml"><img src="https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&amp;logo=python&amp;logoColor=white" alt="Python 3.10 or newer"></a>
+  <a href="#contributing"><img src="https://img.shields.io/badge/Contributions-welcome-0d9488?style=flat-square" alt="Contributions welcome"></a>
+</p>
+
+<p align="center">
   <strong>Loop-level continuous batching for recurrent language models.</strong>
 </p>
 
@@ -11,7 +18,8 @@
   <a href="#serving">Serving</a> ·
   <a href="#documentation">Documentation</a> ·
   <a href="#performance-baselines">Performance</a> ·
-  <a href="#roadmap">Roadmap</a>
+  <a href="#roadmap">Roadmap</a> ·
+  <a href="#contributing">Contributing</a>
 </p>
 
 ## About
@@ -376,6 +384,30 @@ This is planned work. vLLM V1 serves as an architectural reference; the engine
 will remain standalone. Each module review will pin its own reproducible
 baseline and validate relevant throughput, latency, and memory behavior.
 
+<a id="contributing"></a>
+
+## 🤝 Contributing
+
+Help us build efficient inference for recurrent language models. vllm-rlt is
+open to contributors working on systems, models, evaluation, and documentation.
+A reproducible bug report, a carefully measured experiment, or a clearer example
+can be just as useful as a runtime optimization.
+
+- 🛠️ **Improve the engine.** Work on loop-level scheduling, attention, KV caching,
+  or prefill/decode disaggregation. The [architecture RFC and refactoring roadmap](https://github.com/hsliuustc0106/vllm-lt/issues/32)
+  describe the current priorities and module boundaries.
+- 📊 **Bring evidence.** Test your workloads and hardware, investigate numerical
+  differences, or contribute reproducible benchmarks. Include your configuration
+  and correctness checks so others can build on your results.
+- 📖 **Make it easier to use.** Improve installation instructions, explain a
+  runtime behavior, or turn a working example into a guide for the next user.
+
+**Have an idea or found a problem?** [Open an issue](https://github.com/hsliuustc0106/vllm-lt/issues/new)
+with the details, or [send a pull request](https://github.com/hsliuustc0106/vllm-lt/compare).
+For larger changes, start a discussion in an issue so we can work through the
+design together. If you are new to the codebase, tell us what interests you—we
+can help identify a useful starting point.
+
 ## Acknowledgments
 
 vllm-rlt builds on the published Ouro architecture and the ideas in
@@ -408,9 +440,3 @@ reported above.
 ## License
 
 [Apache License 2.0](LICENSE).
-
-Contributions to vllm-rlt are welcome! Whether you are reporting a bug,
-improving documentation, testing a new workload, or working on the runtime,
-we would love to hear from you. Open an issue to share ideas or send a pull
-request to get involved. The [refactoring roadmap](https://github.com/hsliuustc0106/vllm-lt/issues/32)
-is a good place to explore ongoing work.
