@@ -222,6 +222,8 @@ benchmark client usage.
 | Guide | Topics |
 | --- | --- |
 | [Engine design](docs/design.md) | Model stages, scheduling, and KV ownership |
+| [Scheduler walkthrough](docs/scheduler_walkthrough.md) | Responsibilities, admission cases, control flow, and refactoring checklist |
+| [KV layout examples](docs/kv_layout_computation.md) | SHARED and LAST_EXITED semantics and worked attention examples |
 | [Runtime configuration](docs/cdb_runtime.md) | Exit policies, KV layouts, execution options, and CUDA Graphs |
 | [Asynchronous scheduling](https://github.com/hsliuustc0106/vllm-lt/pull/30) | CPU/GPU pipelining and single-stream or multi-stream execution |
 | [FlashAttention](https://github.com/hsliuustc0106/vllm-lt/pull/30) | FA2/FA3/FA4 installation, hardware selection, and constraints |
@@ -310,6 +312,10 @@ The next development focus is **modular architecture refactoring**, tracked in
 [RFC #32](https://github.com/hsliuustc0106/vllm-lt/issues/32). The goal is to make
 state ownership and module interfaces explicit while preserving loop-level
 batching, exit policies, depth-aware KV semantics, and PD handoff behavior.
+
+The first scheduler-responsibility refactor landed in
+[PR #34](https://github.com/hsliuustc0106/vllm-lt/pull/34); the broader architecture
+migration remains in progress.
 
 ### Target Architecture
 

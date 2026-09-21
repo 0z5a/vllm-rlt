@@ -6,7 +6,7 @@ import torch
 from vllm_lt import LLM, CacheConfig, SamplingParams, SchedulerConfig
 from vllm_lt.engine.llm_engine import LLMEngine
 from vllm_lt.models import OuroConfig, OuroForCausalLM
-from vllm_lt.request import Stage
+from vllm_lt.request import FinishReason, RequestOutput, Stage
 
 
 def tiny_model():
@@ -224,3 +224,66 @@ def test_repeated_short_arrivals_cannot_starve_existing_decode(mode):
     assert recurrent_steps >= 11
     drain(engine)
     assert engine.cache_manager.num_used_blocks == 0
+
+
+@pytest.mark.parametrize("mode", ["refill", "no_refill"])
+def test_failed_prefill_batch_does_not_consume_decode_fairness_budget(monkeypatch, mode):
+    engine = LLMEngine(tiny_model(), scheduler_config=SchedulerConfig(mode=mode))
+    for rid in ("prefill", "decode"):
+        engine.add_request(rid, [1, 2], SamplingParams(max_tokens=2, ignore_eos=True))
+    scheduler = engine.scheduler
+    scheduler._admit()
+    scheduler.queues[Stage.PREFILL].remove("decode")
+    scheduler.enqueue(scheduler.requests["decode"], Stage.RECURRENT)
+    ensure_capacity = engine.cache_manager.ensure_capacity
+    monkeypatch.setattr(
+        engine.cache_manager, "ensure_capacity", lambda rid, frontier: rid != "prefill"
+    )
+    assert scheduler.schedule() is None
+    monkeypatch.setattr(engine.cache_manager, "ensure_capacity", ensure_capacity)
+    assert scheduler.schedule().stage == Stage.PREFILL
+    assert scheduler.schedule().stage == Stage.RECURRENT
+
+
+def test_failed_recurrent_batch_keeps_decode_due(monkeypatch):
+    engine = LLMEngine(tiny_model())
+    for rid in ("prefill", "decode"):
+        engine.add_request(rid, [1, 2], SamplingParams(max_tokens=2, ignore_eos=True))
+    scheduler = engine.scheduler
+    scheduler._admit()
+    scheduler.queues[Stage.PREFILL].remove("decode")
+    scheduler.enqueue(scheduler.requests["decode"], Stage.RECURRENT)
+    assert scheduler.schedule().stage == Stage.PREFILL
+    ensure_capacity = engine.cache_manager.ensure_capacity
+    monkeypatch.setattr(engine.cache_manager, "ensure_capacity", lambda rid, frontier: False)
+    assert scheduler.schedule() is None
+    scheduler.enqueue(scheduler.requests["prefill"], Stage.PREFILL)
+    monkeypatch.setattr(engine.cache_manager, "ensure_capacity", ensure_capacity)
+    assert scheduler.schedule().stage == Stage.RECURRENT
+
+
+def test_abort_removes_all_queued_work_and_serializes_reason():
+    engine = LLMEngine(tiny_model())
+    engine.add_request("r", [1, 2], SamplingParams(max_tokens=2))
+    engine.scheduler._admit()
+    request = engine.scheduler.requests["r"]
+    # A delayed termination must remove every queued occurrence.
+    engine.scheduler.queues[Stage.PREFILL].append("r")
+    engine.scheduler.enqueue(request, Stage.RECURRENT)
+    output = engine.abort_request("r")
+    assert request.finish_reason is FinishReason.ABORT
+    assert type(output.finish_reason) is str and output.finish_reason == "abort"
+    assert all("r" not in queue for queue in engine.scheduler.queues.values())
+    assert engine.cache_manager.num_used_blocks == 0
+    assert not engine.has_unfinished_requests()
+
+
+@pytest.mark.parametrize("reason", list(FinishReason))
+def test_finish_reason_preserves_public_string_values(reason):
+    engine = LLMEngine(tiny_model())
+    engine.add_request("r", [1], SamplingParams(max_tokens=1))
+    request = engine.scheduler.requests["r"]
+    engine.scheduler.finish(request, reason)
+    output = RequestOutput.from_request(request)
+    assert output.finished and type(output.finish_reason) is str
+    assert output.finish_reason == reason.value

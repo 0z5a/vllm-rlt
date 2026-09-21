@@ -18,32 +18,60 @@ class PreemptionManager:
         self.snapshots = {}
         self.preemptions = self.resumptions = 0
 
-    def preempt(self, requester, *, priority_only=False):
+    def _is_preemption_candidate(self, request, requester, *, priority_only):
+        """Check safety before considering a victim's priority.
+
+        Pending outputs, transfer leases and this batch's selected requests must
+        remain alive. priority_only additionally forbids evicting equal/higher
+        priority work to admit a new arrival.
+        """
         e = self.engine
-        candidates = [
-            r
-            for r in e.scheduler.requests.values()
-            if r is not requester
-            and r.stage not in (Stage.WAITING, Stage.RECEIVING)
-            and not r.num_output_placeholders
-            and r.request_id not in e.scheduler.protected
-            and not e.cache_manager._get_allocation(r.request_id).transfer_leases
-        ]
-        if priority_only:
-            candidates = [
-                r
-                for r in candidates
-                if r.sampling_params.priority > requester.sampling_params.priority
-            ]
-        if not candidates:
+        if (
+            request is requester
+            or request.stage in (Stage.WAITING, Stage.RECEIVING)
+            or request.num_output_placeholders
+            or request.request_id in e.scheduler.selected_request_ids
+        ):
             return False
-        victim = max(
-            candidates,
-            key=lambda r: (
-                r.sampling_params.priority,
-                e.cache_manager.required_blocks(r.position + 1),
-            ),
+        if e.cache_manager._get_allocation(request.request_id).transfer_leases:
+            return False
+        return not priority_only or (
+            request.sampling_params.priority > requester.sampling_params.priority
         )
+
+    def _select_preemption_victim(self, requester, *, priority_only):
+        """Prefer lower priority, then a larger current-position KV footprint.
+
+        Priority 10 loses to priority 0. The footprint tie-breaker uses
+        required_blocks(position + 1), not exact reclaimable physical pages.
+        Capacity-pressure preemption retains this ranking even in FCFS mode;
+        priority_only restricts eligibility only for priority admission.
+        """
+        candidates = (
+            request
+            for request in self.engine.scheduler.requests.values()
+            if self._is_preemption_candidate(request, requester, priority_only=priority_only)
+        )
+        return max(
+            candidates,
+            key=lambda request: (
+                request.sampling_params.priority,
+                self.engine.cache_manager.required_blocks(request.position + 1),
+            ),
+            default=None,
+        )
+
+    def preempt(self, requester, *, priority_only=False):
+        """Suspend one other request, preserving its recurrent execution state.
+
+        Returns False if no safe victim exists. True means the victim's device
+        resources have been released and it has been moved to WAITING; the
+        requester must still retry its own allocation.
+        """
+        victim = self._select_preemption_victim(requester, priority_only=priority_only)
+        if victim is None:
+            return False
+        e = self.engine
         e.model_runner.synchronize()
         cache = e.cache_manager
         allocation = cache._get_allocation(victim.request_id)
@@ -80,6 +108,12 @@ class PreemptionManager:
         return True
 
     def resume(self, request):
+        """Restore pages/state and re-enqueue the saved stage.
+
+        None means no snapshot; False means insufficient capacity; True means
+        restoration and enqueue both succeeded. Scheduler translates this
+        callback contract into a named ResumeResult.
+        """
         state = self.snapshots.get(request.request_id)
         if state is None:
             return None

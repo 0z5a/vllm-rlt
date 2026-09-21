@@ -5,7 +5,7 @@ from vllm_lt.core.kv_cache_manager import KVCacheManager
 from vllm_lt.core.memory import plan_cache
 from vllm_lt.core.scheduler import Scheduler
 from vllm_lt.kernels.flash_attention import FLASH_BACKENDS
-from vllm_lt.request import Request, RequestOutput, Stage
+from vllm_lt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_lt.sampling_params import SamplingParams
 from vllm_lt.worker.model_runner import ModelRunner
 
@@ -60,7 +60,7 @@ class LLMEngine:
             backend=attention_backend,
             enable_prefix_caching=cache_config.enable_prefix_caching,
             incremental_allocation=cache_config.incremental_allocation,
-            watermark=cache_config.watermark,
+            watermark_ratio=cache_config.watermark_ratio,
         )
         if self.execution_config.prefill_uva and (
             parameter.device.type != "cuda"
@@ -235,9 +235,9 @@ class LLMEngine:
                 eos = self.model.config.eos_token_id
                 eos_ids = eos if isinstance(eos, (tuple, list)) else [eos]
                 if token_id in eos_ids and not params.ignore_eos:
-                    self._finish(request, "stop")
+                    self._finish(request, FinishReason.STOP)
                 elif len(request.generated_token_ids) >= params.max_tokens:
-                    self._finish(request, "length")
+                    self._finish(request, FinishReason.LENGTH)
                 else:
                     self.scheduler.enqueue(request, Stage.PRELUDE)
                 outputs.append(RequestOutput.from_request(request))
@@ -254,7 +254,7 @@ class LLMEngine:
         )
         return request.loops_done >= max_loops or reached_threshold
 
-    def _finish(self, request, reason):
+    def _finish(self, request, reason: FinishReason):
         self.model_runner.release(request.request_id)
         self.cache_manager.poll_prefixes()
         self._signals.pop(request.request_id, None)
@@ -309,9 +309,9 @@ class LLMEngine:
             eos = self.model.config.eos_token_id
             eos_ids = eos if isinstance(eos, (tuple, list)) else [eos]
             if token_id in eos_ids and not params.ignore_eos:
-                self._finish(request, "stop")
+                self._finish(request, FinishReason.STOP)
             elif len(request.generated_token_ids) >= params.max_tokens:
-                self._finish(request, "length")
+                self._finish(request, FinishReason.LENGTH)
             outputs.append(RequestOutput.from_request(request))
         return outputs
 
