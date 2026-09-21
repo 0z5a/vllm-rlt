@@ -114,7 +114,6 @@ support:
 python -m pip install -e '.[text,serve,triton]'
 ```
 
-For CPU-only use, install `python -m pip install -e '.[text]'` instead.
 FlashAttention and NIXL are optional; see the
 [FlashAttention](https://github.com/hsliuustc0106/vllm-lt/pull/30) and
 [prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-lt/pull/31) implementation notes for details.
