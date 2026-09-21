@@ -4,6 +4,7 @@ from vllm_lt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerCo
 from vllm_lt.core.kv_cache_manager import KVCacheManager
 from vllm_lt.core.memory import plan_cache
 from vllm_lt.core.scheduler import Scheduler
+from vllm_lt.engine.preemption import PreemptionManager
 from vllm_lt.kernels.flash_attention import FLASH_BACKENDS
 from vllm_lt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_lt.sampling_params import SamplingParams
@@ -79,13 +80,13 @@ class LLMEngine:
         self._exit_traces = {
             key: tuple(values) for key, values in (self.exit_config.depths_by_request or {}).items()
         }
-        self._signals = {}
+        # Unconsumed exit scores: request ID -> (submission, row, token position, depth).
+        # Delayed policies consume the preceding loop's score after submitting the next.
+        self._pending_exit_signals = {}
         self._pending_coda = []
         self._inflight = []
         self._overlap_boundary = False
         self.last_schedule = None
-        from vllm_lt.engine.preemption import PreemptionManager
-
         self.preemption = PreemptionManager(self)
         if scheduler_config.enable_preemption:
             self.scheduler.preempt_callback = self.preemption.preempt
@@ -150,10 +151,9 @@ class LLMEngine:
         return self.scheduler.has_unfinished_requests
 
     def abort_request(self, request_id: str) -> RequestOutput:
-        if hasattr(self, "preemption"):
-            self.preemption.snapshots.pop(request_id, None)
+        self.preemption.discard_snapshot(request_id)
         self.model_runner.release(request_id)
-        self._signals.pop(request_id, None)
+        self._pending_exit_signals.pop(request_id, None)
         return RequestOutput.from_request(self.scheduler.abort(request_id))
 
     def step(self) -> list[RequestOutput]:
@@ -166,7 +166,7 @@ class LLMEngine:
                 self.model_runner.synchronize()
                 for rid in list(self.scheduler.requests):
                     self.abort_request(rid)
-                self._signals.clear()
+                self._pending_exit_signals.clear()
                 self._pending_coda.clear()
                 self._inflight.clear()
                 raise
@@ -191,8 +191,11 @@ class LLMEngine:
         outputs = []
         for index, item in enumerate(batch.items):
             request = item.request
+            # Ignore results for a request that is no longer registered: it may
+            # have been cancelled, or its ID may now belong to a new Request.
+            # Compare object identity so an old result cannot update the new request.
             if self.scheduler.requests.get(request.request_id) is not request:
-                continue  # A coda completion can arrive after cancellation and ID reuse.
+                continue
             params = request.sampling_params
             if batch.stage == Stage.PREFILL:
                 request.num_prefilled_tokens += item.token_count
@@ -212,7 +215,7 @@ class LLMEngine:
                 request.loops_done = 0
                 request.remaining_probability = 1.0
                 request.pending_exit_depth = None
-                self._signals.pop(request.request_id, None)
+                self._pending_exit_signals.pop(request.request_id, None)
                 self.scheduler.enqueue(request, Stage.RECURRENT)
             elif batch.stage == Stage.RECURRENT:
                 request.loops_done += 1
@@ -257,7 +260,7 @@ class LLMEngine:
     def _finish(self, request, reason: FinishReason):
         self.model_runner.release(request.request_id)
         self.cache_manager.poll_prefixes()
-        self._signals.pop(request.request_id, None)
+        self._pending_exit_signals.pop(request.request_id, None)
         self.scheduler.finish(request, reason)
 
     def _trace_exit(self, request):
@@ -387,7 +390,7 @@ class LLMEngine:
             exited = []
             for index, item in enumerate(batch.items):
                 request = item.request
-                previous = self._signals.pop(request.request_id, None)
+                previous = self._pending_exit_signals.pop(request.request_id, None)
                 request.loops_done += 1
                 params = request.sampling_params
                 maximum = params.max_loops or self.model.config.total_ut_steps
@@ -411,7 +414,7 @@ class LLMEngine:
                         self.exit_config.mode in ("ouro_delayed", "random_lookahead")
                         and params.exit_threshold < 1
                     ):
-                        self._signals[request.request_id] = (
+                        self._pending_exit_signals[request.request_id] = (
                             ticket,
                             index,
                             request.position,
