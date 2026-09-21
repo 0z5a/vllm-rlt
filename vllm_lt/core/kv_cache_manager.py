@@ -200,27 +200,36 @@ class KVCacheManager:
 
     def poll_prefixes(self):
         pending, self._pending_prefixes = self._pending_prefixes, []
-        for rid, allocation, tokens, length, event in pending:
-            if self._allocations.get(rid) is not allocation:
+        for request_id, allocation, tokens, length, event in pending:
+            if self._allocations.get(request_id) is not allocation:
                 continue
             if event is not None and not event.query():
-                self._pending_prefixes.append((rid, allocation, tokens, length, event))
+                self._pending_prefixes.append((request_id, allocation, tokens, length, event))
                 continue
-            self.publish_prefix(rid, tokens, length)
+            self.publish_prefix(request_id, tokens, length)
 
-    def publish_prefix(self, rid, tokens, length, event=None):
+    def publish_prefix(self, request_id, tokens, length, event=None):
+        """Index complete prompt pages for reuse without copying their KV.
+
+        length is the prefilled extent; len(tokens) is the full prompt length.
+        A supplied event defers publication until the GPU writes complete.
+        """
         if not self.enable_prefix_caching:
             return
-        allocation = self._get_allocation(rid)
+        allocation = self._get_allocation(request_id)
         if event is not None:
-            self._pending_prefixes.append((rid, allocation, tuple(tokens), length, event))
+            self._pending_prefixes.append((request_id, allocation, tuple(tokens), length, event))
             return
-        # Keep the final prompt token private: recompute its hidden state on a hit.
-        length = min(length, len(tokens) - 1)
-        for index, key in enumerate(self._prefix_keys(tokens[:length])):
+        # Prefix entries retain KV, not the final hidden state needed by CODA.
+        # Leave at least the last prompt token to recompute on a cache hit;
+        # full-page alignment may leave additional tokens to recompute.
+        publishable_tokens = min(length, len(tokens) - 1)
+        for index, key in enumerate(self._prefix_keys(tokens[:publishable_tokens])):
             if key in self._prefixes:
                 continue
             end = (index + 1) * self.block_size
+            # Every depth and layer must have a contiguous written prefix.
+            # GPU completion alone does not establish this coverage.
             if any(w.prefix < end for plane in allocation.written for w in plane):
                 break
             blocks = tuple(t[index] for t in allocation.block_tables)

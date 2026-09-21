@@ -235,9 +235,11 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
     from unittest.mock import Mock
 
     from vllm_lt.core.scheduler import Scheduler
+    from vllm_lt.engine.preemption import PreemptionManager
     from vllm_lt.request import Request, Stage
 
     engine = object.__new__(LLMEngine)
+    engine.preemption = PreemptionManager(engine)
     engine.execution_config = ExecutionConfig(async_scheduling=async_scheduling)
     engine.scheduler = Scheduler(SchedulerConfig(), Mock())
     engine.cache_manager = engine.scheduler.cache_manager
@@ -246,7 +248,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
     engine._inflight = []
     engine._pending_coda = []
     engine._overlap_boundary = False
-    engine._signals = {}
+    engine._pending_exit_signals = {}
     engine.model_runner = Mock()
     assert engine.step() == []
     assert engine.has_unfinished_requests()

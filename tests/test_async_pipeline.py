@@ -236,7 +236,7 @@ def test_bounded_pipeline_survives_slow_gpu_and_dma_bank_reuse(monkeypatch, mult
     actual = drain(engine)[-1]
     assert actual == expected
     assert maximum <= 2  # New event is appended after execution, total <= 3.
-    assert not engine._signals
+    assert not engine._pending_exit_signals
 
 
 @pytest.mark.gpu

@@ -18,6 +18,10 @@ class PreemptionManager:
         self.snapshots = {}
         self.preemptions = self.resumptions = 0
 
+    def discard_snapshot(self, request_id: str) -> None:
+        """Discard saved CPU state when a request will not be resumed."""
+        self.snapshots.pop(request_id, None)
+
     def _is_preemption_candidate(self, request, requester, *, priority_only):
         """Check safety before considering a victim's priority.
 

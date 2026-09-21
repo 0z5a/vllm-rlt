@@ -579,6 +579,8 @@ class ModelRunner:
                 self.events[request.request_id] = event
 
     def release(self, request_id):
+        # The latest submission or KV-finalization event follows earlier work
+        # through stream dependencies. Wait before recycling this request's slot.
         event = self.events.pop(request_id, None)
         if event is not None:
             event.synchronize()
