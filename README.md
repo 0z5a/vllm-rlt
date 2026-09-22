@@ -97,22 +97,24 @@ Requires **Python 3.10+** and **PyTorch 2.5+**. For GPU inference, use Linux wit
 an NVIDIA GPU and a CUDA-enabled PyTorch installation compatible with your
 hardware.
 
-From the repository root, install the engine with text, serving, and Triton
-support:
+With your environment activated, use uv from the repository root to install
+the project (text, serving, and Triton
+support are included):
 
 ```bash
-python -m pip install -e '.[text,serve,triton]'
+uv pip install -e .
 ```
 
-See the [launch guide](docs/launching.md) for command-line inference, the Python
-API, and HTTP serving. Browse the [documentation](docs/README.md) for runtime
+For a fresh machine, follow the [step-by-step user guide](docs/launching.md):
+create an environment, download the model, start the server, and send your first
+request. The guide also covers command-line inference and the Python API. Browse the [documentation](docs/README.md) for runtime
 configuration, optional backends, and design notes.
 
 ## Performance Baselines
 
 The current performance baselines are recorded in
-[PR #30: depth-aware KV and asynchronous execution](https://github.com/hsliuustc0106/vllm-lt/pull/30)
-and [PR #31: prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-lt/pull/31).
+[PR #30: depth-aware KV and asynchronous execution](https://github.com/hsliuustc0106/vllm-rlt/pull/30)
+and [PR #31: prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-rlt/pull/31).
 These reports provide the reference measurements for subsequent runtime work.
 
 ### Single-GPU runtime
@@ -135,7 +137,7 @@ Values are medians of three trials, with 128 output tokens per request and
 and drain time, excluding HTTP, tokenization, loading, and warmup. The vertical
 axis is linear. P2→P3 changes the exit policy;
 output and exit-depth differences remain unresolved in some configurations.
-See [PR #30](https://github.com/hsliuustc0106/vllm-lt/pull/30) for decode-only
+See [PR #30](https://github.com/hsliuustc0106/vllm-rlt/pull/30) for decode-only
 results, latency tables, and the full protocol.
 
 ### Four-GPU serving
@@ -160,7 +162,7 @@ are averages of phase percentiles, not pooled percentiles. TTFT measures time
 to first token, TPOT average time per subsequent token, ITL individual token
 intervals, and E2E request completion latency. Some cases use isolated reruns
 while others were measured with concurrent configurations on the same host;
-see [PR #31](https://github.com/hsliuustc0106/vllm-lt/pull/31) for the full protocol.
+see [PR #31](https://github.com/hsliuustc0106/vllm-rlt/pull/31) for the full protocol.
 
 In this workload, 1P3D improves generation latency at the cost of TTFT, while
 2P2D improves all reported latency metrics with slightly lower throughput.
@@ -169,14 +171,14 @@ not isolate the benefit of individual cache or scheduling features.
 
 ### Validation
 
-See the [runtime validation and context/concurrency results](https://github.com/hsliuustc0106/vllm-lt/pull/30)
+See the [runtime validation and context/concurrency results](https://github.com/hsliuustc0106/vllm-rlt/pull/30)
 and [GSM8K evaluation guide](docs/accuracy.md) for additional checks. The PRs above
 are the public references for the reported performance results and limitations.
 
 ## Roadmap
 
 We are refactoring module boundaries and state ownership while preserving
-loop-level scheduling and KV semantics. See [RFC #32](https://github.com/hsliuustc0106/vllm-lt/issues/32)
+loop-level scheduling and KV semantics. See [RFC #32](https://github.com/hsliuustc0106/vllm-rlt/issues/32)
 for the target architecture, module breakdown, and implementation sequence.
 
 <a id="contributing"></a>
@@ -189,7 +191,7 @@ A reproducible bug report, a carefully measured experiment, or a clearer example
 can be just as useful as a runtime optimization.
 
 - 🛠️ **Improve the engine.** Work on loop-level scheduling, attention, KV caching,
-  or prefill/decode disaggregation. The [architecture RFC and refactoring roadmap](https://github.com/hsliuustc0106/vllm-lt/issues/32)
+  or prefill/decode disaggregation. The [architecture RFC and refactoring roadmap](https://github.com/hsliuustc0106/vllm-rlt/issues/32)
   describe the current priorities and module boundaries.
 - 📊 **Bring evidence.** Test your workloads and hardware, investigate numerical
   differences, or contribute reproducible benchmarks. Include your configuration
@@ -197,8 +199,8 @@ can be just as useful as a runtime optimization.
 - 📖 **Make it easier to use.** Improve installation instructions, explain a
   runtime behavior, or turn a working example into a guide for the next user.
 
-**Have an idea or found a problem?** [Open an issue](https://github.com/hsliuustc0106/vllm-lt/issues/new)
-with the details, or [send a pull request](https://github.com/hsliuustc0106/vllm-lt/compare).
+**Have an idea or found a problem?** [Open an issue](https://github.com/hsliuustc0106/vllm-rlt/issues/new)
+with the details, or [send a pull request](https://github.com/hsliuustc0106/vllm-rlt/compare).
 For larger changes, start a discussion in an issue so we can work through the
 design together. If you are new to the codebase, tell us what interests you—we
 can help identify a useful starting point.
