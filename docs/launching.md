@@ -13,14 +13,7 @@ GPU. Installation and model download require access to GitHub, Python package
 indexes, and Hugging Face. The BF16 model weights alone need roughly 3 GB of
 GPU memory; leave additional room for the KV cache and runtime buffers.
 
-## 2. Clone the repository
-
-```bash
-git clone https://github.com/hsliuustc0106/vllm-rlt.git
-cd vllm-rlt
-```
-
-## 3. Create and activate a uv environment
+## 2. Create and activate a uv environment
 
 ```bash
 uv venv --python 3.10 .venv  # Replace .venv with your preferred environment name
@@ -29,6 +22,13 @@ source .venv/bin/activate   # Use the same name here
 
 Python 3.10 is an example; you can select another supported version (3.10+).
 Keep this environment active for the following steps.
+
+## 3. Clone the repository
+
+```bash
+git clone https://github.com/hsliuustc0106/vllm-rlt.git
+cd vllm-rlt
+```
 
 ## 4. Install the project
 
@@ -161,7 +161,7 @@ to be repeated.
 
 ```bash
 cd /path/to/vllm-rlt
-source .venv/bin/activate  # Use the environment name you chose in step 3
+source ../.venv/bin/activate  # Use the environment name you chose in step 2
 export CUDA_VISIBLE_DEVICES=0
 ```
 
@@ -225,8 +225,8 @@ the [engine design](design.md).
 
 | Symptom | What to check |
 | --- | --- |
-| `vllm-rlt-serve: command not found` | Activate the environment from step 3 and rerun the editable install. The module entrypoint `python -m vllm_rlt.entrypoints.serve` uses the same server. |
-| `No module named vllm_rlt`, `aiohttp`, or `transformers` | Activate the environment from step 3, verify `sys.executable`, and rerun `uv pip install -e .`. |
+| `vllm-rlt-serve: command not found` | Activate the environment from step 2 and rerun the editable install. The module entrypoint `python -m vllm_rlt.entrypoints.serve` uses the same server. |
+| `No module named vllm_rlt`, `aiohttp`, or `transformers` | Activate the environment from step 2, verify `sys.executable`, and rerun `uv pip install -e .`. |
 | CUDA check fails or reports a driver error | Check your GPU allocation and `CUDA_VISIBLE_DEVICES`. If the driver is too old for the installed PyTorch CUDA build, update the driver or choose a compatible build using the [PyTorch installer](https://pytorch.org/get-started/locally/). The installer does not select builds based on your installed driver. See [NVIDIA driver compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html). |
 | Model download fails | Check access to Hugging Face and available disk space, then rerun step 5. An offline deployment needs a complete downloaded checkpoint and tokenizer. |
 | CUDA out of memory | Stop duplicate model processes you started, inspect free memory with `nvidia-smi`, and use the bounded short-prompt configuration in step 6. The weights and runtime still need sufficient free memory. |
