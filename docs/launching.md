@@ -35,10 +35,10 @@ The project requires **PyTorch 2.5 or newer**; it does not pin an exact version.
 Pip keeps an existing compatible installation, or resolves a compatible version
 from your configured package index in a fresh environment.
 
-If you need a specific CUDA build, install PyTorch **before** the command above
-using the [official PyTorch installation selector](https://pytorch.org/get-started/locally/).
-For example, `cu128` in a PyTorch index URL means **CUDA 12.8**, not a PyTorch
-version. FlashAttention and NIXL are optional and are not needed for this guide.
+Use the same installation and startup commands for GPUs such as the RTX 4090,
+A100, and H100. There is no CUDA version to select based on the GPU model;
+your NVIDIA driver must support the CUDA runtime supplied with PyTorch.
+FlashAttention and NIXL are optional and are not needed for this guide.
 
 Select your GPU and confirm that PyTorch can use it:
 
@@ -221,7 +221,7 @@ the [engine design](design.md).
 | --- | --- |
 | `vllm-rlt-serve: command not found` | Activate `.venv` and rerun the editable install. The module entrypoint `python -m vllm_rlt.entrypoints.serve` uses the same server. |
 | `No module named vllm_rlt`, `aiohttp`, or `transformers` | Activate `.venv`, verify `sys.executable`, and rerun `python -m pip install -e .`. |
-| CUDA check fails or reports a driver error | Check `nvidia-smi`, the PyTorch CUDA build, your allocation, and `CUDA_VISIBLE_DEVICES`. Return to step 3. |
+| CUDA check fails or reports a driver error | Check your GPU allocation and `CUDA_VISIBLE_DEVICES`. If the driver is too old for the installed PyTorch CUDA build, update the driver or choose a compatible build using the [PyTorch installer](https://pytorch.org/get-started/locally/). Pip does not select builds based on your installed driver. See [NVIDIA driver compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html). |
 | Model download fails | Check access to Hugging Face and available disk space, then rerun step 4. An offline deployment needs a complete downloaded checkpoint and tokenizer. |
 | CUDA out of memory | Stop duplicate model processes you started, inspect free memory with `nvidia-smi`, and use the bounded short-prompt configuration in step 5. The weights and runtime still need sufficient free memory. |
 | `/health` gives 503 or connection refused | Check the server terminal. It may still be initializing or may have exited with an error. |
