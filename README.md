@@ -97,11 +97,11 @@ Requires **Python 3.10+** and **PyTorch 2.5+**. For GPU inference, use Linux wit
 an NVIDIA GPU and a CUDA-enabled PyTorch installation compatible with your
 hardware.
 
-From the repository root, install the engine with text, serving, and Triton
-support:
+From the repository root, install the project (text, serving, and Triton
+support are included):
 
 ```bash
-python -m pip install -e '.[text,serve,triton]'
+python -m pip install -e .
 ```
 
 For a fresh machine, follow the [step-by-step user guide](docs/launching.md):

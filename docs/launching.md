@@ -6,24 +6,11 @@ step explicitly asks you to open another one.
 
 ## 1. Check the machine
 
-You need Linux, Git, curl, Python with `venv` support, an NVIDIA driver, and an
-allocated NVIDIA GPU with BF16 support. This guide uses Python 3.12; the package
-requires Python 3.10 or newer. GPU memory must accommodate the model weights,
-KV cache, and runtime buffers. The BF16 weights alone occupy roughly 3 GB;
-that is not the total GPU memory requirement.
-
-```bash
-python3.12 --version
-git --version
-curl --version
-nvidia-smi
-```
-
-`nvidia-smi` must list your GPU. If it fails, fix the driver or obtain a GPU
-allocation before continuing. On shared machines, use your site's reservation
-system. The examples assume GPU 0 is allocated to you; change that ID if needed.
-Network access to GitHub, Python package indexes, and Hugging Face is needed for
-installation and the model download.
+Use Linux with Git, curl, Python 3.12 with `venv` support, and an NVIDIA GPU
+that supports BF16. Run `nvidia-smi` to confirm that the driver recognizes your
+GPU. Installation and model download require access to GitHub, Python package
+indexes, and Hugging Face. The BF16 model weights alone need roughly 3 GB of
+GPU memory; leave additional room for the KV cache and runtime buffers.
 
 ## 2. Clone the repository and create an environment
 
@@ -35,55 +22,33 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 ```
 
-All following `python` and `pip` commands must use this environment. Check it:
+Keep this environment active for the following steps.
+
+## 3. Install the project
 
 ```bash
-python -c 'import sys; print(sys.executable)'
+python -m pip install -e .
 ```
 
-The path should end in `vllm-rlt/.venv/bin/python`. If `venv` is unavailable,
-install your distribution's Python venv package (for example,
-`python3.12-venv` on an Ubuntu installation that provides Python 3.12).
+This installs PyTorch, Transformers, the HTTP server dependencies, and Triton.
+The project requires **PyTorch 2.5 or newer**; it does not pin an exact version.
+Pip keeps an existing compatible installation, or resolves a compatible version
+from your configured package index in a fresh environment.
 
-## 3. Install GPU dependencies and the project
+If you need a specific CUDA build, install PyTorch **before** the command above
+using the [official PyTorch installation selector](https://pytorch.org/get-started/locally/).
+For example, `cu128` in a PyTorch index URL means **CUDA 12.8**, not a PyTorch
+version. FlashAttention and NIXL are optional and are not needed for this guide.
 
-Install a CUDA-enabled PyTorch build before installing the project. For a
-machine whose driver and GPU support the CUDA 12.8 wheels:
-
-```bash
-python -m pip install torch --index-url https://download.pytorch.org/whl/cu128
-python -m pip install -e '.[text,serve,triton]'
-python -m pip check
-```
-
-For a different CUDA build, use the [official PyTorch installation selector](https://pytorch.org/get-started/locally/)
-with Linux, Pip, Python, and the CUDA version supported by your machine, then
-run the project install command above. PyTorch must be version 2.5 or newer.
-The first-run path uses Triton; FlashAttention and NIXL are optional and are not
-required for these examples.
-
-Select your allocated GPU and check it from the installed environment:
+Select your GPU and confirm that PyTorch can use it:
 
 ```bash
 export CUDA_VISIBLE_DEVICES=0
-python - <<'PY'
-import torch
-import triton
-import vllm_rlt
-
-assert torch.cuda.is_available(), 'CUDA is unavailable in this environment'
-assert torch.cuda.is_bf16_supported(), 'This example requires BF16 support'
-print('PyTorch:', torch.__version__, 'CUDA build:', torch.version.cuda)
-print('Triton:', triton.__version__)
-print('GPU:', torch.cuda.get_device_name(0))
-print('Package:', vllm_rlt.__file__)
-PY
-python -m vllm_rlt.entrypoints.serve --help
+python -c "import torch; print('PyTorch:', torch.__version__, 'CUDA:', torch.version.cuda); assert torch.cuda.is_available(), 'CUDA unavailable'; assert torch.cuda.is_bf16_supported(), 'BF16 required'"
 ```
 
-Continue when the checks succeed and the server help is displayed. If a job
-scheduler already set `CUDA_VISIBLE_DEVICES`, preserve that value instead of
-overriding it. Device 0 inside Python means the first visible GPU.
+Use your allocated GPU ID in place of `0`. If your job scheduler already sets
+`CUDA_VISIBLE_DEVICES`, keep its value and skip the export.
 
 ## 4. Download the model and tokenizer
 
@@ -255,7 +220,7 @@ the [engine design](design.md).
 | Symptom | What to check |
 | --- | --- |
 | `vllm-rlt-serve: command not found` | Activate `.venv` and rerun the editable install. The module entrypoint `python -m vllm_rlt.entrypoints.serve` uses the same server. |
-| `No module named vllm_rlt`, `aiohttp`, or `transformers` | Activate `.venv`, verify `sys.executable`, and rerun the editable install with `text,serve,triton`. |
+| `No module named vllm_rlt`, `aiohttp`, or `transformers` | Activate `.venv`, verify `sys.executable`, and rerun `python -m pip install -e .`. |
 | CUDA check fails or reports a driver error | Check `nvidia-smi`, the PyTorch CUDA build, your allocation, and `CUDA_VISIBLE_DEVICES`. Return to step 3. |
 | Model download fails | Check access to Hugging Face and available disk space, then rerun step 4. An offline deployment needs a complete downloaded checkpoint and tokenizer. |
 | CUDA out of memory | Stop duplicate model processes you started, inspect free memory with `nvidia-smi`, and use the bounded short-prompt configuration in step 5. The weights and runtime still need sufficient free memory. |
