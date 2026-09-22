@@ -1,41 +1,50 @@
 # User Guide: From Installation to the First Request
 
-Follow steps 1–7 to serve Ouro-1.4B on one NVIDIA GPU and receive a generated
+Follow steps 1–8 to serve Ouro-1.4B on one NVIDIA GPU and receive a generated
 response. Commands use Bash on Linux. Run them in the same terminal unless a
 step explicitly asks you to open another one.
 
 ## 1. Check the machine
 
-Use Linux with Git, curl, Python 3.10+ with `venv` support, and an NVIDIA GPU
+Use Linux with Git, curl, [uv](https://docs.astral.sh/uv/getting-started/installation/),
+Python 3.10+, and an NVIDIA GPU
 that supports BF16. Run `nvidia-smi` to confirm that the driver recognizes your
 GPU. Installation and model download require access to GitHub, Python package
 indexes, and Hugging Face. The BF16 model weights alone need roughly 3 GB of
 GPU memory; leave additional room for the KV cache and runtime buffers.
 
-## 2. Clone the repository and create an environment
-
-Use a `python3` interpreter that is version 3.10 or newer. If you have multiple
-versions installed, you can use `python3.10` explicitly in the venv command.
+## 2. Clone the repository
 
 ```bash
 git clone https://github.com/hsliuustc0106/vllm-rlt.git
 cd vllm-rlt
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
 ```
 
-Keep this environment active for the following steps.
+## 3. Create and activate a uv environment
 
-## 3. Install the project
+The environment is stored outside the repository, so you can create it before
+or after cloning. Change `RLT_ENV_NAME` to choose your own environment name:
 
 ```bash
-python -m pip install -e .
+RLT_ENV_NAME="vllm-rlt"  # For example: ouro-dev
+uv venv --python 3.10 "$HOME/.venvs/$RLT_ENV_NAME"
+source "$HOME/.venvs/$RLT_ENV_NAME/bin/activate"
+```
+
+Python 3.10 is an example; you can select another supported version (3.10+).
+Keep this environment active for the following steps. The installation command
+below targets the activated environment, independently of its directory name.
+See [uv environments](https://docs.astral.sh/uv/pip/environments/) for details.
+
+## 4. Install the project
+
+```bash
+uv pip install -e .
 ```
 
 This installs PyTorch, Transformers, the HTTP server dependencies, and Triton.
 The project requires **PyTorch 2.5 or newer**; it does not pin an exact version.
-Pip keeps an existing compatible installation, or resolves a compatible version
+uv keeps an existing compatible installation, or resolves a compatible version
 from your configured package index in a fresh environment.
 
 Use the same installation and startup commands for GPUs such as the RTX 4090,
@@ -53,7 +62,7 @@ python -c "import torch; print('PyTorch:', torch.__version__, 'CUDA:', torch.ver
 Use your allocated GPU ID in place of `0`. If your job scheduler already sets
 `CUDA_VISIBLE_DEVICES`, keep its value and skip the export.
 
-## 4. Download the model and tokenizer
+## 5. Download the model and tokenizer
 
 Download the pinned checkpoint once, including tokenizer files. This separates
 network/download failures from server startup failures.
@@ -77,7 +86,7 @@ local checkpoint, replace this path in the commands below; it must contain
 both the model configuration/weights and the tokenizer files. Loading uses
 native code and safetensors, without `trust_remote_code`.
 
-## 5. Start the server
+## 6. Start the server
 
 In the same terminal, run:
 
@@ -104,7 +113,7 @@ prompts or more concurrency, adjust cache capacity and scheduling as described
 in the [runtime guide](cdb_runtime.md). Omitting `--num-blocks` enables automatic
 CUDA KV sizing.
 
-## 6. Check readiness and send a request
+## 7. Check readiness and send a request
 
 Open a **second terminal on the same machine**. These commands only require
 curl; the server remains running in the first terminal.
@@ -149,16 +158,17 @@ Expect SSE `data:` events ending with `data: [DONE]`. This is a completions
 endpoint, not `/v1/chat/completions`. See the [HTTP API reference](serving.md)
 for supported fields, streaming behavior, and limits.
 
-## 7. Stop and restart
+## 8. Stop and restart
 
 Press **Ctrl+C in the server terminal** to stop it and release its GPU resources.
 For a later session, return to the repository, reactivate the environment,
-select your allocated GPU, and rerun step 5. The model download does not need
+select your allocated GPU, and rerun step 6. The model download does not need
 to be repeated.
 
 ```bash
 cd /path/to/vllm-rlt
-source .venv/bin/activate
+RLT_ENV_NAME="vllm-rlt"  # Use the name you chose in step 3
+source "$HOME/.venvs/$RLT_ENV_NAME/bin/activate"
 export CUDA_VISIBLE_DEVICES=0
 ```
 
@@ -222,11 +232,11 @@ the [engine design](design.md).
 
 | Symptom | What to check |
 | --- | --- |
-| `vllm-rlt-serve: command not found` | Activate `.venv` and rerun the editable install. The module entrypoint `python -m vllm_rlt.entrypoints.serve` uses the same server. |
-| `No module named vllm_rlt`, `aiohttp`, or `transformers` | Activate `.venv`, verify `sys.executable`, and rerun `python -m pip install -e .`. |
-| CUDA check fails or reports a driver error | Check your GPU allocation and `CUDA_VISIBLE_DEVICES`. If the driver is too old for the installed PyTorch CUDA build, update the driver or choose a compatible build using the [PyTorch installer](https://pytorch.org/get-started/locally/). Pip does not select builds based on your installed driver. See [NVIDIA driver compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html). |
-| Model download fails | Check access to Hugging Face and available disk space, then rerun step 4. An offline deployment needs a complete downloaded checkpoint and tokenizer. |
-| CUDA out of memory | Stop duplicate model processes you started, inspect free memory with `nvidia-smi`, and use the bounded short-prompt configuration in step 5. The weights and runtime still need sufficient free memory. |
+| `vllm-rlt-serve: command not found` | Activate the environment from step 3 and rerun the editable install. The module entrypoint `python -m vllm_rlt.entrypoints.serve` uses the same server. |
+| `No module named vllm_rlt`, `aiohttp`, or `transformers` | Activate the environment from step 3, verify `sys.executable`, and rerun `uv pip install -e .`. |
+| CUDA check fails or reports a driver error | Check your GPU allocation and `CUDA_VISIBLE_DEVICES`. If the driver is too old for the installed PyTorch CUDA build, update the driver or choose a compatible build using the [PyTorch installer](https://pytorch.org/get-started/locally/). The installer does not select builds based on your installed driver. See [NVIDIA driver compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html). |
+| Model download fails | Check access to Hugging Face and available disk space, then rerun step 5. An offline deployment needs a complete downloaded checkpoint and tokenizer. |
+| CUDA out of memory | Stop duplicate model processes you started, inspect free memory with `nvidia-smi`, and use the bounded short-prompt configuration in step 6. The weights and runtime still need sufficient free memory. |
 | `/health` gives 503 or connection refused | Check the server terminal. It may still be initializing or may have exited with an error. |
 | Port 8000 is already in use | Stop your old server or choose another `--port` and use it in all curl URLs. |
 | Request returns an unknown-model error | The JSON `model` must match `--served-model-name`: `ouro` in this guide. |
@@ -234,4 +244,4 @@ the [engine design](design.md).
 | Chat endpoint returns 404 | Use `/v1/completions` with a string `prompt`. |
 
 When reporting a problem, include the failing command, server error, GPU model,
-PyTorch/CUDA versions from step 3, and your Git revision (`git rev-parse HEAD`).
+PyTorch/CUDA versions from step 4, and your Git revision (`git rev-parse HEAD`).
