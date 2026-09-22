@@ -6,7 +6,7 @@ step explicitly asks you to open another one.
 
 ## 1. Check the machine
 
-Use Linux with Git, curl, Python 3.12 with `venv` support, and an NVIDIA GPU
+Use Linux with Git, curl, Python 3.10+ with `venv` support, and an NVIDIA GPU
 that supports BF16. Run `nvidia-smi` to confirm that the driver recognizes your
 GPU. Installation and model download require access to GitHub, Python package
 indexes, and Hugging Face. The BF16 model weights alone need roughly 3 GB of
@@ -14,10 +14,13 @@ GPU memory; leave additional room for the KV cache and runtime buffers.
 
 ## 2. Clone the repository and create an environment
 
+Use a `python3` interpreter that is version 3.10 or newer. If you have multiple
+versions installed, you can use `python3.10` explicitly in the venv command.
+
 ```bash
 git clone https://github.com/hsliuustc0106/vllm-rlt.git
 cd vllm-rlt
-python3.12 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 ```
