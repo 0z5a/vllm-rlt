@@ -1,8 +1,9 @@
 # User Guide: From Installation to the First Request
 
 Follow steps 1–8 to serve Ouro-1.4B on one NVIDIA GPU and receive a generated
-response. Commands use Bash on Linux. Run them in the same terminal unless a
-step explicitly asks you to open another one.
+response. Commands work in Bash and fish on Linux; use the activation command
+for your shell. Run them in the same terminal unless a step explicitly asks
+you to open another one.
 
 ## 1. Check the machine
 
@@ -17,7 +18,8 @@ GPU memory; leave additional room for the KV cache and runtime buffers.
 
 ```bash
 uv venv --python 3.10 .venv  # Replace .venv with your preferred environment name
-source .venv/bin/activate   # Use the same name here
+source .venv/bin/activate   # Bash; use the same environment name here
+# fish: source .venv/bin/activate.fish
 ```
 
 Python 3.10 is an example; you can select another supported version (3.10+).
@@ -62,7 +64,7 @@ Download the pinned checkpoint once, including tokenizer files. This separates
 network/download failures from server startup failures.
 
 ```bash
-python - <<'PY'
+python -c "
 from huggingface_hub import snapshot_download
 
 snapshot_download(
@@ -71,7 +73,7 @@ snapshot_download(
     local_dir='./artifacts/models/Ouro-1.4B',
     allow_patterns=['*.json', '*.safetensors', '*.model', '*.txt'],
 )
-PY
+"
 ```
 
 Wait for the download to finish. Keep running commands from the repository
@@ -161,7 +163,8 @@ to be repeated.
 
 ```bash
 cd /path/to/vllm-rlt
-source ../.venv/bin/activate  # Use the environment name you chose in step 2
+source ../.venv/bin/activate  # Bash; use the environment name from step 2
+# fish: source ../.venv/bin/activate.fish
 export CUDA_VISIBLE_DEVICES=0
 ```
 
