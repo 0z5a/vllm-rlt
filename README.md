@@ -91,6 +91,19 @@ The diagram shows logical token flow; asynchronous execution can overlap
 stages. See the [runtime guide](docs/cdb_runtime.md) for scheduling, exit policies,
 and depth-aware KV caching.
 
+<a href="docs/assets/inference/ouro-inference.mp4">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/inference/ouro-inference.png">
+    <img src="docs/assets/inference/ouro-inference.gif" alt="Ouro inference through full-depth prefill, token feedback, and adaptive early exit">
+  </picture>
+</a>
+
+The animation follows one request: four-loop prefill produces `y₀`, then
+processing `y₀` with a two-loop adaptive exit produces `y₁`. Each loop reuses
+the same 24-layer transformer core. Gate scores and timing are illustrative;
+the default `exit_threshold=1.0` uses four loops.
+[Watch the MP4](docs/assets/inference/ouro-inference.mp4) for smoother playback.
+
 ## Getting Started
 
 Requires **Python 3.10+** and **PyTorch 2.5+**. For GPU inference, use Linux with
