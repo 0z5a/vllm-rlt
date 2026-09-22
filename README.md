@@ -15,8 +15,7 @@
   <a href="https://arxiv.org/pdf/2608.09444">Paper</a> ·
   <a href="#how-it-works">How It Works</a> ·
   <a href="#getting-started">Getting Started</a> ·
-  <a href="#serving">Serving</a> ·
-  <a href="#documentation">Documentation</a> ·
+  <a href="docs/README.md">Documentation</a> ·
   <a href="#performance-baselines">Performance</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#contributing">Contributing</a>
@@ -68,48 +67,31 @@ supported combinations.
 
 ## How It Works
 
-Each request starts with full-depth prompt prefill. Its final hidden state goes
-directly to the coda to produce the first token. Subsequent tokens pass through
-the prelude, a variable number of recurrent loops, and the coda. The scheduler
-batches each stage independently, allowing requests at different loop depths
-to execute the shared recurrent core together.
+Full-depth prefill produces the first token through the coda. Each subsequent
+token passes through the prelude and a variable number of recurrent loops
+before sampling. Requests at different loop depths can share the same batch.
 
 ```mermaid
-flowchart TD
-    A["Prompt / token IDs"] --> B["Admission + chunked prefill<br/>All recurrence depths"]
-    B -->|Final prompt hidden state| C["Coda + sampling<br/>Produce next token"]
-    C --> D["Deliver token / stream output"]
-    D --> E{"EOS or token limit?"}
-    E -->|Yes| F["Finish request<br/>Release active state"]
-    E -->|No| G["Prelude<br/>Embed sampled token"]
-    G --> H["Recurrent core: one loop<br/>Batch requests at different depths"]
-    H --> I{"Exit policy or max depth?"}
-    I -->|Continue| H
-    I -->|Exit| J["Finalize depth-aware KV<br/>LAST_EXITED: fill skipped depths"]
-    J --> C
-    K[("Depth-aware paged KV cache")] -.->|Read / write| B
-    K -.->|Read / write| H
-    J -.->|Update| K
+flowchart LR
+    A["Full-depth<br/>prefill"] --> B["Coda + sampling"]
+    B --> C["Output token"]
+    C -->|Next token| D["Prelude"]
+    D --> E["Recurrent core"]
+    E -->|Continue| E
+    E -->|Exit| B
+    C -->|EOS / limit| F["Finish"]
 
     classDef boundary fill:#eaf2ff,stroke:#2563eb,color:#172b4d
     classDef recurrent fill:#e6f6f2,stroke:#0d9488,color:#172b4d
-    classDef decision fill:#fff5df,stroke:#d99732,color:#172b4d
-    classDef storage fill:#f2edfa,stroke:#9565c9,color:#172b4d
-    class A,B,C,D,F,G boundary
-    class H,J recurrent
-    class E,I decision
-    class K storage
+    class A,B,C,D,F boundary
+    class E recurrent
 ```
 
-This is the logical request flow. In refill mode, an exited token frees space
-for another token while other requests continue looping. Asynchronous execution
-can overlap stages and advance device work ahead of host output delivery;
-`ouro_delayed` consumes exit decisions with a one-loop delay. See the
-[runtime guide](docs/cdb_runtime.md) for exit policies and cache layouts.
+The diagram shows logical token flow; asynchronous execution can overlap
+stages. See the [runtime guide](docs/cdb_runtime.md) for scheduling, exit policies,
+and depth-aware KV caching.
 
 ## Getting Started
-
-### Installation
 
 Requires **Python 3.10+** and **PyTorch 2.5+**. For GPU inference, use Linux with
 an NVIDIA GPU and a CUDA-enabled PyTorch installation compatible with your
@@ -122,131 +104,9 @@ support:
 python -m pip install -e '.[text,serve,triton]'
 ```
 
-FlashAttention and NIXL are optional; see the
-[FlashAttention](https://github.com/hsliuustc0106/vllm-lt/pull/30) and
-[prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-lt/pull/31) implementation notes for details.
-
-### Offline inference
-
-```bash
-vllm-rlt \
-  --model ByteDance/Ouro-1.4B \
-  --device cuda \
-  --attention-backend triton \
-  --prompt 'The capital of France is' \
-  --prompt '2 + 2 =' \
-  --max-tokens 32 \
-  --exit-threshold 0.7
-```
-
-Repeat `--prompt` to submit a batch. `--model` also accepts a local checkpoint
-directory. BF16 is the default; the official model and tokenizer are pinned to
-revision `574fa66cb8bf5abdc979642d01cf2b79b16bfab1`. Model loading uses native
-code and safetensors, without `trust_remote_code`.
-
-To check the installation without downloading weights or using a GPU:
-
-```bash
-OMP_NUM_THREADS=1 vllm-rlt --toy --max-tokens 4 --exit-threshold 0.7
-```
-
-The toy model is tiny and randomly initialized; it checks engine execution,
-not language quality. On shared GPU hosts, run GPU examples through your local
-reservation system and set device visibility for the allocated GPUs.
-
-### Python API
-
-```python
-from vllm_rlt import LLM, SamplingParams
-
-llm = LLM(
-    "ByteDance/Ouro-1.4B",
-    device="cuda",
-    attention_backend="triton",
-)
-
-outputs = llm.generate(
-    ["The capital of France is", "2 + 2 ="],
-    SamplingParams(
-        max_tokens=32,
-        temperature=0.0,
-        min_loops=2,
-        max_loops=4,
-        exit_threshold=0.7,
-    ),
-)
-
-for output in outputs:
-    print(output.text)
-    print("Exit depths:", output.exit_depths)
-```
-
-The API accepts text prompts or token-ID lists and returns results in input
-order. Prompt prefill runs at full depth; the exit threshold controls subsequent
-decode. Set `exit_threshold=1.0` for fixed-depth execution. The first generated
-token comes from full-depth prefill, which is reflected in `exit_depths`.
-
-For dynamic arrivals and step-by-step output, use `llm.engine.add_request(...)`,
-`llm.engine.step()`, and `llm.engine.abort_request(...)`. See the
-[engine design](docs/design.md) for the execution model.
-
-## Serving
-
-Start a resident model:
-
-```bash
-vllm-rlt-serve \
-  --model ByteDance/Ouro-1.4B \
-  --device cuda \
-  --attention-backend triton \
-  --host 127.0.0.1 \
-  --port 8000
-```
-
-Send a streaming completion request:
-
-```bash
-curl -N http://127.0.0.1:8000/v1/completions \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "model": "ByteDance/Ouro-1.4B",
-    "prompt": "The capital of France is",
-    "max_tokens": 32,
-    "temperature": 0,
-    "exit_threshold": 0.7,
-    "stream": true
-  }'
-```
-
-Concurrent requests share continuous engine batching. The server also exposes
-`GET /health` and `GET /v1/models`. It implements a bounded subset of the
-OpenAI completions API; chat completions are not implemented. See the
-[serving guide](docs/serving.md) for supported fields, request limits, and
-benchmark client usage.
-
-## Documentation
-
-| Guide | Topics |
-| --- | --- |
-| [Engine design](docs/design.md) | Model stages, scheduling, and KV ownership |
-| [Scheduler walkthrough](docs/scheduler_walkthrough.md) | Responsibilities, admission cases, control flow, and refactoring checklist |
-| [KV layout examples](docs/kv_layout_computation.md) | SHARED and LAST_EXITED semantics and worked attention examples |
-| [Runtime configuration](docs/cdb_runtime.md) | Exit policies, KV layouts, execution options, and CUDA Graphs |
-| [Asynchronous scheduling](https://github.com/hsliuustc0106/vllm-lt/pull/30) | CPU/GPU pipelining and single-stream or multi-stream execution |
-| [FlashAttention](https://github.com/hsliuustc0106/vllm-lt/pull/30) | FA2/FA3/FA4 installation, hardware selection, and constraints |
-| [Cache and scheduling features](https://github.com/hsliuustc0106/vllm-lt/pull/31) | Prefix reuse, incremental KV, priorities, and preemption |
-| [Prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-lt/pull/31) | Single-host GPU worker pools and NIXL transfer |
-| [HTTP serving](docs/serving.md) | Completions API, streaming, and service lifecycle |
-| [Accuracy evaluation](docs/accuracy.md) | GSM8K regression setup and comparison methodology |
-
-Current model support is limited to Ouro-1.4B. CPU execution provides a Torch
-reference backend. FlashAttention hardware validation is currently documented
-for FA4 on B300; FA2/FA3 require validation on their target devices. Disaggregated
-serving currently targets multiple GPUs on a single host.
-
-`ouro_delayed` reuses the trained Ouro gate with a one-loop delay; it changes
-the exit policy. The `random_lookahead` mode uses an untrained head for runtime
-experiments. Neither is a distilled lookahead predictor.
+See the [launch guide](docs/launching.md) for command-line inference, the Python
+API, and HTTP serving. Browse the [documentation](docs/README.md) for runtime
+configuration, optional backends, and design notes.
 
 ## Performance Baselines
 
@@ -315,74 +175,9 @@ are the public references for the reported performance results and limitations.
 
 ## Roadmap
 
-The next development focus is **modular architecture refactoring**, tracked in
-[RFC #32](https://github.com/hsliuustc0106/vllm-lt/issues/32). The goal is to make
-state ownership and module interfaces explicit while preserving loop-level
-batching, exit policies, depth-aware KV semantics, and PD handoff behavior.
-
-The first scheduler-responsibility refactor landed in
-[PR #34](https://github.com/hsliuustc0106/vllm-lt/pull/34); the broader architecture
-migration remains in progress.
-
-### Target Architecture
-
-The following diagram follows [RFC #32](https://github.com/hsliuustc0106/vllm-lt/issues/32).
-It describes the **planned refactoring architecture**, rather than a completed
-migration of the current code.
-
-```mermaid
-flowchart TD
-    A["LLM / CLI / API Server"] --> B["Engine interface<br/>Input / output processing"]
-    B --> C["EngineCore"]
-    C --> D["Scheduler"]
-    D --> E["Logical KVCacheManager"]
-    C --> F["Executor / Worker"]
-    F --> G["ModelRunner"]
-    G --> H["Model + Sampler"]
-    H --> I["Attention backend"]
-    G --> J["Device KV storage<br/>Execution metadata"]
-    D --> K["Scheduler-side connector"]
-    F --> L["Worker-side connector"]
-    K -.->|Transfer metadata / completion feedback| L
-    L --> M["NIXL transport"]
-
-    classDef frontend fill:#eaf2ff,stroke:#2563eb,color:#172b4d
-    classDef scheduling fill:#e6f6f2,stroke:#0d9488,color:#172b4d
-    classDef execution fill:#eef0ff,stroke:#6965cf,color:#172b4d
-    classDef transfer fill:#fff5df,stroke:#d99732,color:#172b4d
-    class A,B frontend
-    class C,D,E scheduling
-    class F,G,H,I,J execution
-    class K,L,M transfer
-```
-
-The scheduler owns logical request progression, while the worker and runner
-own device state. EngineCore drives the feedback loop:
-`schedule()` → `SchedulerOutput` → execution → `ModelRunnerOutput` →
-`update_from_output()`. Logical KV management tracks allocation and lifetimes;
-device storage and attention execute behind separate interfaces. The PD
-coordinator sits above the prefill/decode engines; scheduler-side and
-worker-side connectors handle their transfer contracts.
-
-The planned work includes:
-
-- Establish a scheduler/execution feedback loop: the scheduler owns logical
-  request progress and exit decisions; EngineCore orchestrates submission and
-  result collection; workers own device execution state.
-- Separate logical KV allocation, references, and transfer leases from device
-  storage, copies, and attention execution.
-- Replace direct access to private queues and mutable state with explicit
-  scheduling results, execution results, frontend APIs, and PD connectors.
-- Refactor incrementally, validating cancellation, late results, preemption,
-  transfer cleanup, numerical behavior, and performance against pinned baselines.
-
-The latest order recorded in the RFC is **Scheduler (M3) → EngineCore (M2) →
-logical KV (M4) → Attention (M8) → Executor/Worker/ModelRunner (M5) → Sampling
-(M7) → Model (M6) → PD/transfer (M9) → Entrypoints (M1)**.
-
-This is planned work. vLLM V1 serves as an architectural reference; the engine
-will remain standalone. Each module review will pin its own reproducible
-baseline and validate relevant throughput, latency, and memory behavior.
+We are refactoring module boundaries and state ownership while preserving
+loop-level scheduling and KV semantics. See [RFC #32](https://github.com/hsliuustc0106/vllm-lt/issues/32)
+for the target architecture, module breakdown, and implementation sequence.
 
 <a id="contributing"></a>
 
