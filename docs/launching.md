@@ -22,19 +22,13 @@ cd vllm-rlt
 
 ## 3. Create and activate a uv environment
 
-The environment is stored outside the repository, so you can create it before
-or after cloning. Change `RLT_ENV_NAME` to choose your own environment name:
-
 ```bash
-RLT_ENV_NAME="vllm-rlt"  # For example: ouro-dev
-uv venv --python 3.10 "$HOME/.venvs/$RLT_ENV_NAME"
-source "$HOME/.venvs/$RLT_ENV_NAME/bin/activate"
+uv venv --python 3.10 .venv  # Replace .venv with your preferred environment name
+source .venv/bin/activate   # Use the same name here
 ```
 
 Python 3.10 is an example; you can select another supported version (3.10+).
-Keep this environment active for the following steps. The installation command
-below targets the activated environment, independently of its directory name.
-See [uv environments](https://docs.astral.sh/uv/pip/environments/) for details.
+Keep this environment active for the following steps.
 
 ## 4. Install the project
 
@@ -167,8 +161,7 @@ to be repeated.
 
 ```bash
 cd /path/to/vllm-rlt
-RLT_ENV_NAME="vllm-rlt"  # Use the name you chose in step 3
-source "$HOME/.venvs/$RLT_ENV_NAME/bin/activate"
+source .venv/bin/activate  # Use the environment name you chose in step 3
 export CUDA_VISIBLE_DEVICES=0
 ```
 
