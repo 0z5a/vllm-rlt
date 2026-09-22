@@ -1,106 +1,269 @@
-# Launching vllm-rlt
+# User Guide: From Installation to the First Request
 
-After completing the [installation](../README.md#getting-started), choose a
-command-line batch, the Python API, or an HTTP server. Run the examples from
-the repository root in the environment where the project is installed.
+Follow steps 1–7 to serve Ouro-1.4B on one NVIDIA GPU and receive a generated
+response. Commands use Bash on Linux. Run them in the same terminal unless a
+step explicitly asks you to open another one.
 
-[Command-line inference](#command-line-inference) · [Python API](#python-api) ·
-[HTTP serving](#http-serving)
+## 1. Check the machine
+
+You need Linux, Git, curl, Python with `venv` support, an NVIDIA driver, and an
+allocated NVIDIA GPU with BF16 support. This guide uses Python 3.12; the package
+requires Python 3.10 or newer. GPU memory must accommodate the model weights,
+KV cache, and runtime buffers. The BF16 weights alone occupy roughly 3 GB;
+that is not the total GPU memory requirement.
+
+```bash
+python3.12 --version
+git --version
+curl --version
+nvidia-smi
+```
+
+`nvidia-smi` must list your GPU. If it fails, fix the driver or obtain a GPU
+allocation before continuing. On shared machines, use your site's reservation
+system. The examples assume GPU 0 is allocated to you; change that ID if needed.
+Network access to GitHub, Python package indexes, and Hugging Face is needed for
+installation and the model download.
+
+## 2. Clone the repository and create an environment
+
+```bash
+git clone https://github.com/hsliuustc0106/vllm-rlt.git
+cd vllm-rlt
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+All following `python` and `pip` commands must use this environment. Check it:
+
+```bash
+python -c 'import sys; print(sys.executable)'
+```
+
+The path should end in `vllm-rlt/.venv/bin/python`. If `venv` is unavailable,
+install your distribution's Python venv package (for example,
+`python3.12-venv` on an Ubuntu installation that provides Python 3.12).
+
+## 3. Install GPU dependencies and the project
+
+Install a CUDA-enabled PyTorch build before installing the project. For a
+machine whose driver and GPU support the CUDA 12.8 wheels:
+
+```bash
+python -m pip install torch --index-url https://download.pytorch.org/whl/cu128
+python -m pip install -e '.[text,serve,triton]'
+python -m pip check
+```
+
+For a different CUDA build, use the [official PyTorch installation selector](https://pytorch.org/get-started/locally/)
+with Linux, Pip, Python, and the CUDA version supported by your machine, then
+run the project install command above. PyTorch must be version 2.5 or newer.
+The first-run path uses Triton; FlashAttention and NIXL are optional and are not
+required for these examples.
+
+Select your allocated GPU and check it from the installed environment:
+
+```bash
+export CUDA_VISIBLE_DEVICES=0
+python - <<'PY'
+import torch
+import triton
+import vllm_rlt
+
+assert torch.cuda.is_available(), 'CUDA is unavailable in this environment'
+assert torch.cuda.is_bf16_supported(), 'This example requires BF16 support'
+print('PyTorch:', torch.__version__, 'CUDA build:', torch.version.cuda)
+print('Triton:', triton.__version__)
+print('GPU:', torch.cuda.get_device_name(0))
+print('Package:', vllm_rlt.__file__)
+PY
+python -m vllm_rlt.entrypoints.serve --help
+```
+
+Continue when the checks succeed and the server help is displayed. If a job
+scheduler already set `CUDA_VISIBLE_DEVICES`, preserve that value instead of
+overriding it. Device 0 inside Python means the first visible GPU.
+
+## 4. Download the model and tokenizer
+
+Download the pinned checkpoint once, including tokenizer files. This separates
+network/download failures from server startup failures.
+
+```bash
+python - <<'PY'
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id='ByteDance/Ouro-1.4B',
+    revision='574fa66cb8bf5abdc979642d01cf2b79b16bfab1',
+    local_dir='./artifacts/models/Ouro-1.4B',
+    allow_patterns=['*.json', '*.safetensors', '*.model', '*.txt'],
+)
+PY
+```
+
+Wait for the download to finish. Keep running commands from the repository
+root so `./artifacts/models/Ouro-1.4B` resolves to the same directory. For an existing
+local checkpoint, replace this path in the commands below; it must contain
+both the model configuration/weights and the tokenizer files. Loading uses
+native code and safetensors, without `trust_remote_code`.
+
+## 5. Start the server
+
+In the same terminal, run:
+
+```bash
+python -m vllm_rlt.entrypoints.serve \
+  --model ./artifacts/models/Ouro-1.4B \
+  --served-model-name ouro \
+  --device cuda \
+  --dtype bfloat16 \
+  --attention-backend triton \
+  --num-blocks 64 \
+  --max-num-seqs 1 \
+  --host 127.0.0.1 \
+  --port 8000
+```
+
+Leave this process running. The equivalent installed command is
+`vllm-rlt-serve` with the same arguments. Startup loads the model and tokenizer;
+the first generation can also incur kernel compilation overhead.
+
+This first-run configuration uses a bounded KV pool and one active sequence
+for short prompts. It is not a performance-benchmark configuration. For longer
+prompts or more concurrency, adjust cache capacity and scheduling as described
+in the [runtime guide](cdb_runtime.md). Omitting `--num-blocks` enables automatic
+CUDA KV sizing.
+
+## 6. Check readiness and send a request
+
+Open a **second terminal on the same machine**. These commands only require
+curl; the server remains running in the first terminal.
+
+```bash
+curl -i http://127.0.0.1:8000/health
+curl -sS http://127.0.0.1:8000/v1/models
+```
+
+Wait until `/health` returns **HTTP 200**. HTTP 503 means it is not ready;
+inspect the first terminal for initialization progress or errors. The model
+list must include `ouro`, matching `--served-model-name`.
+
+Send a non-streaming request first:
+
+```bash
+curl --fail-with-body -sS http://127.0.0.1:8000/v1/completions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "ouro",
+    "prompt": "The capital of France is",
+    "max_tokens": 32,
+    "temperature": 0,
+    "exit_threshold": 0.7,
+    "stream": false
+  }'
+```
+
+A successful response contains `choices[0].text`, a `finish_reason`, and `usage`
+with prompt/completion token counts. The exact generated text can vary; checking
+readiness alone does not verify generation.
+
+To receive tokens as a stream:
+
+```bash
+curl --fail-with-body -N http://127.0.0.1:8000/v1/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"ouro","prompt":"The capital of France is","max_tokens":32,"temperature":0,"exit_threshold":0.7,"stream":true}'
+```
+
+Expect SSE `data:` events ending with `data: [DONE]`. This is a completions
+endpoint, not `/v1/chat/completions`. See the [HTTP API reference](serving.md)
+for supported fields, streaming behavior, and limits.
+
+## 7. Stop and restart
+
+Press **Ctrl+C in the server terminal** to stop it and release its GPU resources.
+For a later session, return to the repository, reactivate the environment,
+select your allocated GPU, and rerun step 5. The model download does not need
+to be repeated.
+
+```bash
+cd /path/to/vllm-rlt
+source .venv/bin/activate
+export CUDA_VISIBLE_DEVICES=0
+```
+
+Replace `/path/to/vllm-rlt` with your checkout path and preserve scheduler-set
+GPU visibility when applicable. This completes the first-run path:
+installation, model loading, readiness, a real completion, and shutdown.
 
 ## Command-line inference
 
+For an offline batch, stop the HTTP server first if you will reuse the same
+GPU, then run from the activated environment and repository root:
+
 ```bash
-vllm-rlt \
-  --model ByteDance/Ouro-1.4B \
+python -m vllm_rlt.entrypoints.cli \
+  --model ./artifacts/models/Ouro-1.4B \
   --device cuda \
   --attention-backend triton \
+  --num-blocks 64 \
+  --max-num-seqs 1 \
   --prompt 'The capital of France is' \
   --prompt '2 + 2 =' \
   --max-tokens 32 \
   --exit-threshold 0.7
 ```
 
-Repeat `--prompt` to submit a batch. `--model` also accepts a local checkpoint
-directory. BF16 is the default; the official model and tokenizer are pinned to
-revision `574fa66cb8bf5abdc979642d01cf2b79b16bfab1`. Model loading uses native
-code and safetensors, without `trust_remote_code`.
-
-To check the installation without downloading weights or using a GPU:
-
-```bash
-OMP_NUM_THREADS=1 vllm-rlt --toy --max-tokens 4 --exit-threshold 0.7
-```
-
-The toy model is tiny and randomly initialized; it checks engine execution,
-not language quality. On shared GPU hosts, run GPU examples through your local
-reservation system and set device visibility for the allocated GPUs.
+The equivalent installed command is `vllm-rlt`. Repeat `--prompt` for a batch;
+the CLI prints one JSON result per prompt, including text, token IDs, exit
+depths, and the finish reason.
 
 ## Python API
 
+Save the following as `example.py` in the repository root, then run
+`python example.py` from the activated environment. Stop the HTTP server first
+if it uses the same GPU.
+
 ```python
-from vllm_rlt import LLM, SamplingParams
+from vllm_rlt import CacheConfig, LLM, SamplingParams
 
 llm = LLM(
-    "ByteDance/Ouro-1.4B",
-    device="cuda",
-    attention_backend="triton",
+    './artifacts/models/Ouro-1.4B',
+    device='cuda',
+    attention_backend='triton',
+    cache_config=CacheConfig(num_blocks=64),
 )
-
 outputs = llm.generate(
-    ["The capital of France is", "2 + 2 ="],
-    SamplingParams(
-        max_tokens=32,
-        temperature=0.0,
-        min_loops=2,
-        max_loops=4,
-        exit_threshold=0.7,
-    ),
+    ['The capital of France is', '2 + 2 ='],
+    SamplingParams(max_tokens=32, min_loops=2, max_loops=4, exit_threshold=0.7),
 )
-
 for output in outputs:
     print(output.text)
-    print("Exit depths:", output.exit_depths)
+    print('Exit depths:', output.exit_depths)
 ```
 
-The API accepts text prompts or token-ID lists and returns results in input
-order. Prompt prefill runs at full depth; the exit threshold controls subsequent
-decode. Set `exit_threshold=1.0` for fixed-depth execution. The first generated
-token comes from full-depth prefill, which is reflected in `exit_depths`.
+Results preserve input order. Prompt prefill runs at full depth; the exit
+threshold controls subsequent decode. Set `exit_threshold=1.0` for fixed-depth
+execution. The first generated token comes from full-depth prefill, reflected
+in `exit_depths`. For dynamic arrivals, stepwise output, and cancellation, see
+the [engine design](design.md).
 
-For dynamic arrivals and step-by-step output, use `llm.engine.add_request(...)`,
-`llm.engine.step()`, and `llm.engine.abort_request(...)`. See the
-[engine design](design.md) for the execution model.
+## Troubleshooting
 
-## HTTP serving
+| Symptom | What to check |
+| --- | --- |
+| `vllm-rlt-serve: command not found` | Activate `.venv` and rerun the editable install. The module entrypoint `python -m vllm_rlt.entrypoints.serve` uses the same server. |
+| `No module named vllm_rlt`, `aiohttp`, or `transformers` | Activate `.venv`, verify `sys.executable`, and rerun the editable install with `text,serve,triton`. |
+| CUDA check fails or reports a driver error | Check `nvidia-smi`, the PyTorch CUDA build, your allocation, and `CUDA_VISIBLE_DEVICES`. Return to step 3. |
+| Model download fails | Check access to Hugging Face and available disk space, then rerun step 4. An offline deployment needs a complete downloaded checkpoint and tokenizer. |
+| CUDA out of memory | Stop duplicate model processes you started, inspect free memory with `nvidia-smi`, and use the bounded short-prompt configuration in step 5. The weights and runtime still need sufficient free memory. |
+| `/health` gives 503 or connection refused | Check the server terminal. It may still be initializing or may have exited with an error. |
+| Port 8000 is already in use | Stop your old server or choose another `--port` and use it in all curl URLs. |
+| Request returns an unknown-model error | The JSON `model` must match `--served-model-name`: `ouro` in this guide. |
+| Request is rejected for KV capacity/context limits | Shorten the prompt/output or increase the KV budget for your workload. The first-run cache is intentionally small. |
+| Chat endpoint returns 404 | Use `/v1/completions` with a string `prompt`. |
 
-Start a resident model:
-
-```bash
-vllm-rlt-serve \
-  --model ByteDance/Ouro-1.4B \
-  --device cuda \
-  --attention-backend triton \
-  --host 127.0.0.1 \
-  --port 8000
-```
-
-Send a streaming completion request:
-
-```bash
-curl -N http://127.0.0.1:8000/v1/completions \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "model": "ByteDance/Ouro-1.4B",
-    "prompt": "The capital of France is",
-    "max_tokens": 32,
-    "temperature": 0,
-    "exit_threshold": 0.7,
-    "stream": true
-  }'
-```
-
-Concurrent requests share continuous engine batching. The server also exposes
-`GET /health` and `GET /v1/models`. It implements a bounded subset of the
-OpenAI completions API; chat completions are not implemented. See the
-[serving guide](serving.md) for supported fields, request limits, and
-benchmark client usage.
+When reporting a problem, include the failing command, server error, GPU model,
+PyTorch/CUDA versions from step 3, and your Git revision (`git rev-parse HEAD`).

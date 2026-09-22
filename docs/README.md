@@ -1,19 +1,20 @@
 # Documentation
 
-Start with the [installation](../README.md#getting-started) and
-[launch guide](launching.md), then explore the runtime and design references below.
+New users should follow the [first-run user guide](launching.md), from creating
+an environment to receiving the first generated response. The
+[README](../README.md#getting-started) provides a brief installation reference.
 
 | Guide | Topics |
 | --- | --- |
-| [Launch guide](launching.md) | Command-line inference, Python API, and HTTP server examples |
+| [First-run user guide](launching.md) | Environment setup, model download, server startup, first request, CLI, Python API, and troubleshooting |
 | [Engine design](design.md) | Model stages, scheduling, and KV ownership |
 | [Scheduler walkthrough](scheduler_walkthrough.md) | Responsibilities, admission cases, control flow, and refactoring checklist |
 | [KV layout examples](kv_layout_computation.md) | SHARED and LAST_EXITED semantics and worked attention examples |
 | [Runtime configuration](cdb_runtime.md) | Exit policies, KV layouts, execution options, and CUDA Graphs |
-| [Asynchronous scheduling](https://github.com/hsliuustc0106/vllm-lt/pull/30) | CPU/GPU pipelining and single-stream or multi-stream execution |
-| [FlashAttention](https://github.com/hsliuustc0106/vllm-lt/pull/30) | FA2/FA3/FA4 installation, hardware selection, and constraints |
-| [Cache and scheduling features](https://github.com/hsliuustc0106/vllm-lt/pull/31) | Prefix reuse, incremental KV, priorities, and preemption |
-| [Prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-lt/pull/31) | Single-host GPU worker pools and NIXL transfer |
+| [Asynchronous scheduling](https://github.com/hsliuustc0106/vllm-rlt/pull/30) | CPU/GPU pipelining and single-stream or multi-stream execution |
+| [FlashAttention](https://github.com/hsliuustc0106/vllm-rlt/pull/30) | FA2/FA3/FA4 installation, hardware selection, and constraints |
+| [Cache and scheduling features](https://github.com/hsliuustc0106/vllm-rlt/pull/31) | Prefix reuse, incremental KV, priorities, and preemption |
+| [Prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-rlt/pull/31) | Single-host GPU worker pools and NIXL transfer |
 | [HTTP serving](serving.md) | Completions API, streaming, and service lifecycle |
 | [Accuracy evaluation](accuracy.md) | GSM8K regression setup and comparison methodology |
 
