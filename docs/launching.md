@@ -36,7 +36,11 @@ cd vllm-rlt
 
 ```bash
 uv pip install -e .
+python -m vllm_rlt.entrypoints.serve --help
 ```
+
+The help command should display the server options, confirming that the
+current environment can import the server entrypoint. It does not start the server.
 
 This installs PyTorch, Transformers, the HTTP server dependencies, and Triton.
 The project requires **PyTorch 2.5 or newer**; it does not pin an exact version.
