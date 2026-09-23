@@ -48,7 +48,7 @@ class SpeculativeRunner:
             ids,
             [depth] * len(ids),
             positions,
-            packed_prefill=packed and getattr(self.cache.attention, "generation", None) == 4,
+            packed_prefill=packed and self.cache.attention_info.get("generation") == 4,
         )
         if self.graphs is not None:
             hidden, _ = self.graphs.run(hidden, batch)

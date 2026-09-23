@@ -124,7 +124,7 @@ class RecurrentGraphs:
         if packed:
             entry.metadata.cu_seqlens_q.copy_(batch.cu_seqlens_q)
         width = batch.block_tables.shape[1]
-        entry.metadata.block_tables[:, :width].copy_(batch.block_tables[:count])
+        entry.metadata.block_tables[:, :width].copy_(batch.block_tables)
         if key not in self.entries:
             # First-use capture is intentionally outside steady-state timing.
             # Drain outstanding streams: CUDA capture cannot race other launches.
