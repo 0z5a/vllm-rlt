@@ -12,6 +12,7 @@ from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace
 from vllm_rlt.worker.cuda_graph import RecurrentGraphs
+from vllm_rlt.worker.sampling import sample_logits
 
 
 @dataclass
@@ -600,19 +601,4 @@ class ModelRunner:
         return int(self._sample_tensor(logits, request).item())
 
     def _sample_tensor(self, logits: torch.Tensor, request: Request):
-        params = request.sampling_params
-        if params.temperature == 0:
-            return logits.argmax()
-        logits = logits.float() / params.temperature
-        if params.top_k > 0:
-            threshold = logits.topk(min(params.top_k, logits.numel())).values[-1]
-            logits = logits.masked_fill(logits < threshold, -torch.inf)
-        if params.top_p < 1:
-            sorted_logits, indices = logits.sort(descending=True)
-            remove = sorted_logits.softmax(-1).cumsum(-1) > params.top_p
-            remove[1:] = remove[:-1].clone()
-            remove[0] = False
-            logits = logits.scatter(0, indices, sorted_logits.masked_fill(remove, -torch.inf))
-        if request.generator is None:
-            request.generator = torch.Generator(device=self.device).manual_seed(params.seed)
-        return torch.multinomial(logits.softmax(-1), 1, generator=request.generator).squeeze(0)
+        return sample_logits(logits, request)

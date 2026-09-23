@@ -709,3 +709,49 @@ def test_http_trace_selection_and_concurrent_reuse(asynchronous):
             assert "trace exit mode" in (await response.json())["error"]["message"]
 
     asyncio.run(run())
+
+
+def test_speculative_http_and_stream_deliver_entire_committed_suffix():
+    from vllm_rlt import SpeculativeConfig
+
+    def load():
+        torch.manual_seed(123)
+        m = OuroForCausalLM(OuroConfig.tiny())
+
+        # Force full acceptance of a printable token so this test exercises
+        # multi-token chunks regardless of random tiny-model draft quality.
+        def coda(hidden):
+            logits = hidden.new_zeros((len(hidden), m.config.vocab_size))
+            logits[:, 5] = 1
+            return logits
+
+        m.coda = coda
+        return LLMEngine(m, speculative_config=SpeculativeConfig(4)), TinyTokenizer()
+
+    direct, tokenizer = load()
+    direct.add_request("r", tokenizer.encode("abc"), SamplingParams(max_tokens=12, ignore_eos=True))
+    expected = None
+    while direct.has_unfinished_requests():
+        for out in direct.step():
+            if out.finished:
+                expected = tokenizer.decode(out.token_ids)
+
+    async def run():
+        async with client_for(load, output_buffer=2) as (client, worker):
+            await until(lambda: worker.ready)
+            response = await client.post("/v1/completions", json=body(max_tokens=12))
+            result = await response.json()
+            assert response.status == 200
+            assert result["choices"][0]["text"] == expected
+            assert result["usage"]["completion_tokens"] == 12
+            response = await client.post(
+                "/v1/completions",
+                json=body(max_tokens=12, stream=True, stream_options={"include_usage": True}),
+            )
+            wire = await response.text()
+            frames = [json.loads(f.removeprefix("data: ")) for f in wire.strip().split("\n\n")[:-1]]
+            assert "".join(f["choices"][0]["text"] for f in frames if f["choices"]) == expected
+            assert frames[-1]["usage"]["completion_tokens"] == 12
+            assert worker.engine.speculative_runner.stats.accepted_tokens > 0
+
+    asyncio.run(run())

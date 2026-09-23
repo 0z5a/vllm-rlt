@@ -309,6 +309,26 @@ class KVCacheManager:
         )
         return True
 
+    def truncate_suffix(self, request_id: str, frontier: int) -> None:
+        """Invalidate an uncommitted suffix, retaining reserved physical pages.
+
+        Call only after all suffix users complete. Retaining pages preserves the
+        admission reservation; stale bytes are hidden by written/context lengths.
+        Shared prompt pages must never be truncated or subsequently overwritten.
+        """
+        allocation = self._get_allocation(request_id)
+        if type(frontier) is not int or not 0 <= frontier <= allocation.max_tokens:
+            raise ValueError("invalid KV truncation frontier")
+        if allocation.transfer_leases:
+            raise ValueError("cannot truncate KV during a transfer")
+        for table in allocation.block_tables:
+            if any(self._refs[b] > 1 for b in table[frontier // self.block_size :]):
+                raise ValueError("cannot truncate shared prefix pages")
+        for plane in allocation.written:
+            for written in plane:
+                written.prefix = min(written.prefix, frontier)
+                written.pending = {p for p in written.pending if p < frontier}
+
     def free(self, request_id: str) -> None:
         allocation = self._allocations.get(request_id)
         if allocation is not None and allocation.transfer_leases:

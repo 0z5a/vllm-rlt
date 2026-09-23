@@ -33,6 +33,8 @@ def main():
     parser.add_argument("--min-loops", type=int, default=2)
     parser.add_argument("--exit-threshold", type=float, default=1.0)
     parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--top-k", type=int, default=-1)
+    parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-num-seqs", type=int, default=8)
     parser.add_argument("--max-num-batched-tokens", type=int, default=128)
@@ -76,6 +78,8 @@ def main():
         min_loops=args.min_loops,
         exit_threshold=args.exit_threshold,
         temperature=args.temperature,
+        top_k=args.top_k,
+        top_p=args.top_p,
         seed=args.seed,
         ignore_eos=args.toy,
     )

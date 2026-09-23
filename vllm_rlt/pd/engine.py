@@ -70,7 +70,10 @@ class PDEngine:
         dtype="bfloat16",
         revision=None,
         seed=0,
+        speculative_config=None,
     ):
+        if speculative_config is not None:
+            raise ValueError("speculative decoding is not yet supported by PD")
         self.config = pd_config or PDConfig()
         self.exit_config = exit_config or ExitConfig("ouro_delayed")
         execution = execution_config or ExecutionConfig(async_scheduling=True)

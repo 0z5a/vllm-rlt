@@ -124,14 +124,20 @@ class EngineWorker:
                 tokens = self.tokenizer.encode(channel.spec.prompt)
                 options = {"trace_id": channel.spec.trace_id} if channel.spec.trace_id else {}
                 self.engine.add_request(request_id, tokens, channel.spec.params, **options)
-                self.decoders[request_id] = IncrementalText(self.tokenizer)
+                self.decoders[request_id] = (IncrementalText(self.tokenizer), 0)
             except ValueError as exc:
                 failures.append((request_id, ServingError.invalid_request(str(exc))))
         events = []
         for output in self.engine.step():
-            decoder = self.decoders[output.request_id]
+            decoder, delivered = self.decoders[output.request_id]
             try:
-                delta = decoder.decode(output.token_ids[-1], output.finished)
+                # A speculative round can commit several IDs. Decode every new
+                # ID once; one event per round keeps backpressure independent of K.
+                delta = "".join(
+                    decoder.decode(token, output.finished and index == len(output.token_ids) - 1)
+                    for index, token in enumerate(output.token_ids[delivered:], start=delivered)
+                )
+                self.decoders[output.request_id] = (decoder, len(output.token_ids))
             except ValueError as exc:
                 if not output.finished:
                     self.engine.abort_request(output.request_id)

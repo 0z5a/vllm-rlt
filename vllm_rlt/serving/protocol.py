@@ -129,7 +129,7 @@ class IncrementalText:
 
     Cleanup is disabled, matching the released tokenizer. Incomplete UTF-8
     prefixes are withheld until a later token completes them (or final flush).
-    Each sampled ID still produces an event even when its text delta is empty.
+    Each sampled ID is decoded once; the worker may combine several IDs into one event.
     """
 
     def __init__(self, tokenizer):

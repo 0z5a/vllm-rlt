@@ -5,10 +5,17 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig
+from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SpeculativeConfig
 
 
 def add_runtime_args(parser):
+    parser.add_argument(
+        "--speculative-tokens",
+        type=int,
+        help="Enable fixed-loop self-speculation with K draft tokens",
+    )
+    parser.add_argument("--draft-loops", type=int, default=2)
+    parser.add_argument("--target-loops", type=int, default=4)
     parser.add_argument("--enable-prefix-caching", action="store_true")
     parser.add_argument("--incremental-kv", action="store_true")
     parser.add_argument("--kv-watermark", type=float, default=0.0)
@@ -52,6 +59,13 @@ def runtime_configs(args):
     add_runtime_args(parser)
     args = SimpleNamespace(**(vars(parser.parse_args([])) | vars(args)))
     return dict(
+        speculative_config=SpeculativeConfig(
+            num_speculative_tokens=args.speculative_tokens,
+            draft_loops=args.draft_loops,
+            target_loops=args.target_loops,
+        )
+        if args.speculative_tokens is not None
+        else None,
         cache_config=CacheConfig(
             enable_prefix_caching=args.enable_prefix_caching,
             incremental_allocation=args.incremental_kv,

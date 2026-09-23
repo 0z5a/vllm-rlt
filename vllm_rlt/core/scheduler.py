@@ -5,14 +5,14 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from vllm_rlt.config import SchedulerConfig
-from vllm_rlt.core.scheduling_policy import NoRefillPolicy, RefillPolicy
+from vllm_rlt.core.scheduling_policy import NoRefillPolicy, RefillPolicy, SpeculativePolicy
 from vllm_rlt.request import FinishReason, Request, Stage
 
 
 @dataclass(frozen=True)
 class ScheduledItem:
     request: Request
-    # Used by prefill only; decode always schedules one position per request.
+    # PREFILL and SPECULATIVE use a contiguous span; ordinary decode uses one row.
     token_start: int = 0
     token_count: int = 1
 
@@ -57,9 +57,10 @@ class AdmissionPlan:
 
 
 class Scheduler:
-    def __init__(self, config: SchedulerConfig, cache_manager):
+    def __init__(self, config: SchedulerConfig, cache_manager, speculative_config=None):
         self.config = config
         self.cache_manager = cache_manager
+        self.speculative_config = speculative_config
         self.requests: dict[str, Request] = {}
         self.queues: dict[Stage, deque[str]] = {s: deque() for s in Stage}
         self.selected_request_ids: set[str] = set()
@@ -68,7 +69,7 @@ class Scheduler:
         self.preempt_callback = None
         self.resume_callback = None
         policy_cls = NoRefillPolicy if config.mode == "no_refill" else RefillPolicy
-        self.policy = policy_cls(config)
+        self.policy = (SpeculativePolicy if speculative_config else policy_cls)(config)
 
     def add_request(self, request: Request):
         if request.request_id in self.requests:
@@ -297,6 +298,12 @@ class Scheduler:
                 token_budget, self.config.prefill_chunk_size, len(request.prompt_token_ids) - start
             )
             return ScheduledItem(request, start, count)
+        if stage == Stage.SPECULATIVE:
+            # K candidates plus one bonus distribution. At the output limit,
+            # K=0 is an ordinary fixed-depth step and needs no extra KV slot.
+            remaining = request.sampling_params.max_tokens - len(request.generated_token_ids)
+            count = min(self.speculative_config.num_speculative_tokens + 1, remaining, token_budget)
+            return ScheduledItem(request, request.position, count)
         return ScheduledItem(request)
 
     def _ensure_execution_capacity(self, request: Request, frontier: int) -> bool:
@@ -329,10 +336,10 @@ class Scheduler:
             remaining -= 1
             request = self.requests[queue.popleft()]
             item = self._make_scheduled_item(request, stage, token_budget)
-            if stage in (Stage.PREFILL, Stage.PRELUDE, Stage.RECURRENT):
+            if stage in (Stage.PREFILL, Stage.PRELUDE, Stage.RECURRENT, Stage.SPECULATIVE):
                 frontier = (
                     item.token_start + item.token_count
-                    if stage == Stage.PREFILL
+                    if stage in (Stage.PREFILL, Stage.SPECULATIVE)
                     else request.position + 1
                 )
                 if not self._ensure_execution_capacity(request, frontier):
