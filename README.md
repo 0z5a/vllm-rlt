@@ -220,7 +220,6 @@ can help identify a useful starting point.
 
 You can also scan the QR code below with WeChat to join the vllm-rlt developer
 group and discuss usage and development.
-欢迎扫码加入 vllm-rlt 开发者交流群，交流使用经验与开发进展。
 
 <p align="center">
   <a href="docs/assets/wechat-group-qrcode.jpg">
