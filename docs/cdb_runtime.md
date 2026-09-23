@@ -69,7 +69,6 @@ from vllm_rlt import LLM, SamplingParams, SpeculativeConfig
 llm = LLM(
     "../models/Ouro-1.4B",
     device="cuda",
-    dtype="bfloat16",
     attention_backend="flash_attn_4",
     speculative_config=SpeculativeConfig(
         num_speculative_tokens=4, draft_loops=2, target_loops=4,
