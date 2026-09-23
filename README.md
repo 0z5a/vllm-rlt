@@ -218,6 +218,15 @@ For larger changes, start a discussion in an issue so we can work through the
 design together. If you are new to the codebase, tell us what interests you—we
 can help identify a useful starting point.
 
+You can also scan the QR code below with WeChat to join the vllm-rlt developer
+group and discuss usage and development.
+
+<p align="center">
+  <a href="docs/assets/wechat-group-qrcode.jpg">
+    <img src="docs/assets/wechat-group-qrcode.jpg" alt="vllm-rlt WeChat developer group QR code / 微信开发者交流群二维码" width="320">
+  </a>
+</p>
+
 ## Acknowledgments
 
 vllm-rlt builds on the published Ouro architecture and the ideas in
