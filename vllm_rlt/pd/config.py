@@ -25,22 +25,29 @@ class PDConfig:
             raise ValueError("PD requires nonempty prefill and decode device pools")
         if any(type(d) is not int or d < 0 for d in devices) or len(set(devices)) != len(devices):
             raise ValueError("PD devices must be distinct nonnegative CUDA device indices")
-        for name in ("max_receiving_requests", "max_draining_requests"):
-            if type(getattr(self, name)) is not int or getattr(self, name) < 0:
-                raise ValueError(f"{name} must be a nonnegative integer")
-        for name in (
-            "max_pending_requests",
-            "transfer_chunk_bytes",
-            "max_inflight_bytes",
-            "max_transfer_descriptors",
-            "max_control_messages",
+        for name, value in (
+            ("max_receiving_requests", self.max_receiving_requests),
+            ("max_draining_requests", self.max_draining_requests),
         ):
-            if type(getattr(self, name)) is not int or getattr(self, name) < 1:
+            if type(value) is not int or value < 0:
+                raise ValueError(f"{name} must be a nonnegative integer")
+        for name, value in (
+            ("max_pending_requests", self.max_pending_requests),
+            ("transfer_chunk_bytes", self.transfer_chunk_bytes),
+            ("max_inflight_bytes", self.max_inflight_bytes),
+            ("max_transfer_descriptors", self.max_transfer_descriptors),
+            ("max_control_messages", self.max_control_messages),
+        ):
+            if type(value) is not int or value < 1:
                 raise ValueError(f"{name} must be a positive integer")
         if self.transfer_chunk_bytes > self.max_inflight_bytes:
             raise ValueError("transfer_chunk_bytes exceeds max_inflight_bytes")
-        for name in ("startup_timeout", "request_timeout", "shutdown_timeout"):
-            if not math.isfinite(getattr(self, name)) or getattr(self, name) <= 0:
+        for name, value in (
+            ("startup_timeout", self.startup_timeout),
+            ("request_timeout", self.request_timeout),
+            ("shutdown_timeout", self.shutdown_timeout),
+        ):
+            if not math.isfinite(value) or value <= 0:
                 raise ValueError(f"{name} must be positive and finite")
         if not self.backend:
             raise ValueError("NIXL backend must be specified")

@@ -147,8 +147,9 @@ class PDEngine:
                     peers=[p.info["info"] for p in self.peers.values() if p.role != peer.role],
                 )
             self._wait(lambda: all(p.connected for p in self.peers.values()), deadline)
-        except BaseException:
-            self._terminate()
+        except BaseException as error:
+            if not self._quiesce():
+                error.add_note("PD workers remain alive with registered memory quarantined")
             raise
 
     def _send(self, destination, kind, **fields):
@@ -439,24 +440,48 @@ class PDEngine:
             return outputs
         except BaseException as error:
             self.failure = str(error)
-            self._terminate()
+            if not self._quiesce():
+                error.add_note("PD workers remain alive with registered memory quarantined")
             raise
 
-    def _terminate(self):
-        # Fail closed: stop all remote writers before destroying receive pools.
+    def _quiesce(self):
+        # Drain P writers before D receivers can release registered memory.
+        self.closed = True
         for role in ("prefill", "decode"):
             selected = [p for p in self.peers.values() if p.role == role]
+            for peer in selected:
+                if peer.process.is_alive() and not peer.stopped:
+                    try:
+                        self._send(peer.name, "quiesce")
+                    except (BrokenPipeError, OSError):
+                        if peer.process.is_alive():
+                            return False
+            deadline = time.monotonic() + self.config.shutdown_timeout
+            while any(p.process.is_alive() and not p.stopped for p in selected):
+                for peer in self.peers.values():
+                    if peer.stopped:
+                        continue
+                    for _ in range(self.config.max_control_messages):
+                        if not peer.channel.poll():
+                            break
+                        try:
+                            message = peer.channel.recv()
+                        except EOFError:
+                            break
+                        if message["kind"] == "stopped":
+                            peer.stopped = True
+                            self.worker_metrics[peer.name] = message
+                if time.monotonic() >= deadline:
+                    return False
+                time.sleep(0.001)
             for p in selected:
+                p.process.join(max(0, deadline - time.monotonic()))
                 if p.process.is_alive():
-                    p.process.terminate()
-            for p in selected:
-                p.process.join(5)
-                if p.process.is_alive():
-                    p.process.kill()
-                    p.process.join(5)
+                    return False
+                p.stopped = True
                 p.channel.close()
         self.cache_manager.num_used_blocks = 0
-        self.closed = True
+        return True
 
     def close(self):
         if self.closed:
@@ -475,8 +500,9 @@ class PDEngine:
                     raise TimeoutError("PD worker did not exit")
                 peer.channel.close()
             self.closed = True
-        except BaseException:
-            self._terminate()
+        except BaseException as error:
+            if not self._quiesce():
+                error.add_note("PD workers remain alive with registered memory quarantined")
             raise
 
     def __enter__(self):

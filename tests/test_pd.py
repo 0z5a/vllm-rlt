@@ -243,10 +243,11 @@ def test_pd_multiple_workers_and_peer_failure():
         e.add_request("fail", [1] * 20, params, trace_id="t")
         e.step()
         peer = next(p for p in e.peers.values() if p.role == "prefill")
-        peer.process.kill()
-        peer.process.join()
-        with pytest.raises(RuntimeError):
-            e.step()
+        e._send(peer.name, "invalid")
+        with pytest.raises(RuntimeError, match="unknown PD command"):
+            deadline = time.monotonic() + 90
+            while time.monotonic() < deadline:
+                e.step()
         assert e.closed and all(not p.process.is_alive() for p in e.peers.values())
 
 
