@@ -45,10 +45,8 @@ class LLMEngine:
                 raise ValueError(
                     "speculative decoding currently requires synchronous eager execution"
                 )
-            if scheduler_config.enable_preemption or scheduler_config.mode != "refill":
-                raise ValueError(
-                    "speculative decoding requires refill scheduling without preemption"
-                )
+            if scheduler_config.mode != "refill":
+                raise ValueError("speculative decoding requires refill scheduling")
             # Retained q distributions and sampling scratch coexist with target
             # logits. Reserve beyond ordinary prefill/core profiling, even when
             # requests later choose sampling rather than greedy.

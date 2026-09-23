@@ -303,7 +303,6 @@ def test_probability_filters_match_expected_and_keep_boundary_ties():
         dict(cache_config=CacheConfig(layout="shared")),
         dict(execution_config=ExecutionConfig(async_scheduling=True)),
         dict(execution_config=ExecutionConfig(cuda_graphs=True)),
-        dict(scheduler_config=SchedulerConfig(enable_preemption=True)),
         dict(scheduler_config=SchedulerConfig(mode="no_refill")),
     ],
 )
@@ -340,6 +339,42 @@ def test_dynamic_arrival_budget_and_failure_reclamation(monkeypatch):
             e.step()
     for rid in list(e.scheduler.requests):
         e.abort_request(rid)
+    assert e.cache_manager.num_used_blocks == 0
+
+
+def test_priority_preempts_only_between_speculative_rounds_and_resumes():
+    m = model()
+    prompts = {"low": [2, 3, 4], "high": [7, 8, 9]}
+    params = {
+        "low": SamplingParams(max_tokens=10, ignore_eos=True, priority=10),
+        "high": SamplingParams(max_tokens=7, ignore_eos=True, priority=0),
+    }
+    expected = {rid: LLM(m).generate([prompt], params[rid])[0] for rid, prompt in prompts.items()}
+    e = engine(
+        m,
+        k=3,
+        cache_config=CacheConfig(64, 2, incremental_allocation=True),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=1,
+            max_num_batched_tokens=4,
+            prefill_chunk_size=2,
+            policy="priority",
+            enable_preemption=True,
+        ),
+    )
+    e.add_request("low", prompts["low"], params["low"])
+    while len(e.scheduler.requests["low"].generated_token_ids) < 2:
+        e.step()
+    e.add_request("high", prompts["high"], params["high"])
+    actual = drain(e)
+    assert e.preemption.preemptions > 0
+    assert e.preemption.resumptions > 0
+    assert {rid: out.token_ids for rid, out in actual.items()} == {
+        rid: out.token_ids for rid, out in expected.items()
+    }
+    assert {rid: out.exit_depths for rid, out in actual.items()} == {
+        rid: out.exit_depths for rid, out in expected.items()
+    }
     assert e.cache_manager.num_used_blocks == 0
 
 

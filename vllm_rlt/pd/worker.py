@@ -47,7 +47,11 @@ class PDWorker:
         torch.cuda.set_device(device)
         torch.manual_seed(options["seed"])
         self.role, self.channel, self.config = role, channel, pd_config
-        dtype = getattr(torch, options["dtype"])
+        dtype = {
+            "float32": torch.float32,
+            "float16": torch.float16,
+            "bfloat16": torch.bfloat16,
+        }[options["dtype"]]
         self.model = (
             OuroForCausalLM(model_source).to(device=f"cuda:{device}", dtype=dtype)
             if isinstance(model_source, OuroConfig)
@@ -204,6 +208,8 @@ class PDWorker:
             if self.work or self.connector.pending:
                 raise RuntimeError("stop requested before PD requests drained")
             self.running = False
+        elif kind == "quiesce":
+            self.running = False
         else:
             raise ValueError(f"unknown PD command {kind}")
 
@@ -348,6 +354,8 @@ class PDWorker:
                 if not self.channel.poll():
                     break
                 self.command(self.channel.recv())
+            if not self.running:
+                break
             self.progress()
             if self.role == "prefill":
                 self.prefill_step()
@@ -360,7 +368,13 @@ class PDWorker:
                         self.send("released", tid=w.tid, role=self.role)
             if not self.work and not self.channel.poll():
                 time.sleep(0.001)
+        self.shutdown()
+
+    def shutdown(self):
         self.engine.model_runner.synchronize()
+        while self.connector.pending:
+            self.connector.poll()
+            time.sleep(0.001)
         self.connector.close()
         self.send(
             "stopped",
@@ -373,19 +387,27 @@ class PDWorker:
 
 
 def worker_main(role, device, name, channel, model_source, options, pd_config):
-    # Keep owner reachable on fatal errors. The coordinator terminates senders
-    # before receivers; no failed receiver reuses a potentially writable page.
+    # Keep registered memory until the coordinator drains writers before receivers.
     owner = None
     try:
         owner = PDWorker(role, device, name, channel, model_source, options, pd_config)
         owner.run()
     except BaseException:
-        try:
-            channel.send(dict(kind="fatal", error=traceback.format_exc(), pid=os.getpid()))
+        channel.send(dict(kind="fatal", error=traceback.format_exc(), pid=os.getpid()))
+        if owner is not None:
             while True:
-                time.sleep(1)
-        except (BrokenPipeError, EOFError):
-            pass
+                try:
+                    command = channel.recv()
+                except EOFError:
+                    while True:
+                        time.sleep(60)
+                if command["kind"] == "quiesce":
+                    try:
+                        owner.shutdown()
+                    except BaseException:
+                        while True:
+                            time.sleep(60)
+                    break
         raise
     finally:
         channel.close()

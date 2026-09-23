@@ -2,11 +2,19 @@
 
 import time
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 import torch
 
-from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
+from vllm_rlt import (
+    CacheConfig,
+    ExecutionConfig,
+    ExitConfig,
+    SamplingParams,
+    SchedulerConfig,
+    SpeculativeConfig,
+)
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
@@ -96,6 +104,71 @@ def test_pd_configuration_validation(options):
         PDConfig(**options)
 
 
+def test_speculative_pd_rejects_incompatible_modes_before_workers_start():
+    from vllm_rlt.pd.engine import PDEngine
+
+    with pytest.raises(ValueError, match="fixed-depth refill"):
+        PDEngine(
+            OuroConfig.tiny(),
+            speculative_config=SpeculativeConfig(3),
+            exit_config=ExitConfig("ouro_delayed"),
+        )
+    with pytest.raises(ValueError, match="CUDA graphs"):
+        PDEngine(
+            OuroConfig.tiny(),
+            speculative_config=SpeculativeConfig(3),
+            execution_config=ExecutionConfig(cuda_graphs=True),
+        )
+
+
+def test_pd_quiesce_after_unready_prefill_exit_drains_decode():
+    from vllm_rlt.pd.engine import PDEngine, Peer
+
+    sent = []
+
+    class Process:
+        def __init__(self, alive):
+            self.alive = alive
+
+        def is_alive(self):
+            return self.alive
+
+        def join(self, timeout):
+            assert timeout >= 0
+
+    class Channel:
+        def __init__(self, name, process):
+            self.name, self.process = name, process
+            self.messages = []
+
+        def send(self, message):
+            sent.append((self.name, message["kind"]))
+            self.messages.append({"kind": "stopped"})
+
+        def poll(self):
+            return bool(self.messages)
+
+        def recv(self):
+            self.process.alive = False
+            return self.messages.pop()
+
+        def close(self):
+            pass
+
+    prefill, decode = Process(False), Process(True)
+    e = object.__new__(PDEngine)
+    e.config = PDConfig(shutdown_timeout=1)
+    e.peers = {
+        "p": Peer("p", "prefill", prefill, Channel("p", prefill)),
+        "d": Peer("d", "decode", decode, Channel("d", decode)),
+    }
+    e.worker_metrics = {}
+    e.cache_manager = SimpleNamespace(num_used_blocks=1)
+    assert e._quiesce()
+    assert sent == [("d", "quiesce")]
+    assert e.cache_manager.num_used_blocks == 0
+
+
 def drain(engine):
     outputs = {}
     deadline = time.monotonic() + 90
@@ -140,6 +213,47 @@ def create_pd(*, graph=False, layout="last_exited", multi=False):
         attention_backend="triton",
         seed=123,
     )
+
+
+@pytest.mark.gpu
+def test_pd_speculative_decode_matches_local_full_depth():
+    pytest.importorskip("nixl")
+    from vllm_rlt.pd.engine import PDEngine
+
+    if torch.cuda.device_count() < 2:
+        pytest.skip("requires two visible GPUs")
+    config = replace(OuroConfig.tiny(), head_dim=64)
+    spec = SpeculativeConfig(3)
+    prompts = [[1, 2, 3, 4, 5], [7, 6, 5]]
+    params = SamplingParams(max_tokens=9, min_loops=4, max_loops=4, ignore_eos=True)
+    with PDEngine(
+        config,
+        pd_config=PDConfig(
+            prefill_devices=(0,), decode_devices=(1,), request_timeout=90, startup_timeout=90
+        ),
+        prefill_cache_config=CacheConfig(128, 4),
+        decode_cache_config=CacheConfig(128, 4),
+        prefill_scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
+        decode_scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
+        attention_backend="triton",
+        speculative_config=spec,
+        seed=123,
+    ) as pd:
+        torch.manual_seed(123)
+        model = OuroForCausalLM(config).to("cuda:0", torch.bfloat16)
+        local = LLMEngine(
+            model,
+            cache_config=CacheConfig(128, 4),
+            scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
+            attention_backend="triton",
+            speculative_config=spec,
+        )
+        for index, prompt in enumerate(prompts):
+            pd.add_request(str(index), prompt, params)
+            local.add_request(str(index), prompt, params)
+        assert drain(pd) == drain(local)
+        assert pd.cache_manager.num_used_blocks == 0
+    assert all(m["used_blocks"] == 0 for m in pd.worker_metrics.values())
 
 
 @pytest.mark.gpu

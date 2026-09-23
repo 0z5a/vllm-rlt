@@ -72,10 +72,11 @@ class PDEngine:
         seed=0,
         speculative_config=None,
     ):
-        if speculative_config is not None:
-            raise ValueError("speculative decoding is not yet supported by PD")
         self.config = pd_config or PDConfig()
-        self.exit_config = exit_config or ExitConfig("ouro_delayed")
+        self.speculative_config = speculative_config
+        self.exit_config = exit_config or ExitConfig(
+            "ouro" if speculative_config is not None else "ouro_delayed"
+        )
         execution = execution_config or ExecutionConfig(async_scheduling=True)
         p_scheduler = prefill_scheduler_config or SchedulerConfig(
             max_num_seqs=8, max_num_batched_tokens=2048, prefill_chunk_size=2048
@@ -83,6 +84,11 @@ class PDEngine:
         d_scheduler = decode_scheduler_config or SchedulerConfig(
             max_num_seqs=128, max_num_batched_tokens=128
         )
+        if speculative_config is not None:
+            if self.exit_config.mode != "ouro" or d_scheduler.mode != "refill":
+                raise ValueError("speculative PD requires fixed-depth refill decoding")
+            if execution.cuda_graphs:
+                raise ValueError("speculative PD CUDA graphs are not supported")
         p_cache = prefill_cache_config or CacheConfig()
         d_cache = decode_cache_config or CacheConfig()
         if (p_cache.layout, p_cache.block_size) != (d_cache.layout, d_cache.block_size):
@@ -110,6 +116,11 @@ class PDEngine:
                 for device in devices:
                     name = f"{epoch}-{role}-{device}"
                     parent, child = context.Pipe()
+                    worker_execution = (
+                        replace(execution, cuda_graphs=False) if role == "prefill" else execution
+                    )
+                    if speculative_config is not None:
+                        worker_execution = replace(worker_execution, async_scheduling=False)
                     options = dict(
                         dtype=dtype,
                         revision=revision,
@@ -118,12 +129,9 @@ class PDEngine:
                             cache_config=cache,
                             scheduler_config=scheduler,
                             exit_config=self.exit_config,
-                            execution_config=(
-                                replace(execution, cuda_graphs=False)
-                                if role == "prefill"
-                                else execution
-                            ),
+                            execution_config=worker_execution,
                             attention_backend=attention_backend,
+                            speculative_config=(speculative_config if role == "decode" else None),
                         ),
                     )
                     process = context.Process(
@@ -149,8 +157,9 @@ class PDEngine:
                     peers=[p.info["info"] for p in self.peers.values() if p.role != peer.role],
                 )
             self._wait(lambda: all(p.connected for p in self.peers.values()), deadline)
-        except BaseException:
-            self._terminate()
+        except BaseException as error:
+            if not self._quiesce():
+                error.add_note("PD workers remain alive with registered memory quarantined")
             raise
 
     def _send(self, destination, kind, **fields):
@@ -294,6 +303,10 @@ class PDEngine:
         maximum = params.max_loops or cfg.total_ut_steps
         if maximum > cfg.total_ut_steps or params.min_loops > maximum:
             raise ValueError("requested loop bounds exceed model depth")
+        if self.speculative_config is not None and (
+            maximum != self.speculative_config.target_loops or params.exit_threshold != 1.0
+        ):
+            raise ValueError("speculative PD requests require fixed target depth")
         if len(prompt_token_ids) + params.max_tokens - 1 > cfg.max_position_embeddings:
             raise ValueError("prompt plus decode exceeds context capacity")
         if trace_id is not None and (not isinstance(trace_id, str) or not trace_id):
@@ -420,24 +433,49 @@ class PDEngine:
             return outputs
         except BaseException as error:
             self.failure = str(error)
-            self._terminate()
+            if not self._quiesce():
+                error.add_note("PD workers remain alive with registered memory quarantined")
             raise
 
-    def _terminate(self):
-        # Fail closed: stop all remote writers before destroying receive pools.
+    def _quiesce(self):
+        # Stop P writers and drain their posted transfers before D releases pages.
+        self.closed = True
         for role in ("prefill", "decode"):
             selected = [p for p in self.peers.values() if p.role == role]
             for p in selected:
-                if p.process.is_alive():
-                    p.process.terminate()
+                if not p.process.is_alive() and not p.connected:
+                    # Startup never admitted work, so this peer has no remote DMA.
+                    p.stopped = True
+                if p.process.is_alive() and not p.stopped:
+                    try:
+                        self._send(p.name, "quiesce")
+                    except (BrokenPipeError, OSError):
+                        return False
+            deadline = time.monotonic() + self.config.shutdown_timeout
+            while any(p.process.is_alive() and not p.stopped for p in selected):
+                for p in selected:
+                    if p.stopped:
+                        continue
+                    while p.channel.poll():
+                        try:
+                            message = p.channel.recv()
+                        except EOFError:
+                            break
+                        if message["kind"] == "stopped":
+                            p.stopped = True
+                            self.worker_metrics[p.name] = message
+                if time.monotonic() >= deadline:
+                    return False
+                time.sleep(0.001)
             for p in selected:
-                p.process.join(5)
+                if not p.stopped:
+                    return False
+                p.process.join(max(0, deadline - time.monotonic()))
                 if p.process.is_alive():
-                    p.process.kill()
-                    p.process.join(5)
+                    return False
                 p.channel.close()
         self.cache_manager.num_used_blocks = 0
-        self.closed = True
+        return True
 
     def close(self):
         if self.closed:
@@ -456,8 +494,9 @@ class PDEngine:
                     raise TimeoutError("PD worker did not exit")
                 peer.channel.close()
             self.closed = True
-        except BaseException:
-            self._terminate()
+        except BaseException as error:
+            if not self._quiesce():
+                error.add_note("PD workers remain alive with registered memory quarantined")
             raise
 
     def __enter__(self):
