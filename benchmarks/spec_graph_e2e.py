@@ -68,9 +68,10 @@ def main():
     params = SamplingParams(max_tokens=args.max_tokens, min_loops=4, max_loops=4, ignore_eos=True)
     rows = []
     for name, prompts in workloads.items():
-        warmup = {graph: timed(engines[graph], prompts, params)[0] for graph in (False, True)}
-        if warmup[False] != warmup[True]:
-            raise AssertionError(f"{name}: graph warmup output mismatch")
+        for _ in range(3):
+            warmup = {graph: timed(engines[graph], prompts, params)[0] for graph in (False, True)}
+            if warmup[False] != warmup[True]:
+                raise AssertionError(f"{name}: graph warmup output mismatch")
         for trial in range(args.repeats):
             pair = {}
             for graph in (False, True) if trial % 2 == 0 else (True, False):
@@ -132,7 +133,7 @@ def main():
         "# Ouro-1.4B speculative CUDA Graph E2E\n\n"
         f"{torch.cuda.get_device_name(0)}; BF16, Triton, d=2/D=4, K=4, "
         f"{args.max_tokens} output tokens. One resident model, separate engine state, "
-        f"one warmup per arm, {args.repeats} alternating paired trials. "
+        f"three warmups per arm, {args.repeats} alternating paired trials. "
         "Timings include prefill, draft, verification, coda and KV commit. "
         "Every paired output token and exit depth matched.\n\n"
         + "\n".join(table)
