@@ -218,9 +218,8 @@ For larger changes, start a discussion in an issue so we can work through the
 design together. If you are new to the codebase, tell us what interests you—we
 can help identify a useful starting point.
 
-### WeChat developer group / 微信开发者交流群
-
-Scan the QR code below with WeChat to join the vllm-rlt developer group.
+You can also scan the QR code below with WeChat to join the vllm-rlt developer
+group and discuss usage and development.
 欢迎扫码加入 vllm-rlt 开发者交流群，交流使用经验与开发进展。
 
 <p align="center">
