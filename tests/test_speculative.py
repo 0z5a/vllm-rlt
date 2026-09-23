@@ -342,14 +342,27 @@ def test_dynamic_arrival_budget_and_failure_reclamation(monkeypatch):
     assert e.cache_manager.num_used_blocks == 0
 
 
-def test_priority_preempts_only_between_speculative_rounds_and_resumes():
-    m = model()
+@pytest.mark.parametrize(
+    "device,backend",
+    [("cpu", "torch"), pytest.param("cuda", "triton", marks=pytest.mark.gpu)],
+)
+def test_priority_preempts_only_between_speculative_rounds_and_resumes(device, backend):
+    m = (
+        model()
+        if device == "cpu"
+        else OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+            "cuda", torch.bfloat16
+        )
+    )
     prompts = {"low": [2, 3, 4], "high": [7, 8, 9]}
     params = {
         "low": SamplingParams(max_tokens=10, ignore_eos=True, priority=10),
         "high": SamplingParams(max_tokens=7, ignore_eos=True, priority=0),
     }
-    expected = {rid: LLM(m).generate([prompt], params[rid])[0] for rid, prompt in prompts.items()}
+    expected = {
+        rid: LLM(m, attention_backend=backend).generate([prompt], params[rid])[0]
+        for rid, prompt in prompts.items()
+    }
     e = engine(
         m,
         k=3,
@@ -361,6 +374,7 @@ def test_priority_preempts_only_between_speculative_rounds_and_resumes():
             policy="priority",
             enable_preemption=True,
         ),
+        attention_backend=backend,
     )
     e.add_request("low", prompts["low"], params["low"])
     while len(e.scheduler.requests["low"].generated_token_ids) < 2:
