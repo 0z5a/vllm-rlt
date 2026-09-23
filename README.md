@@ -218,6 +218,20 @@ For larger changes, start a discussion in an issue so we can work through the
 design together. If you are new to the codebase, tell us what interests you—we
 can help identify a useful starting point.
 
+### WeChat developer group / 微信开发者交流群
+
+Scan the QR code below with WeChat to join the vllm-rlt developer group.
+欢迎扫码加入 vllm-rlt 开发者交流群，交流使用经验与开发进展。
+
+<p align="center">
+  <a href="docs/assets/wechat-group-qrcode.jpg">
+    <img src="docs/assets/wechat-group-qrcode.jpg" alt="vllm-rlt WeChat developer group QR code / 微信开发者交流群二维码" width="320">
+  </a>
+</p>
+
+The QR code is valid until September 30, 2026. If it has expired, please
+[open an issue](https://github.com/ThinkFlowLab/vllm-rlt/issues/new) to request an updated code.
+
 ## Acknowledgments
 
 vllm-rlt builds on the published Ouro architecture and the ideas in
