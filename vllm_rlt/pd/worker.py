@@ -327,13 +327,19 @@ class PDWorker:
             elif not w.cancelled and not w.active and w.expected is not None:
                 if any(seq >= w.expected for seq in w.received):
                     raise RuntimeError("unexpected transfer sequence")
-                if (
-                    len(w.received) == w.expected
-                    and sum(
+                if len(w.received) == w.expected:
+                    active = sum(
                         x.active and x.request.stage != Stage.WAITING for x in self.work.values()
                     )
-                    < self.active_limit
-                ):
+                    room = active < self.active_limit
+                    if (
+                        not room
+                        and self.engine.scheduler.config.policy == "priority"
+                        and self.engine.scheduler.config.enable_preemption
+                    ):
+                        room = self.engine.preemption.preempt(w.request, priority_only=True)
+                    if not room:
+                        continue
                     self.cache.mark_imported_prefix(
                         w.tid, len(w.request.prompt_token_ids), start=w.cached_tokens
                     )
@@ -383,6 +389,8 @@ class PDWorker:
             transfers=self.connector.transfers,
             transfer_seconds=self.connector.transfer_seconds,
             used_blocks=self.cache.num_used_blocks,
+            preemptions=self.engine.preemption.preemptions,
+            resumptions=self.engine.preemption.resumptions,
         )
 
 

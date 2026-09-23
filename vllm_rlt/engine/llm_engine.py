@@ -213,9 +213,11 @@ class LLMEngine:
             return []
         try:
             if batch.stage == Stage.SPECULATIVE:
-                return self._update_speculative(batch, self.speculative_runner.execute(batch))
-            result = self.model_runner.execute(batch)
-            return self._update(batch, result)
+                outputs = self._update_speculative(batch, self.speculative_runner.execute(batch))
+            else:
+                outputs = self._update(batch, self.model_runner.execute(batch))
+            self.scheduler.selected_request_ids.clear()
+            return outputs
         except Exception:
             # A failed execution may have partially written KV; invalidate the affected requests.
             for item in batch.items:

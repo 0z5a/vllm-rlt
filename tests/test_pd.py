@@ -257,6 +257,63 @@ def test_pd_speculative_decode_matches_local_full_depth():
 
 
 @pytest.mark.gpu
+def test_pd_speculative_priority_preempts_after_handoff():
+    pytest.importorskip("nixl")
+    from vllm_rlt import LLM
+    from vllm_rlt.pd.engine import PDEngine
+
+    if torch.cuda.device_count() < 2:
+        pytest.skip("requires two visible GPUs")
+    config = replace(OuroConfig.tiny(), head_dim=64, max_position_embeddings=512)
+    spec = SpeculativeConfig(3)
+    prompts = {"low": [1, 2, 3, 4, 5], "high": [7, 6, 5]}
+    params = {
+        "low": SamplingParams(
+            max_tokens=256, min_loops=4, max_loops=4, ignore_eos=True, priority=10
+        ),
+        "high": SamplingParams(max_tokens=7, min_loops=4, max_loops=4, ignore_eos=True),
+    }
+    with PDEngine(
+        config,
+        pd_config=PDConfig(
+            prefill_devices=(0,), decode_devices=(1,), request_timeout=90, startup_timeout=90
+        ),
+        prefill_cache_config=CacheConfig(512, 4),
+        decode_cache_config=CacheConfig(512, 4),
+        prefill_scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
+        decode_scheduler_config=SchedulerConfig(
+            max_num_seqs=1,
+            max_num_batched_tokens=4,
+            policy="priority",
+            enable_preemption=True,
+        ),
+        attention_backend="triton",
+        speculative_config=spec,
+        seed=123,
+    ) as pd:
+        pd.add_request("low", prompts["low"], params["low"])
+        deadline = time.monotonic() + 90
+        while len(pd.requests["low"].generated_token_ids) < 1:
+            pd.step()
+            assert time.monotonic() < deadline
+        pd.add_request("high", prompts["high"], params["high"])
+        actual = drain(pd)
+        assert pd.cache_manager.num_used_blocks == 0
+    decode = [m for name, m in pd.worker_metrics.items() if "decode" in name]
+    assert len(decode) == 1
+    assert decode[0]["preemptions"] > 0, list(pd.metrics)
+    assert decode[0]["resumptions"] > 0
+
+    torch.manual_seed(123)
+    model = OuroForCausalLM(config).to("cuda:0", torch.bfloat16)
+    reference = LLM(model, attention_backend="triton", speculative_config=spec)
+    for request_id, prompt in prompts.items():
+        expected = reference.generate([prompt], params[request_id])[0]
+        assert actual[request_id].token_ids == expected.token_ids
+        assert actual[request_id].exit_depths == expected.exit_depths
+
+
+@pytest.mark.gpu
 @pytest.mark.parametrize(
     "graph,layout", [(False, "last_exited"), (True, "last_exited"), (False, "shared")]
 )
