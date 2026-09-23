@@ -48,6 +48,8 @@ class _Allocation:
     written: list[list[_WrittenPositions]]
     transfer_leases: set[str] = field(default_factory=set)
     release_requested: bool = False
+    fork_source: object = None
+    fork_length: int = 0
 
 
 @dataclass(frozen=True, eq=False)
@@ -308,6 +310,60 @@ class KVCacheManager:
             for d, t in enumerate(allocation.block_tables)
         )
         return True
+
+    @torch.no_grad()
+    def fork_prefix(self, source_id: str, fork_id: str, length: int, max_tokens: int) -> bool:
+        """Borrow complete prefix pages and copy a partial boundary page."""
+        if self.layout != "last_exited":
+            raise ValueError("speculative forks require last_exited KV")
+        source = self._get_allocation(source_id)
+        if not 0 < length < max_tokens <= source.max_tokens:
+            raise ValueError("invalid speculative KV range")
+        if any(w.prefix != length or w.pending for plane in source.written for w in plane):
+            raise RuntimeError("source KV is not committed at the fork boundary")
+        pages, remainder = divmod(length, self.block_size)
+        prefix = tuple(tuple(table[page] for table in source.block_tables) for page in range(pages))
+        if not self.allocate(fork_id, max_tokens, initial_tokens=max_tokens, prefix=prefix):
+            return False
+        fork = self._get_allocation(fork_id)
+        if remainder:
+            for source_table, fork_table in zip(source.block_tables, fork.block_tables):
+                old, new = source_table[pages], fork_table[pages]
+                self.key_cache[new, :, :remainder].copy_(self.key_cache[old, :, :remainder])
+                self.value_cache[new, :, :remainder].copy_(self.value_cache[old, :, :remainder])
+        for plane in fork.written:
+            for written in plane:
+                written.prefix = length
+        fork.fork_source = source
+        fork.fork_length = length
+        return True
+
+    def commit_fork(self, source_id: str, fork_id: str, length: int) -> None:
+        """Publish only a contiguous verified prefix; discard the speculative suffix."""
+        source = self._get_allocation(source_id)
+        fork = self._get_allocation(fork_id)
+        start = fork.fork_length
+        if fork.fork_source is not source or not start < length <= fork.max_tokens:
+            raise ValueError("fork does not match the requested committed prefix")
+        if any(w.prefix < length for plane in fork.written for w in plane):
+            raise RuntimeError("cannot commit unwritten speculative KV")
+        first = start // self.block_size
+        last = (length - 1) // self.block_size
+        tables = [list(table) for table in source.block_tables]
+        for depth, table in enumerate(tables):
+            for page in range(first, last + 1):
+                block = fork.block_tables[depth][page]
+                self._refs[block] += 1
+                if page < len(table):
+                    self._drop_refs((table[page],))
+                    table[page] = block
+                else:
+                    table.append(block)
+        source.block_tables = tuple(tuple(table) for table in tables)
+        for plane in source.written:
+            for written in plane:
+                written.prefix = length
+        self.free(fork_id)
 
     def free(self, request_id: str) -> None:
         allocation = self._allocations.get(request_id)
