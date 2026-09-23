@@ -118,7 +118,8 @@ def main():
             )
     (args.output / "speedup.md").write_text(
         "# Ouro-1.4B fixed-depth greedy E2E\n\n"
-        "Model remains resident. Timings include prefill, draft, verification, and KV commit. "
+        f"Device: {torch.cuda.get_device_name(0)}. Model remains resident. "
+        "Timings include prefill, draft, verification, and KV commit. "
         "Each arm has one warmup and paired inputs with alternating order; "
         "medians use three trials by default.\n\n"
         + "\n".join(table)
