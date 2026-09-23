@@ -252,6 +252,25 @@ def test_pd_multiple_workers_and_peer_failure():
 
 
 @pytest.mark.gpu
+def test_pd_worker_failure_quiesces_without_signals():
+    with create_pd() as e:
+        e.add_request(
+            "fail",
+            [1] * 20,
+            SamplingParams(max_tokens=4, min_loops=1, ignore_eos=True),
+            trace_id="t",
+        )
+        e.step()
+        peer = next(p for p in e.peers.values() if p.role == "prefill")
+        e._send(peer.name, "invalid")
+        with pytest.raises(RuntimeError, match="unknown PD command"):
+            deadline = time.monotonic() + 90
+            while time.monotonic() < deadline:
+                e.step()
+        assert e.closed and all(not p.process.is_alive() for p in e.peers.values())
+
+
+@pytest.mark.gpu
 @pytest.mark.parametrize("phase", ["prefill", "decode"])
 def test_pd_cancel_during_execution_and_close_with_live_request(phase):
     e = create_pd()
