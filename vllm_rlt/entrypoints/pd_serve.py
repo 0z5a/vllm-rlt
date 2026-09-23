@@ -43,6 +43,7 @@ def load_engine(args):
             backend=args.nixl_backend,
             max_receiving_requests=args.pd_max_receiving_requests,
             max_draining_requests=args.pd_max_draining_requests,
+            pair_ranks=tuple(args.pd_pair_rank),
         ),
         prefill_cache_config=replace(cache, num_blocks=args.prefill_num_blocks),
         decode_cache_config=replace(cache, num_blocks=args.decode_num_blocks),
@@ -101,6 +102,14 @@ def main():
     parser.add_argument("--pd-transfer-chunk-bytes", type=int, default=64 * 1024**2)
     parser.add_argument("--pd-max-inflight-bytes", type=int, default=256 * 1024**2)
     parser.add_argument("--pd-max-transfer-descriptors", type=int, default=256)
+    parser.add_argument(
+        "--pd-pair-rank",
+        action="append",
+        type=lambda value: tuple(map(int, value.split(":"))),
+        default=[],
+        metavar="P:D:RANK",
+        help="Prefer qualified P/D pairs with lower rank; repeat for each measured pair",
+    )
     parser.add_argument("--pd-startup-timeout", type=float, default=300)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)

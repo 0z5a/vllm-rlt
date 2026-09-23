@@ -87,6 +87,7 @@ class PDEngine:
         if attention_backend not in ("triton", "flash_attn", "flash_attn_4"):
             raise ValueError("PD supports CUDA Triton or paged FA4 attention")
         self.scheduling_policy = p_scheduler.policy
+        self.pair_ranks = {(p, d): rank for p, d, rank in self.config.pair_ranks}
         self.peers = {}
         self.requests = {}
         self.transfers = {}
@@ -348,15 +349,36 @@ class PDEngine:
                 ]
                 if not eligible:
                     break
-                candidates[role] = min(
-                    eligible,
-                    key=lambda p: (p.blocks / p.info["num_blocks"], p.slots / p.info["max_seqs"]),
-                )
+                candidates[role] = eligible
             if len(candidates) != 2:
                 if time.monotonic() - w.created > self.config.request_timeout / 2:
                     break
                 continue
-            p, d = candidates["prefill"], candidates["decode"]
+            if self.pair_ranks:
+                p, d = min(
+                    ((p, d) for p in candidates["prefill"] for d in candidates["decode"]),
+                    key=lambda pair: (
+                        self.pair_ranks.get(
+                            (pair[0].info["info"]["device"], pair[1].info["info"]["device"]),
+                            max(self.pair_ranks.values()) + 1,
+                        ),
+                        pair[0].blocks / pair[0].info["num_blocks"]
+                        + pair[1].blocks / pair[1].info["num_blocks"],
+                        pair[0].slots / pair[0].info["max_seqs"]
+                        + pair[1].slots / pair[1].info["max_seqs"],
+                    ),
+                )
+            else:
+                p, d = (
+                    min(
+                        candidates[role],
+                        key=lambda peer: (
+                            peer.blocks / peer.info["num_blocks"],
+                            peer.slots / peer.info["max_seqs"],
+                        ),
+                    )
+                    for role in ("prefill", "decode")
+                )
             w.p, w.d = p.name, d.name
             w.p_blocks = self._blocks(p, len(w.request.prompt_token_ids))
             w.d_blocks = self._blocks(

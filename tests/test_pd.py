@@ -2,6 +2,7 @@
 
 import time
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -11,7 +12,9 @@ from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
 from vllm_rlt.pd.config import PDConfig
+from vllm_rlt.pd.engine import PDEngine, Peer, Pending
 from vllm_rlt.pd.transport import kv_segments, partition_segments
+from vllm_rlt.request import Request
 
 
 def test_transfer_lease_defers_free_until_last_reader():
@@ -94,6 +97,51 @@ def test_segment_ranges_cover_only_valid_tokens_and_all_layers_depths():
 def test_pd_configuration_validation(options):
     with pytest.raises(ValueError):
         PDConfig(**options)
+
+
+@pytest.mark.parametrize("preferred_decode_full", [False, True])
+def test_pd_pair_rank_uses_eligible_pair_or_falls_back(preferred_decode_full):
+    config = PDConfig(
+        prefill_devices=(0, 4),
+        decode_devices=(1, 5),
+        pair_ranks=((4, 5, 0),),
+    )
+    engine = object.__new__(PDEngine)
+    engine.config = config
+    engine.scheduling_policy = "fcfs"
+    engine.pair_ranks = {(4, 5): 0}
+    messages = []
+    engine.peers = {}
+    for role, devices in (("prefill", config.prefill_devices), ("decode", config.decode_devices)):
+        for device in devices:
+            name = f"{role}-{device}"
+            peer = Peer(name, role, None, SimpleNamespace(send=messages.append))
+            peer.info = dict(
+                info=dict(device=device, agent=name),
+                num_blocks=128,
+                block_size=4,
+                depths=4,
+                max_seqs=8,
+                active_limit=8,
+                watermark_blocks=0,
+            )
+            engine.peers[name] = peer
+    if preferred_decode_full:
+        engine.peers["decode-5"].slots = 8
+    pending = Pending(Request("q", [1, 2], SamplingParams(max_tokens=3)), "t", None)
+    engine.transfers = {"t": pending}
+    engine._admit()
+    assert (pending.p, pending.d) == (
+        ("prefill-0", "decode-1") if preferred_decode_full else ("prefill-4", "decode-5")
+    )
+    assert messages[-1]["kind"] == "reserve"
+
+
+def test_pd_pair_rank_rejects_unconfigured_or_duplicate_pair():
+    with pytest.raises(ValueError):
+        PDConfig(pair_ranks=((0, 2, 0),))
+    with pytest.raises(ValueError):
+        PDConfig(pair_ranks=((0, 1, 0), (0, 1, 1)))
 
 
 def drain(engine):

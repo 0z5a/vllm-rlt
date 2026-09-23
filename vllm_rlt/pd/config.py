@@ -17,6 +17,7 @@ class PDConfig:
     backend: str = "UCX"
     max_receiving_requests: int = 32
     max_draining_requests: int = 8
+    pair_ranks: tuple[tuple[int, int, int], ...] = ()
 
     def __post_init__(self):
         devices = (*self.prefill_devices, *self.decode_devices)
@@ -43,3 +44,14 @@ class PDConfig:
                 raise ValueError(f"{name} must be positive and finite")
         if not self.backend:
             raise ValueError("NIXL backend must be specified")
+        pairs = set()
+        for prefill, decode, rank in self.pair_ranks:
+            if (
+                prefill not in self.prefill_devices
+                or decode not in self.decode_devices
+                or type(rank) is not int
+                or rank < 0
+                or (prefill, decode) in pairs
+            ):
+                raise ValueError("pair_ranks must contain unique configured P/D pairs and ranks")
+            pairs.add((prefill, decode))
