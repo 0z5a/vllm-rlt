@@ -228,9 +228,6 @@ group and discuss usage and development.
   </a>
 </p>
 
-The QR code is valid until September 30, 2026. If it has expired, please
-[open an issue](https://github.com/ThinkFlowLab/vllm-rlt/issues/new) to request an updated code.
-
 ## Acknowledgments
 
 vllm-rlt builds on the published Ouro architecture and the ideas in
