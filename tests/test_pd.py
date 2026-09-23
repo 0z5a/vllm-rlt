@@ -144,6 +144,51 @@ def test_pd_pair_rank_rejects_unconfigured_or_duplicate_pair():
         PDConfig(pair_ranks=((0, 1, 0), (0, 1, 1)))
 
 
+def test_pd_quiesce_drains_sender_before_receiver():
+    order = []
+
+    class Process:
+        alive = True
+
+        def is_alive(self):
+            return self.alive
+
+        def join(self, timeout):
+            assert timeout >= 0
+
+    class Channel:
+        def __init__(self, role, process):
+            self.role, self.process = role, process
+            self.messages = []
+
+        def send(self, message):
+            assert message["kind"] == "quiesce"
+            order.append(self.role)
+            self.messages.append({"kind": "stopped"})
+
+        def poll(self):
+            return bool(self.messages)
+
+        def recv(self):
+            self.process.alive = False
+            return self.messages.pop(0)
+
+        def close(self):
+            pass
+
+    engine = object.__new__(PDEngine)
+    engine.config = PDConfig(shutdown_timeout=1)
+    engine.peers = {}
+    engine.worker_metrics = {}
+    engine.cache_manager = SimpleNamespace(num_used_blocks=1)
+    for role in ("prefill", "decode"):
+        process = Process()
+        engine.peers[role] = Peer(role, role, process, Channel(role, process))
+    assert engine._quiesce()
+    assert order == ["prefill", "decode"]
+    assert engine.closed and engine.cache_manager.num_used_blocks == 0
+
+
 def drain(engine):
     outputs = {}
     deadline = time.monotonic() + 90
