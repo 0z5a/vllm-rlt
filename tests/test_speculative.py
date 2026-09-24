@@ -437,6 +437,42 @@ def test_prefill_interleaves_between_draft_and_verify_without_changing_outputs(d
     assert e.cache_manager.num_used_blocks == 0
 
 
+@pytest.mark.gpu
+def test_cuda_graph_replay_with_intra_round_prefill():
+    torch.manual_seed(123)
+    m = OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to("cuda", torch.bfloat16)
+    params = SamplingParams(max_tokens=9, ignore_eos=True)
+    expected = LLM(m, speculative_config=SpeculativeConfig(3), attention_backend="triton").generate(
+        [[2, 3], [7, 8, 9]], params
+    )
+    e = LLMEngine(
+        m,
+        speculative_config=SpeculativeConfig(3, interleave_round=True),
+        execution_config=ExecutionConfig(cuda_graphs=True, cuda_graph_max_batch_size=8),
+        cache_config=CacheConfig(128, 16),
+        scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
+        attention_backend="triton",
+    )
+    e.add_request("first", [2, 3], params)
+    while not e.scheduler.requests["first"].generated_token_ids:
+        e.step()
+    assert e.step() == []
+    e.add_request("second", [7, 8, 9], params)
+    e.step()
+    assert e.last_schedule.stage == Stage.PREFILL
+    e.step()
+    assert e.last_schedule.stage == Stage.SPECULATIVE
+    actual = drain(e)
+    assert [actual[rid].token_ids for rid in ("first", "second")] == [
+        output.token_ids for output in expected
+    ]
+    assert [actual[rid].exit_depths for rid in ("first", "second")] == [
+        output.exit_depths for output in expected
+    ]
+    assert e.speculative_runner.graphs.replays > 0
+    assert e.cache_manager.num_used_blocks == 0
+
+
 def test_priority_waits_for_draft_verification_before_preempting():
     m = model()
     params = {
