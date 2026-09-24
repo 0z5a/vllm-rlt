@@ -7,6 +7,19 @@ from types import SimpleNamespace
 import torch
 
 
+def _capture(hidden, stream, pool, run):
+    """Warm and capture one stable-input graph on its own stream."""
+    torch.cuda.synchronize(hidden.device)
+    with torch.cuda.stream(stream):
+        for _ in range(2):
+            run()
+    stream.synchronize()
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph, pool=pool, stream=stream):
+        output = run()
+    return graph, output
+
+
 class _DeviceCache:
     """Capture only GPU cache operations, never Python allocation/written state."""
 
@@ -126,21 +139,15 @@ class RecurrentGraphs:
         width = batch.block_tables.shape[1]
         entry.metadata.block_tables[:, :width].copy_(batch.block_tables)
         if key not in self.entries:
-            # First-use capture is intentionally outside steady-state timing.
-            # Drain outstanding streams: CUDA capture cannot race other launches.
-            torch.cuda.synchronize(cache.device)
             proxy = _DeviceCache(cache)
-            with torch.cuda.stream(self.capture_stream):
-                for _ in range(2):
-                    self.model.recurrent_prepared(
-                        entry.hidden, entry.metadata, proxy, compute_gate=self.compute_gate
-                    )
-            self.capture_stream.synchronize()
-            entry.graph = torch.cuda.CUDAGraph()
-            with torch.cuda.graph(entry.graph, pool=self.pool, stream=self.capture_stream):
-                entry.output = self.model.recurrent_prepared(
+            entry.graph, entry.output = _capture(
+                entry.hidden,
+                self.capture_stream,
+                self.pool,
+                lambda: self.model.recurrent_prepared(
                     entry.hidden, entry.metadata, proxy, compute_gate=self.compute_gate
-                )
+                ),
+            )
             self.entries[key] = entry
             self.captures += 1
         entry.graph.replay()
@@ -178,14 +185,9 @@ class CodaGraphs:
             entry = SimpleNamespace(hidden=torch.empty_like(hidden))
         entry.hidden.copy_(hidden)
         if count not in self.entries:
-            torch.cuda.synchronize(hidden.device)
-            with torch.cuda.stream(self.stream):
-                for _ in range(2):
-                    self.model.coda(entry.hidden)
-            self.stream.synchronize()
-            entry.graph = torch.cuda.CUDAGraph()
-            with torch.cuda.graph(entry.graph, pool=self.pool, stream=self.stream):
-                entry.output = self.model.coda(entry.hidden)
+            entry.graph, entry.output = _capture(
+                entry.hidden, self.stream, self.pool, lambda: self.model.coda(entry.hidden)
+            )
             self.entries[count] = entry
             self.captures += 1
         entry.graph.replay()
