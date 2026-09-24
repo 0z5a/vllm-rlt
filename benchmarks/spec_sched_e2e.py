@@ -15,14 +15,7 @@ from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Stage
 
 
-def run(model, prompts, params, *, interleave):
-    engine = LLMEngine(
-        model,
-        cache_config=CacheConfig(num_blocks=1024),
-        scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=256),
-        attention_backend="triton",
-        speculative_config=SpeculativeConfig(4, interleave_round=interleave),
-    )
+def run(engine, prompts, params):
     torch.cuda.synchronize()
     start = time.perf_counter()
     engine.add_request("first", prompts[0], params)
@@ -51,7 +44,7 @@ def run(model, prompts, params, *, interleave):
     torch.cuda.synchronize()
     if second_ttft is None:
         raise AssertionError("second request produced no output")
-    if interleave and not interleaved_prefills:
+    if engine.speculative_config.interleave_round and not interleaved_prefills:
         raise AssertionError("intra-round prefill did not execute")
     return dict(
         seconds=time.perf_counter() - start,
@@ -79,16 +72,26 @@ def main():
         ),
     ]
     model = OuroForCausalLM.from_pretrained(args.model, device="cuda:0", dtype=torch.bfloat16)
+    engines = {
+        flag: LLMEngine(
+            model,
+            cache_config=CacheConfig(num_blocks=1024),
+            scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=256),
+            attention_backend="triton",
+            speculative_config=SpeculativeConfig(4, interleave_round=flag),
+        )
+        for flag in (False, True)
+    }
     params = SamplingParams(max_tokens=args.max_tokens, min_loops=4, max_loops=4, ignore_eos=True)
     rows = []
     for _ in range(3):
-        pair = {flag: run(model, prompts, params, interleave=flag) for flag in (False, True)}
+        pair = {flag: run(engines[flag], prompts, params) for flag in (False, True)}
         if pair[False]["outputs"] != pair[True]["outputs"]:
             raise AssertionError("warmup output mismatch")
     for trial in range(args.repeats):
         pair = {}
         for flag in (False, True) if trial % 2 == 0 else (True, False):
-            pair[flag] = run(model, prompts, params, interleave=flag)
+            pair[flag] = run(engines[flag], prompts, params)
             rows.append(dict(trial=trial, interleave=flag, **pair[flag]))
         if pair[False]["outputs"] != pair[True]["outputs"]:
             raise AssertionError(f"trial {trial} output mismatch")
