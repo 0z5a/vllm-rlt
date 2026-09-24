@@ -344,10 +344,14 @@ def test_dynamic_arrival_budget_and_failure_reclamation(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "device,backend",
-    [("cpu", "torch"), pytest.param("cuda", "triton", marks=pytest.mark.gpu)],
+    "device,backend,graphs",
+    [
+        ("cpu", "torch", False),
+        pytest.param("cuda", "triton", False, marks=pytest.mark.gpu),
+        pytest.param("cuda", "triton", True, marks=pytest.mark.gpu),
+    ],
 )
-def test_priority_preempts_only_between_speculative_rounds_and_resumes(device, backend):
+def test_priority_preempts_only_between_speculative_rounds_and_resumes(device, backend, graphs):
     m = (
         model()
         if device == "cpu"
@@ -367,7 +371,7 @@ def test_priority_preempts_only_between_speculative_rounds_and_resumes(device, b
     e = engine(
         m,
         k=3,
-        cache_config=CacheConfig(64, 2, incremental_allocation=True),
+        cache_config=CacheConfig(64, 16 if graphs else 2, incremental_allocation=True),
         scheduler_config=SchedulerConfig(
             max_num_seqs=1,
             max_num_batched_tokens=4,
@@ -376,6 +380,7 @@ def test_priority_preempts_only_between_speculative_rounds_and_resumes(device, b
             enable_preemption=True,
         ),
         attention_backend=backend,
+        execution_config=ExecutionConfig(cuda_graphs=graphs, cuda_graph_max_batch_size=8),
     )
     e.add_request("low", prompts["low"], params["low"])
     while len(e.scheduler.requests["low"].generated_token_ids) < 2:
@@ -531,10 +536,14 @@ def test_abort_during_draft_does_not_reuse_provisional_kv():
 
 @pytest.mark.parametrize("temperature", [0, 0.8])
 @pytest.mark.parametrize(
-    "device,backend",
-    [("cpu", "torch"), pytest.param("cuda", "triton", marks=pytest.mark.gpu)],
+    "device,backend,graphs",
+    [
+        ("cpu", "torch", False),
+        pytest.param("cuda", "triton", False, marks=pytest.mark.gpu),
+        pytest.param("cuda", "triton", True, marks=pytest.mark.gpu),
+    ],
 )
-def test_committed_round_migrates_kv_and_sampling_state(temperature, device, backend):
+def test_committed_round_migrates_kv_and_sampling_state(temperature, device, backend, graphs):
     if device == "cuda":
         if torch.cuda.device_count() < 2:
             pytest.skip("migration requires two visible GPUs")
@@ -547,6 +556,7 @@ def test_committed_round_migrates_kv_and_sampling_state(temperature, device, bac
         m = target_model = model()
     cache = CacheConfig(128, 16) if device == "cuda" else CacheConfig(64, 2)
     spec = SpeculativeConfig(3, interleave_round=True)
+    execution = ExecutionConfig(cuda_graphs=graphs, cuda_graph_max_batch_size=8)
     params = SamplingParams(
         max_tokens=12,
         ignore_eos=True,
@@ -554,12 +564,22 @@ def test_committed_round_migrates_kv_and_sampling_state(temperature, device, bac
         top_k=7,
         seed=42,
     )
-    expected = LLM(m, speculative_config=spec, attention_backend=backend).generate(
-        [[2, 3, 4]], params
-    )[0]
-    source = LLMEngine(m, speculative_config=spec, cache_config=cache, attention_backend=backend)
+    expected = LLM(
+        m, speculative_config=spec, attention_backend=backend, execution_config=execution
+    ).generate([[2, 3, 4]], params)[0]
+    source = LLMEngine(
+        m,
+        speculative_config=spec,
+        cache_config=cache,
+        attention_backend=backend,
+        execution_config=execution,
+    )
     target = LLMEngine(
-        target_model, speculative_config=spec, cache_config=cache, attention_backend=backend
+        target_model,
+        speculative_config=spec,
+        cache_config=cache,
+        attention_backend=backend,
+        execution_config=execution,
     )
     source.add_request("r", [2, 3, 4], params)
     while not source.scheduler.requests["r"].generated_token_ids:
