@@ -1,6 +1,8 @@
 """Fixed-depth oracle, rollback, lifecycle and distribution tests for speculation."""
 
+import pickle
 from collections import Counter
+from contextlib import nullcontext
 
 import pytest
 import torch
@@ -302,7 +304,6 @@ def test_probability_filters_match_expected_and_keep_boundary_ties():
     [
         dict(cache_config=CacheConfig(layout="shared")),
         dict(execution_config=ExecutionConfig(async_scheduling=True)),
-        dict(scheduler_config=SchedulerConfig(enable_preemption=True)),
         dict(scheduler_config=SchedulerConfig(mode="no_refill")),
     ],
 )
@@ -340,6 +341,207 @@ def test_dynamic_arrival_budget_and_failure_reclamation(monkeypatch):
     for rid in list(e.scheduler.requests):
         e.abort_request(rid)
     assert e.cache_manager.num_used_blocks == 0
+
+
+@pytest.mark.parametrize(
+    "device,backend",
+    [("cpu", "torch"), pytest.param("cuda", "triton", marks=pytest.mark.gpu)],
+)
+def test_priority_preempts_only_between_speculative_rounds_and_resumes(device, backend):
+    m = (
+        model()
+        if device == "cpu"
+        else OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+            "cuda", torch.bfloat16
+        )
+    )
+    prompts = {"low": [2, 3, 4], "high": [7, 8, 9]}
+    params = {
+        "low": SamplingParams(max_tokens=10, ignore_eos=True, priority=10),
+        "high": SamplingParams(max_tokens=7, ignore_eos=True, priority=0),
+    }
+    expected = {
+        rid: LLM(m, attention_backend=backend).generate([prompt], params[rid])[0]
+        for rid, prompt in prompts.items()
+    }
+    e = engine(
+        m,
+        k=3,
+        cache_config=CacheConfig(64, 2, incremental_allocation=True),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=1,
+            max_num_batched_tokens=4,
+            prefill_chunk_size=2,
+            policy="priority",
+            enable_preemption=True,
+        ),
+        attention_backend=backend,
+    )
+    e.add_request("low", prompts["low"], params["low"])
+    while len(e.scheduler.requests["low"].generated_token_ids) < 2:
+        e.step()
+    e.add_request("high", prompts["high"], params["high"])
+    actual = drain(e)
+    assert e.preemption.preemptions > 0
+    assert e.preemption.resumptions > 0
+    assert {rid: out.token_ids for rid, out in actual.items()} == {
+        rid: out.token_ids for rid, out in expected.items()
+    }
+    assert {rid: out.exit_depths for rid, out in actual.items()} == {
+        rid: out.exit_depths for rid, out in expected.items()
+    }
+    assert e.cache_manager.num_used_blocks == 0
+
+
+@pytest.mark.parametrize(
+    "device,backend",
+    [("cpu", "torch"), pytest.param("cuda", "triton", marks=pytest.mark.gpu)],
+)
+def test_prefill_interleaves_between_draft_and_verify_without_changing_outputs(device, backend):
+    m = (
+        model()
+        if device == "cpu"
+        else OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+            "cuda", torch.bfloat16
+        )
+    )
+    prompts = {"first": [2, 3], "second": [7, 8, 9]}
+    params = SamplingParams(max_tokens=8, ignore_eos=True)
+    expected = {
+        rid: LLM(m, attention_backend=backend).generate([prompt], params)[0].token_ids
+        for rid, prompt in prompts.items()
+    }
+    e = LLMEngine(
+        m,
+        speculative_config=SpeculativeConfig(3, interleave_round=True),
+        cache_config=CacheConfig(128, 2),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2, max_num_batched_tokens=8, prefill_chunk_size=2
+        ),
+        attention_backend=backend,
+    )
+    e.add_request("first", prompts["first"], params)
+    while not e.scheduler.requests["first"].generated_token_ids:
+        e.step()
+    assert e.step() == []
+    assert e.last_schedule.stage == Stage.SPECULATIVE
+    assert "first" in e.preemption.inflight_ids
+    e.add_request("second", prompts["second"], params)
+    assert e.step() == []
+    assert e.last_schedule.stage == Stage.PREFILL
+    assert e.step()[0].request_id == "first"
+    assert e.last_schedule.stage == Stage.SPECULATIVE
+    assert not e.preemption.inflight_ids
+    actual = drain(e)
+    assert {rid: out.token_ids for rid, out in actual.items()} == expected
+    assert e.cache_manager.num_used_blocks == 0
+
+
+def test_priority_waits_for_draft_verification_before_preempting():
+    m = model()
+    params = {
+        "low": SamplingParams(max_tokens=8, ignore_eos=True, priority=10),
+        "high": SamplingParams(max_tokens=5, ignore_eos=True, priority=0),
+    }
+    e = LLMEngine(
+        m,
+        speculative_config=SpeculativeConfig(3, interleave_round=True),
+        cache_config=CacheConfig(64, 2, incremental_allocation=True),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=1,
+            max_num_batched_tokens=4,
+            prefill_chunk_size=2,
+            policy="priority",
+            enable_preemption=True,
+        ),
+    )
+    e.add_request("low", [2, 3, 4], params["low"])
+    while not e.scheduler.requests["low"].generated_token_ids:
+        e.step()
+    e.step()  # Draft is complete; verification still owns provisional KV.
+    e.add_request("high", [7, 8, 9], params["high"])
+    assert e.step()[0].request_id == "low"
+    assert e.preemption.preemptions == 0
+    actual = drain(e)
+    assert e.preemption.preemptions > 0
+    assert e.preemption.resumptions > 0
+    for rid, prompt in (("low", [2, 3, 4]), ("high", [7, 8, 9])):
+        expected = LLM(m).generate([prompt], params[rid])[0]
+        assert actual[rid].token_ids == expected.token_ids
+        assert actual[rid].exit_depths == expected.exit_depths
+    assert e.cache_manager.num_used_blocks == 0
+
+
+def test_abort_during_draft_does_not_reuse_provisional_kv():
+    m = model()
+    params = SamplingParams(max_tokens=8, ignore_eos=True)
+    e = LLMEngine(
+        m,
+        speculative_config=SpeculativeConfig(3, interleave_round=True),
+        cache_config=CacheConfig(64, 2),
+    )
+    e.add_request("r", [2, 3], params)
+    while not e.scheduler.requests["r"].generated_token_ids:
+        e.step()
+    assert e.step() == []
+    e.abort_request("r")
+    e.add_request("r", [7, 8, 9], params)
+    actual = drain(e)["r"]
+    expected = LLM(m).generate([[7, 8, 9]], params)[0]
+    assert actual.token_ids == expected.token_ids
+    assert actual.exit_depths == expected.exit_depths
+    assert e.cache_manager.num_used_blocks == 0
+
+
+@pytest.mark.parametrize("temperature", [0, 0.8])
+@pytest.mark.parametrize(
+    "device,backend",
+    [("cpu", "torch"), pytest.param("cuda", "triton", marks=pytest.mark.gpu)],
+)
+def test_committed_round_migrates_kv_and_sampling_state(temperature, device, backend):
+    if device == "cuda":
+        if torch.cuda.device_count() < 2:
+            pytest.skip("migration requires two visible GPUs")
+        config = OuroConfig.tiny(hidden_size=256, head_dim=64)
+        torch.manual_seed(123)
+        m = OuroForCausalLM(config).to("cuda:0", torch.bfloat16)
+        target_model = OuroForCausalLM(config).to("cuda:1", torch.bfloat16)
+        target_model.load_state_dict(m.state_dict())
+    else:
+        m = target_model = model()
+    cache = CacheConfig(128, 16) if device == "cuda" else CacheConfig(64, 2)
+    spec = SpeculativeConfig(3, interleave_round=True)
+    params = SamplingParams(
+        max_tokens=12,
+        ignore_eos=True,
+        temperature=temperature,
+        top_k=7,
+        seed=42,
+    )
+    expected = LLM(m, speculative_config=spec, attention_backend=backend).generate(
+        [[2, 3, 4]], params
+    )[0]
+    source = LLMEngine(m, speculative_config=spec, cache_config=cache, attention_backend=backend)
+    target = LLMEngine(
+        target_model, speculative_config=spec, cache_config=cache, attention_backend=backend
+    )
+    source.add_request("r", [2, 3, 4], params)
+    while not source.scheduler.requests["r"].generated_token_ids:
+        source.step()
+    assert source.step() == []  # Drafted KV is still provisional.
+    with pytest.raises(RuntimeError, match="committed speculative round boundary"):
+        source.export_request("r")
+    source.step()
+    packet = pickle.loads(pickle.dumps(source.export_request("r")))
+    assert packet.state["keys"].device.type == "cpu"
+    assert not source.has_unfinished_requests()
+    assert source.cache_manager.num_used_blocks == 0
+    with torch.cuda.device(1) if device == "cuda" else nullcontext():
+        assert target.import_request(packet)
+        actual = drain(target)["r"]
+    assert actual.token_ids == expected.token_ids
+    assert actual.exit_depths == expected.exit_depths
+    assert target.cache_manager.num_used_blocks == 0
 
 
 @pytest.mark.parametrize("k", [0, -1, True, 1.5])

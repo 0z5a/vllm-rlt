@@ -366,3 +366,13 @@ class Scheduler:
         if not self.requests:
             return None
         return self.policy.schedule(self, prefer_recurrent=prefer_recurrent)
+
+    def schedule_intra_round(self) -> SchedulerOutput | None:
+        """Run one independent boundary batch while a draft awaits verification."""
+        self.selected_request_ids.clear()
+        if self.queues[Stage.CODA]:
+            return self._take(Stage.CODA)
+        self._admit()
+        if self.queues[Stage.PREFILL]:
+            return self._take(Stage.PREFILL)
+        return None
