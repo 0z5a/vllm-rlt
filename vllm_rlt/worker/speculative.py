@@ -15,6 +15,7 @@ from vllm_rlt.worker.sampling import (
     generator_for,
     probabilities,
     rejection_sample,
+    sample_logits,
 )
 
 
@@ -37,7 +38,7 @@ class SpeculativeStats:
 @dataclass
 class DraftedItem:
     item: ScheduledItem
-    candidates: list[int] = field(default_factory=list)
+    candidates: list[torch.Tensor] = field(default_factory=list)
     proposals: list[torch.Tensor] = field(default_factory=list)
     states: list[torch.Tensor] = field(default_factory=list)
 
@@ -82,11 +83,16 @@ class SpeculativeRunner:
             active = [i for i, item in enumerate(items) if offset < item.token_count]
             ids = [items[i].request.request_id for i in active]
             positions = [items[i].token_start + offset for i in active]
-            tokens = [
-                items[i].request.input_token_id if offset == 0 else drafted[i].candidates[-1]
-                for i in active
-            ]
-            hidden = self.model.prelude(torch.tensor(tokens, device=self.device, dtype=torch.long))
+            tokens = (
+                torch.tensor(
+                    [items[i].request.input_token_id for i in active],
+                    device=self.device,
+                    dtype=torch.long,
+                )
+                if offset == 0
+                else torch.stack([drafted[i].candidates[-1] for i in active])
+            )
+            hidden = self.model.prelude(tokens)
             for depth in range(self.config.draft_loops):
                 hidden = self._core(hidden, ids, positions, depth)
             drafting = []
@@ -105,7 +111,7 @@ class SpeculativeRunner:
                     q = probabilities(logits[row], request.sampling_params)
                     drafted[i].proposals.append(q)
                     candidate = draw(q, generator_for(request, self.device))
-                drafted[i].candidates.append(int(candidate.item()))
+                drafted[i].candidates.append(candidate)
         return drafted
 
     @torch.inference_mode()
@@ -126,10 +132,21 @@ class SpeculativeRunner:
             rows = logits[start : start + item.token_count]
             start += item.token_count
             request = item.request
+            greedy = request.sampling_params.temperature == 0
+            drafts = (
+                torch.stack(entry.candidates)
+                if entry.candidates
+                else torch.empty(0, device=self.device, dtype=torch.long)
+            )
+            if greedy:
+                ids = torch.cat((rows.argmax(dim=-1), drafts)).tolist()
+                targets, candidates = ids[: item.token_count], ids[item.token_count :]
+            else:
+                candidates = drafts.tolist()
             tokens, accepted = [], 0
-            for offset, candidate in enumerate(entry.candidates):
-                if request.sampling_params.temperature == 0:
-                    token = int(rows[offset].argmax().item())
+            for offset, candidate in enumerate(candidates):
+                if greedy:
+                    token = targets[offset]
                     accept = token == candidate
                 else:
                     p = probabilities(rows[offset], request.sampling_params)
@@ -141,14 +158,10 @@ class SpeculativeRunner:
                     break
                 accepted += 1
             else:
-                if request.sampling_params.temperature == 0:
-                    token = rows[-1].argmax()
+                if greedy:
+                    tokens.append(targets[-1])
                 else:
-                    token = draw(
-                        probabilities(rows[-1], request.sampling_params),
-                        generator_for(request, self.device),
-                    )
-                tokens.append(int(token.item()))
+                    tokens.append(int(sample_logits(rows[-1], request).item()))
             results.append(SpeculativeResult(tokens, accepted, len(entry.candidates)))
         self.stats.rounds += len(drafted)
         self.stats.drafted_tokens += sum(len(entry.candidates) for entry in drafted)

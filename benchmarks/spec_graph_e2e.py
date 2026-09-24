@@ -36,9 +36,11 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-tokens", type=int, default=64)
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--warmups", type=int, default=12)
+    parser.add_argument("--workload", choices=("repeated / 1", "repeated / 4", "prose / 1"))
     args = parser.parse_args()
-    if args.max_tokens < 2 or args.repeats < 1:
-        parser.error("max-tokens must be at least 2 and repeats must be positive")
+    if args.max_tokens < 2 or args.repeats < 1 or args.warmups < 1:
+        parser.error("max-tokens must be at least 2; repeats and warmups must be positive")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=False)
     repeated = tokenizer.encode("The quick brown fox jumps over the lazy dog. " * 12)
@@ -51,6 +53,8 @@ def main():
         "repeated / 4": [repeated] * 4,
         "prose / 1": [prose],
     }
+    if args.workload:
+        workloads = {args.workload: workloads[args.workload]}
     model = OuroForCausalLM.from_pretrained(args.model, device="cuda:0", dtype=torch.bfloat16)
     engines = {
         graph: LLM(
@@ -68,7 +72,7 @@ def main():
     params = SamplingParams(max_tokens=args.max_tokens, min_loops=4, max_loops=4, ignore_eos=True)
     rows = []
     for name, prompts in workloads.items():
-        for _ in range(5):
+        for _ in range(args.warmups):
             warmup = {graph: timed(engines[graph], prompts, params)[0] for graph in (False, True)}
             if warmup[False] != warmup[True]:
                 raise AssertionError(f"{name}: graph warmup output mismatch")
@@ -108,6 +112,7 @@ def main():
                 target_loops=4,
                 k=4,
                 output_budget=args.max_tokens,
+                warmups=args.warmups,
                 prompts=workloads,
                 rows=rows,
                 graphs=counters,
@@ -133,7 +138,7 @@ def main():
         "# Ouro-1.4B speculative CUDA Graph E2E\n\n"
         f"{torch.cuda.get_device_name(0)}; BF16, Triton, d=2/D=4, K=4, "
         f"{args.max_tokens} output tokens. One resident model, separate engine state, "
-        f"five warmups per arm, {args.repeats} alternating paired trials. "
+        f"{args.warmups} warmups per arm, {args.repeats} alternating paired trials. "
         "Timings include prefill, draft, verification, coda and KV commit. "
         "Every paired output token and exit depth matched.\n\n"
         + "\n".join(table)
