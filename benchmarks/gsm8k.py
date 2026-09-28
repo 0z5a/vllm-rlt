@@ -308,6 +308,64 @@ def depth_summary(rows):
     }
 
 
+def first_difference(a, b):
+    """First index where two sequences differ; the shorter length if one is a prefix."""
+    return next((k for k, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
+
+
+def sequence_differences(pairs):
+    """Diagnostic token and exit-depth sequence differences per question (not gated).
+
+    Matching answers and accuracy can hide different executions, e.g. synchronous and
+    asynchronous runs of one exit policy. Each sequence is compared only where both runs
+    recorded it. Exit depth k is chosen with the prompt plus tokens[:k] as context, so a
+    depth difference at k <= the first token difference, with both runs having a depth at k,
+    means the two runs made different exit decisions on identical context
+    ("identical_context").
+    """
+    tokens, depths = [], []
+    token_compared = depth_compared = 0
+    for x, y in pairs:
+        tx, ty = x.get("token_ids"), y.get("token_ids")
+        token_first = None
+        if tx is not None and ty is not None:
+            token_compared += 1
+            if tx != ty:
+                token_first = first_difference(tx, ty)
+                tokens.append({"id": x["id"], "first_divergence": token_first})
+        dx, dy = x.get("exit_depths"), y.get("exit_depths")
+        if dx is not None and dy is not None:
+            depth_compared += 1
+            if dx != dy:
+                first = first_difference(dx, dy)
+                shared = token_first if token_first is not None else min(len(dx), len(dy))
+                # A difference only in length (one run stopped earlier) is not a decision.
+                decided = first < min(len(dx), len(dy))
+                depths.append(
+                    {
+                        "id": x["id"],
+                        "first_divergence": first,
+                        "identical_context": decided and first <= shared,
+                    }
+                )
+
+    def block(differing, compared):
+        firsts = [d["first_divergence"] for d in differing]
+        return {
+            "questions_compared": compared,
+            "questions_differing": len(differing),
+            "earliest_first_divergence": min(firsts, default=None),
+            "median_first_divergence": statistics.median(firsts) if firsts else None,
+            "questions": differing,
+        }
+
+    depth_block = block(depths, depth_compared)
+    depth_block["questions_differing_on_identical_context"] = sum(
+        d["identical_context"] for d in depths
+    )
+    return {"token_ids": block(tokens, token_compared), "exit_depths": depth_block}
+
+
 def score(task, row, text):
     from lm_eval.api.instance import Instance
 
@@ -502,6 +560,8 @@ def compare(args):
         "reference_correct_candidate_wrong": sum(d == -1 for d in differences),
         "reference_wrong_candidate_correct": sum(d == 1 for d in differences),
         "answer_disagreements": [x["id"] for x, y in pairs if x["answer"] != y["answer"]],
+        # Diagnostic only; the accuracy gate below does not use it.
+        "sequence_differences": sequence_differences(pairs),
         "max_regression_pp": a["max_regression_pp"],
         "passes_observed_accuracy_gate": (
             delta >= -a["max_regression_pp"]

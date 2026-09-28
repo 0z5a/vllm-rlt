@@ -156,6 +156,14 @@ exit settings and depth summary alongside the paired accuracy result. Result key
 `reference_*`/`candidate_*`; the earlier `transformers_*`/`native_*` keys are also
 written only when the reference is the Transformers release and the candidate is native.
 
+Matching answers can hide different executions, for example between synchronous and
+asynchronous runs of one exit policy. `sequence_differences` therefore reports, for the
+generated token sequences and for the exit-depth sequences (where both runs record
+them), how many questions differ and where each first diverges. An exit-depth difference
+counts as `identical_context` when the two runs chose different depths for a position
+whose preceding tokens were still identical. These fields are diagnostic; the accuracy
+gate does not use them.
+
 Dataset: [GSM8K](https://huggingface.co/datasets/openai/gsm8k).
 The [Ouro evaluation settings](https://arxiv.org/html/2510.25741v5#A3.T16) do not
 pin the exact harness revision, demonstrations or token limits, so the settings

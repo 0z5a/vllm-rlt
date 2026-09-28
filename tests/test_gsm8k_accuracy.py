@@ -23,6 +23,7 @@ from benchmarks.gsm8k import (
     make_task,
     score,
     select_doc_ids,
+    sequence_differences,
 )
 
 
@@ -459,3 +460,69 @@ def test_compare_keeps_backend_named_keys_for_hf_vs_native(tmp_path):
     assert result["transformers_correct"] == result["reference_correct"] == 1
     assert result["native_correct"] == result["candidate_correct"] == 0
     assert result["native_accuracy_pct"] == result["candidate_accuracy_pct"] == 0
+
+
+def rows(id_, tokens, depths=None):
+    row = {"id": id_, "token_ids": tokens}
+    if depths is not None:
+        row["exit_depths"] = depths
+    return row
+
+
+def test_sequence_differences_locate_first_divergence():
+    pairs = [
+        # identical
+        (rows(0, [1, 2, 3], [4, 2, 2]), rows(0, [1, 2, 3], [4, 2, 2])),
+        # same tokens, exit decision differs at 2 on identical context
+        (rows(1, [1, 2, 3], [4, 2, 2]), rows(1, [1, 2, 3], [4, 2, 3])),
+        # tokens diverge at 1; the later depth difference follows from it
+        (rows(2, [1, 5, 6], [4, 2, 2]), rows(2, [1, 2, 3], [4, 2, 3])),
+        # depth differs at 1 while tokens still agree there: identical context
+        (rows(3, [1, 2, 9], [4, 3, 2]), rows(3, [1, 2, 3], [4, 2, 2])),
+        # one output is a prefix of the other: a length difference, not an exit decision
+        (rows(4, [1, 2], [4, 2]), rows(4, [1, 2, 3], [4, 2, 2])),
+        # exit decision differs at 2 on identical context and changes token 2 itself
+        (rows(5, [1, 2, 3], [4, 2, 2]), rows(5, [1, 2, 9], [4, 2, 3])),
+    ]
+    result = sequence_differences(pairs)
+    tokens, depths = result["token_ids"], result["exit_depths"]
+    assert tokens["questions_compared"] == 6
+    assert tokens["questions_differing"] == 4
+    assert [q["first_divergence"] for q in tokens["questions"]] == [1, 2, 2, 2]
+    assert (tokens["earliest_first_divergence"], tokens["median_first_divergence"]) == (1, 2)
+    assert depths["questions_differing"] == 5
+    assert {q["id"]: q["identical_context"] for q in depths["questions"]} == {
+        1: True,
+        2: False,
+        3: True,
+        4: False,
+        5: True,
+    }
+    assert depths["questions_differing_on_identical_context"] == 3
+
+
+def test_sequence_differences_skip_unrecorded_depths():
+    # HF fixed-depth rows record no exit depths.
+    result = sequence_differences([(rows(0, [1, 2]), rows(0, [1, 3], [4, 2]))])
+    assert result["token_ids"]["questions_differing"] == 1
+    assert result["exit_depths"]["questions_compared"] == 0
+    assert result["exit_depths"]["earliest_first_divergence"] is None
+
+
+def test_compare_reports_sequences_without_changing_the_gate(tmp_path):
+    args = comparison_fixture(tmp_path, examples=2)
+    for backend, depths in (("transformers", [[4, 2], [4, 2]]), ("native", [[4, 2], [4, 3]])):
+        path = tmp_path / backend
+        samples = [json.loads(line) for line in (path / "samples.jsonl").read_text().splitlines()]
+        for sample, sample_depths in zip(samples, depths):
+            sample.update(token_ids=[7, 8], exit_depths=sample_depths)
+        (path / "samples.jsonl").write_text("".join(json.dumps(r) + "\n" for r in samples))
+        summary = json.loads((path / "summary.json").read_text())
+        summary.update(backend="native", samples_sha256=file_digest(path / "samples.jsonl"))
+        (path / "summary.json").write_text(json.dumps(summary))
+    result = compare(args)
+    differences = result["sequence_differences"]
+    assert differences["token_ids"]["questions_differing"] == 0
+    assert differences["exit_depths"]["questions_differing_on_identical_context"] == 1
+    assert result["answer_disagreements"] == []
+    assert result["passes_observed_accuracy_gate"]
