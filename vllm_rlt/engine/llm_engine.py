@@ -25,6 +25,7 @@ class LLMEngine:
         exit_config=None,
         execution_config=None,
         speculative_config=None,
+        model_runner_class=ModelRunner,
     ):
         self.model = model
         cache_config = cache_config or CacheConfig()
@@ -102,7 +103,7 @@ class LLMEngine:
             if speculative_config is not None
             else None
         )
-        self.model_runner = ModelRunner(
+        self.model_runner = model_runner_class(
             model,
             self.cache_manager,
             exit_config=self.exit_config,
