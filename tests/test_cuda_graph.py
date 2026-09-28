@@ -8,6 +8,7 @@ import torch
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.worker.cuda_graph import _capture
 
 
 def test_cuda_graph_validation():
@@ -19,6 +20,27 @@ def test_cuda_graph_validation():
         LLMEngine(
             OuroForCausalLM(OuroConfig.tiny()), execution_config=ExecutionConfig(cuda_graphs=True)
         )
+
+
+@pytest.mark.gpu
+def test_capture_waits_for_input_stream_without_device_sync(monkeypatch):
+    hidden = torch.empty(4, device="cuda")
+    producer = torch.cuda.Stream()
+    capture_stream = torch.cuda.Stream()
+    with torch.cuda.stream(producer):
+        hidden.fill_(7)
+        with monkeypatch.context() as patch:
+            patch.setattr(
+                torch.cuda,
+                "synchronize",
+                lambda *args, **kwargs: pytest.fail("capture synchronized the whole device"),
+            )
+            graph, output = _capture(
+                hidden, capture_stream, torch.cuda.graph_pool_handle(), lambda: hidden * 2
+            )
+        graph.replay()
+    torch.cuda.current_stream().wait_stream(producer)
+    torch.testing.assert_close(output, torch.full_like(output, 14))
 
 
 @pytest.mark.gpu
