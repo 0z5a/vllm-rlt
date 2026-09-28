@@ -4,7 +4,7 @@ import torch
 from lm_eval.models.utils import postprocess_generated_text, stop_sequences_criteria
 from transformers import AutoModelForCausalLM, DynamicCache, LogitsProcessor
 
-from benchmarks.gsm8k import FIXED_EXIT
+from benchmarks.gsm8k import is_fixed
 from vllm_rlt import (
     LLM,
     CacheConfig,
@@ -24,6 +24,13 @@ class FiniteLogits(LogitsProcessor):
     def __call__(self, input_ids, scores):
         check_logits(scores)
         return scores
+
+
+def check_depth(config, loops):
+    if config.total_ut_steps != loops:
+        raise ValueError(
+            f"Model has {config.total_ut_steps} loops but the protocol expects {loops}"
+        )
 
 
 class ReleaseExitHooks:
@@ -73,8 +80,10 @@ class ReleaseExitHooks:
 
 
 class Generator:
-    def __init__(self, backend, model_path, tokenizer, max_length, exit_policy=FIXED_EXIT):
+    def __init__(self, backend, model_path, tokenizer, max_length, exit_policy):
         self.backend, self.tokenizer, self.exit = backend, tokenizer, exit_policy
+        # Full depth, taken from the protocol (the checkpoint's total_ut_steps).
+        loops = exit_policy["max_loops"]
         if backend == "transformers":
             self.model = (
                 AutoModelForCausalLM.from_pretrained(
@@ -93,9 +102,10 @@ class Generator:
             self.cache_slots = (
                 self.model.config.num_hidden_layers * self.model.config.total_ut_steps
             )
+            check_depth(self.model.config, loops)
             self.exit_hooks = (
                 None
-                if exit_policy == FIXED_EXIT
+                if is_fixed(exit_policy)
                 else ReleaseExitHooks(self.model, exit_policy["threshold"])
             )
         else:
@@ -104,13 +114,15 @@ class Generator:
                 device="cuda",
                 dtype=torch.bfloat16,
                 attention_backend="triton",
-                cache_config=CacheConfig(num_blocks=4 * ((max_length + 15) // 16)),
+                # last_exited KV keeps one plane per loop.
+                cache_config=CacheConfig(num_blocks=loops * ((max_length + 15) // 16)),
                 scheduler_config=SchedulerConfig(max_num_seqs=1, max_num_batched_tokens=128),
                 exit_config=ExitConfig(exit_policy["mode"]),
                 execution_config=ExecutionConfig(async_scheduling=exit_policy["async_scheduling"]),
             )
             # Observe the existing sampling boundary without changing arithmetic.
             self.model = self.llm.engine.model
+            check_depth(self.model.config, loops)
             self._finite_hook = self.model.lm_head.register_forward_hook(
                 lambda module, inputs, output: check_logits(output)
             )
@@ -138,8 +150,8 @@ class Generator:
                 # The release selects the exited loop's hidden state after running
                 # every loop, so its KV stays full-depth even when exiting early.
                 **(
-                    {"exit_at_step": 3}
-                    if self.exit == FIXED_EXIT
+                    {"exit_at_step": self.exit["max_loops"] - 1}
+                    if is_fixed(self.exit)
                     else {"exit_threshold": self.exit["threshold"]}
                 ),
                 use_weighted_exit=False,
@@ -170,8 +182,9 @@ class Generator:
                     for output in engine.step():
                         ids = output.token_ids
                         depths = output.exit_depths
-                        if self.exit == FIXED_EXIT and any(depth != 4 for depth in depths):
-                            raise RuntimeError("Expected fixed-four-loop generation")
+                        full = self.exit["max_loops"]
+                        if is_fixed(self.exit) and any(depth != full for depth in depths):
+                            raise RuntimeError("Expected fixed full-depth generation")
                         sequence = torch.tensor([prompt_ids + ids], device="cuda")
                         if not output.finished and criteria(sequence, None).all().item():
                             engine.abort_request("gsm8k")
@@ -185,6 +198,6 @@ class Generator:
         result = {"token_ids": ids, "raw_text": raw, "text": text, "finish_reason": reason}
         if depths is not None:
             # The first output comes from full-depth prefill on both backends; later entries are
-            # decode depths. The release still computes all four loops for every token.
+            # decode depths. The release still computes every loop for every token.
             result["exit_depths"] = list(depths)
         return result

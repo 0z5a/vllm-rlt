@@ -30,8 +30,9 @@ Adopting the 87-question case required no new GPU inference.
 
 The reference calls `AutoModelForCausalLM.from_pretrained(...,
 trust_remote_code=True)` and the released model's `generate()`. It uses eager
-attention and the standard Transformers `DynamicCache` with 96 depth/layer slots,
-plus `exit_at_step=3` for fourth-loop logits. This cache setup accommodates the
+attention and the standard Transformers `DynamicCache` with one slot per layer and
+loop (96 here), plus `exit_at_step = total_ut_steps - 1` (3) for last-loop logits.
+This cache setup accommodates the
 pinned release's older cache interface; the model source is not patched.
 The candidate uses the existing native engine and Triton attention. Both use
 BF16 weights and activations, retaining each backend's existing FP32 reductions
@@ -113,7 +114,10 @@ do not reuse the stored 59/87 baseline: run HF and native, then use `compare`.
 
 ## Adaptive-exit runs
 
-The default recipe runs all four loops for every token. `run` also accepts an
+The default recipe runs the checkpoint's full depth for every token: `prepare` reads
+`total_ut_steps` from its `config.json` (4 for Ouro-1.4B) into the protocol's `loops`,
+and `run` takes the depth from there. `loops` is part of the baseline fingerprint, so the
+stored GSM8K-87 baseline applies only to a four-loop protocol. `run` also accepts an
 adaptive exit policy, so accuracy can be measured under the same protocol:
 
 ```bash
@@ -123,9 +127,10 @@ python -m benchmarks.gsm8k run --backend native \
 ```
 
 - `--exit-threshold` is the cumulative exit probability. `1` (the default) keeps
-  the fixed four-loop recipe, and the loop/mode options are rejected with it.
-- Below 1, `--min-loops` is required. `--exit-mode ouro_delayed` selects the delayed
-  gate, and `--async-scheduling` (native only) requires it.
+  the fixed full-depth recipe, and the loop/mode options are rejected with it.
+- Below 1, `--min-loops` is required, between 1 and the protocol's depth.
+  `--exit-mode ouro_delayed` selects the delayed gate, and `--async-scheduling`
+  (native only) requires it.
 - The Transformers release accepts `--exit-mode ouro --min-loops 1` only: it has no
   minimum loop count or delayed mode. It runs every loop and selects the exited
   loop's hidden state, so its KV stays full-depth, while native execution skips the
@@ -140,7 +145,7 @@ python -m benchmarks.gsm8k run --backend native \
 Metadata and summaries record the exit settings. Adaptive summaries add `depth`: decode
 token count, mean decode depth, a depth histogram and mean decode loops per
 question. For the Transformers release these are the selected exit loops, recorded
-with its own rule; it still computes all four loops for every token. The first output
+with its own rule; it still computes every loop for every token. The first output
 token comes from full-depth prefill and is excluded from these statistics. The stored
 GSM8K-87 baseline describes fixed-depth generation, so adaptive native runs report no
 `baseline_comparison` and no gate.

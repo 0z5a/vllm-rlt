@@ -14,14 +14,6 @@ MODEL_REVISION = "574fa66cb8bf5abdc979642d01cf2b79b16bfab1"
 DATA_REVISION = "740312add88f781978c0658806c59bc2815b9866"
 PACKAGES = ("torch", "transformers", "lm-eval", "datasets", "tokenizers", "triton")
 DEFAULT_CASE = Path(__file__).parent / "fixtures/gsm8k-87.json"
-# The original recipe: every output token uses all four loops.
-FIXED_EXIT = {
-    "mode": "ouro",
-    "threshold": 1.0,
-    "min_loops": 4,
-    "max_loops": 4,
-    "async_scheduling": False,
-}
 
 
 def digest(value):
@@ -80,6 +72,29 @@ def select_doc_ids(population, *, limit, seed, split):
         ).digest(),
     )
     return sorted(ranked[:limit])
+
+
+def checkpoint_loops(config):
+    """Full recurrent depth of an Ouro checkpoint, from its config.json."""
+    loops = config.get("total_ut_steps")
+    if config.get("model_type") != "ouro" or type(loops) is not int or loops < 1:
+        raise ValueError("This evaluation requires an Ouro checkpoint with total_ut_steps >= 1")
+    return loops
+
+
+def fixed_exit(loops):
+    """The original recipe: every output token runs the checkpoint's full depth."""
+    return {
+        "mode": "ouro",
+        "threshold": 1.0,
+        "min_loops": loops,
+        "max_loops": loops,
+        "async_scheduling": False,
+    }
+
+
+def is_fixed(exit_policy):
+    return exit_policy["threshold"] == 1
 
 
 def baseline_fingerprint(protocol):
@@ -158,9 +173,7 @@ def prepare(args):
         raise ValueError("--limit must be positive")
     if not 0 < args.max_new_tokens < args.max_length or args.max_regression_pp < 0:
         raise ValueError("Invalid context/output budget or regression threshold")
-    config = json.loads((model / "config.json").read_text())
-    if config.get("model_type") != "ouro" or config.get("total_ut_steps") != 4:
-        raise ValueError("This evaluation requires the four-loop Ouro checkpoint")
+    loops = checkpoint_loops(json.loads((model / "config.json").read_text()))
     task = make_task(split=args.split)
     case = None
     if args.limit is None and not args.all:
@@ -214,7 +227,8 @@ def prepare(args):
         "max_new_tokens": args.max_new_tokens,
         "max_length": args.max_length,
         "dtype": "bfloat16",
-        "loops": 4,
+        # Fingerprinted: the stored four-loop baseline applies only when this is 4.
+        "loops": loops,
         "batch_size": 1,
         "add_special_tokens": False,
         "apply_chat_template": False,
@@ -246,16 +260,21 @@ def prepare(args):
     )
 
 
-def exit_settings(backend, mode="ouro", threshold=1.0, min_loops=None, async_scheduling=False):
-    """Validate one run's exit policy; the default reproduces the fixed-depth recipe."""
+def exit_settings(
+    backend, loops, mode="ouro", threshold=1.0, min_loops=None, async_scheduling=False
+):
+    """Validate one run's exit policy against the checkpoint's full depth ``loops``.
+
+    The default reproduces the fixed-depth recipe.
+    """
     if not 0 <= threshold <= 1:
         raise ValueError("--exit-threshold must be in [0, 1]")
     if threshold == 1:
         if (mode, min_loops, async_scheduling) != ("ouro", None, False):
             raise ValueError("Exit options require --exit-threshold below 1")
-        return dict(FIXED_EXIT)
-    if min_loops is None or not 1 <= min_loops <= 4:
-        raise ValueError("Adaptive exit requires an explicit --min-loops between 1 and 4")
+        return fixed_exit(loops)
+    if min_loops is None or not 1 <= min_loops <= loops:
+        raise ValueError(f"Adaptive exit requires an explicit --min-loops between 1 and {loops}")
     if async_scheduling and mode != "ouro_delayed":
         raise ValueError("--async-scheduling requires --exit-mode ouro_delayed")
     if backend == "transformers" and (mode, min_loops) != ("ouro", 1):
@@ -265,7 +284,7 @@ def exit_settings(backend, mode="ouro", threshold=1.0, min_loops=None, async_sch
         "mode": mode,
         "threshold": threshold,
         "min_loops": min_loops,
-        "max_loops": 4,
+        "max_loops": loops,
         "async_scheduling": async_scheduling,
     }
 
@@ -340,12 +359,23 @@ def run(args):
         and baseline_fingerprint(protocol) != protocol["baseline"]["protocol_fingerprint"]
     ):
         raise ValueError("Default case protocol changed after its HF baseline was frozen")
+    loops = protocol["loops"]
+    exit_policy = exit_settings(
+        args.backend,
+        loops,
+        args.exit_mode,
+        args.exit_threshold,
+        args.min_loops,
+        args.async_scheduling,
+    )
     if protocol["source"]["packages"] != source()["packages"]:
         raise ValueError("Evaluation package versions changed after preparation")
     model = Path(protocol["model"])
     for name, expected in protocol["model_files"].items():
         if file_digest(model / name) != expected:
             raise ValueError(f"Model file changed: {name}")
+    if checkpoint_loops(json.loads((model / "config.json").read_text())) != loops:
+        raise ValueError("Checkpoint depth differs from the protocol")
     if not os.environ.get("CUDA_VISIBLE_DEVICES") or torch.cuda.device_count() != 1:
         raise RuntimeError("Run with one scheduler-assigned GPU")
     output = Path(args.output)
@@ -362,15 +392,14 @@ def run(args):
         "expected_examples": len(protocol["records"]),
         "max_regression_pp": protocol["max_regression_pp"],
         "min_reference_accuracy_pct": protocol["min_reference_accuracy_pct"],
-        "exit": args.exit,
+        "loops": loops,
+        "exit": exit_policy,
     }
     write_json(output / "metadata.json", metadata)
     tokenizer = AutoTokenizer.from_pretrained(model, local_files_only=True)
     task = make_task(protocol["task_config"])
     start = time.monotonic()
-    generator = Generator(
-        args.backend, str(model), tokenizer, protocol["max_length"], exit_policy=args.exit
-    )
+    generator = Generator(args.backend, str(model), tokenizer, protocol["max_length"], exit_policy)
     load_seconds = time.monotonic() - start
     rows = []
     with (output / "samples.jsonl").open("x", buffering=1) as stream:
@@ -405,8 +434,8 @@ def run(args):
         "generation_and_scoring_seconds": sum(r["seconds"] for r in rows),
         "samples_sha256": file_digest(output / "samples.jsonl"),
     }
-    # The stored baseline describes fixed-depth generation only.
-    if args.backend == "native" and "baseline" in protocol and args.exit == FIXED_EXIT:
+    # The stored baseline describes fixed-depth generation only; its fingerprint fixes loops.
+    if args.backend == "native" and "baseline" in protocol and is_fixed(exit_policy):
         summary["baseline_comparison"] = baseline_result(protocol, rows)
     write_json(output / "summary.json", summary)
     print(json.dumps(summary, indent=2))
@@ -450,15 +479,16 @@ def compare(args):
     result = {
         "examples": a["examples"],
         "split": a["split"],
-        # Summaries written before exit options existed used the fixed recipe.
+        # Summaries written before exit options existed used the fixed recipe, and the
+        # harness then accepted only four-loop checkpoints.
         "reference": {
             "backend": a["backend"],
-            "exit": a.get("exit", FIXED_EXIT),
+            "exit": a.get("exit", fixed_exit(4)),
             "depth": a.get("depth"),
         },
         "candidate": {
             "backend": b["backend"],
-            "exit": b.get("exit", FIXED_EXIT),
+            "exit": b.get("exit", fixed_exit(4)),
             "depth": b.get("depth"),
         },
         "reference_accuracy_pct": 100 * a["accuracy"],
@@ -531,7 +561,7 @@ def main():
         "--exit-threshold",
         type=float,
         default=1.0,
-        help="Cumulative exit probability; 1 keeps the fixed four-loop recipe",
+        help="Cumulative exit probability; 1 keeps the fixed full-depth recipe",
     )
     p.add_argument("--min-loops", type=int, help="Required when --exit-threshold is below 1")
     p.add_argument("--async-scheduling", action="store_true", help="Native ouro_delayed only")
@@ -540,14 +570,6 @@ def main():
     p.add_argument("--native", "--candidate", dest="native", required=True)
     p.add_argument("--output", required=True)
     args = parser.parse_args()
-    if args.command == "run":
-        args.exit = exit_settings(
-            args.backend,
-            args.exit_mode,
-            args.exit_threshold,
-            args.min_loops,
-            args.async_scheduling,
-        )
     result = {"prepare": prepare, "run": run, "compare": compare}[args.command](args)
     if args.command == "compare" and not result["passes_observed_accuracy_gate"]:
         raise SystemExit(1)

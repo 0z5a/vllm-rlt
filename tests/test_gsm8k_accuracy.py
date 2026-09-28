@@ -10,15 +10,16 @@ import pytest
 from benchmarks import gsm8k
 from benchmarks.gsm8k import (
     DEFAULT_CASE,
-    FIXED_EXIT,
     baseline_fingerprint,
     baseline_result,
     build_records,
+    checkpoint_loops,
     compare,
     depth_summary,
     digest,
     exit_settings,
     file_digest,
+    fixed_exit,
     make_task,
     score,
     select_doc_ids,
@@ -154,7 +155,8 @@ def test_baseline_fingerprint_tracks_recipe_not_checkout():
     changed_length = {**protocol, "max_new_tokens": 512}
     changed_packages = deepcopy(protocol)
     changed_packages["source"]["packages"]["transformers"] = "different"
-    for changed in (changed_prompt, changed_length, changed_packages):
+    changed_depth = {**protocol, "loops": 6}
+    for changed in (changed_prompt, changed_length, changed_packages, changed_depth):
         assert baseline_fingerprint(changed) != expected
 
 
@@ -304,11 +306,15 @@ def test_invalid_comparisons_rejected(tmp_path, change):
         compare(args)
 
 
-def test_default_exit_is_the_fixed_recipe():
-    assert exit_settings("native") == FIXED_EXIT
-    assert exit_settings("transformers") == FIXED_EXIT
+@pytest.mark.parametrize("loops", [4, 6])
+def test_default_exit_is_the_fixed_recipe(loops):
+    fixed = {"mode": "ouro", "threshold": 1.0, "min_loops": loops, "max_loops": loops}
+    for backend in ("native", "transformers"):
+        assert exit_settings(backend, loops) == {**fixed, "async_scheduling": False}
+        assert fixed_exit(loops) == exit_settings(backend, loops)
 
 
+@pytest.mark.parametrize("loops", [4, 6])
 @pytest.mark.parametrize(
     "backend,options",
     [
@@ -317,13 +323,85 @@ def test_default_exit_is_the_fixed_recipe():
         ("transformers", dict(mode="ouro", threshold=0.9, min_loops=1)),
     ],
 )
-def test_adaptive_exit_settings(backend, options):
-    settings = exit_settings(backend, **options)
-    assert settings["max_loops"] == 4
+def test_adaptive_exit_settings(backend, options, loops):
+    settings = exit_settings(backend, loops, **options)
+    assert settings["max_loops"] == loops
     assert settings["threshold"] == options["threshold"]
     assert settings["min_loops"] == options["min_loops"]
     assert settings["async_scheduling"] == options.get("async_scheduling", False)
-    assert settings != FIXED_EXIT
+    assert settings != fixed_exit(loops)
+
+
+def test_min_loops_is_validated_against_the_checkpoint_depth():
+    assert exit_settings("native", 6, threshold=0.5, min_loops=6)["min_loops"] == 6
+    with pytest.raises(ValueError, match="between 1 and 6"):
+        exit_settings("native", 6, threshold=0.5, min_loops=7)
+
+
+@pytest.mark.parametrize(
+    "config,loops",
+    [
+        ({"model_type": "ouro", "total_ut_steps": 4}, 4),
+        ({"model_type": "ouro", "total_ut_steps": 6}, 6),
+        ({"model_type": "llama", "total_ut_steps": 4}, None),
+        ({"model_type": "ouro"}, None),
+        ({"model_type": "ouro", "total_ut_steps": 0}, None),
+        ({"model_type": "ouro", "total_ut_steps": 4.0}, None),
+    ],
+)
+def test_checkpoint_loops_come_from_config(config, loops):
+    if loops is None:
+        with pytest.raises(ValueError, match="total_ut_steps"):
+            checkpoint_loops(config)
+    else:
+        assert checkpoint_loops(config) == loops
+
+
+def test_run_refuses_the_stored_baseline_at_another_depth(tmp_path, monkeypatch):
+    pytest.importorskip("lm_eval")
+    case = json.loads(DEFAULT_CASE.read_text())
+    protocol = {
+        "model_revision": "pinned",
+        "model_files": {},
+        "task_config": {},
+        "records": [],
+        "max_new_tokens": 1024,
+        "max_length": 2048,
+        "dtype": "bfloat16",
+        "loops": 4,
+        "batch_size": 1,
+        "add_special_tokens": False,
+        "apply_chat_template": False,
+        "source": {"packages": case["baseline"]["packages"]},
+    }
+    baseline = {**case["baseline"], "protocol_fingerprint": baseline_fingerprint(protocol)}
+
+    class PassedTheGuard(Exception):
+        pass
+
+    def stop():
+        raise PassedTheGuard
+
+    # The package check follows the baseline guard; stop there instead of loading a model.
+    monkeypatch.setattr(gsm8k, "source", stop)
+    for loops in (4, 6):
+        path = tmp_path / f"protocol-{loops}.json"
+        path.write_text(json.dumps({**protocol, "loops": loops, "baseline": baseline}))
+        args = SimpleNamespace(
+            protocol=str(path),
+            backend="native",
+            exit_mode="ouro",
+            exit_threshold=1.0,
+            min_loops=None,
+            async_scheduling=False,
+        )
+        if loops == 4:
+            with pytest.raises(PassedTheGuard):
+                gsm8k.run(args)
+        else:
+            # Another depth changes the fingerprint, so the four-loop baseline cannot apply.
+            with pytest.raises(ValueError, match="changed after its HF baseline was frozen"):
+                gsm8k.run(args)
 
 
 @pytest.mark.parametrize(
@@ -342,7 +420,7 @@ def test_adaptive_exit_settings(backend, options):
 )
 def test_invalid_exit_settings_rejected(backend, options, message):
     with pytest.raises(ValueError, match=message):
-        exit_settings(backend, **options)
+        exit_settings(backend, 4, **options)
 
 
 def test_depth_summary_excludes_the_prefill_token():
@@ -357,7 +435,7 @@ def test_depth_summary_excludes_the_prefill_token():
 
 def test_compare_reports_exit_policies_between_native_runs(tmp_path):
     args = comparison_fixture(tmp_path)
-    adaptive = exit_settings("native", mode="ouro", threshold=0.5, min_loops=2)
+    adaptive = exit_settings("native", 4, mode="ouro", threshold=0.5, min_loops=2)
     depth = depth_summary([{"exit_depths": [4, 2]}])
     for backend, extra in (
         ("transformers", {"backend": "native"}),
@@ -366,8 +444,8 @@ def test_compare_reports_exit_policies_between_native_runs(tmp_path):
         path = tmp_path / backend / "summary.json"
         path.write_text(json.dumps({**json.loads(path.read_text()), **extra}))
     result = compare(args)
-    # A summary without exit settings predates them and used the fixed recipe.
-    assert result["reference"] == {"backend": "native", "exit": FIXED_EXIT, "depth": None}
+    # A summary without exit settings predates them and used the fixed four-loop recipe.
+    assert result["reference"] == {"backend": "native", "exit": fixed_exit(4), "depth": None}
     assert result["candidate"] == {"backend": "native", "exit": adaptive, "depth": depth}
     assert (result["reference_correct"], result["candidate_correct"]) == (1, 1)
     # Backend-named keys would mislabel a native-vs-native comparison, so they are omitted.

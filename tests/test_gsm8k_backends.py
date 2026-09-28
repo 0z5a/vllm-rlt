@@ -5,6 +5,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
+from benchmarks.gsm8k import fixed_exit
+
 ADAPTIVE_EXIT = {
     "mode": "ouro",
     "threshold": 0.5,
@@ -74,7 +76,7 @@ def generator(monkeypatch):
     )
     generator = backends.Generator.__new__(backends.Generator)
     generator.backend = "native"
-    generator.exit = backends.FIXED_EXIT
+    generator.exit = fixed_exit(4)
     generator.tokenizer = SimpleNamespace(eos_token_id=0, decode=lambda ids, **kw: "answer STOP")
     generator.llm = SimpleNamespace(engine=Engine())
     return generator
@@ -91,6 +93,29 @@ def test_stop_releases_request_without_an_extra_token(generator):
     params = generator.llm.engine.params
     assert params.min_loops == params.max_loops == 4 and params.exit_threshold == 1
     assert result["exit_depths"] == [4, 4]
+
+
+@pytest.mark.parametrize("depths,fails", [((6, 6), False), ((6, 4), True)])
+def test_fixed_depth_follows_the_protocol_depth(generator, depths, fails):
+    generator.exit = fixed_exit(6)
+    generator.llm.engine = Engine(depths=depths)
+    if fails:
+        with pytest.raises(RuntimeError, match="full-depth"):
+            generator.generate([1, 2], 8, ["STOP"])
+        return
+    result = generator.generate([1, 2], 8, ["STOP"])
+    params = generator.llm.engine.params
+    assert params.min_loops == params.max_loops == 6
+    assert result["exit_depths"] == [6, 6]
+
+
+def test_model_depth_must_match_the_protocol():
+    pytest.importorskip("lm_eval")
+    from benchmarks.gsm8k_backends import check_depth
+
+    check_depth(SimpleNamespace(total_ut_steps=4), 4)
+    with pytest.raises(ValueError, match="6 loops but the protocol expects 4"):
+        check_depth(SimpleNamespace(total_ut_steps=6), 4)
 
 
 def test_adaptive_exit_records_depths_below_four(generator):
@@ -129,8 +154,9 @@ class ReleaseModel:
         return torch.cat([inputs.cpu(), torch.tensor([[10, 11]])], dim=1)
 
 
+@pytest.mark.parametrize("loops", [4, 6])
 @pytest.mark.parametrize("adaptive", [False, True])
-def test_transformers_exit_arguments(generator, monkeypatch, adaptive):
+def test_transformers_exit_arguments(generator, monkeypatch, adaptive, loops):
     from benchmarks import gsm8k_backends as backends
 
     class Cache:
@@ -145,13 +171,14 @@ def test_transformers_exit_arguments(generator, monkeypatch, adaptive):
     generator.exit_hooks = SimpleNamespace(depths=["stale"]) if adaptive else None
     generator.model = ReleaseModel(generator.exit_hooks)
     generator.cache_slots = 4
-    generator.exit = ADAPTIVE_EXIT if adaptive else backends.FIXED_EXIT
+    generator.exit = {**ADAPTIVE_EXIT, "max_loops": loops} if adaptive else fixed_exit(loops)
     result = generator.generate([1, 2], 8, ["STOP"])
     kwargs = generator.model.kwargs
     if adaptive:
         assert kwargs["exit_threshold"] == 0.5 and "exit_at_step" not in kwargs
     else:
-        assert kwargs["exit_at_step"] == 3 and "exit_threshold" not in kwargs
+        # The last loop of the protocol's depth: 3 for the four-loop checkpoint.
+        assert kwargs["exit_at_step"] == loops - 1 and "exit_threshold" not in kwargs
     assert result["token_ids"] == [10, 11]
     if adaptive:
         # Depths from the previous question are cleared before generation.
