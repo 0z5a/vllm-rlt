@@ -94,20 +94,21 @@ class SpeculativeRunner:
     @torch.inference_mode()
     def execute(self, batch):
         items = batch.items
-        candidates = [[] for _ in items]
         proposals = [[] for _ in items]
         states = [[] for _ in items]
+        # Draft IDs stay on the device: each offset's IDs are the next offset's
+        # prelude input, and all of them are read back once after verification.
+        drafted = []
+        inputs = self.cache._stage([item.request.input_token_id for item in items], torch.long)
         # Each item includes the final shallow input needed for the bonus row.
         # Drafting batches independent requests at every autoregressive step.
         for offset in range(max(item.token_count for item in items)):
+            # The rows still drafting at the previous offset are exactly this
+            # offset's active rows, in the same order, so their IDs are the inputs.
             active = [i for i, item in enumerate(items) if offset < item.token_count]
             ids = [items[i].request.request_id for i in active]
             positions = [items[i].token_start + offset for i in active]
-            tokens = [
-                items[i].request.input_token_id if offset == 0 else candidates[i][-1]
-                for i in active
-            ]
-            hidden = self.model.prelude(self.cache._stage(tokens, torch.long))
+            hidden = self.model.prelude(inputs)
             hidden = self._cores(hidden, ids, positions, range(self.config.draft_loops))
             drafting = []
             for row, i in enumerate(active):
@@ -115,20 +116,17 @@ class SpeculativeRunner:
                 if offset + 1 < items[i].token_count:
                     drafting.append((row, i))
             if not drafting:
-                continue
+                break
             logits = self._coda(torch.stack([hidden[row] for row, _ in drafting]))
-            # One device-to-host read covers every greedy draft row of this offset.
-            greedy = None
-            if any(items[i].request.sampling_params.temperature == 0 for _, i in drafting):
-                greedy = logits.argmax(-1).tolist()
+            inputs = logits.argmax(-1)
             for row, (_, i) in enumerate(drafting):
                 request = items[i].request
-                if request.sampling_params.temperature == 0:
-                    candidates[i].append(greedy[row])
-                    continue
-                q = probabilities(logits[row], request.sampling_params)
-                proposals[i].append(q)
-                candidates[i].append(int(draw(q, generator_for(request, self.device)).item()))
+                if request.sampling_params.temperature != 0:
+                    q = probabilities(logits[row], request.sampling_params)
+                    proposals[i].append(q)
+                    # Per-request RNG consumption order is unchanged; only the read moves.
+                    inputs[row] = draw(q, generator_for(request, self.device))
+            drafted.append(([i for _, i in drafting], inputs))
         # Group contiguous positions per request for causal ragged attention.
         ids, positions = [], []
         for item in items:
@@ -143,10 +141,18 @@ class SpeculativeRunner:
             packed=True,
         )
         logits = self._coda(hidden)
-        # Greedy verification reads all target argmaxes once instead of per candidate.
-        targets = None
-        if any(item.request.sampling_params.temperature == 0 for item in items):
-            targets = logits.argmax(-1).tolist()
+        # One device-to-host read returns every draft ID and, for greedy requests,
+        # every verification target argmax.
+        greedy = any(item.request.sampling_params.temperature == 0 for item in items)
+        pending = [draft for _, draft in drafted] + ([logits.argmax(-1)] if greedy else [])
+        values = torch.cat(pending).tolist() if pending else []
+        candidates = [[] for _ in items]
+        start = 0
+        for rows, _ in drafted:
+            for i, candidate in zip(rows, values[start : start + len(rows)]):
+                candidates[i].append(candidate)
+            start += len(rows)
+        targets = values[start:]
         results, start = [], 0
         for i, item in enumerate(items):
             rows = logits[start : start + item.token_count]
