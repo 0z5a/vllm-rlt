@@ -1,0 +1,345 @@
+"""Unit coverage for collection control, rank routing and artifact processing."""
+
+import asyncio
+import csv
+import json
+import tarfile
+import threading
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+import torch
+
+from vllm_rlt.profiling import ProfileConfig, ProfileController, _package, parse_trace
+
+TRACE = {
+    "traceEvents": [
+        {
+            "ph": "X",
+            "cat": "cpu_op",
+            "name": "aten::mm",
+            "ts": 10,
+            "dur": 5,
+            "pid": 1,
+            "tid": 2,
+            "args": {"Input Dims": [[2, 4]], "Call stack": "caller"},
+        },
+        {
+            "ph": "X",
+            "cat": "kernel",
+            "name": "gemm",
+            "ts": 12,
+            "dur": 20,
+            "pid": 0,
+            "tid": 7,
+            "args": {"device": 0, "stream": 7},
+        },
+        {"ph": "i", "name": "[memory]", "args": {"Bytes": -16}},
+    ]
+}
+
+
+class NativeProfilerStub:
+    """Drive native callback boundaries without collecting devices or loading models."""
+
+    def __init__(self, **options):
+        self.options = options
+        self.schedule = options["schedule"]
+        self.index = 0
+        self.stopped = False
+        self.action = self.schedule(0) if self.schedule else None
+
+    def start(self):
+        self.owner = threading.get_ident()
+
+    def step(self):
+        assert threading.get_ident() == self.owner
+        if self.action == torch.profiler.ProfilerAction.RECORD_AND_SAVE:
+            self.options["on_trace_ready"](self)
+        self.index += 1
+        self.action = self.schedule(self.index) if self.schedule else None
+
+    def stop(self):
+        assert threading.get_ident() == self.owner
+        if not self.stopped and (
+            self.schedule is None
+            or self.action
+            in (torch.profiler.ProfilerAction.RECORD, torch.profiler.ProfilerAction.RECORD_AND_SAVE)
+        ):
+            self.options["on_trace_ready"](self)
+        self.stopped = True
+
+    def export_chrome_trace(self, path):
+        Path(path).write_text(json.dumps(TRACE))
+
+    def events(self):
+        return [
+            SimpleNamespace(
+                name="aten::mm",
+                device_type="CPU",
+                thread=2,
+                input_shapes=[[2, 4]],
+                stack=["caller"],
+                cpu_time_total=5,
+                self_cpu_time_total=3,
+                device_time_total=20,
+                self_device_time_total=20,
+                flops=64,
+            )
+        ]
+
+    def export_stacks(self, path):
+        Path(path).write_text("caller 3\n")
+
+    def export_memory_timeline(self, path, device):
+        Path(path).write_text(json.dumps([[10, 20], [[0, 8], [0, 16]]]))
+
+
+@pytest.fixture
+def native(monkeypatch):
+    instances = []
+
+    def create(**options):
+        instance = NativeProfilerStub(**options)
+        instances.append(instance)
+        return instance
+
+    monkeypatch.setattr(torch.profiler, "profile", create)
+    monkeypatch.setattr(
+        torch.profiler, "supported_activities", lambda: {torch.profiler.ProfilerActivity.CPU}
+    )
+    return instances
+
+
+def config(tmp_path, **options):
+    return ProfileConfig(enabled=True, output_dir=str(tmp_path), **options)
+
+
+def read_archive(job):
+    assert job["state"] == "ready", job
+    assert not Path(job["staging"]).exists()
+    with tarfile.open(job["archive"]) as archive:
+        summary = json.load(archive.extractfile("summary.json"))
+        inventory = json.load(archive.extractfile("inventory.json"))
+    assert "trace.json" in inventory
+    return summary
+
+
+def test_core_options_artifacts_and_raw_cleanup(tmp_path, native):
+    controller = ProfileController("cpu")
+    try:
+        controller.start(
+            config(
+                tmp_path, record_shapes=True, with_stack=True, profile_memory=True, with_flops=True
+            )
+        )
+        with pytest.raises(RuntimeError, match="already active"):
+            controller.start(config(tmp_path))
+        controller.stop()
+        result = controller.wait(5)
+        assert result["success"]
+        assert read_archive(result["jobs"]["0"])["memory"]["freed_bytes"] == 16
+        with tarfile.open(result["jobs"]["0"]["archive"]) as archive:
+            memory = json.load(archive.extractfile("memory_summary.json"))
+            assert memory["peak_visible_category_bytes"] == 16
+            stack = json.load(archive.extractfile("stack_summary.json"))
+            assert stack["self_cpu_time_us"] == 3
+        assert native[0].options["activities"] == [torch.profiler.ProfilerActivity.CPU]
+        assert native[0].options["schedule"] is None
+    finally:
+        controller.close()
+
+
+def test_scheduled_completion_short_window_and_restart(tmp_path, native):
+    controller = ProfileController("cpu")
+    try:
+        first = controller.start(
+            config(tmp_path, wait=1, warmup=1, active=2, repeat=2), scheduled=True
+        )
+        for _ in range(8):
+            controller.step()
+        assert not controller.recording
+        status = controller.wait(5)
+        assert len(status["jobs"]) == 2
+        assert all(not read_archive(j)["incomplete_window"] for j in status["jobs"].values())
+        second = controller.start(config(tmp_path, wait=20), scheduled=True)
+        controller.step()
+        controller.stop()
+        assert controller.wait(5)["empty"]
+        assert second["session_id"] != first["session_id"]
+        controller.start(config(tmp_path, active=10), scheduled=True)
+        controller.step()  # Warmup complete; stop before the full active window.
+        controller.stop()
+        assert read_archive(controller.wait(5)["jobs"]["0"])["incomplete_window"]
+    finally:
+        controller.close()
+
+
+def test_background_processing_does_not_block_stop(tmp_path, native, monkeypatch):
+    entered, release = threading.Event(), threading.Event()
+    owner = threading.get_ident()
+    threads = []
+
+    def blocked(*args):
+        threads.append(threading.get_ident())
+        entered.set()
+        assert release.wait(5)
+        return _package(*args)
+
+    monkeypatch.setattr("vllm_rlt.profiling._package", blocked)
+    controller = ProfileController("cpu")
+    try:
+        controller.start(config(tmp_path))
+        controller.stop()
+        assert entered.wait(2)
+        assert threads == [controller.current.thread.ident] and threads[0] != owner
+        assert not controller.status()["artifacts_complete"]
+        with pytest.raises(TimeoutError):
+            controller.wait(0)
+    finally:
+        release.set()
+        controller.close()
+    read_archive(controller.status()["jobs"]["0"])
+
+
+@pytest.mark.parametrize("stage", ["parse_trace", "_package"])
+def test_processing_failure_preserves_raw(tmp_path, native, monkeypatch, stage):
+    def fail(*args):
+        raise ValueError("injected failure")
+
+    monkeypatch.setattr("vllm_rlt.profiling." + stage, fail)
+    controller = ProfileController("cpu")
+    try:
+        controller.start(config(tmp_path))
+        controller.stop()
+        status = controller.wait(5)
+        job = status["jobs"]["0"]
+        assert not status["success"]
+        assert job["state"] == "failed" and "injected failure" in job["error"]
+        assert (Path(job["staging"]) / "trace.json").exists()
+        assert not Path(job["archive"]).exists()
+    finally:
+        controller.close()
+
+
+def test_rank_artifacts_are_distinct(tmp_path, native):
+    for rank in (0, 1):
+        controller = ProfileController("cpu")
+        try:
+            controller.start(
+                config(tmp_path),
+                session_id="shared",
+                rank=rank,
+                role="prefill" if rank == 0 else "decode",
+                managed_manifest=False,
+            )
+            controller.stop()
+            job = controller.wait(5)["jobs"]["0"]
+            assert read_archive(job)["rank"] == rank
+            assert f"rank-{rank:05d}" in job["archive"]
+        finally:
+            controller.close()
+
+
+def test_configuration_validation_and_disabled_path(tmp_path, native):
+    controller = ProfileController("cpu")
+    assert controller.start(ProfileConfig())["disabled"]
+    assert not list(tmp_path.iterdir()) and not native
+    for options in (
+        {"active": 0},
+        {"wait": -1},
+        {"repeat": True},
+        {"activities": ("bogus",)},
+        {"record_shapes": 1},
+    ):
+        with pytest.raises(ValueError):
+            config(tmp_path, **options)
+    with pytest.raises(ValueError, match="unsupported"):
+        controller.start(config(tmp_path, activities=("cuda",)))
+    assert not list(tmp_path.iterdir())
+
+
+def test_stream_parser_handles_large_events(tmp_path):
+    trace = json.loads(json.dumps(TRACE))
+    trace["traceEvents"][0]["args"]["Call stack"] = "x" * 70000
+    source = tmp_path / "trace.json"
+    source.write_text(json.dumps(trace))
+    parse_trace(source, tmp_path, {"config": {"profile_memory": True}})
+    with (tmp_path / "operators.csv").open() as output:
+        rows = list(csv.DictReader(output))
+    assert len(rows) == 2 and rows[0]["self_duration_us"] == ""
+    assert rows[1]["attribution"] == "device"
+    assert json.loads((tmp_path / "summary.json").read_text())["observed_duration_us"] == 22
+
+
+def fake_pd():
+    from vllm_rlt.pd.engine import PDEngine
+
+    engine = object.__new__(PDEngine)
+    engine.closed = False
+    engine.peers = {"p": SimpleNamespace(name="p"), "d": SimpleNamespace(name="d")}
+    engine.config = SimpleNamespace(startup_timeout=0.1, shutdown_timeout=0.1)
+    engine._profile_session = None
+    engine._profile_recording = False
+    engine._profile_statuses = {}
+    engine._profile_replies = {}
+    engine.transfers = {}
+    return engine
+
+
+def test_pd_acknowledgments_and_partial_failure_rollback(tmp_path):
+    engine = fake_pd()
+    sent = []
+    fail_decode = False
+    recording = {}
+
+    def send(name, kind, **fields):
+        sent.append((name, kind, fields))
+        if fail_decode and name == "d" and kind == "profile_start":
+            reply = {"error": "cannot start"}
+        else:
+            if kind != "profile_status":
+                recording[name] = kind == "profile_start"
+            reply = {
+                "result": {
+                    "recording": recording.get(name, False),
+                    "artifacts_complete": not recording.get(name, False),
+                }
+            }
+        engine._message(
+            engine.peers[name],
+            dict(
+                kind="profile_reply",
+                control_id=fields["control_id"],
+                session_id=fields["session_id"],
+                **reply,
+            ),
+        )
+
+    engine._send = send
+    engine._poll = lambda: None
+    status = engine.start_profile(config(tmp_path))
+    assert status["recording"] and set(status["ranks"]) == {"0", "1"}
+    assert all(not entry[2]["scheduled"] for entry in sent)
+    engine.stop_profile()
+    assert not engine.wait_for_profile_artifacts(1)["recording"]
+    fail_decode = True
+    with pytest.raises(RuntimeError, match="cannot start"):
+        engine.start_profile(config(tmp_path))
+    assert sent[-2][1] == sent[-1][1] == "profile_stop"
+    assert "cannot start" in engine._profile_manifest()["errors"][0]
+
+
+def test_serving_control_runs_on_owner_thread():
+    from vllm_rlt.serving.worker import EngineWorker
+
+    threads = []
+    engine = SimpleNamespace(start_profile=lambda *a, **kw: threads.append(threading.get_ident()))
+    worker = EngineWorker(lambda: (engine, None))
+    worker.engine, worker.ready = engine, True
+    try:
+        asyncio.run(worker.profile_control("start", ProfileConfig(enabled=False)))
+        assert len(threads) == 1 and threads[0] != threading.get_ident()
+    finally:
+        worker.executor.shutdown(wait=True)
