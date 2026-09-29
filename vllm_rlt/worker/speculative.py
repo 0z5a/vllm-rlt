@@ -58,13 +58,26 @@ class SpeculativeRunner:
         )
         self.coda_graphs = CodaGraphs(model, execution) if execution.cuda_graphs else None
 
-    def _core(self, hidden, ids, positions, depth, *, packed=False):
-        batch = self.cache._prepare_batch(
+    def _packed(self, packed):
+        return packed and self.cache.attention_info.get("generation") == 4
+
+    def _cores(self, hidden, ids, positions, depths, *, packed=False):
+        # Depth-independent metadata is prepared and copied once for all depths.
+        batches = self.cache._prepare_batches(
             ids,
-            [depth] * len(ids),
+            [[depth] * len(ids) for depth in depths],
             positions,
-            packed_prefill=packed and self.cache.attention_info.get("generation") == 4,
+            packed_prefill=self._packed(packed),
         )
+        for depth, batch in zip(depths, batches):
+            hidden = self._core(hidden, ids, positions, depth, packed=packed, batch=batch)
+        return hidden
+
+    def _core(self, hidden, ids, positions, depth, *, packed=False, batch=None):
+        if batch is None:
+            batch = self.cache._prepare_batch(
+                ids, [depth] * len(ids), positions, packed_prefill=self._packed(packed)
+            )
         if self.graphs is not None:
             hidden, _ = self.graphs.run(hidden, batch)
         else:
@@ -95,8 +108,7 @@ class SpeculativeRunner:
                 for i in active
             ]
             hidden = self.model.prelude(self.cache._stage(tokens, torch.long))
-            for depth in range(self.config.draft_loops):
-                hidden = self._core(hidden, ids, positions, depth)
+            hidden = self._cores(hidden, ids, positions, range(self.config.draft_loops))
             drafting = []
             for row, i in enumerate(active):
                 states[i].append(hidden[row])
@@ -123,8 +135,13 @@ class SpeculativeRunner:
             ids.extend([item.request.request_id] * item.token_count)
             positions.extend(range(item.token_start, item.token_start + item.token_count))
         hidden = torch.stack([h for request_states in states for h in request_states])
-        for depth in range(self.config.draft_loops, self.config.target_loops):
-            hidden = self._core(hidden, ids, positions, depth, packed=True)
+        hidden = self._cores(
+            hidden,
+            ids,
+            positions,
+            range(self.config.draft_loops, self.config.target_loops),
+            packed=True,
+        )
         logits = self._coda(hidden)
         # Greedy verification reads all target argmaxes once instead of per candidate.
         targets = None
