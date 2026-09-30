@@ -37,7 +37,6 @@ An ordinary engine step is one `LLMEngine.step()` invocation, not necessarily on
 from vllm_rlt import LLM, ProfileConfig
 
 config = ProfileConfig(
-    enabled=True,
     output_dir="/tmp/rlt-profiles",
     activities=("cpu", "cuda"),
     record_shapes=True,
@@ -93,7 +92,7 @@ Directory names use the rank and UTC capture timestamp to the second. Captures s
 
 Each archive contains:
 
-- `trace.json`: native Chrome trace, including runtime phase annotations.
+- `trace.json`: native Chrome trace of the configured CPU/CUDA activities.
 - `events.jsonl`: immutable native event snapshots captured before the profiler releases the cycle.
 - `operators.csv`: trace event counts and inclusive durations, with available process/thread/device/stream attribution.
 - `operator_metrics.csv`: native CPU/device inclusive and self times, shapes, stacks and FLOPs, aggregated in the background.
@@ -101,6 +100,6 @@ Each archive contains:
 - `inventory.json`: archived file sizes and SHA-256 checksums.
 - Stack exports and summaries when stacks are enabled; memory timeline and summary when memory, shapes and stacks are all enabled.
 
-FLOPs and other unavailable fields are not inferred for unsupported operators. Trace event durations can overlap and must not be summed as wall-clock time. Memory summaries describe allocations visible to PyTorch, not total device memory. CUDA Graph and transport visibility depends on the native profiler/backend; host annotations do not constitute a complete NIXL/RDMA trace.
+FLOPs and other unavailable fields are not inferred for unsupported operators. Trace event durations can overlap and must not be summed as wall-clock time. Memory summaries describe allocations visible to PyTorch, not total device memory. CUDA Graph and transport visibility depends on the native profiler/backend; the native profiler does not provide a complete NIXL/RDMA trace.
 
 Parsing and compression run on one background thread per rank. Native profiler finalization, export and event snapshotting still run on the owner thread. Background work shares CPU, memory and the Python GIL; it does not eliminate resource contention. Raw files are deleted only after archive contents have been verified and the final archive published. On failure, raw files remain in that cycle's staging directory and status includes the error. Archives retain the original data for inspection and reprocessing.

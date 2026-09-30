@@ -14,7 +14,8 @@ from types import SimpleNamespace
 
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.models import OuroConfig
-from vllm_rlt.profiling import ProfileConfig, _json, profile_timestamp
+from vllm_rlt.profiling import ProfileConfig
+from vllm_rlt.profiling_artifacts import _write_json_atomic, profile_timestamp
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
 
@@ -457,7 +458,9 @@ class PDEngine:
         )
         if self._profile_session:
             result["capture_time"] = self._profile_timestamp
-            _json(self._profile_root / f"manifest-{self._profile_timestamp}.json", result)
+            _write_json_atomic(
+                self._profile_root / f"manifest-{self._profile_timestamp}.json", result
+            )
         return result
 
     def _profile_control(self, action, *, timeout=None, **fields):
@@ -508,8 +511,6 @@ class PDEngine:
             self.profile_status()
         if self._profile_recording:
             raise RuntimeError("a profiling session is already active")
-        if not config.enabled:
-            return {"recording": False, "disabled": True}
         if self._profile_session:
             if any(
                 s.get("recording") or not s.get("artifacts_complete", True)

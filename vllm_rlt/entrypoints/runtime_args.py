@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SpeculativeConfig
+from vllm_rlt.profiling import ProfileConfig
 
 
 def add_runtime_args(parser):
@@ -103,30 +104,41 @@ def add_profile_args(parser):
     group = parser.add_argument_group("PyTorch profiling")
     group.add_argument("--profile", action="store_true")
     group.add_argument("--profile-dir")
-    group.add_argument("--profile-activities", help="comma-separated cpu,cuda")
-    group.add_argument("--profile-record-shapes", action="store_true")
-    group.add_argument("--profile-with-stack", action="store_true")
-    group.add_argument("--profile-memory", action="store_true")
-    group.add_argument("--profile-with-flops", action="store_true")
-    for name, default in (("wait", 0), ("warmup", 1), ("active", 10), ("repeat", 1)):
-        group.add_argument("--profile-" + name, type=int, default=default)
+    group.add_argument(
+        "--profile-activities",
+        default=ProfileConfig.activities,
+        help="comma-separated cpu,cuda",
+    )
+    for flag, field in (
+        ("record-shapes", "record_shapes"),
+        ("with-stack", "with_stack"),
+        ("memory", "profile_memory"),
+        ("with-flops", "with_flops"),
+    ):
+        group.add_argument(
+            "--profile-" + flag, action="store_true", default=getattr(ProfileConfig, field)
+        )
+    for name in ("wait", "warmup", "active", "repeat"):
+        group.add_argument("--profile-" + name, type=int, default=getattr(ProfileConfig, name))
 
 
-def profile_config(args):
-    from vllm_rlt.profiling import ProfileConfig
+def profile_config_from_args(args) -> ProfileConfig | None:
+    """Build startup profiling settings, filling missing CLI fields from parser defaults."""
+    parser = argparse.ArgumentParser(add_help=False)
+    add_profile_args(parser)
+    args = SimpleNamespace(**(vars(parser.parse_args([])) | vars(args)))
+    if not args.profile:
+        return None
 
     return ProfileConfig(
-        enabled=getattr(args, "profile", False),
-        output_dir=getattr(args, "profile_dir", None),
-        activities=tuple(args.profile_activities.split(","))
-        if getattr(args, "profile_activities", None)
-        else None,
-        record_shapes=getattr(args, "profile_record_shapes", False),
-        with_stack=getattr(args, "profile_with_stack", False),
-        profile_memory=getattr(args, "profile_memory", False),
-        with_flops=getattr(args, "profile_with_flops", False),
-        wait=getattr(args, "profile_wait", 0),
-        warmup=getattr(args, "profile_warmup", 1),
-        active=getattr(args, "profile_active", 10),
-        repeat=getattr(args, "profile_repeat", 1),
+        output_dir=args.profile_dir,
+        activities=tuple(args.profile_activities.split(",")) if args.profile_activities else None,
+        record_shapes=args.profile_record_shapes,
+        with_stack=args.profile_with_stack,
+        profile_memory=args.profile_memory,
+        with_flops=args.profile_with_flops,
+        wait=args.profile_wait,
+        warmup=args.profile_warmup,
+        active=args.profile_active,
+        repeat=args.profile_repeat,
     )

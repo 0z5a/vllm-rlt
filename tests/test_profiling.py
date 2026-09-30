@@ -13,7 +13,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from vllm_rlt.profiling import ProfileConfig, ProfileController, _package, parse_trace
+from vllm_rlt.profiling import ProfileConfig, Profiler
+from vllm_rlt.profiling_artifacts import ProfileArtifactWorker, _package, parse_trace
 
 TRACE = {
     "traceEvents": [
@@ -73,9 +74,11 @@ class NativeProfilerStub:
         self.stopped = True
 
     def export_chrome_trace(self, path):
+        assert threading.get_ident() == self.owner
         Path(path).write_text(json.dumps(TRACE))
 
     def events(self):
+        assert threading.get_ident() == self.owner
         return [
             SimpleNamespace(
                 name="aten::mm",
@@ -115,7 +118,7 @@ def native(monkeypatch):
 
 
 def config(tmp_path, **options):
-    return ProfileConfig(enabled=True, output_dir=str(tmp_path), **options)
+    return ProfileConfig(output_dir=str(tmp_path), **options)
 
 
 def read_archive(job):
@@ -129,7 +132,7 @@ def read_archive(job):
 
 
 def test_core_options_artifacts_and_raw_cleanup(tmp_path, native):
-    controller = ProfileController("cpu")
+    controller = Profiler("cpu")
     try:
         controller.start(
             config(
@@ -154,7 +157,7 @@ def test_core_options_artifacts_and_raw_cleanup(tmp_path, native):
 
 
 def test_scheduled_completion_short_window_and_restart(tmp_path, native):
-    controller = ProfileController("cpu")
+    controller = Profiler("cpu")
     try:
         first = controller.start(
             config(tmp_path, wait=1, warmup=1, active=2, repeat=2), scheduled=True
@@ -196,19 +199,23 @@ def test_background_processing_does_not_block_stop(tmp_path, native, monkeypatch
         assert release.wait(5)
         return _package(*args)
 
-    monkeypatch.setattr("vllm_rlt.profiling._package", blocked)
-    controller = ProfileController("cpu")
+    monkeypatch.setattr("vllm_rlt.profiling_artifacts._package", blocked)
+    controller = Profiler("cpu")
     try:
         controller.start(config(tmp_path))
         controller.stop()
         assert entered.wait(2)
-        assert threads == [controller.current.thread.ident] and threads[0] != owner
+        assert threads == [controller.current.artifacts.thread.ident] and threads[0] != owner
         assert not controller.status()["artifacts_complete"]
+        assert not controller.current.artifacts_complete
+        with pytest.raises(RuntimeError, match="still processing"):
+            controller.start(config(tmp_path))
         with pytest.raises(TimeoutError):
             controller.wait(0)
     finally:
         release.set()
         controller.close()
+    assert controller.current.artifacts_complete
     read_archive(controller.status()["jobs"]["0"])
 
 
@@ -217,8 +224,8 @@ def test_processing_failure_preserves_raw(tmp_path, native, monkeypatch, stage):
     def fail(*args):
         raise ValueError("injected failure")
 
-    monkeypatch.setattr("vllm_rlt.profiling." + stage, fail)
-    controller = ProfileController("cpu")
+    monkeypatch.setattr("vllm_rlt.profiling_artifacts." + stage, fail)
+    controller = Profiler("cpu")
     try:
         controller.start(config(tmp_path))
         controller.stop()
@@ -236,8 +243,10 @@ def test_same_second_captures_preserve_previous_artifacts(tmp_path, native, monk
     from datetime import datetime, timezone
 
     instant = datetime(2026, 9, 30, 2, 10, 15, tzinfo=timezone.utc)
-    monkeypatch.setattr("vllm_rlt.profiling.datetime", SimpleNamespace(now=lambda zone: instant))
-    controller = ProfileController("cpu")
+    monkeypatch.setattr(
+        "vllm_rlt.profiling_artifacts.datetime", SimpleNamespace(now=lambda zone: instant)
+    )
+    controller = Profiler("cpu")
     archives = []
     try:
         for suffix in ("", "-2"):
@@ -256,7 +265,7 @@ def test_same_second_captures_preserve_previous_artifacts(tmp_path, native, monk
 def test_rank_artifacts_are_distinct(tmp_path, native):
     capture_time = "20260930T021015Z"
     for rank in (0, 1):
-        controller = ProfileController("cpu")
+        controller = Profiler("cpu")
         try:
             controller.start(
                 config(tmp_path),
@@ -276,9 +285,19 @@ def test_rank_artifacts_are_distinct(tmp_path, native):
 
 
 def test_configuration_validation_and_disabled_path(tmp_path, native):
-    controller = ProfileController("cpu")
-    assert controller.start(ProfileConfig())["disabled"]
+    from vllm_rlt.entrypoints.runtime_args import profile_config_from_args
+
+    assert profile_config_from_args(SimpleNamespace(profile=False)) is None
+    with pytest.raises(ValueError, match="output_dir"):
+        profile_config_from_args(SimpleNamespace(profile=True))
+    assert profile_config_from_args(
+        SimpleNamespace(profile=True, profile_dir=str(tmp_path))
+    ) == config(tmp_path)
+    for output_dir in (None, "", 123):
+        with pytest.raises(ValueError, match="output_dir"):
+            ProfileConfig(output_dir=output_dir)
     assert not list(tmp_path.iterdir()) and not native
+    controller = Profiler("cpu")
     for options in (
         {"active": 0},
         {"wait": -1},
@@ -367,7 +386,7 @@ def test_pd_acknowledgments_and_partial_failure_rollback(tmp_path):
     assert "cannot start" in engine._profile_manifest()["errors"][0]
 
 
-def test_serving_control_runs_on_owner_thread():
+def test_serving_control_runs_on_owner_thread(tmp_path):
     from vllm_rlt.serving.worker import EngineWorker
 
     threads = []
@@ -375,14 +394,14 @@ def test_serving_control_runs_on_owner_thread():
     worker = EngineWorker(lambda: (engine, None))
     worker.engine, worker.ready = engine, True
     try:
-        asyncio.run(worker.profile_control("start", ProfileConfig(enabled=False)))
+        asyncio.run(worker.profile_control("start", config(tmp_path)))
         assert len(threads) == 1 and threads[0] != threading.get_ident()
     finally:
         worker.executor.shutdown(wait=True)
 
 
 def test_completed_sessions_release_native_objects(tmp_path, native):
-    controller = ProfileController("cpu")
+    controller = Profiler("cpu")
     previous = None
     try:
         for _ in range(3):
@@ -402,7 +421,7 @@ def test_completed_sessions_release_native_objects(tmp_path, native):
 
 
 def test_stop_failure_releases_native_profiler(tmp_path, native, monkeypatch):
-    controller = ProfileController("cpu")
+    controller = Profiler("cpu")
     controller.start(config(tmp_path))
 
     def fail():
@@ -432,7 +451,7 @@ def test_http_wait_after_partial_pd_start_failure(tmp_path):
     engine._profile_errors = ["decode start failed"]
     engine._profile_statuses = {
         "p": {"recording": False, "artifacts_complete": False, "success": False},
-        "d": ProfileController("cpu").status(),
+        "d": Profiler("cpu").status(),
     }
     polls = []
 
@@ -455,9 +474,8 @@ def test_http_wait_after_partial_pd_start_failure(tmp_path):
         worker.executor.shutdown(wait=True)
 
 
-@pytest.mark.parametrize("failure_stage", ["config", "start"])
 @pytest.mark.parametrize("cleanup_fails", [False, True])
-def test_pd_load_profile_failure_closes_engine(monkeypatch, failure_stage, cleanup_fails):
+def test_pd_load_profile_failure_closes_engine(monkeypatch, cleanup_fails):
     from tokenizers.decoders import ByteLevel
     from transformers import AutoTokenizer
 
@@ -482,8 +500,8 @@ def test_pd_load_profile_failure_closes_engine(monkeypatch, failure_stage, clean
     monkeypatch.setattr(pd_serve, "PDEngine", lambda *a, **k: engine)
     monkeypatch.setattr(
         pd_serve,
-        "profile_config",
-        fail if failure_stage == "config" else lambda args: SimpleNamespace(enabled=True),
+        "profile_config_from_args",
+        lambda args: ProfileConfig(output_dir="/tmp/profiles"),
     )
     args = SimpleNamespace(
         model="local-model",
@@ -518,3 +536,103 @@ def test_pd_load_profile_failure_closes_engine(monkeypatch, failure_stage, clean
         pd_serve.load_engine(args)
     assert error.value is original
     assert closed == [True]
+
+
+@pytest.mark.parametrize("entrypoint", ["serve", "pd_serve"])
+def test_invalid_profile_config_fails_before_loading_model(monkeypatch, entrypoint):
+    from importlib import import_module
+
+    from transformers import AutoTokenizer
+
+    module = import_module("vllm_rlt.entrypoints." + entrypoint)
+
+    def unexpected_load(*args, **kwargs):
+        pytest.fail("profiling configuration must be validated before loading resources")
+
+    monkeypatch.setattr(AutoTokenizer, "from_pretrained", unexpected_load)
+    engine_name = "LLMEngine" if entrypoint == "serve" else "PDEngine"
+    monkeypatch.setattr(module, engine_name, unexpected_load)
+    with pytest.raises(ValueError, match="output_dir"):
+        module.load_engine(SimpleNamespace(profile=True))
+
+
+def test_profile_cli_defaults_and_overrides(tmp_path, monkeypatch):
+    import argparse
+
+    from vllm_rlt.entrypoints.runtime_args import add_profile_args, profile_config_from_args
+
+    monkeypatch.setattr(ProfileConfig, "warmup", 3)
+    parser = argparse.ArgumentParser()
+    add_profile_args(parser)
+    args = parser.parse_args(["--profile", "--profile-dir", str(tmp_path)])
+    assert args.profile_warmup == 3
+    assert profile_config_from_args(args).warmup == 3
+    assert (
+        profile_config_from_args(SimpleNamespace(profile=True, profile_dir=str(tmp_path))).warmup
+        == 3
+    )
+    args = parser.parse_args(
+        [
+            "--profile",
+            "--profile-dir",
+            str(tmp_path),
+            "--profile-warmup",
+            "5",
+            "--profile-activities",
+            "cpu,cuda",
+            "--profile-with-flops",
+        ]
+    )
+    result = profile_config_from_args(args)
+    assert result.warmup == 5
+    assert result.activities == ("cpu", "cuda")
+    assert result.with_flops
+    assert profile_config_from_args(SimpleNamespace()) is None
+
+
+def test_finish_drains_cycles_beyond_queue_capacity(tmp_path, monkeypatch):
+    entered, release = threading.Event(), threading.Event()
+    processed = []
+    owner = threading.get_ident()
+
+    def package(staging, archive):
+        assert threading.get_ident() != owner
+        entered.set()
+        assert release.wait(5)
+        processed.append(staging.name)
+        return "checksum", None
+
+    monkeypatch.setattr("vllm_rlt.profiling_artifacts._package", package)
+    worker = ProfileArtifactWorker(
+        tmp_path,
+        dict(rank=0, session_id="test", capture_time="20260930T021015Z"),
+        managed_manifest=False,
+    )
+    worker.start(1)
+    try:
+        worker.submit(0, tmp_path / "0", tmp_path / "0.tar.gz", incomplete_window=False)
+        assert entered.wait(2)
+        # Block the consumer so submission must overflow the bounded queue.
+        for cycle in range(1, 21):
+            worker.submit(
+                cycle,
+                tmp_path / str(cycle),
+                tmp_path / f"{cycle}.tar.gz",
+                incomplete_window=False,
+            )
+        worker.finish(2)
+        status = worker.status()
+        assert not status["recording"] and not status["artifacts_complete"]
+        with pytest.raises(TimeoutError):
+            worker.wait(0)
+        release.set()
+        status = worker.wait(5)
+        assert status["success"] and status["artifacts_complete"]
+        assert sorted(map(int, processed)) == list(range(21))
+        persisted = json.loads((tmp_path / "status.json").read_text())
+        assert persisted["jobs"] == status["jobs"]
+        assert persisted["stopped_at_ns"] == 2 and not persisted["recording"]
+    finally:
+        release.set()
+        worker.finish(2)
+        worker.wait(5)

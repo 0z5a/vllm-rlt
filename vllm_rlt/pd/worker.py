@@ -249,10 +249,6 @@ class PDWorker:
             raise ValueError(f"unknown PD command {kind}")
 
     def queue_chunk(self, w, start, end, event, final):
-        with self.engine.profiling.region(f"rlt.kv_submit tid={w.tid} trace_id={w.trace_id}"):
-            return self._queue_chunk(w, start, end, event, final)
-
-    def _queue_chunk(self, w, start, end, event, final):
         peer = self.connector.peers[w.peer]
         tables = self.cache._get_allocation(w.tid).block_tables
         start = max(start, w.target_cached_tokens)
@@ -294,9 +290,7 @@ class PDWorker:
             tid for tid in original if tid not in selected
         )
         self.engine.scheduler.queues[Stage.PREFILL].extend(unused)
-        tids = ",".join(item.request.request_id for item in batch.items)
-        with self.engine.profiling.region(f"rlt.prefill_requests tids={tids}"):
-            ticket = self.engine.model_runner.submit(batch)
+        ticket = self.engine.model_runner.submit(batch)
         stream = self.engine.model_runner.core_stream or torch.cuda.current_stream(
             self.cache.device
         )
@@ -335,10 +329,7 @@ class PDWorker:
                 raise RuntimeError("invalid transfer completion")
             if w.active and sequence not in w.received:
                 raise RuntimeError("late KV write after decode activation")
-            with self.engine.profiling.region(
-                f"rlt.kv_received tid={tid} sequence={sequence} trace_id={w.trace_id}"
-            ):
-                w.received.add(sequence)
+            w.received.add(sequence)
         work = list(self.work.values())
         if work:
             start = self.transfer_cursor % len(work)
@@ -391,10 +382,7 @@ class PDWorker:
                     w.request.hidden_state = self.hidden[w.slot]
                     self.engine.scheduler.enqueue(w.request, Stage.CODA)
                     w.active = True
-                    with self.engine.profiling.region(
-                        f"rlt.decode_activate tid={w.tid} trace_id={w.trace_id}"
-                    ):
-                        self.send("activated", tid=w.tid, seconds=time.monotonic() - w.started)
+                    self.send("activated", tid=w.tid, seconds=time.monotonic() - w.started)
 
     def run(self):
         while self.running:
@@ -402,11 +390,9 @@ class PDWorker:
                 if not self.channel.poll():
                     break
                 self.command(self.channel.recv())
-            with self.engine.profiling.region("rlt.kv_progress"):
-                self.progress()
+            self.progress()
             if self.role == "prefill":
-                with self.engine.profiling.region("rlt.prefill"):
-                    submitted = self.prefill_step()
+                submitted = self.prefill_step()
                 if submitted:
                     self.engine.profiling.step()
             elif any(w.active for w in self.work.values()):

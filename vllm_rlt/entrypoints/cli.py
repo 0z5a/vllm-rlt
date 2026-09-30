@@ -5,7 +5,11 @@ from dataclasses import asdict
 import torch
 
 from vllm_rlt import LLM, SamplingParams, SchedulerConfig
-from vllm_rlt.entrypoints.runtime_args import add_runtime_args, profile_config, runtime_configs
+from vllm_rlt.entrypoints.runtime_args import (
+    add_runtime_args,
+    profile_config_from_args,
+    runtime_configs,
+)
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
 
 
@@ -46,8 +50,9 @@ def main():
         parser.error("--toy uses built-in token ID prompts; omit --prompt")
     if not args.toy and not args.prompt:
         parser.error("provide --prompt or use --toy for a CPU smoke test")
-    profiling = profile_config(args)
-    profiling.resolve_activities(args.device) if profiling.enabled else None
+    profiling = profile_config_from_args(args)
+    if profiling is not None:
+        profiling.resolve_activities(args.device)
     torch.manual_seed(args.seed)
     model = (
         OuroForCausalLM(OuroConfig.tiny()).to(device=args.device, dtype=getattr(torch, args.dtype))
@@ -86,12 +91,12 @@ def main():
         ignore_eos=args.toy,
     )
     try:
-        if profiling.enabled:
+        if profiling is not None:
             llm.start_profile(profiling, scheduled=True)
         outputs = llm.generate([[1, 2, 3], [4, 5]] if args.toy else args.prompt, params)
     finally:
         llm.close()
-    if profiling.enabled:
+    if profiling is not None:
         import sys
 
         print(json.dumps(llm.profile_status()), file=sys.stderr)

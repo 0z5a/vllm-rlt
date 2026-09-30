@@ -205,7 +205,6 @@ def create_app(
             if action == "start":
                 if not scheduled and set(body) & {"wait", "warmup", "active", "repeat"}:
                     raise ValueError("schedule parameters require scheduled=true")
-                body.setdefault("enabled", True)
                 config = ProfileConfig(**body)
             else:
                 if body or scheduled:

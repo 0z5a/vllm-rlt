@@ -6,7 +6,11 @@ from dataclasses import asdict, replace
 from functools import partial
 
 from vllm_rlt.config import SchedulerConfig
-from vllm_rlt.entrypoints.runtime_args import add_runtime_args, profile_config, runtime_configs
+from vllm_rlt.entrypoints.runtime_args import (
+    add_runtime_args,
+    profile_config_from_args,
+    runtime_configs,
+)
 from vllm_rlt.models.config import OURO_MODEL_ID, OURO_REVISION
 from vllm_rlt.pd.config import PDConfig
 from vllm_rlt.pd.engine import PDEngine
@@ -16,6 +20,7 @@ def load_engine(args):
     from tokenizers.decoders import ByteLevel
     from transformers import AutoTokenizer
 
+    profiling = profile_config_from_args(args)
     revision = args.revision or (OURO_REVISION if args.model == OURO_MODEL_ID else None)
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer or args.model,
@@ -65,8 +70,7 @@ def load_engine(args):
         **options,
     )
     try:
-        profiling = profile_config(args)
-        if profiling.enabled:
+        if profiling is not None:
             engine.start_profile(profiling, scheduled=True)
     except BaseException:
         try:

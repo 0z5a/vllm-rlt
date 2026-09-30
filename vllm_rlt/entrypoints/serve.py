@@ -9,7 +9,11 @@ import torch
 
 from vllm_rlt.config import SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.entrypoints.runtime_args import add_runtime_args, profile_config, runtime_configs
+from vllm_rlt.entrypoints.runtime_args import (
+    add_runtime_args,
+    profile_config_from_args,
+    runtime_configs,
+)
 from vllm_rlt.models.config import OURO_MODEL_ID, OURO_REVISION
 from vllm_rlt.models.ouro import OuroForCausalLM
 
@@ -18,6 +22,9 @@ def load_engine(args):
     from tokenizers.decoders import ByteLevel
     from transformers import AutoTokenizer
 
+    profiling = profile_config_from_args(args)
+    if profiling is not None:
+        profiling.resolve_activities(args.device)
     revision = args.revision or (OURO_REVISION if args.model == OURO_MODEL_ID else None)
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer or args.model,
@@ -47,8 +54,7 @@ def load_engine(args):
         ),
         attention_backend=args.attention_backend,
     )
-    profiling = profile_config(args)
-    if profiling.enabled:
+    if profiling is not None:
         engine.start_profile(profiling, scheduled=True)
     return engine, tokenizer
 

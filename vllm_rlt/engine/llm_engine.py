@@ -6,7 +6,7 @@ from vllm_rlt.core.memory import plan_cache
 from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS
-from vllm_rlt.profiling import ProfileController
+from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
 from vllm_rlt.worker.model_runner import ModelRunner
@@ -28,7 +28,7 @@ class LLMEngine:
         speculative_config=None,
     ):
         self.model = model
-        self.profiling = ProfileController(next(model.parameters()).device)
+        self.profiling = Profiler(next(model.parameters()).device)
         cache_config = cache_config or CacheConfig()
         scheduler_config = scheduler_config or SchedulerConfig()
         parameter = next(model.parameters())
@@ -211,8 +211,7 @@ class LLMEngine:
         if not self.profiling.recording:
             return self._step()
         try:
-            with self.profiling.region("rlt.engine_step"):
-                outputs = self._step()
+            outputs = self._step()
             self.profiling.step()
             return outputs
         except BaseException:
@@ -233,8 +232,7 @@ class LLMEngine:
                 self._pending_coda.clear()
                 self._inflight.clear()
                 raise
-        with self.profiling.region("rlt.schedule"):
-            batch = self.scheduler.schedule()
+        batch = self.scheduler.schedule()
         self.last_schedule = batch
         if batch is None:
             # PD imports wait for external KV completion; yield to the IPC loop.
@@ -243,11 +241,9 @@ class LLMEngine:
             return []
         try:
             if batch.stage == Stage.SPECULATIVE:
-                with self.profiling.region("rlt.speculative"):
-                    result = self.speculative_runner.execute(batch)
+                result = self.speculative_runner.execute(batch)
                 return self._update_speculative(batch, result)
-            with self.profiling.region("rlt." + batch.stage.name.lower()):
-                result = self.model_runner.execute(batch)
+            result = self.model_runner.execute(batch)
             return self._update(batch, result)
         except Exception:
             # A failed execution may have partially written KV; invalidate the affected requests.
@@ -469,8 +465,7 @@ class LLMEngine:
             self.last_schedule = batch
             if not batch.items:
                 return outputs
-        with self.profiling.region("rlt." + batch.stage.name.lower()):
-            ticket = self.model_runner.submit(batch)
+        ticket = self.model_runner.submit(batch)
         self._inflight.append(ticket)
         if batch.stage == Stage.CODA:
             self._pending_coda.append(ticket)
