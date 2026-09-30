@@ -12,6 +12,7 @@ from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
 from vllm_rlt.pd.config import PDConfig
 from vllm_rlt.pd.transport import kv_segments, partition_segments
+from vllm_rlt.profiling import Profiler
 
 
 def test_transfer_lease_defers_free_until_last_reader():
@@ -239,6 +240,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
     from vllm_rlt.request import Request, Stage
 
     engine = object.__new__(LLMEngine)
+    engine.profiling = Profiler("cpu")
     engine.preemption = PreemptionManager(engine)
     engine.execution_config = ExecutionConfig(async_scheduling=async_scheduling)
     engine.scheduler = Scheduler(SchedulerConfig(), Mock())
