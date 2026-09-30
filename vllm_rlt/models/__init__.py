@@ -2,6 +2,7 @@
 """Model exports and unified AutoModelForCausalLM factory."""
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -46,30 +47,70 @@ def resolve_local_model_path(path_or_repo: str | Path, revision=None) -> Path | 
     return None
 
 
-def resolve_model_config(path_or_repo, *, revision=None, allow_download=False):
-    """Resolve an approved source and inspect its config before loading weights."""
+def _confirm_download(source):
+    if not sys.stdin.isatty():
+        raise RuntimeError(
+            f"Download requires approval for '{source}'. Run interactively and enter y/yes, "
+            "or provide a local checkpoint."
+        )
+    try:
+        answer = input(f"Download '{source}' from HuggingFace? (y/yes): ")
+    except EOFError as error:
+        raise RuntimeError("Download was not approved.") from error
+    if answer.strip().lower() not in ("y", "yes"):
+        raise RuntimeError("Download was not approved.")
+
+
+def resolve_model_config(path_or_repo, *, revision=None):
+    """Use a local checkpoint, or confirm interactively before downloading it."""
+    from huggingface_hub import hf_hub_download, snapshot_download
+
     source = resolve_model_source(path_or_repo)
     local = resolve_local_model_path(source, revision=revision)
     if local is not None:
-        source = str(local)
         config_path = local / "config.json"
     else:
-        if not allow_download:
-            raise RuntimeError(
-                f"Model '{path_or_repo}' is not available locally. Download requires approval: "
-                "pass allow_download=True or confirm at the interactive entrypoint."
-            )
-        from huggingface_hub import hf_hub_download
-
+        _confirm_download(source)
         config_path = Path(hf_hub_download(source, "config.json", revision=revision))
     config = json.loads(config_path.read_text())
     model_type = config.get("model_type", "").lower()
     if model_type not in MODEL_MAPPING:
         raise ValueError(f"Unsupported model_type {model_type!r} for {path_or_repo}")
-    # Pin an approved remote load to the snapshot whose configuration was read.
+    # Use the same resolved snapshot for weights and the default tokenizer.
     if config_path.parent.parent.name == "snapshots":
         revision = config_path.parent.name
-    return source, revision, config
+    if local is None:
+        local = Path(
+            snapshot_download(
+                repo_id=source,
+                revision=revision,
+                allow_patterns=[
+                    "*.json",
+                    "*.safetensors",
+                    "*.model",
+                    "tokenizer.tiktoken",
+                    "vocab.txt",
+                    "merges.txt",
+                ],
+            )
+        )
+    return str(local), revision, config
+
+
+def load_tokenizer(source, *, revision=None):
+    """Load cached tokenizer assets, asking before any missing Hub download."""
+    from transformers import AutoTokenizer
+
+    source = resolve_model_source(source)
+    try:
+        return AutoTokenizer.from_pretrained(
+            source, revision=revision, trust_remote_code=False, local_files_only=True
+        )
+    except OSError:
+        if Path(source).is_dir():
+            raise
+    _confirm_download(source)
+    return AutoTokenizer.from_pretrained(source, revision=revision, trust_remote_code=False)
 
 
 class AutoModelForCausalLM:
@@ -105,11 +146,8 @@ class AutoModelForCausalLM:
         revision: str | None = None,
         device: torch.device | str = "cpu",
         dtype: torch.dtype = torch.bfloat16,
-        allow_download: bool = False,
     ):
-        source, resolved_revision, config = resolve_model_config(
-            path_or_repo, revision=revision, allow_download=allow_download
-        )
+        source, resolved_revision, config = resolve_model_config(path_or_repo, revision=revision)
         return cls._dispatch_from_config(
             config, source, revision=resolved_revision, device=device, dtype=dtype
         )
@@ -124,4 +162,5 @@ __all__ = [
     "resolve_local_model_path",
     "resolve_model_source",
     "resolve_model_config",
+    "load_tokenizer",
 ]

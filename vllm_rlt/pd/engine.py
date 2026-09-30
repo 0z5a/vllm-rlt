@@ -72,16 +72,13 @@ class PDEngine:
         attention_backend="flash_attn",
         dtype="bfloat16",
         revision=None,
-        allow_download=False,
         seed=0,
         speculative_config=None,
     ):
         if speculative_config is not None:
             raise ValueError("speculative decoding is not yet supported by PD")
         if isinstance(model, (str, Path)):
-            model, revision, _ = resolve_model_config(
-                model, revision=revision, allow_download=allow_download
-            )
+            model, revision, _ = resolve_model_config(model, revision=revision)
         self.config = pd_config or PDConfig()
         self.exit_config = exit_config or ExitConfig("ouro_delayed")
         execution = execution_config or ExecutionConfig(async_scheduling=True)
@@ -126,7 +123,6 @@ class PDEngine:
                     options = dict(
                         dtype=dtype,
                         revision=revision,
-                        allow_download=allow_download,
                         seed=seed,
                         engine=dict(
                             cache_config=cache,

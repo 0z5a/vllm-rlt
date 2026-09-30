@@ -6,7 +6,6 @@ from dataclasses import asdict
 import torch
 
 from vllm_rlt import LLM, SamplingParams, SchedulerConfig
-from vllm_rlt.entrypoints.model_loading import approve_download
 from vllm_rlt.entrypoints.runtime_args import (
     add_runtime_args,
     profile_config_from_args,
@@ -82,13 +81,7 @@ def main():
     parser.add_argument("--max-num-batched-tokens", type=int, default=128)
     parser.add_argument("--num-blocks", type=int, help="Override automatic KV sizing")
     parser.add_argument("--block-size", type=int, default=16)
-    parser.add_argument(
-        "--yes",
-        "-y",
-        action="store_true",
-        dest="assume_yes",
-        help="Automatically approve model downloading from HuggingFace without interactive prompt",
-    )
+
     add_runtime_args(parser)
     args = parser.parse_args()
     if not args.toy and not args.model:
@@ -101,7 +94,6 @@ def main():
     if profiling is not None:
         profiling.resolve_activities(args.device)
     torch.manual_seed(args.seed)
-    allow_download = False
     if args.toy:
         if "nanbeige" in (args.model or "ouro").lower():
             from vllm_rlt.models import NanbeigeForCausalLM
@@ -115,13 +107,11 @@ def main():
             )
     else:
         model = args.model
-        allow_download = approve_download(args, parser)
     llm = LLM(
         model,
         revision=args.revision,
         device=args.device,
         dtype=getattr(torch, args.dtype),
-        allow_download=allow_download,
         **runtime_configs(args),
         scheduler_config=SchedulerConfig(
             policy=getattr(args, "scheduling_policy", "fcfs"),

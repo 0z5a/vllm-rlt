@@ -9,35 +9,33 @@ import torch
 
 from vllm_rlt.config import SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.entrypoints.model_loading import approve_download
 from vllm_rlt.entrypoints.runtime_args import (
     add_runtime_args,
     profile_config_from_args,
     runtime_configs,
 )
-from vllm_rlt.models import AutoModelForCausalLM, resolve_model_config, resolve_model_source
+from vllm_rlt.models import (
+    AutoModelForCausalLM,
+    load_tokenizer,
+    resolve_model_config,
+    resolve_model_source,
+)
 
 
 def load_engine(args):
     from tokenizers.decoders import ByteLevel
-    from transformers import AutoTokenizer
 
     profiling = profile_config_from_args(args)
     if profiling is not None:
         profiling.resolve_activities(args.device)
-    allow_download = getattr(args, "allow_download", getattr(args, "assume_yes", False))
-    source, revision, config = resolve_model_config(
-        args.model, revision=args.revision, allow_download=allow_download
-    )
-    tokenizer = AutoTokenizer.from_pretrained(
+    source, revision, config = resolve_model_config(args.model, revision=args.revision)
+    tokenizer = load_tokenizer(
         args.tokenizer or resolve_model_source(args.model),
         revision=(
             args.tokenizer_revision
             if args.tokenizer_revision is not None
             else (args.revision if args.tokenizer else revision)
         ),
-        trust_remote_code=False,
-        local_files_only=not allow_download,
     )
     if config["model_type"].lower() == "ouro":
         decoder = getattr(getattr(tokenizer, "backend_tokenizer", None), "decoder", None)
@@ -48,7 +46,6 @@ def load_engine(args):
         revision=revision,
         device=args.device,
         dtype=getattr(torch, args.dtype),
-        allow_download=allow_download,
     )
     engine = LLMEngine(
         model,
@@ -105,19 +102,12 @@ def main():
     parser.add_argument("--cpu-threads", type=int, default=1)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument(
-        "--yes",
-        "-y",
-        action="store_true",
-        dest="assume_yes",
-        help="Automatically approve model downloading from HuggingFace without interactive prompt",
-    )
+
     add_runtime_args(parser)
     args = parser.parse_args()
     limits = ServingLimits(**{name: getattr(args, name) for name in defaults})
     if args.device == "cpu" and args.attention_backend != "torch":
         parser.error("CPU execution requires --attention-backend torch")
-    args.allow_download = approve_download(args, parser)
     torch.set_num_threads(args.cpu_threads)
     logging.basicConfig(level=logging.INFO)
     app = create_app(

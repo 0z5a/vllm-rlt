@@ -15,6 +15,12 @@ from vllm_rlt.models import (
 )
 
 
+@pytest.fixture
+def confirm_download(monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "yes")
+
+
 def test_local_dispatch_ouro(tmp_path):
     config = tiny_ouro_config()
     (tmp_path / "config.json").write_text(json.dumps(config.to_dict()))
@@ -42,12 +48,13 @@ def test_unsupported_model_type_raises_directly(tmp_path):
         AutoModelForCausalLM.from_pretrained(tmp_path)
 
 
-def test_remote_model_requires_approval_by_default():
+def test_remote_model_requires_approval_by_default(monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
     with pytest.raises(RuntimeError, match="Download requires approval"):
         AutoModelForCausalLM.from_pretrained("remote-org/unapproved-model")
 
 
-def test_remote_approved_download_selects_by_config(tmp_path, monkeypatch):
+def test_remote_approved_download_selects_by_config(tmp_path, monkeypatch, confirm_download):
     config = tiny_nanbeige_config()
     (tmp_path / "config.json").write_text(json.dumps(config.to_dict()))
     model = NanbeigeForCausalLM(config)
@@ -64,23 +71,21 @@ def test_remote_approved_download_selects_by_config(tmp_path, monkeypatch):
     monkeypatch.setattr("huggingface_hub.hf_hub_download", mock_hf_download)
     monkeypatch.setattr("huggingface_hub.snapshot_download", mock_snapshot)
 
-    loaded = AutoModelForCausalLM.from_pretrained(
-        "custom-org/custom-model", allow_download=True, dtype=torch.float32
-    )
+    loaded = AutoModelForCausalLM.from_pretrained("custom-org/custom-model", dtype=torch.float32)
     assert isinstance(loaded, NanbeigeForCausalLM)
 
 
-def test_remote_download_surfaces_errors_directly(monkeypatch):
+def test_remote_download_surfaces_errors_directly(monkeypatch, confirm_download):
     def mock_failing_download(repo_id, filename, revision=None):
         raise ConnectionError("Simulated network failure")
 
     monkeypatch.setattr("huggingface_hub.hf_hub_download", mock_failing_download)
 
     with pytest.raises(ConnectionError, match="Simulated network failure"):
-        AutoModelForCausalLM.from_pretrained("some/remote-model", allow_download=True)
+        AutoModelForCausalLM.from_pretrained("some/remote-model")
 
 
-def test_remote_download_preserves_source(tmp_path, monkeypatch):
+def test_remote_download_preserves_source(tmp_path, monkeypatch, confirm_download):
     config = tiny_nanbeige_config()
     (tmp_path / "config.json").write_text(json.dumps(config.to_dict()))
     model = NanbeigeForCausalLM(config)
@@ -97,11 +102,8 @@ def test_remote_download_preserves_source(tmp_path, monkeypatch):
 
     monkeypatch.setattr("huggingface_hub.hf_hub_download", mock_hf_download)
     monkeypatch.setattr("huggingface_hub.snapshot_download", mock_snapshot)
-    monkeypatch.setattr("vllm_rlt.models.resolve_local_model_path", lambda *a, **k: None)
 
-    loaded = AutoModelForCausalLM.from_pretrained(
-        "test-org/custom-model", allow_download=True, dtype=torch.float32
-    )
+    loaded = AutoModelForCausalLM.from_pretrained("test-org/custom-model", dtype=torch.float32)
     assert isinstance(loaded, NanbeigeForCausalLM)
     assert downloaded_repo[0][0] == "test-org/custom-model"
 

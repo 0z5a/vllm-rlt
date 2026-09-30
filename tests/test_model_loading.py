@@ -1,6 +1,5 @@
 """Regressions for caller identity and download authorization after PR #63."""
 
-import argparse
 import json
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -14,6 +13,12 @@ from vllm_rlt.models import AutoModelForCausalLM, NanbeigeForCausalLM, resolve_l
 
 
 @pytest.fixture
+def confirm_download(monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "yes")
+
+
+@pytest.fixture
 def checkpoint(tmp_path):
     model = NanbeigeForCausalLM(tiny_nanbeige_config())
     (tmp_path / "config.json").write_text(json.dumps(model.config.to_dict()))
@@ -23,16 +28,22 @@ def checkpoint(tmp_path):
 
 @pytest.mark.parametrize("revision", [None, "my-tag"])
 @pytest.mark.parametrize("source", ["custom-org/model", "ouro", "nanbeige"])
-def test_caller_revision_reaches_hub_unchanged(monkeypatch, checkpoint, revision, source):
+def test_caller_revision_reaches_hub_unchanged(
+    monkeypatch, checkpoint, revision, source, confirm_download
+):
     fetch = Mock(return_value=str(checkpoint / "config.json"))
     monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
     monkeypatch.setattr("huggingface_hub.hf_hub_download", fetch)
+    snapshot = Mock(return_value=str(checkpoint))
+    monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot)
     load = Mock(return_value=object())
     monkeypatch.setattr(NanbeigeForCausalLM, "from_pretrained", load)
-    AutoModelForCausalLM.from_pretrained(source, revision=revision, allow_download=True)
+    AutoModelForCausalLM.from_pretrained(source, revision=revision)
     assert fetch.call_args.args == (source, "config.json")
     assert fetch.call_args.kwargs["revision"] == revision
     assert load.call_args.kwargs["revision"] == revision
+    assert snapshot.call_args.kwargs["repo_id"] == source
+    assert load.call_args.args == (str(checkpoint),)
 
 
 def test_revision_specific_cached_checkpoint_needs_no_network(monkeypatch, checkpoint):
@@ -47,6 +58,7 @@ def test_revision_specific_cached_checkpoint_needs_no_network(monkeypatch, check
 
 
 def test_partial_cache_does_not_authorize_download(monkeypatch, tmp_path):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
     (tmp_path / "config.json").write_text('{"model_type": "nanbeige"}')
     monkeypatch.setattr(
         "huggingface_hub.try_to_load_from_cache", lambda *a, **k: str(tmp_path / "config.json")
@@ -56,7 +68,7 @@ def test_partial_cache_does_not_authorize_download(monkeypatch, tmp_path):
         AutoModelForCausalLM.from_pretrained("my-org/model")
 
 
-def test_text_generation_uses_caller_source_and_revision(monkeypatch, checkpoint):
+def test_text_generation_uses_caller_source_and_revision(monkeypatch, checkpoint, confirm_download):
     from vllm_rlt import LLM, SamplingParams
 
     monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
@@ -67,7 +79,7 @@ def test_text_generation_uses_caller_source_and_revision(monkeypatch, checkpoint
     tokenizer = SimpleNamespace(encode=lambda text: [2, 3], decode=lambda ids, **kw: "text")
     token_load = Mock(return_value=tokenizer)
     monkeypatch.setattr("transformers.AutoTokenizer.from_pretrained", token_load)
-    llm = LLM("custom-org/checkpoint", revision="custom", allow_download=True, dtype=torch.float32)
+    llm = LLM("custom-org/checkpoint", revision="custom", dtype=torch.float32)
     try:
         outputs = llm.generate("hello", SamplingParams(max_tokens=1, ignore_eos=True))
         assert outputs[0].text == "text"
@@ -77,38 +89,39 @@ def test_text_generation_uses_caller_source_and_revision(monkeypatch, checkpoint
         llm.close()
 
 
-@pytest.mark.parametrize("answer", ["y", "yes", " YES ", "n"])
-def test_interactive_approval(monkeypatch, answer):
-    from vllm_rlt.entrypoints.model_loading import approve_download
-
-    monkeypatch.setattr(
-        "vllm_rlt.entrypoints.model_loading.resolve_local_model_path", lambda *a, **k: None
-    )
+@pytest.mark.parametrize("answer", ["y", "yes", " YES ", "n", "", "true"])
+def test_interactive_download(monkeypatch, checkpoint, answer):
     monkeypatch.setattr("sys.stdin.isatty", lambda: True)
-    monkeypatch.setattr("builtins.input", lambda prompt: answer)
-    args = SimpleNamespace(model="org/model", revision=None, assume_yes=False)
-    if answer == "n":
-        with pytest.raises(SystemExit):
-            approve_download(args, argparse.ArgumentParser())
+    prompt = Mock(return_value=answer)
+    monkeypatch.setattr("builtins.input", prompt)
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    fetch = Mock(return_value=str(checkpoint / "config.json"))
+    snapshot = Mock(return_value=str(checkpoint))
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", fetch)
+    monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot)
+    if answer.strip().lower() in ("y", "yes"):
+        assert isinstance(AutoModelForCausalLM.from_pretrained("org/model"), NanbeigeForCausalLM)
+        snapshot.assert_called_once()
     else:
-        assert approve_download(args, argparse.ArgumentParser())
+        with pytest.raises(RuntimeError, match="not approved"):
+            AutoModelForCausalLM.from_pretrained("org/model")
+        fetch.assert_not_called()
+        snapshot.assert_not_called()
+    prompt.assert_called_once()
 
 
-def test_noninteractive_requires_explicit_approval(monkeypatch):
-    from vllm_rlt.entrypoints.model_loading import approve_download
-
-    monkeypatch.setattr(
-        "vllm_rlt.entrypoints.model_loading.resolve_local_model_path", lambda *a, **k: None
-    )
+def test_noninteractive_download_fails_without_network(monkeypatch):
     monkeypatch.setattr("sys.stdin.isatty", lambda: False)
-    args = SimpleNamespace(model="org/model", revision=None, assume_yes=False)
-    with pytest.raises(SystemExit):
-        approve_download(args, argparse.ArgumentParser())
-    args.assume_yes = True
-    assert approve_download(args, argparse.ArgumentParser())
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    fetch = Mock(side_effect=AssertionError("must not download"))
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", fetch)
+    with pytest.raises(RuntimeError, match="Run interactively"):
+        AutoModelForCausalLM.from_pretrained("org/model")
+    fetch.assert_not_called()
 
 
 def test_pd_rejects_unapproved_download_before_spawning(monkeypatch):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
     from vllm_rlt.pd.engine import PDEngine
 
     monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
@@ -119,7 +132,9 @@ def test_pd_rejects_unapproved_download_before_spawning(monkeypatch):
     spawn.assert_not_called()
 
 
-def test_serving_custom_repository_dispatches_from_config(monkeypatch, checkpoint):
+def test_serving_custom_repository_dispatches_from_config(
+    monkeypatch, checkpoint, confirm_download
+):
     from tokenizers.decoders import WordPiece
 
     from vllm_rlt.entrypoints.serve import load_engine
@@ -135,7 +150,6 @@ def test_serving_custom_repository_dispatches_from_config(monkeypatch, checkpoin
     args = SimpleNamespace(
         model="custom-org/custom-name",
         revision="tag",
-        allow_download=True,
         tokenizer=None,
         tokenizer_revision=None,
         device="cpu",
@@ -157,27 +171,28 @@ def test_serving_custom_repository_dispatches_from_config(monkeypatch, checkpoin
         engine.close()
 
 
-@pytest.mark.parametrize("approved", [False, True])
-def test_pd_worker_preserves_download_authorization(monkeypatch, approved):
-    from vllm_rlt.pd.worker import PDWorker
+def test_pd_downloads_in_parent_before_spawning(monkeypatch, checkpoint, confirm_download):
+    from vllm_rlt.pd.engine import PDEngine
 
-    monkeypatch.setattr(torch.cuda, "set_device", lambda device: None)
-    load = Mock(side_effect=RuntimeError("stop before GPU allocation"))
-    monkeypatch.setattr(AutoModelForCausalLM, "from_pretrained", load)
-    with pytest.raises(RuntimeError, match="stop before GPU allocation"):
-        PDWorker(
-            "prefill",
-            0,
-            "worker",
-            None,
-            "org/model",
-            {"seed": 0, "dtype": "bfloat16", "revision": "tag", "allow_download": approved},
-            None,
-        )
-    assert load.call_args.kwargs["allow_download"] is approved
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "huggingface_hub.hf_hub_download", lambda *a, **k: str(checkpoint / "config.json")
+    )
+    snapshot = Mock(return_value=str(checkpoint))
+    monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot)
+
+    def spawn(method):
+        snapshot.assert_called_once()
+        raise RuntimeError("stop before workers")
+
+    monkeypatch.setattr("vllm_rlt.pd.engine.mp.get_context", spawn)
+    with pytest.raises(RuntimeError, match="stop before workers"):
+        PDEngine("custom-org/model")
 
 
-def test_resolved_hub_snapshot_freezes_model_and_tokenizer_revision(monkeypatch, tmp_path):
+def test_resolved_hub_snapshot_freezes_model_and_tokenizer_revision(
+    monkeypatch, tmp_path, confirm_download
+):
     from vllm_rlt.models import resolve_model_config
 
     config = tmp_path / "snapshots" / ("a" * 40) / "config.json"
@@ -186,8 +201,11 @@ def test_resolved_hub_snapshot_freezes_model_and_tokenizer_revision(monkeypatch,
     monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
     fetch = Mock(return_value=str(config))
     monkeypatch.setattr("huggingface_hub.hf_hub_download", fetch)
-    source, revision, _ = resolve_model_config("custom-org/checkpoint", allow_download=True)
-    assert source == "custom-org/checkpoint"
+    snapshot = Mock(return_value=str(config.parent))
+    monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot)
+    source, revision, _ = resolve_model_config("custom-org/checkpoint")
+    assert source == str(config.parent)
+    assert snapshot.call_args.kwargs["repo_id"] == "custom-org/checkpoint"
     assert fetch.call_args.kwargs["revision"] is None
     assert revision == "a" * 40
 
@@ -207,3 +225,33 @@ def test_cli_requires_source_for_real_model(monkeypatch):
     with pytest.raises(SystemExit) as error:
         main()
     assert error.value.code == 2
+
+
+@pytest.mark.parametrize("answer", ["yes", "no"])
+def test_missing_tokenizer_prompts_before_download(monkeypatch, answer):
+    from vllm_rlt.models import load_tokenizer
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    prompt = Mock(return_value=answer)
+    monkeypatch.setattr("builtins.input", prompt)
+    tokenizer = object()
+    load = Mock(side_effect=[OSError("not cached"), tokenizer])
+    monkeypatch.setattr("transformers.AutoTokenizer.from_pretrained", load)
+    if answer == "yes":
+        assert load_tokenizer("org/tokenizer", revision="tag") is tokenizer
+        assert load.call_count == 2
+        assert load.call_args.kwargs == {"revision": "tag", "trust_remote_code": False}
+    else:
+        with pytest.raises(RuntimeError, match="not approved"):
+            load_tokenizer("org/tokenizer", revision="tag")
+        assert load.call_count == 1
+    assert load.call_args_list[0].kwargs["local_files_only"] is True
+    prompt.assert_called_once()
+
+
+def test_local_checkpoint_never_prompts(monkeypatch, checkpoint):
+    prompt = Mock(side_effect=AssertionError("local loading must not ask"))
+    monkeypatch.setattr("builtins.input", prompt)
+    model = AutoModelForCausalLM.from_pretrained(checkpoint)
+    assert isinstance(model, NanbeigeForCausalLM)
+    prompt.assert_not_called()

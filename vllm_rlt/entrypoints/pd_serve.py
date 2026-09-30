@@ -6,35 +6,28 @@ from dataclasses import asdict, replace
 from functools import partial
 
 from vllm_rlt.config import SchedulerConfig
-from vllm_rlt.entrypoints.model_loading import approve_download
 from vllm_rlt.entrypoints.runtime_args import (
     add_runtime_args,
     profile_config_from_args,
     runtime_configs,
 )
-from vllm_rlt.models import resolve_model_config, resolve_model_source
+from vllm_rlt.models import load_tokenizer, resolve_model_config, resolve_model_source
 from vllm_rlt.pd.config import PDConfig
 from vllm_rlt.pd.engine import PDEngine
 
 
 def load_engine(args):
     from tokenizers.decoders import ByteLevel
-    from transformers import AutoTokenizer
 
     profiling = profile_config_from_args(args)
-    allow_download = getattr(args, "allow_download", getattr(args, "assume_yes", False))
-    source, revision, config = resolve_model_config(
-        args.model, revision=args.revision, allow_download=allow_download
-    )
-    tokenizer = AutoTokenizer.from_pretrained(
+    source, revision, config = resolve_model_config(args.model, revision=args.revision)
+    tokenizer = load_tokenizer(
         args.tokenizer or resolve_model_source(args.model),
         revision=(
             args.tokenizer_revision
             if args.tokenizer_revision is not None
             else (args.revision if args.tokenizer else revision)
         ),
-        trust_remote_code=False,
-        local_files_only=not allow_download,
     )
     if config["model_type"].lower() == "ouro":
         decoder = getattr(getattr(tokenizer, "backend_tokenizer", None), "decoder", None)
@@ -45,7 +38,6 @@ def load_engine(args):
     engine = PDEngine(
         source,
         revision=revision,
-        allow_download=allow_download,
         dtype=args.dtype,
         pd_config=PDConfig(
             prefill_devices=tuple(args.prefill_devices),
@@ -139,15 +131,8 @@ def main():
     parser.set_defaults(
         num_blocks=None, exit_mode="ouro_delayed", prefill_chunk_size=2048, async_scheduling=True
     )
-    parser.add_argument(
-        "-y",
-        "--yes",
-        action="store_true",
-        dest="assume_yes",
-        help="Approve model/tokenizer downloads from HuggingFace",
-    )
+
     args = parser.parse_args()
-    args.allow_download = approve_download(args, parser)
     limits = ServingLimits(**{name: getattr(args, name) for name in asdict(ServingLimits())})
     logging.basicConfig(level=logging.INFO)
     web.run_app(

@@ -58,7 +58,6 @@ class PDWorker:
                 revision=options["revision"],
                 device=f"cuda:{device}",
                 dtype=dtype,
-                allow_download=options.get("allow_download", False),
             )
         )
         self.engine = LLMEngine(self.model, **options["engine"])
