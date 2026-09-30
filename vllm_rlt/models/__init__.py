@@ -7,8 +7,6 @@ from typing import Any
 
 import torch
 
-from vllm_rlt.recipes import get_recipe
-
 from .nanbeige import NanbeigeConfig, NanbeigeForCausalLM
 from .ouro import OuroConfig, OuroForCausalLM
 
@@ -19,14 +17,11 @@ MODEL_MAPPING = {
 
 
 def resolve_model_source(path_or_repo: str | Path) -> str:
-    """Expand explicit local paths or recipe aliases without changing revision."""
+    """Expand explicit local paths; preserve caller-provided repository IDs."""
     folder = Path(path_or_repo).expanduser()
     if folder.is_dir():
         return str(folder.resolve())
-    raw = str(path_or_repo)
-    recipe = get_recipe(raw)
-    # A full repository ID is already an explicit source.
-    return recipe.model_id if "/" not in raw and recipe is not None else raw
+    return str(path_or_repo)
 
 
 def resolve_local_model_path(path_or_repo: str | Path, revision=None) -> Path | None:

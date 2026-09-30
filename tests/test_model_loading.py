@@ -22,7 +22,7 @@ def checkpoint(tmp_path):
 
 
 @pytest.mark.parametrize("revision", [None, "my-tag"])
-@pytest.mark.parametrize("source", ["ByteDance/Ouro-1.4B", "ouro"])
+@pytest.mark.parametrize("source", ["custom-org/model", "ouro", "nanbeige"])
 def test_caller_revision_reaches_hub_unchanged(monkeypatch, checkpoint, revision, source):
     fetch = Mock(return_value=str(checkpoint / "config.json"))
     monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
@@ -30,7 +30,7 @@ def test_caller_revision_reaches_hub_unchanged(monkeypatch, checkpoint, revision
     load = Mock(return_value=object())
     monkeypatch.setattr(NanbeigeForCausalLM, "from_pretrained", load)
     AutoModelForCausalLM.from_pretrained(source, revision=revision, allow_download=True)
-    assert fetch.call_args.args == ("ByteDance/Ouro-1.4B", "config.json")
+    assert fetch.call_args.args == (source, "config.json")
     assert fetch.call_args.kwargs["revision"] == revision
     assert load.call_args.kwargs["revision"] == revision
 
@@ -56,7 +56,7 @@ def test_partial_cache_does_not_authorize_download(monkeypatch, tmp_path):
         AutoModelForCausalLM.from_pretrained("my-org/model")
 
 
-def test_alias_text_generation_uses_same_source_and_revision(monkeypatch, checkpoint):
+def test_text_generation_uses_caller_source_and_revision(monkeypatch, checkpoint):
     from vllm_rlt import LLM, SamplingParams
 
     monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
@@ -67,11 +67,11 @@ def test_alias_text_generation_uses_same_source_and_revision(monkeypatch, checkp
     tokenizer = SimpleNamespace(encode=lambda text: [2, 3], decode=lambda ids, **kw: "text")
     token_load = Mock(return_value=tokenizer)
     monkeypatch.setattr("transformers.AutoTokenizer.from_pretrained", token_load)
-    llm = LLM("nanbeige", revision="custom", allow_download=True, dtype=torch.float32)
+    llm = LLM("custom-org/checkpoint", revision="custom", allow_download=True, dtype=torch.float32)
     try:
         outputs = llm.generate("hello", SamplingParams(max_tokens=1, ignore_eos=True))
         assert outputs[0].text == "text"
-        assert token_load.call_args.args == ("Nanbeige/Nanbeige4.2-3B",)
+        assert token_load.call_args.args == ("custom-org/checkpoint",)
         assert token_load.call_args.kwargs["revision"] == "custom"
     finally:
         llm.close()
@@ -186,7 +186,24 @@ def test_resolved_hub_snapshot_freezes_model_and_tokenizer_revision(monkeypatch,
     monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
     fetch = Mock(return_value=str(config))
     monkeypatch.setattr("huggingface_hub.hf_hub_download", fetch)
-    source, revision, _ = resolve_model_config("nanbeige", allow_download=True)
-    assert source == "Nanbeige/Nanbeige4.2-3B"
+    source, revision, _ = resolve_model_config("custom-org/checkpoint", allow_download=True)
+    assert source == "custom-org/checkpoint"
     assert fetch.call_args.kwargs["revision"] is None
     assert revision == "a" * 40
+
+
+def test_model_loaders_require_explicit_source():
+    from vllm_rlt.models import OuroForCausalLM
+
+    for loader in (AutoModelForCausalLM, OuroForCausalLM, NanbeigeForCausalLM):
+        with pytest.raises(TypeError):
+            loader.from_pretrained()
+
+
+def test_cli_requires_source_for_real_model(monkeypatch):
+    from vllm_rlt.entrypoints.cli import main
+
+    monkeypatch.setattr("sys.argv", ["vllm-rlt", "--prompt", "hello"])
+    with pytest.raises(SystemExit) as error:
+        main()
+    assert error.value.code == 2

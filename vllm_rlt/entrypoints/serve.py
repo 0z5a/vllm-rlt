@@ -16,7 +16,6 @@ from vllm_rlt.entrypoints.runtime_args import (
     runtime_configs,
 )
 from vllm_rlt.models import AutoModelForCausalLM, resolve_model_config, resolve_model_source
-from vllm_rlt.recipes import OURO_MODEL_ID
 
 
 def load_engine(args):
@@ -80,11 +79,13 @@ def main():
     from vllm_rlt.serving.server import create_app
 
     parser = argparse.ArgumentParser(description="Serve one Ouro model with OpenAI completions")
-    parser.add_argument("--model", default=OURO_MODEL_ID)
+    parser.add_argument(
+        "--model", help="Local checkpoint path or HuggingFace repository ID", required=True
+    )
     parser.add_argument("--revision")
     parser.add_argument("--tokenizer")
     parser.add_argument("--tokenizer-revision")
-    parser.add_argument("--served-model-name", default=OURO_MODEL_ID)
+    parser.add_argument("--served-model-name")
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
     parser.add_argument(
@@ -121,7 +122,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     app = create_app(
         partial(load_engine, args),
-        model=args.served_model_name,
+        model=args.served_model_name or args.model,
         limits=limits,
         allowed_hosts=("localhost", args.host),
     )

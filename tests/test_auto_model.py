@@ -80,7 +80,7 @@ def test_remote_download_surfaces_errors_directly(monkeypatch):
         AutoModelForCausalLM.from_pretrained("some/remote-model", allow_download=True)
 
 
-def test_remote_download_with_recipe_alias(tmp_path, monkeypatch):
+def test_remote_download_preserves_source(tmp_path, monkeypatch):
     config = tiny_nanbeige_config()
     (tmp_path / "config.json").write_text(json.dumps(config.to_dict()))
     model = NanbeigeForCausalLM(config)
@@ -100,10 +100,10 @@ def test_remote_download_with_recipe_alias(tmp_path, monkeypatch):
     monkeypatch.setattr("vllm_rlt.models.resolve_local_model_path", lambda *a, **k: None)
 
     loaded = AutoModelForCausalLM.from_pretrained(
-        "nanbeige", allow_download=True, dtype=torch.float32
+        "test-org/custom-model", allow_download=True, dtype=torch.float32
     )
     assert isinstance(loaded, NanbeigeForCausalLM)
-    assert downloaded_repo[0][0] == "Nanbeige/Nanbeige4.2-3B"
+    assert downloaded_repo[0][0] == "test-org/custom-model"
 
 
 def test_artifacts_basename_does_not_override_repository(tmp_path, monkeypatch):

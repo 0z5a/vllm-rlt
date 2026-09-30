@@ -13,7 +13,6 @@ from vllm_rlt.entrypoints.runtime_args import (
     runtime_configs,
 )
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
-from vllm_rlt.recipes import OURO_MODEL_ID
 
 
 def _toy_ouro_config() -> OuroConfig:
@@ -56,7 +55,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Ouro inference with loop-level continuous batching"
     )
-    parser.add_argument("--model", default=OURO_MODEL_ID)
+    parser.add_argument("--model", help="Local checkpoint path or HuggingFace repository ID")
     parser.add_argument("--revision")
     parser.add_argument("--prompt", action="append", help="Text prompt; repeat for a batch")
     parser.add_argument(
@@ -92,6 +91,8 @@ def main():
     )
     add_runtime_args(parser)
     args = parser.parse_args()
+    if not args.toy and not args.model:
+        parser.error("--model is required unless --toy is used")
     if args.toy and args.prompt:
         parser.error("--toy uses built-in token ID prompts; omit --prompt")
     if not args.toy and not args.prompt:
@@ -102,7 +103,7 @@ def main():
     torch.manual_seed(args.seed)
     allow_download = False
     if args.toy:
-        if "nanbeige" in args.model.lower():
+        if "nanbeige" in (args.model or "ouro").lower():
             from vllm_rlt.models import NanbeigeForCausalLM
 
             model = NanbeigeForCausalLM(_toy_nanbeige_config()).to(

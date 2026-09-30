@@ -86,7 +86,7 @@ async def until(predicate):
 
 @asynccontextmanager
 async def client_for(load=factory, **kwargs):
-    app = create_app(load, limits=ServingLimits(**kwargs))
+    app = create_app(load, model="test-model", limits=ServingLimits(**kwargs))
     client = TestClient(TestServer(app, handler_cancellation=True))
     await client.start_server()
     try:
@@ -97,7 +97,7 @@ async def client_for(load=factory, **kwargs):
 
 def body(**kwargs):
     return {
-        "model": "ByteDance/Ouro-1.4B",
+        "model": "test-model",
         "prompt": "abc",
         "max_tokens": 4,
         "ignore_eos": True,
@@ -132,7 +132,7 @@ def body(**kwargs):
 )
 def test_validation(extra):
     with pytest.raises((ValueError, TypeError)):
-        CompletionRequest.parse(body(**extra), "ByteDance/Ouro-1.4B")
+        CompletionRequest.parse(body(**extra), "test-model")
 
 
 def test_neutral_client_fields_and_extensions():
@@ -148,7 +148,7 @@ def test_neutral_client_fields_and_extensions():
             top_k=9,
             top_p=0.8,
         ),
-        "ByteDance/Ouro-1.4B",
+        "test-model",
     )
     assert spec.include_usage and spec.params.max_loops == 3 and spec.params.top_k == 9
 
@@ -356,6 +356,7 @@ def test_shutdown_cleans_http_and_engine_state(caplog, expired):
         pause, cleaned = PauseAt(Stage.PREFILL), asyncio.Event()
         app = create_app(
             lambda: factory(hook=pause),
+            model="test-model",
             limits=ServingLimits(shutdown_timeout=0.01 if expired else 5),
         )
 
@@ -698,7 +699,7 @@ def test_write_deadline_aborts_socket_without_blocking_other_clients(monkeypatch
 @pytest.mark.parametrize("value", [None, "", 1, [], True])
 def test_invalid_trace_id(value):
     with pytest.raises(ValueError, match="trace_id"):
-        CompletionRequest.parse(body(trace_id=value), "ByteDance/Ouro-1.4B")
+        CompletionRequest.parse(body(trace_id=value), "test-model")
 
 
 @pytest.mark.parametrize("asynchronous", [False, True])
