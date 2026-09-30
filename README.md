@@ -16,10 +16,16 @@
   <a href="#how-it-works">How It Works</a> ·
   <a href="#getting-started">Getting Started</a> ·
   <a href="docs/README.md">Documentation</a> ·
+  <a href="docs/developer-guide.md"><strong>Developer Must-Read</strong></a> ·
   <a href="#performance-baselines">Performance</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#contributing">Contributing</a>
 </p>
+
+> [!IMPORTANT]
+> **Contributing? Read the [Developer Must-Read](docs/developer-guide.md) first.**
+> Good code starts before coding: understand the requirement, verify the implementation,
+> analyze performance, and complete the [refactoring skill review](.agents/skills/rlt-refactor/SKILL.md) before marking your change ready.
 
 ## About
 
@@ -197,6 +203,10 @@ for the target architecture, module breakdown, and implementation sequence.
 <a id="contributing"></a>
 
 ## 🤝 Contributing
+
+Start with the **[Developer Must-Read](docs/developer-guide.md)** for the development
+workflow, required evidence, and completion criteria. Use the
+[refactoring skill](.agents/skills/rlt-refactor/SKILL.md) for code-quality review.
 
 Help us build efficient inference for recurrent language models. vllm-rlt is
 open to contributors working on systems, models, evaluation, and documentation.
