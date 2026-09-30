@@ -7,14 +7,21 @@ import torch
 
 from vllm_rlt.config import CacheConfig, ExecutionConfig, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.request import Request
+from vllm_rlt.request import Request, Stage
 from vllm_rlt.sampling_params import SamplingParams
 from vllm_rlt.worker.model_runner import ModelRunner
 
 
 class RLModelRunner(ModelRunner):
     selected_log_probs: dict[str, list[torch.Tensor]]
+    block_tokens: dict[str, int]
     phase: str
+
+    def _execute(self, batch, prepared=None):
+        result = super()._execute(batch, prepared)
+        if batch.stage == Stage.RECURRENT and self.graphs is not None:
+            self.block_tokens["decode"] += len(batch.items) * len(self.model.model.layers)
+        return result
 
     def _prefill_tokens(self, ids, positions, tokens):
         self.phase = "prefill"
@@ -45,6 +52,7 @@ class RLEngine(LLMEngine):
 
     Prefix caching, asynchronous execution and speculative decoding are excluded
     by construction. Physical KV pages are reused only after every request finishes.
+    Recurrent CUDA graphs retain their parameter addresses across publication.
     """
 
     model_runner: RLModelRunner
@@ -57,6 +65,7 @@ class RLEngine(LLMEngine):
         attention_backend: str = "triton",
         max_num_seqs: int = 8,
         max_num_batched_tokens: int = 128,
+        execution_config: ExecutionConfig | None = None,
     ):
         super().__init__(
             model,
@@ -64,13 +73,13 @@ class RLEngine(LLMEngine):
             scheduler_config=SchedulerConfig(
                 max_num_seqs=max_num_seqs, max_num_batched_tokens=max_num_batched_tokens
             ),
-            execution_config=ExecutionConfig(),
+            execution_config=execution_config,
             attention_backend=attention_backend,
             model_runner_class=RLModelRunner,
         )
         self.model_runner.selected_log_probs = {}
         self.model_runner.phase = "decode"
-        self.block_tokens = {"prefill": 0, "decode": 0}
+        self.block_tokens = self.model_runner.block_tokens = {"prefill": 0, "decode": 0}
         for layer in model.model.layers:
             layer.register_forward_pre_hook(self._record_block_tokens)
         self.policy_version = 0
@@ -100,6 +109,8 @@ class RLEngine(LLMEngine):
         return super().add_request(request_id, prompt_token_ids, params, trace_id=trace_id)
 
     def _record_block_tokens(self, module, inputs) -> None:
+        if self.model_runner.phase == "decode" and self.model_runner.graphs is not None:
+            return
         self.block_tokens[self.model_runner.phase] += inputs[0].shape[0]
 
     def set_loop_budget(self, loops: int) -> None:
@@ -142,7 +153,7 @@ class RLEngine(LLMEngine):
         if temperature <= 0:
             raise ValueError("RL requires a positive sampling temperature")
         self.set_loop_budget(loops)
-        self.block_tokens = {"prefill": 0, "decode": 0}
+        self.block_tokens = self.model_runner.block_tokens = {"prefill": 0, "decode": 0}
         ids = [f"rl-{self.batch_index}-{index}" for index in range(len(prompts))]
         self.batch_index += 1
         for index, (request_id, prompt) in enumerate(zip(ids, prompts, strict=True)):
