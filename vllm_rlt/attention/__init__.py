@@ -1,6 +1,7 @@
 """Attention backend selection and kernel metadata semantics (M8)."""
 
 from vllm_rlt.attention.backend import (
+    AttentionBackend,
     BackendCapabilities,
     backend_capabilities,
     create_backend,
@@ -9,6 +10,7 @@ from vllm_rlt.attention.backend import (
 from vllm_rlt.attention.metadata import AttentionMetadata, AttentionRows, build_attention_metadata
 
 __all__ = [
+    "AttentionBackend",
     "AttentionMetadata",
     "AttentionRows",
     "BackendCapabilities",

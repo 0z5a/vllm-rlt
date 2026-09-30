@@ -16,6 +16,7 @@ from numbers import Integral
 import torch
 
 from vllm_rlt.attention import (
+    AttentionBackend,
     AttentionRows,
     BackendCapabilities,
     backend_capabilities,
@@ -100,6 +101,8 @@ class KVCacheManager:
         enable_prefix_caching: bool = False,
         incremental_allocation: bool = False,
         watermark_ratio: float = 0.0,
+        *,
+        attention: AttentionBackend | None = None,
     ):
         for name, value in (
             ("num_layers", num_layers),
@@ -121,9 +124,11 @@ class KVCacheManager:
         self.storage_depths = max_loops if layout == "last_exited" else 1
         self.device = torch.device(device)
         self.dtype = dtype
-        self.backend = backend
-        self.attention = create_backend(backend, self.device, dtype, head_dim, block_size)
-        self.attention_info = getattr(self.attention, "info", {"backend": backend})
+        self.attention = attention or create_backend(
+            backend, self.device, dtype, head_dim, block_size
+        )
+        self.attention_info = self.attention.info
+        self.backend = self.attention_info["selected_backend"]
         shape = (num_blocks, num_layers, block_size, num_kv_heads, head_dim)
         self.key_cache = torch.empty(shape, device=self.device, dtype=dtype)
         self.value_cache = torch.empty_like(self.key_cache)

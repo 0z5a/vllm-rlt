@@ -123,6 +123,16 @@ create an environment, download the model, start the server, and send your first
 request. The guide also covers command-line inference and the Python API. Browse the [documentation](docs/README.md) for runtime
 configuration, optional backends, and design notes.
 
+Local inference and serving accept `--attention-backend auto` (Python:
+`attention_backend="auto"`). Auto tries compatible FA4, FA3, FA2, Triton, then
+Torch, checking hardware, dtype, head dimension, page size, installed packages,
+and execution requirements. CPU uses Torch. GPU async scheduling and CUDA Graphs
+require a device backend; UVA packed prefill requires declared packed-prefill
+support and LAST_EXITED KV. Selection occurs before memory profiling. The startup
+log and `cache_manager.attention_info` report the selected backend and why earlier
+candidates were skipped. Explicit backend choices retain their validation errors
+and never fall back. Existing defaults are unchanged.
+
 ## Performance Baselines
 
 The current performance baselines are recorded in

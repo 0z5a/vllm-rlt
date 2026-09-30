@@ -7,6 +7,7 @@ import torch
 
 from vllm_rlt.attention import (
     AttentionRows,
+    BackendCapabilities,
     backend_capabilities,
     build_attention_metadata,
     create_backend,
@@ -33,10 +34,11 @@ def test_backend_name_is_checked_before_other_cache_options():
 def test_packed_prefill_capability_is_an_explicit_backend_contract():
     reference = create_backend("torch", torch.device("cpu"), torch.float32, 8, 2)
     assert backend_capabilities(reference).packed_prefill is False
-    assert backend_capabilities(SimpleNamespace(generation=4)).packed_prefill is True
+    declared = SimpleNamespace(generation=2, capabilities=BackendCapabilities(packed_prefill=True))
+    assert backend_capabilities(declared).packed_prefill is True
     cache = KVCacheManager(1, 1, 8, 4, 2, 1)
     assert cache.attention_capabilities.packed_prefill is False
-    cache.attention = SimpleNamespace(generation=4)
+    cache.attention = declared
     assert cache.attention_capabilities.packed_prefill is True
 
 

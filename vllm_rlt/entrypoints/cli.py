@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 from dataclasses import asdict
 
 import torch
@@ -24,7 +25,15 @@ def main():
     parser.add_argument(
         "--attention-backend",
         type=str.lower,
-        choices=["torch", "triton", "flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4"],
+        choices=[
+            "auto",
+            "torch",
+            "triton",
+            "flash_attn",
+            "flash_attn_2",
+            "flash_attn_3",
+            "flash_attn_4",
+        ],
         default="torch",
     )
     parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
@@ -40,6 +49,7 @@ def main():
     parser.add_argument("--block-size", type=int, default=16)
     add_runtime_args(parser)
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
     if args.toy and args.prompt:
         parser.error("--toy uses built-in token ID prompts; omit --prompt")
     if not args.toy and not args.prompt:
