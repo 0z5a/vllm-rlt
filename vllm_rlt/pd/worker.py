@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, field, replace
 import torch
 
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import AutoModelForCausalLM, OuroConfig, OuroForCausalLM
 from vllm_rlt.profiling import ProfileConfig
 from vllm_rlt.request import Stage
 
@@ -53,8 +53,12 @@ class PDWorker:
         self.model = (
             OuroForCausalLM(model_source).to(device=f"cuda:{device}", dtype=dtype)
             if isinstance(model_source, OuroConfig)
-            else OuroForCausalLM.from_pretrained(
-                model_source, revision=options["revision"], device=f"cuda:{device}", dtype=dtype
+            else AutoModelForCausalLM.from_pretrained(
+                model_source,
+                revision=options["revision"],
+                device=f"cuda:{device}",
+                dtype=dtype,
+                allow_download=True,
             )
         )
         self.engine = LLMEngine(self.model, **options["engine"])

@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-# Architecture adapted from ByteDance/Ouro-1.4B modeling_ouro.py, revision
-# 574fa66cb8bf5abdc979642d01cf2b79b16bfab1 (Apache-2.0).
-# Original architecture includes code Copyright 2024 The Qwen team, Alibaba
-# Group and the HuggingFace Inc. team. All rights reserved.
-"""Native Ouro execution split into embedding, recurrent core, and LM head.
+"""Native Nanbeige execution split into embedding, recurrent core, and LM head.
 
-The scheduler owns loop depth and halting. Each row can belong to a different
+Supports fixed-loop recurrent causal LM architectures such as Nanbeige/Nanbeige4.2-3B.
+The scheduler owns loop depth and token progress. Each row can belong to a different
 request or loop depth; the cache supplies the corresponding causal KV history.
 """
 
@@ -32,30 +29,30 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class OuroConfig:
-    vocab_size: int = 49152
-    hidden_size: int = 2048
-    intermediate_size: int = 5632
-    num_hidden_layers: int = 24
-    num_attention_heads: int = 16
-    num_key_value_heads: int = 16
+class NanbeigeConfig:
+    vocab_size: int = 166144
+    hidden_size: int = 3072
+    intermediate_size: int = 10752
+    num_hidden_layers: int = 22
+    num_attention_heads: int = 48
+    num_key_value_heads: int = 8
     head_dim: int = 128
     hidden_act: str = "silu"
-    max_position_embeddings: int = 65536
+    max_position_embeddings: int = 262144
     initializer_range: float = 0.02
-    rms_norm_eps: float = 1e-6
-    rope_theta: float = 1_000_000.0
-    total_ut_steps: int = 4
+    rms_norm_eps: float = 1e-5
+    rope_theta: float = 70_000_000.0
+    num_loops: int = 2
+    total_ut_steps: int = 2
     early_exit_threshold: float = 1.0
-    bos_token_id: int | None = 0
-    eos_token_id: int | None = 0
-    pad_token_id: int | None = None
+    bos_token_id: int | None = 166100
+    eos_token_id: int | None = 166101
+    pad_token_id: int | None = 0
     tie_word_embeddings: bool = False
     attention_dropout: float = 0.0
+    attention_bias: bool = False
+    skip_loop_final_norm: bool = False
     rope_scaling: dict[str, Any] | None = None
-    use_sliding_window: bool = False
-    sliding_window: int | None = None
-    layer_types: list[str] | None = None
 
     def __post_init__(self) -> None:
         for name in (
@@ -67,6 +64,7 @@ class OuroConfig:
             "num_key_value_heads",
             "head_dim",
             "max_position_embeddings",
+            "num_loops",
             "total_ut_steps",
         ):
             value = getattr(self, name)
@@ -83,18 +81,11 @@ class OuroConfig:
         if not math.isfinite(self.early_exit_threshold) or not 0 <= self.early_exit_threshold <= 1:
             raise ValueError("early_exit_threshold must be in [0, 1]")
         if self.hidden_act != "silu":
-            raise ValueError("Only Ouro's silu activation is supported")
+            raise ValueError("Only silu hidden_act is supported")
         if self.rope_scaling is not None:
             raise ValueError("RoPE scaling is not supported")
-        if self.use_sliding_window or self.sliding_window is not None:
-            raise ValueError("Sliding-window attention is not supported")
-        if self.layer_types is not None and (
-            len(self.layer_types) != self.num_hidden_layers
-            or any(layer != "full_attention" for layer in self.layer_types)
-        ):
-            raise ValueError("Every Ouro layer must use full_attention")
         if self.tie_word_embeddings:
-            raise ValueError("Tied embeddings are not supported by the Ouro-1.4B loader")
+            raise ValueError("Tied embeddings are not supported")
         if self.attention_dropout != 0:
             raise ValueError("Inference requires attention_dropout=0")
         for name in ("bos_token_id", "eos_token_id", "pad_token_id"):
@@ -107,50 +98,40 @@ class OuroConfig:
                 raise ValueError(f"{name} must be a vocabulary index or None")
 
     @classmethod
-    def from_dict(cls, values: dict[str, Any]) -> "OuroConfig":
-        if values.get("model_type", "ouro") != "ouro":
-            raise ValueError("Only model_type='ouro' is supported")
-        if values.get("architectures", ["OuroForCausalLM"]) != ["OuroForCausalLM"]:
-            raise ValueError("Only the OuroForCausalLM architecture is supported")
+    def from_dict(cls, values: dict[str, Any]) -> "NanbeigeConfig":
+        if values.get("model_type", "nanbeige") != "nanbeige":
+            raise ValueError("Only model_type='nanbeige' is supported")
+        if values.get("architectures", ["NanbeigeForCausalLM"]) != ["NanbeigeForCausalLM"]:
+            raise ValueError("Only the NanbeigeForCausalLM architecture is supported")
         names = {field.name for field in fields(cls)}
-        metadata = {
-            "architectures",
-            "auto_map",
-            "model_type",
-            "torch_dtype",
-            "dtype",
-            "transformers_version",
-            "max_window_layers",
-            "use_cache",
-            "_name_or_path",
-        }
-        unknown = values.keys() - names - metadata
-        if unknown:
-            raise ValueError(f"Unsupported Ouro configuration fields: {sorted(unknown)}")
         config_values = {key: value for key, value in values.items() if key in names}
+        if "num_loops" in values and "total_ut_steps" not in config_values:
+            config_values["total_ut_steps"] = values["num_loops"]
+        elif "total_ut_steps" in config_values and "num_loops" not in config_values:
+            config_values["num_loops"] = config_values["total_ut_steps"]
         if "head_dim" not in config_values and "hidden_size" in config_values:
             heads = config_values.get("num_attention_heads", cls.num_attention_heads)
-            if config_values["hidden_size"] % heads:
-                raise ValueError("hidden_size must be divisible by num_attention_heads")
-            config_values["head_dim"] = config_values["hidden_size"] // heads
-        if config_values.get("num_key_value_heads", 1) is None:
+            config_values["head_dim"] = config_values.get(
+                "kv_channels", config_values["hidden_size"] // heads
+            )
+        if config_values.get("num_key_value_heads") is None:
             config_values["num_key_value_heads"] = config_values.get(
                 "num_attention_heads", cls.num_attention_heads
             )
         return cls(**config_values)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"model_type": "ouro", "architectures": ["OuroForCausalLM"], **asdict(self)}
+        return {"model_type": "nanbeige", "architectures": ["NanbeigeForCausalLM"], **asdict(self)}
 
 
 # Backward-compatible aliases for shared layers
-OuroRMSNorm = RMSNorm
-OuroRotaryEmbedding = RotaryEmbedding
+NanbeigeRMSNorm = RMSNorm
+NanbeigeRotaryEmbedding = RotaryEmbedding
 _rotate_half = rotate_half
 
 
-class OuroAttention(nn.Module):
-    def __init__(self, config: OuroConfig, layer_idx: int) -> None:
+class NanbeigeAttention(nn.Module):
+    def __init__(self, config: NanbeigeConfig, layer_idx: int) -> None:
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -174,10 +155,11 @@ class OuroAttention(nn.Module):
         batch: "_PreparedKVBatch",
         cache: "KVCacheManager",
     ) -> torch.Tensor:
-        shape = (hidden.shape[0], -1, self.config.head_dim)
-        q = self.q_proj(hidden).view(shape)
-        k = self.k_proj(hidden).view(shape)
-        v = self.v_proj(hidden).view(shape)
+        shape_q = (hidden.shape[0], self.config.num_attention_heads, self.config.head_dim)
+        shape_kv = (hidden.shape[0], self.config.num_key_value_heads, self.config.head_dim)
+        q = self.q_proj(hidden).view(shape_q)
+        k = self.k_proj(hidden).view(shape_kv)
+        v = self.v_proj(hidden).view(shape_kv)
         cos, sin = position_embeddings
         q, k = apply_rotary_pos_emb(q, k, cos, sin)
         cache._write_prepared(self.layer_idx, batch, k, v)
@@ -185,8 +167,8 @@ class OuroAttention(nn.Module):
         return self.o_proj(output.reshape(hidden.shape[0], -1))
 
 
-class OuroMLP(nn.Module):
-    def __init__(self, config: OuroConfig) -> None:
+class NanbeigeMLP(nn.Module):
+    def __init__(self, config: NanbeigeConfig) -> None:
         super().__init__()
         self.gate_proj = nn.Linear(config.hidden_size, config.intermediate_size, bias=False)
         self.up_proj = nn.Linear(config.hidden_size, config.intermediate_size, bias=False)
@@ -196,15 +178,13 @@ class OuroMLP(nn.Module):
         return self.down_proj(F.silu(self.gate_proj(hidden)) * self.up_proj(hidden))
 
 
-class OuroDecoderLayer(nn.Module):
-    def __init__(self, config: OuroConfig, layer_idx: int) -> None:
+class NanbeigeDecoderLayer(nn.Module):
+    def __init__(self, config: NanbeigeConfig, layer_idx: int) -> None:
         super().__init__()
-        self.self_attn = OuroAttention(config, layer_idx)
-        self.mlp = OuroMLP(config)
+        self.self_attn = NanbeigeAttention(config, layer_idx)
+        self.mlp = NanbeigeMLP(config)
         self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.input_layernorm_2 = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.post_attention_layernorm_2 = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
     def forward(
         self,
@@ -213,81 +193,73 @@ class OuroDecoderLayer(nn.Module):
         batch: "_PreparedKVBatch",
         cache: "KVCacheManager",
     ) -> torch.Tensor:
-        attention = self.self_attn(self.input_layernorm(hidden), position_embeddings, batch, cache)
-        hidden = hidden + self.input_layernorm_2(attention)
-        return hidden + self.post_attention_layernorm_2(
-            self.mlp(self.post_attention_layernorm(hidden))
-        )
+        residual = hidden
+        hidden = self.input_layernorm(hidden)
+        attention = self.self_attn(hidden, position_embeddings, batch, cache)
+        hidden = residual + attention
+
+        residual = hidden
+        hidden = self.post_attention_layernorm(hidden)
+        mlp = self.mlp(hidden)
+        return residual + mlp
 
 
-class OuroModel(nn.Module):
-    def __init__(self, config: OuroConfig) -> None:
+class NanbeigeModel(nn.Module):
+    def __init__(self, config: NanbeigeConfig) -> None:
         super().__init__()
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, config.pad_token_id)
         self.layers = nn.ModuleList(
-            OuroDecoderLayer(config, layer) for layer in range(config.num_hidden_layers)
+            NanbeigeDecoderLayer(config, layer) for layer in range(config.num_hidden_layers)
         )
         self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.rotary_emb = RotaryEmbedding(head_dim=config.head_dim, rope_theta=config.rope_theta)
-        self.early_exit_gate = nn.Linear(config.hidden_size, 1, bias=True)
 
 
-class OuroForCausalLM(nn.Module):
-    """Inference-only native Ouro-1.4B with checkpoint-compatible parameter names."""
+class NanbeigeForCausalLM(nn.Module):
+    """Nanbeige causal language model matching the vllm-rlt execution contract."""
 
-    def __init__(self, config: OuroConfig) -> None:
+    def __init__(self, config: NanbeigeConfig) -> None:
         super().__init__()
         self.config = config
-        self.model = OuroModel(config)
+        self.model = NanbeigeModel(config)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
-        self.apply(self._initialize)
-        self.requires_grad_(False)
-        self.eval()
 
-    def _initialize(self, module: nn.Module) -> None:
-        if isinstance(module, (nn.Linear, nn.Embedding)):
-            nn.init.normal_(module.weight, mean=0, std=self.config.initializer_range)
-            if isinstance(module, nn.Linear) and module.bias is not None:
-                nn.init.zeros_(module.bias)
-            if isinstance(module, nn.Embedding) and module.padding_idx is not None:
-                with torch.no_grad():
-                    module.weight[module.padding_idx].zero_()
-
-    def prelude(self, token_ids: torch.Tensor) -> torch.Tensor:
-        if token_ids.ndim != 1:
-            raise ValueError("prelude expects packed token_ids with shape [N]")
-        return self.model.embed_tokens(token_ids)
+    def prelude(self, tokens: torch.Tensor) -> torch.Tensor:
+        return self.model.embed_tokens(tokens)
 
     def recurrent(
         self,
         hidden: torch.Tensor,
         request_ids: Sequence[str],
         depths: Sequence[int],
-        positions: Sequence[int] | torch.Tensor,
+        positions: Sequence[int],
         cache: "KVCacheManager",
         *,
         compute_gate: bool = True,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        """Execute one full shared core; depths are zero-based cache namespaces."""
-        if hidden.ndim != 2 or hidden.shape[1] != self.config.hidden_size:
+        if hidden.ndim != 2 or hidden.shape[-1] != self.config.hidden_size:
             raise ValueError("recurrent expects hidden with shape [N, hidden_size]")
         count = hidden.shape[0]
         if count == 0 or not (len(request_ids) == len(depths) == len(positions) == count):
             raise ValueError("recurrent requires matching, nonempty packed metadata")
-        # Internal model/cache traversal contract: descriptor ownership and
-        # allocation identity are checked again by every prepared layer call.
         batch = cache._prepare_batch(request_ids, depths, positions)
         return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
 
     def recurrent_prepared(self, hidden, batch, cache, *, compute_gate=True):
-        """Run core with runner-owned metadata, including inactive padding rows."""
+        """Run recurrent core with runner-owned metadata."""
         position_embeddings = self.model.rotary_emb(hidden, batch.position_ids)
         for layer in self.model.layers:
             hidden = layer(hidden, position_embeddings, batch, cache)
-        # Norm is inside the recurrence in Ouro; this normalized state is the
-        # next loop's input as well as the gate and LM head input.
-        hidden = self.model.norm(hidden)
-        return hidden, self.model.early_exit_gate(hidden).squeeze(-1) if compute_gate else None
+        if not self.config.skip_loop_final_norm:
+            hidden = self.model.norm(hidden)
+        # Nanbeige is a fixed-loop recurrent model without an early-exit gate.
+        # Returning a strongly negative logit ensures 0 exit probability until max_loops.
+        gate = (
+            torch.full((hidden.shape[0],), -1e4, device=hidden.device, dtype=hidden.dtype)
+            if compute_gate
+            else None
+        )
+        return hidden, gate
 
     def coda(self, hidden: torch.Tensor) -> torch.Tensor:
         return self.lm_head(hidden)
@@ -300,11 +272,8 @@ class OuroForCausalLM(nn.Module):
         revision: str | None = None,
         device: torch.device | str = "cpu",
         dtype: torch.dtype = torch.bfloat16,
-    ) -> "OuroForCausalLM":
-        """Stream strictly checked safetensors into a meta model; never execute Hub code.
-
-        Local directories may contain a single model.safetensors or an indexed sharded checkpoint.
-        """
+    ) -> "NanbeigeForCausalLM":
+        """Stream strictly checked safetensors into a meta model; never execute Hub code."""
         from safetensors import safe_open
 
         if dtype not in (torch.float32, torch.float16, torch.bfloat16):
@@ -321,7 +290,7 @@ class OuroForCausalLM(nn.Module):
                     allow_patterns=["config.json", "*.safetensors", "model.safetensors.index.json"],
                 )
             )
-        config = OuroConfig.from_dict(json.loads((folder / "config.json").read_text()))
+        config = NanbeigeConfig.from_dict(json.loads((folder / "config.json").read_text()))
         index_path = folder / "model.safetensors.index.json"
         index = json.loads(index_path.read_text())["weight_map"] if index_path.is_file() else None
         if index is None:
@@ -341,7 +310,6 @@ class OuroForCausalLM(nn.Module):
             model = cls(config)
         expected = {name: tuple(parameter.shape) for name, parameter in model.named_parameters()}
         discovered: dict[str, Path] = {}
-        # Validate every key and shape before allocating model weight memory.
         for shard in shards:
             with safe_open(shard, framework="pt", device="cpu") as checkpoint:
                 for name in checkpoint.keys():
@@ -358,7 +326,7 @@ class OuroForCausalLM(nn.Module):
         if missing:
             raise ValueError(f"Missing checkpoint tensors: {sorted(missing)}")
         if index is not None and set(index) != set(expected):
-            raise ValueError("Checkpoint index does not match Ouro parameter names")
+            raise ValueError("Checkpoint index does not match Nanbeige parameter names")
         for shard in shards:
             with safe_open(shard, framework="pt", device="cpu") as checkpoint:
                 for name in checkpoint.keys():

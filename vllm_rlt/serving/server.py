@@ -7,8 +7,8 @@ import time
 
 from aiohttp import web
 
-from vllm_rlt.models.config import OURO_MODEL_ID
 from vllm_rlt.profiling import ProfileConfig
+from vllm_rlt.recipes import OURO_MODEL_ID
 from vllm_rlt.serving.protocol import (
     CompletionRequest,
     ServingError,

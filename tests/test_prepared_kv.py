@@ -6,8 +6,9 @@ import weakref
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroForCausalLM
 
 
 @pytest.fixture(autouse=True)
@@ -224,7 +225,7 @@ def test_empty_adapters_preserve_layer_and_tensor_validation():
 
 def test_one_preparation_and_position_tensor_per_core_across_24_layers(monkeypatch):
     torch.manual_seed(43)
-    config = OuroConfig.tiny(num_hidden_layers=24)
+    config = tiny_ouro_config(num_hidden_layers=24)
     model = OuroForCausalLM(config)
     cache = make_cache(
         num_layers=24, num_kv_heads=config.num_key_value_heads, head_dim=config.head_dim

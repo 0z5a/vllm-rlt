@@ -3,15 +3,16 @@ import math
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
 from vllm_rlt import LLM, CacheConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import FinishReason, RequestOutput, Stage
 
 
 def tiny_model():
     torch.manual_seed(123)
-    return OuroForCausalLM(OuroConfig.tiny())
+    return OuroForCausalLM(tiny_ouro_config())
 
 
 def drain(engine, limit=1000):

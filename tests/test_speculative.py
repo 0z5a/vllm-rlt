@@ -5,6 +5,8 @@ from collections import Counter
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
+from tests.reference import dense_reference
 from vllm_rlt import (
     LLM,
     CacheConfig,
@@ -15,15 +17,14 @@ from vllm_rlt import (
 )
 from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
-from vllm_rlt.models.reference import dense_reference
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.sampling import probabilities, rejection_sample
 
 
 def model(seed=123, dtype=torch.float32):
     torch.manual_seed(seed)
-    return OuroForCausalLM(OuroConfig.tiny()).to(dtype=dtype)
+    return OuroForCausalLM(tiny_ouro_config()).to(dtype=dtype)
 
 
 def engine(m, k=3, **kwargs):
@@ -75,7 +76,7 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
     m = model(dtype=dtype).to(device)
     if backend == "flash_attn_4":
         torch.manual_seed(123)
-        m = OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+        m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
             device=device, dtype=dtype
         )
     e = engine(m, k=3, cache_config=CacheConfig(128, 2), attention_backend=backend)
@@ -352,7 +353,7 @@ def test_invalid_k(k):
 @pytest.mark.parametrize("backend", ["triton", "flash_attn_4"])
 def test_gpu_sampling_and_greedy_match_replay_with_ragged_requests(backend):
     torch.manual_seed(123)
-    m = OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+    m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
         device="cuda", dtype=torch.bfloat16
     )
     prompts = [[2, 3, 4], [7, 8], [9]]

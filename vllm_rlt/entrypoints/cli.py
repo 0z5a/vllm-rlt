@@ -1,5 +1,6 @@
 import argparse
 import json
+import sys
 from dataclasses import asdict
 
 import torch
@@ -10,14 +11,51 @@ from vllm_rlt.entrypoints.runtime_args import (
     profile_config_from_args,
     runtime_configs,
 )
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroConfig, OuroForCausalLM, resolve_local_model_path
+from vllm_rlt.recipes import OURO_MODEL_ID
+
+
+def _toy_ouro_config() -> OuroConfig:
+    return OuroConfig(
+        vocab_size=64,
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        head_dim=8,
+        max_position_embeddings=128,
+        total_ut_steps=4,
+        bos_token_id=0,
+        eos_token_id=0,
+    )
+
+
+def _toy_nanbeige_config():
+    from vllm_rlt.models import NanbeigeConfig
+
+    return NanbeigeConfig(
+        vocab_size=64,
+        hidden_size=64,
+        intermediate_size=128,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        head_dim=16,
+        max_position_embeddings=128,
+        num_loops=2,
+        total_ut_steps=2,
+        bos_token_id=0,
+        eos_token_id=1,
+        pad_token_id=0,
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="Ouro inference with loop-level continuous batching"
     )
-    parser.add_argument("--model", default="ByteDance/Ouro-1.4B")
+    parser.add_argument("--model", default=OURO_MODEL_ID)
     parser.add_argument("--revision")
     parser.add_argument("--prompt", action="append", help="Text prompt; repeat for a batch")
     parser.add_argument(
@@ -33,8 +71,8 @@ def main():
     )
     parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
     parser.add_argument("--max-tokens", type=int, default=16)
-    parser.add_argument("--max-loops", type=int, default=4)
-    parser.add_argument("--min-loops", type=int, default=2)
+    parser.add_argument("--max-loops", type=int, default=None)
+    parser.add_argument("--min-loops", type=int, default=None)
     parser.add_argument("--exit-threshold", type=float, default=1.0)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top-k", type=int, default=-1)
@@ -44,6 +82,13 @@ def main():
     parser.add_argument("--max-num-batched-tokens", type=int, default=128)
     parser.add_argument("--num-blocks", type=int, help="Override automatic KV sizing")
     parser.add_argument("--block-size", type=int, default=16)
+    parser.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        dest="assume_yes",
+        help="Automatically approve model downloading from HuggingFace without interactive prompt",
+    )
     add_runtime_args(parser)
     args = parser.parse_args()
     if args.toy and args.prompt:
@@ -54,16 +99,46 @@ def main():
     if profiling is not None:
         profiling.resolve_activities(args.device)
     torch.manual_seed(args.seed)
-    model = (
-        OuroForCausalLM(OuroConfig.tiny()).to(device=args.device, dtype=getattr(torch, args.dtype))
-        if args.toy
-        else args.model
-    )
+    allow_download = False
+    if args.toy:
+        if "nanbeige" in args.model.lower():
+            from vllm_rlt.models import NanbeigeForCausalLM
+
+            model = NanbeigeForCausalLM(_toy_nanbeige_config()).to(
+                device=args.device, dtype=getattr(torch, args.dtype)
+            )
+        else:
+            model = OuroForCausalLM(_toy_ouro_config()).to(
+                device=args.device, dtype=getattr(torch, args.dtype)
+            )
+    else:
+        local_path = resolve_local_model_path(args.model)
+        if local_path is not None:
+            model = str(local_path)
+        else:
+            model = args.model
+            if args.assume_yes:
+                allow_download = True
+            elif sys.stdin.isatty():
+                prompt_msg = (
+                    f"Model '{args.model}' not found locally. Download from HuggingFace? (y/yes): "
+                )
+                response = input(prompt_msg).strip().lower()
+                if response in ("y", "yes"):
+                    allow_download = True
+                else:
+                    parser.error(f"Download of '{args.model}' was not approved.")
+            else:
+                parser.error(
+                    f"Model '{args.model}' is not available locally. In non-interactive "
+                    f"environments, pass -y/--yes to approve downloading from HuggingFace."
+                )
     llm = LLM(
         model,
         revision=args.revision,
         device=args.device,
         dtype=getattr(torch, args.dtype),
+        allow_download=allow_download,
         **runtime_configs(args),
         scheduler_config=SchedulerConfig(
             policy=getattr(args, "scheduling_policy", "fcfs"),
@@ -79,10 +154,12 @@ def main():
         ),
         attention_backend=args.attention_backend,
     )
+    model_depth = llm.engine.model.config.total_ut_steps
+    min_loops = args.min_loops if args.min_loops is not None else min(2, model_depth)
     params = SamplingParams(
         max_tokens=args.max_tokens,
         max_loops=args.max_loops,
-        min_loops=args.min_loops,
+        min_loops=min_loops,
         exit_threshold=args.exit_threshold,
         temperature=args.temperature,
         top_k=args.top_k,
@@ -97,8 +174,6 @@ def main():
     finally:
         llm.close()
     if profiling is not None:
-        import sys
-
         print(json.dumps(llm.profile_status()), file=sys.stderr)
     for output in outputs:
         print(json.dumps(asdict(output), ensure_ascii=False))

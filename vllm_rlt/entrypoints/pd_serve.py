@@ -11,9 +11,9 @@ from vllm_rlt.entrypoints.runtime_args import (
     profile_config_from_args,
     runtime_configs,
 )
-from vllm_rlt.models.config import OURO_MODEL_ID, OURO_REVISION
 from vllm_rlt.pd.config import PDConfig
 from vllm_rlt.pd.engine import PDEngine
+from vllm_rlt.recipes import OURO_MODEL_ID
 
 
 def load_engine(args):
@@ -21,14 +21,18 @@ def load_engine(args):
     from transformers import AutoTokenizer
 
     profiling = profile_config_from_args(args)
-    revision = args.revision or (OURO_REVISION if args.model == OURO_MODEL_ID else None)
+    revision = args.revision
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer or args.model,
         revision=args.tokenizer_revision or revision,
         trust_remote_code=False,
     )
-    if not isinstance(tokenizer.backend_tokenizer.decoder, ByteLevel):
-        raise ValueError("serving requires the Ouro byte-level tokenizer")
+    from vllm_rlt.entrypoints.serve import _is_ouro_model
+
+    if _is_ouro_model(args.model):
+        decoder = getattr(getattr(tokenizer, "backend_tokenizer", None), "decoder", None)
+        if not isinstance(decoder, ByteLevel):
+            raise ValueError("serving requires the Ouro byte-level tokenizer")
     options = runtime_configs(args)
     cache = options.pop("cache_config")
     engine = PDEngine(
