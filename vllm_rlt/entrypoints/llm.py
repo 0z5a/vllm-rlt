@@ -97,3 +97,24 @@ class LLM:
                 if request_id in self.engine.scheduler.requests:
                     self.engine.abort_request(request_id)
             raise
+
+    def start_profile(self, config, *, scheduled=False):
+        return self.engine.start_profile(config, scheduled=scheduled)
+
+    def stop_profile(self):
+        return self.engine.stop_profile()
+
+    def profile_status(self):
+        return self.engine.profile_status()
+
+    def wait_for_profile_artifacts(self, timeout=None):
+        return self.engine.wait_for_profile_artifacts(timeout)
+
+    def close(self):
+        self.engine.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
