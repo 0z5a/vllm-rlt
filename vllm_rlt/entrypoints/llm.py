@@ -18,6 +18,7 @@ class LLM:
         revision=None,
         device="cpu",
         dtype=torch.bfloat16,
+        allow_download=False,
         cache_config=None,
         scheduler_config=None,
         attention_backend="torch",
@@ -29,15 +30,14 @@ class LLM:
         if isinstance(model, str):
             model_name = model
             model = AutoModelForCausalLM.from_pretrained(
-                model_name, revision=revision, device=device, dtype=dtype
+                model_name,
+                revision=revision,
+                device=device,
+                dtype=dtype,
+                allow_download=allow_download,
             )
             if tokenizer is None:
-                from vllm_rlt.models.ouro import OURO_REVISION
-
-                self._tokenizer_source = (
-                    model_name,
-                    revision or (OURO_REVISION if model_name == "ByteDance/Ouro-1.4B" else None),
-                )
+                self._tokenizer_source = (model_name, revision)
         self.tokenizer = tokenizer
         self.engine = LLMEngine(
             model,

@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import sys
 from dataclasses import asdict
 from functools import partial
 
@@ -10,25 +11,56 @@ import torch
 from vllm_rlt.config import SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.entrypoints.runtime_args import add_runtime_args, runtime_configs
-from vllm_rlt.models import AutoModelForCausalLM
-from vllm_rlt.models.config import OURO_MODEL_ID, OURO_REVISION
+from vllm_rlt.models import AutoModelForCausalLM, resolve_local_model_path
+from vllm_rlt.recipes import OURO_MODEL_ID
+
+
+def _is_ouro_model(model_name_or_path: str) -> bool:
+    import json
+
+    from vllm_rlt.models import resolve_local_model_path
+    from vllm_rlt.recipes import get_recipe
+
+    raw = str(model_name_or_path)
+    recipe = get_recipe(raw)
+    if recipe is not None:
+        return recipe.served_model_name == "ouro"
+
+    local_path = resolve_local_model_path(raw)
+    if local_path is not None and (local_path / "config.json").is_file():
+        try:
+            cfg = json.loads((local_path / "config.json").read_text())
+            return cfg.get("model_type", "").lower() == "ouro"
+        except Exception:
+            pass
+
+    if "nanbeige" in raw.lower():
+        return False
+
+    return True
 
 
 def load_engine(args):
     from tokenizers.decoders import ByteLevel
     from transformers import AutoTokenizer
 
-    revision = args.revision or (OURO_REVISION if args.model == OURO_MODEL_ID else None)
+    revision = args.revision
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer or args.model,
         revision=args.tokenizer_revision or revision,
         trust_remote_code=False,
     )
-    decoder = tokenizer.backend_tokenizer.decoder
-    if not isinstance(decoder, ByteLevel):
-        raise ValueError("serving requires the Ouro byte-level tokenizer")
+    if _is_ouro_model(args.model):
+        decoder = getattr(getattr(tokenizer, "backend_tokenizer", None), "decoder", None)
+        if not isinstance(decoder, ByteLevel):
+            raise ValueError("serving requires the Ouro byte-level tokenizer")
+    allow_download = getattr(args, "allow_download", getattr(args, "assume_yes", False))
     model = AutoModelForCausalLM.from_pretrained(
-        args.model, revision=revision, device=args.device, dtype=getattr(torch, args.dtype)
+        args.model,
+        revision=revision,
+        device=args.device,
+        dtype=getattr(torch, args.dtype),
+        allow_download=allow_download,
     )
     engine = LLMEngine(
         model,
@@ -81,11 +113,39 @@ def main():
     parser.add_argument("--cpu-threads", type=int, default=1)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        dest="assume_yes",
+        help="Automatically approve model downloading from HuggingFace without interactive prompt",
+    )
     add_runtime_args(parser)
     args = parser.parse_args()
     limits = ServingLimits(**{name: getattr(args, name) for name in defaults})
     if args.device == "cpu" and args.attention_backend != "torch":
         parser.error("CPU execution requires --attention-backend torch")
+    local_path = resolve_local_model_path(args.model)
+    args.allow_download = False
+    if local_path is not None:
+        args.model = str(local_path)
+    else:
+        if args.assume_yes:
+            args.allow_download = True
+        elif sys.stdin.isatty():
+            prompt_msg = (
+                f"Model '{args.model}' not found locally. Download from HuggingFace? (y/yes): "
+            )
+            response = input(prompt_msg).strip().lower()
+            if response in ("y", "yes"):
+                args.allow_download = True
+            else:
+                parser.error(f"Download of '{args.model}' was not approved.")
+        else:
+            parser.error(
+                f"Model '{args.model}' is not available locally. In non-interactive "
+                f"environments, pass -y/--yes to approve downloading from HuggingFace."
+            )
     torch.set_num_threads(args.cpu_threads)
     logging.basicConfig(level=logging.INFO)
     app = create_app(

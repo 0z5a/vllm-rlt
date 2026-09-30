@@ -17,10 +17,15 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from vllm_rlt.layers import (
+    RMSNorm,
+    RotaryEmbedding,
+    apply_rotary_pos_emb,
+    rotate_half,
+)
+
 if TYPE_CHECKING:
     from vllm_rlt.core.kv_cache_manager import KVCacheManager, _PreparedKVBatch
-
-NANBEIGE_MODEL_ID = "Nanbeige/Nanbeige4.2-3B"
 
 
 @dataclass(frozen=True)
@@ -93,27 +98,6 @@ class NanbeigeConfig:
                 raise ValueError(f"{name} must be a vocabulary index or None")
 
     @classmethod
-    def tiny(cls, **overrides: Any) -> "NanbeigeConfig":
-        """Small randomly initialized architecture for CPU tests."""
-        values = dict(
-            vocab_size=64,
-            hidden_size=64,
-            intermediate_size=128,
-            num_hidden_layers=2,
-            num_attention_heads=4,
-            num_key_value_heads=2,
-            head_dim=16,
-            max_position_embeddings=128,
-            num_loops=2,
-            total_ut_steps=2,
-            bos_token_id=0,
-            eos_token_id=1,
-            pad_token_id=0,
-        )
-        values.update(overrides)
-        return cls(**values)
-
-    @classmethod
     def from_dict(cls, values: dict[str, Any]) -> "NanbeigeConfig":
         if values.get("model_type", "nanbeige") != "nanbeige":
             raise ValueError("Only model_type='nanbeige' is supported")
@@ -140,52 +124,10 @@ class NanbeigeConfig:
         return {"model_type": "nanbeige", "architectures": ["NanbeigeForCausalLM"], **asdict(self)}
 
 
-class NanbeigeRMSNorm(nn.Module):
-    def __init__(self, hidden_size: int, eps: float = 1e-5) -> None:
-        super().__init__()
-        self.weight = nn.Parameter(torch.ones(hidden_size))
-        self.variance_epsilon = eps
-
-    def forward(self, hidden: torch.Tensor) -> torch.Tensor:
-        value = hidden.float()
-        value = value * torch.rsqrt(value.square().mean(-1, keepdim=True) + self.variance_epsilon)
-        return self.weight * value.to(hidden.dtype)
-
-
-def _rotate_half(value: torch.Tensor) -> torch.Tensor:
-    first, second = value.chunk(2, dim=-1)
-    return torch.cat((-second, first), dim=-1)
-
-
-class NanbeigeRotaryEmbedding(nn.Module):
-    def __init__(self, config: NanbeigeConfig) -> None:
-        super().__init__()
-        self.config = config
-        self.register_buffer("inv_freq", self.frequencies(), persistent=False)
-
-    def frequencies(self, device: torch.device | str | None = None) -> torch.Tensor:
-        return 1.0 / (
-            self.config.rope_theta
-            ** (
-                torch.arange(0, self.config.head_dim, 2, dtype=torch.float32, device=device)
-                / self.config.head_dim
-            )
-        )
-
-    def _apply(self, fn, recurse=True):
-        super()._apply(fn, recurse=recurse)
-        self.inv_freq = self.frequencies(device=self.inv_freq.device)
-        return self
-
-    def forward(
-        self, hidden: torch.Tensor, positions: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        with torch.autocast(device_type=hidden.device.type, enabled=False):
-            angles = positions.float().unsqueeze(-1) * self.inv_freq.float()
-            angles = torch.cat((angles, angles), dim=-1)
-        return angles.cos().to(hidden.dtype).unsqueeze(1), angles.sin().to(hidden.dtype).unsqueeze(
-            1
-        )
+# Backward-compatible aliases for shared layers
+NanbeigeRMSNorm = RMSNorm
+NanbeigeRotaryEmbedding = RotaryEmbedding
+_rotate_half = rotate_half
 
 
 class NanbeigeAttention(nn.Module):
@@ -219,8 +161,7 @@ class NanbeigeAttention(nn.Module):
         k = self.k_proj(hidden).view(shape_kv)
         v = self.v_proj(hidden).view(shape_kv)
         cos, sin = position_embeddings
-        q = q * cos + _rotate_half(q) * sin
-        k = k * cos + _rotate_half(k) * sin
+        q, k = apply_rotary_pos_emb(q, k, cos, sin)
         cache._write_prepared(self.layer_idx, batch, k, v)
         output = cache._attend_prepared(self.layer_idx, batch, q)
         return self.o_proj(output.reshape(hidden.shape[0], -1))
@@ -242,8 +183,8 @@ class NanbeigeDecoderLayer(nn.Module):
         super().__init__()
         self.self_attn = NanbeigeAttention(config, layer_idx)
         self.mlp = NanbeigeMLP(config)
-        self.input_layernorm = NanbeigeRMSNorm(config.hidden_size, config.rms_norm_eps)
-        self.post_attention_layernorm = NanbeigeRMSNorm(config.hidden_size, config.rms_norm_eps)
+        self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
     def forward(
         self,
@@ -270,8 +211,8 @@ class NanbeigeModel(nn.Module):
         self.layers = nn.ModuleList(
             NanbeigeDecoderLayer(config, layer) for layer in range(config.num_hidden_layers)
         )
-        self.norm = NanbeigeRMSNorm(config.hidden_size, config.rms_norm_eps)
-        self.rotary_emb = NanbeigeRotaryEmbedding(config)
+        self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.rotary_emb = RotaryEmbedding(head_dim=config.head_dim, rope_theta=config.rope_theta)
 
 
 class NanbeigeForCausalLM(nn.Module):
@@ -326,7 +267,7 @@ class NanbeigeForCausalLM(nn.Module):
     @classmethod
     def from_pretrained(
         cls,
-        path_or_repo: str | Path = NANBEIGE_MODEL_ID,
+        path_or_repo: str | Path,
         *,
         revision: str | None = None,
         device: torch.device | str = "cpu",

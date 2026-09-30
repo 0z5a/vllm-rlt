@@ -1,4 +1,5 @@
-"""Independent dense Ouro oracle for correctness validation, not engine execution."""
+# SPDX-License-Identifier: Apache-2.0
+"""Independent dense model oracles for correctness validation, not engine execution."""
 
 import torch
 from torch.nn import functional as F

@@ -6,9 +6,11 @@ import pytest
 import torch
 from safetensors.torch import save_file
 
+from tests.helpers import tiny_ouro_config
+from tests.reference import dense_reference
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
-from vllm_rlt.models import OURO_REVISION, OuroConfig, OuroForCausalLM
-from vllm_rlt.models.reference import dense_reference
+from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.recipes import OURO_MODEL_ID, OURO_REVISION
 
 
 def make_cache(config, *, blocks=64):
@@ -27,13 +29,13 @@ def make_cache(config, *, blocks=64):
 @pytest.fixture
 def model():
     torch.manual_seed(71)
-    return OuroForCausalLM(OuroConfig.tiny())
+    return OuroForCausalLM(tiny_ouro_config())
 
 
 @pytest.mark.parametrize("kv_heads", [1, 2, 4])
 def test_packed_prefill_matches_dense_at_every_depth(kv_heads):
     torch.manual_seed(8)
-    config = OuroConfig.tiny(num_key_value_heads=kv_heads)
+    config = tiny_ouro_config(num_key_value_heads=kv_heads)
     model = OuroForCausalLM(config)
     tokens = torch.tensor([5, 7, 2, 11, 3])
     expected = dense_reference(model, tokens, config.total_ut_steps)
@@ -160,13 +162,31 @@ def test_official_repo_is_pinned_and_remote_code_is_not_requested(tmp_path, mode
         return str(tmp_path)
 
     monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
-    loaded = OuroForCausalLM.from_pretrained()
+    loaded = OuroForCausalLM.from_pretrained(OURO_MODEL_ID, revision=OURO_REVISION)
     for name, parameter in loaded.named_parameters():
         torch.testing.assert_close(parameter, model.state_dict()[name].bfloat16(), atol=0, rtol=0)
     assert loaded.model.rotary_emb.inv_freq.dtype == torch.float32
     assert called["revision"] == OURO_REVISION
-    assert called["repo_id"] == "ByteDance/Ouro-1.4B"
+    assert called["repo_id"] == OURO_MODEL_ID
     assert not any(".py" in pattern for pattern in called["allow_patterns"])
+
+
+def test_caller_revision_is_consistently_used_without_override(tmp_path, model, monkeypatch):
+    (tmp_path / "config.json").write_text(json.dumps(model.config.to_dict()))
+    save_file(model.state_dict(), tmp_path / "model.safetensors")
+    called = {}
+
+    def snapshot_download(**kwargs):
+        called.update(kwargs)
+        return str(tmp_path)
+
+    monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
+    OuroForCausalLM.from_pretrained(OURO_MODEL_ID, revision=None)
+    assert called["revision"] is None
+    assert called["repo_id"] == OURO_MODEL_ID
+
+    OuroForCausalLM.from_pretrained(OURO_MODEL_ID, revision="custom-branch")
+    assert called["revision"] == "custom-branch"
 
 
 @pytest.mark.parametrize(
@@ -184,11 +204,11 @@ def test_official_repo_is_pinned_and_remote_code_is_not_requested(tmp_path, mode
 )
 def test_unsupported_config_is_rejected(overrides):
     with pytest.raises(ValueError):
-        OuroConfig.tiny(**overrides)
+        tiny_ouro_config(**overrides)
 
 
 def test_config_roundtrip_and_unrecognized_architecture():
-    config = OuroConfig.tiny()
+    config = tiny_ouro_config()
     assert OuroConfig.from_dict(config.to_dict()) == config
     with pytest.raises(ValueError, match="model_type"):
         OuroConfig.from_dict({"model_type": "llama"})
