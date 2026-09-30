@@ -44,7 +44,7 @@ If implementation and intent differ, correct the implementation or explicitly re
 
 ## 3. First Post-Implementation Skill: Performance Analysis and Optimization
 
-Evaluate the change using the performance-analysis and optimization workflow below.
+Use the [rlt-perf-opt skill](../.agents/skills/rlt-perf-opt/SKILL.md) to evaluate the change. The required workflow is summarized below.
 
 The goal goes beyond establishing that an implementation is faster or slower. Explain **where the change occurs in the code or execution flow, what work or waiting it removes, what overhead it introduces, and how these changes account for the measured result**.
 
@@ -160,6 +160,8 @@ Before marking a PR ready for review, be able to answer:
 
 List unfinished validation and unresolved blockers explicitly. Draft PRs are useful for discussion, but an unverified implementation should not be described as completed development.
 
-## Refactoring Skill
+## Development Skills
+
+The [rlt-perf-opt skill](../.agents/skills/rlt-perf-opt/SKILL.md) covers reproducible benchmarks, ops-only/full profiling, source-level attribution, optimization, and correctness checks.
 
 The [rlt-refactor skill](../.agents/skills/rlt-refactor/SKILL.md) provides concrete code-quality rules and examples. Its rule library will evolve with subsequent development and review experience.
