@@ -1,0 +1,12 @@
+{
+  "architecture": "aarch64",
+  "python": "3.12.3",
+  "packages": {
+    "torch": "2.13.0+cu130",
+    "triton": "3.7.1",
+    "numpy": "2.3.5",
+    "transformers": "5.17.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "1.31.0"
+  }
+}
