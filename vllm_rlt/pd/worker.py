@@ -12,6 +12,7 @@ import torch
 
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.profiling import ProfileConfig
 from vllm_rlt.request import Stage
 
 from .transport import NixlConnector, kv_segments, partition_segments
@@ -23,6 +24,7 @@ class Work:
     request: object
     slot: int
     peer: str
+    trace_id: str | None = None
     target_tables: tuple = ()
     target_slot: int = 0
     cached_tokens: int = 0
@@ -138,7 +140,9 @@ class PDWorker:
             self.send("rejected", tid=tid, role=self.role)
             return
         self.cache.pin_transfer(tid, tid)
-        w = Work(tid, request, self.free_slots.pop(), command["peer"])
+        w = Work(
+            tid, request, self.free_slots.pop(), command["peer"], trace_id=command.get("trace_id")
+        )
         w.cached_tokens = hit
         self.work[tid] = w
         if self.role == "decode":
@@ -163,6 +167,43 @@ class PDWorker:
 
     def command(self, command):
         kind = command["kind"]
+        if kind.startswith("profile_"):
+            try:
+                action = kind.removeprefix("profile_")
+                if action == "start":
+                    result = self.engine.start_profile(
+                        ProfileConfig(**command["config"]),
+                        scheduled=command["scheduled"],
+                        session_id=command["session_id"],
+                        capture_time=command["capture_time"],
+                        rank=command["rank"],
+                        role=self.role,
+                        managed_manifest=False,
+                    )
+                else:
+                    current = self.engine.profile_status().get("session_id")
+                    if current is not None and current != command["session_id"]:
+                        raise ValueError("profile session ID mismatch")
+                    if action == "stop":
+                        result = self.engine.stop_profile()
+                    elif action == "status":
+                        result = self.engine.profile_status()
+                    else:
+                        raise ValueError("unknown profile action")
+                self.send(
+                    "profile_reply",
+                    control_id=command["control_id"],
+                    session_id=command["session_id"],
+                    result=result,
+                )
+            except Exception as exc:
+                self.send(
+                    "profile_reply",
+                    control_id=command["control_id"],
+                    session_id=command["session_id"],
+                    error=str(exc),
+                )
+            return
         if kind == "connect":
             for peer in command["peers"]:
                 self.connector.connect(peer)
@@ -208,6 +249,10 @@ class PDWorker:
             raise ValueError(f"unknown PD command {kind}")
 
     def queue_chunk(self, w, start, end, event, final):
+        with self.engine.profiling.region(f"rlt.kv_submit tid={w.tid} trace_id={w.trace_id}"):
+            return self._queue_chunk(w, start, end, event, final)
+
+    def _queue_chunk(self, w, start, end, event, final):
         peer = self.connector.peers[w.peer]
         tables = self.cache._get_allocation(w.tid).block_tables
         start = max(start, w.target_cached_tokens)
@@ -249,7 +294,9 @@ class PDWorker:
             tid for tid in original if tid not in selected
         )
         self.engine.scheduler.queues[Stage.PREFILL].extend(unused)
-        ticket = self.engine.model_runner.submit(batch)
+        tids = ",".join(item.request.request_id for item in batch.items)
+        with self.engine.profiling.region(f"rlt.prefill_requests tids={tids}"):
+            ticket = self.engine.model_runner.submit(batch)
         stream = self.engine.model_runner.core_stream or torch.cuda.current_stream(
             self.cache.device
         )
@@ -275,6 +322,7 @@ class PDWorker:
                     self.engine.scheduler.enqueue(request, Stage.PREFILL)
         # submit keeps its events; the prefill ticket has no readback slot.
         del ticket
+        return True
 
     def progress(self):
         self.cache.poll_prefixes()
@@ -287,7 +335,10 @@ class PDWorker:
                 raise RuntimeError("invalid transfer completion")
             if w.active and sequence not in w.received:
                 raise RuntimeError("late KV write after decode activation")
-            w.received.add(sequence)
+            with self.engine.profiling.region(
+                f"rlt.kv_received tid={tid} sequence={sequence} trace_id={w.trace_id}"
+            ):
+                w.received.add(sequence)
         work = list(self.work.values())
         if work:
             start = self.transfer_cursor % len(work)
@@ -340,7 +391,10 @@ class PDWorker:
                     w.request.hidden_state = self.hidden[w.slot]
                     self.engine.scheduler.enqueue(w.request, Stage.CODA)
                     w.active = True
-                    self.send("activated", tid=w.tid, seconds=time.monotonic() - w.started)
+                    with self.engine.profiling.region(
+                        f"rlt.decode_activate tid={w.tid} trace_id={w.trace_id}"
+                    ):
+                        self.send("activated", tid=w.tid, seconds=time.monotonic() - w.started)
 
     def run(self):
         while self.running:
@@ -348,9 +402,13 @@ class PDWorker:
                 if not self.channel.poll():
                     break
                 self.command(self.channel.recv())
-            self.progress()
+            with self.engine.profiling.region("rlt.kv_progress"):
+                self.progress()
             if self.role == "prefill":
-                self.prefill_step()
+                with self.engine.profiling.region("rlt.prefill"):
+                    submitted = self.prefill_step()
+                if submitted:
+                    self.engine.profiling.step()
             elif any(w.active for w in self.work.values()):
                 for output in self.engine.step():
                     self.send("output", tid=output.request_id, output=output)
@@ -361,6 +419,7 @@ class PDWorker:
             if not self.work and not self.channel.poll():
                 time.sleep(0.001)
         self.engine.model_runner.synchronize()
+        self.engine.close()
         self.connector.close()
         self.send(
             "stopped",

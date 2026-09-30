@@ -9,6 +9,7 @@ from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, Speculativ
 
 
 def add_runtime_args(parser):
+    add_profile_args(parser)
     parser.add_argument(
         "--speculative-tokens",
         type=int,
@@ -95,4 +96,37 @@ def runtime_configs(args):
             static_buffers=args.static_buffers,
             pad_to_power_of_two=args.pad_to_power_of_two,
         ),
+    )
+
+
+def add_profile_args(parser):
+    group = parser.add_argument_group("PyTorch profiling")
+    group.add_argument("--profile", action="store_true")
+    group.add_argument("--profile-dir")
+    group.add_argument("--profile-activities", help="comma-separated cpu,cuda")
+    group.add_argument("--profile-record-shapes", action="store_true")
+    group.add_argument("--profile-with-stack", action="store_true")
+    group.add_argument("--profile-memory", action="store_true")
+    group.add_argument("--profile-with-flops", action="store_true")
+    for name, default in (("wait", 0), ("warmup", 1), ("active", 10), ("repeat", 1)):
+        group.add_argument("--profile-" + name, type=int, default=default)
+
+
+def profile_config(args):
+    from vllm_rlt.profiling import ProfileConfig
+
+    return ProfileConfig(
+        enabled=getattr(args, "profile", False),
+        output_dir=getattr(args, "profile_dir", None),
+        activities=tuple(args.profile_activities.split(","))
+        if getattr(args, "profile_activities", None)
+        else None,
+        record_shapes=getattr(args, "profile_record_shapes", False),
+        with_stack=getattr(args, "profile_with_stack", False),
+        profile_memory=getattr(args, "profile_memory", False),
+        with_flops=getattr(args, "profile_with_flops", False),
+        wait=getattr(args, "profile_wait", 0),
+        warmup=getattr(args, "profile_warmup", 1),
+        active=getattr(args, "profile_active", 10),
+        repeat=getattr(args, "profile_repeat", 1),
     )
