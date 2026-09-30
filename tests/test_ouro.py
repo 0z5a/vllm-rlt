@@ -10,7 +10,6 @@ from tests.helpers import tiny_ouro_config
 from tests.reference import dense_reference
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
-from vllm_rlt.recipes import OURO_MODEL_ID, OURO_REVISION
 
 
 def make_cache(config, *, blocks=64):
@@ -161,13 +160,19 @@ def test_official_repo_is_pinned_and_remote_code_is_not_requested(tmp_path, mode
         called.update(kwargs)
         return str(tmp_path)
 
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "yes")
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "huggingface_hub.hf_hub_download", lambda *a, **k: str(tmp_path / "config.json")
+    )
     monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
-    loaded = OuroForCausalLM.from_pretrained(OURO_MODEL_ID, revision=OURO_REVISION)
+    loaded = OuroForCausalLM.from_pretrained("test-org/checkpoint", revision="test-revision")
     for name, parameter in loaded.named_parameters():
         torch.testing.assert_close(parameter, model.state_dict()[name].bfloat16(), atol=0, rtol=0)
     assert loaded.model.rotary_emb.inv_freq.dtype == torch.float32
-    assert called["revision"] == OURO_REVISION
-    assert called["repo_id"] == OURO_MODEL_ID
+    assert called["revision"] == "test-revision"
+    assert called["repo_id"] == "test-org/checkpoint"
     assert not any(".py" in pattern for pattern in called["allow_patterns"])
 
 
@@ -180,12 +185,18 @@ def test_caller_revision_is_consistently_used_without_override(tmp_path, model, 
         called.update(kwargs)
         return str(tmp_path)
 
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "yes")
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "huggingface_hub.hf_hub_download", lambda *a, **k: str(tmp_path / "config.json")
+    )
     monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
-    OuroForCausalLM.from_pretrained(OURO_MODEL_ID, revision=None)
+    OuroForCausalLM.from_pretrained("test-org/checkpoint", revision=None)
     assert called["revision"] is None
-    assert called["repo_id"] == OURO_MODEL_ID
+    assert called["repo_id"] == "test-org/checkpoint"
 
-    OuroForCausalLM.from_pretrained(OURO_MODEL_ID, revision="custom-branch")
+    OuroForCausalLM.from_pretrained("test-org/checkpoint", revision="custom-branch")
     assert called["revision"] == "custom-branch"
 
 

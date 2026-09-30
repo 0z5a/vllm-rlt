@@ -11,32 +11,32 @@ from vllm_rlt.entrypoints.runtime_args import (
     profile_config_from_args,
     runtime_configs,
 )
+from vllm_rlt.models import load_tokenizer, resolve_model_config, resolve_model_source
 from vllm_rlt.pd.config import PDConfig
 from vllm_rlt.pd.engine import PDEngine
-from vllm_rlt.recipes import OURO_MODEL_ID
 
 
 def load_engine(args):
     from tokenizers.decoders import ByteLevel
-    from transformers import AutoTokenizer
 
     profiling = profile_config_from_args(args)
-    revision = args.revision
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.tokenizer or args.model,
-        revision=args.tokenizer_revision or revision,
-        trust_remote_code=False,
+    source, revision, config = resolve_model_config(args.model, revision=args.revision)
+    tokenizer = load_tokenizer(
+        args.tokenizer or resolve_model_source(args.model),
+        revision=(
+            args.tokenizer_revision
+            if args.tokenizer_revision is not None
+            else (args.revision if args.tokenizer else revision)
+        ),
     )
-    from vllm_rlt.entrypoints.serve import _is_ouro_model
-
-    if _is_ouro_model(args.model):
+    if config["model_type"].lower() == "ouro":
         decoder = getattr(getattr(tokenizer, "backend_tokenizer", None), "decoder", None)
         if not isinstance(decoder, ByteLevel):
             raise ValueError("serving requires the Ouro byte-level tokenizer")
     options = runtime_configs(args)
     cache = options.pop("cache_config")
     engine = PDEngine(
-        args.model,
+        source,
         revision=revision,
         dtype=args.dtype,
         pd_config=PDConfig(
@@ -92,11 +92,13 @@ def main():
     from vllm_rlt.serving.server import create_app
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", default=OURO_MODEL_ID)
+    parser.add_argument(
+        "--model", help="Local checkpoint path or HuggingFace repository ID", required=True
+    )
     parser.add_argument("--revision")
     parser.add_argument("--tokenizer")
     parser.add_argument("--tokenizer-revision")
-    parser.add_argument("--served-model-name", default="ouro")
+    parser.add_argument("--served-model-name")
     parser.add_argument("--dtype", choices=["float32", "bfloat16"], default="bfloat16")
     parser.add_argument(
         "--attention-backend",
@@ -129,13 +131,14 @@ def main():
     parser.set_defaults(
         num_blocks=None, exit_mode="ouro_delayed", prefill_chunk_size=2048, async_scheduling=True
     )
+
     args = parser.parse_args()
     limits = ServingLimits(**{name: getattr(args, name) for name in asdict(ServingLimits())})
     logging.basicConfig(level=logging.INFO)
     web.run_app(
         create_app(
             partial(load_engine, args),
-            model=args.served_model_name,
+            model=args.served_model_name or args.model,
             limits=limits,
             allowed_hosts=("localhost", args.host),
         ),

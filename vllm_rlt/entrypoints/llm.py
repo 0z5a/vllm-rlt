@@ -3,7 +3,12 @@ from dataclasses import replace
 import torch
 
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import AutoModelForCausalLM
+from vllm_rlt.models import (
+    AutoModelForCausalLM,
+    load_tokenizer,
+    resolve_model_config,
+    resolve_model_source,
+)
 from vllm_rlt.sampling_params import SamplingParams
 
 
@@ -18,7 +23,6 @@ class LLM:
         revision=None,
         device="cpu",
         dtype=torch.bfloat16,
-        allow_download=False,
         cache_config=None,
         scheduler_config=None,
         attention_backend="torch",
@@ -28,16 +32,16 @@ class LLM:
     ):
         self._tokenizer_source = None
         if isinstance(model, str):
-            model_name = model
+            tokenizer_source = resolve_model_source(model)
+            model_name, revision, _ = resolve_model_config(model, revision=revision)
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 revision=revision,
                 device=device,
                 dtype=dtype,
-                allow_download=allow_download,
             )
             if tokenizer is None:
-                self._tokenizer_source = (model_name, revision)
+                self._tokenizer_source = (tokenizer_source, revision)
         self.tokenizer = tokenizer
         self.engine = LLMEngine(
             model,
@@ -64,11 +68,10 @@ class LLM:
             for prompt, request_params in zip(prompts, all_params):
                 if isinstance(prompt, str):
                     if self.tokenizer is None and self._tokenizer_source is not None:
-                        from transformers import AutoTokenizer
-
                         source, revision = self._tokenizer_source
-                        self.tokenizer = AutoTokenizer.from_pretrained(
-                            source, revision=revision, trust_remote_code=False
+                        self.tokenizer = load_tokenizer(
+                            source,
+                            revision=revision,
                         )
                     if self.tokenizer is None:
                         raise ValueError(

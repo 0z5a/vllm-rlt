@@ -12,7 +12,6 @@ from tests.reference import dense_nanbeige_reference
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import AutoModelForCausalLM, NanbeigeConfig, NanbeigeForCausalLM
-from vllm_rlt.recipes import NANBEIGE_MODEL_ID
 from vllm_rlt.sampling_params import SamplingParams
 
 
@@ -173,13 +172,19 @@ def test_nanbeige_caller_revision_is_consistently_used_without_override(
         called.update(kwargs)
         return str(tmp_path)
 
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "yes")
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "huggingface_hub.hf_hub_download", lambda *a, **k: str(tmp_path / "config.json")
+    )
     monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
-    NanbeigeForCausalLM.from_pretrained(NANBEIGE_MODEL_ID, revision=None)
+    NanbeigeForCausalLM.from_pretrained("Nanbeige/Nanbeige4.2-3B", revision=None)
     assert called["revision"] is None
-    assert called["repo_id"] == NANBEIGE_MODEL_ID
+    assert called["repo_id"] == "Nanbeige/Nanbeige4.2-3B"
     assert not any(".py" in pattern for pattern in called["allow_patterns"])
 
-    NanbeigeForCausalLM.from_pretrained(NANBEIGE_MODEL_ID, revision="v1.0")
+    NanbeigeForCausalLM.from_pretrained("Nanbeige/Nanbeige4.2-3B", revision="v1.0")
     assert called["revision"] == "v1.0"
 
 
@@ -190,7 +195,7 @@ def test_official_nanbeige_tokenizer_contract():
     except ImportError:
         pytest.skip("transformers or huggingface_hub not installed")
 
-    tok_path = try_to_load_from_cache(NANBEIGE_MODEL_ID, "tokenizer.json")
+    tok_path = try_to_load_from_cache("Nanbeige/Nanbeige4.2-3B", "tokenizer.json")
     if tok_path is None:
         pytest.skip("Official Nanbeige tokenizer is not cached locally")
 
@@ -216,7 +221,7 @@ def test_parity_against_official_hf_transformers():
     if (local_dir / "config.json").is_file():
         cache_dir = local_dir
     else:
-        config_path = try_to_load_from_cache(NANBEIGE_MODEL_ID, "config.json")
+        config_path = try_to_load_from_cache("Nanbeige/Nanbeige4.2-3B", "config.json")
         if config_path is None:
             pytest.skip("Official Nanbeige remote code is not cached locally")
         cache_dir = Path(config_path).parent

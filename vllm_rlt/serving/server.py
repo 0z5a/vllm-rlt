@@ -8,7 +8,6 @@ import time
 from aiohttp import web
 
 from vllm_rlt.profiling import ProfileConfig
-from vllm_rlt.recipes import OURO_MODEL_ID
 from vllm_rlt.serving.protocol import (
     CompletionRequest,
     ServingError,
@@ -31,7 +30,7 @@ def error_response(error):
 def create_app(
     factory,
     *,
-    model=OURO_MODEL_ID,
+    model,
     limits=ServingLimits(),
     allowed_hosts=("localhost",),
 ):

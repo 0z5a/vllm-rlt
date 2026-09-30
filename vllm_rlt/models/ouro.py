@@ -311,16 +311,10 @@ class OuroForCausalLM(nn.Module):
             raise ValueError("dtype must be float32, float16, or bfloat16")
         folder = Path(path_or_repo).expanduser()
         if not folder.is_dir():
-            from huggingface_hub import snapshot_download
+            from vllm_rlt.models import resolve_model_config
 
-            repo = str(path_or_repo)
-            folder = Path(
-                snapshot_download(
-                    repo_id=repo,
-                    revision=revision,
-                    allow_patterns=["config.json", "*.safetensors", "model.safetensors.index.json"],
-                )
-            )
+            source, revision, _ = resolve_model_config(path_or_repo, revision=revision)
+            folder = Path(source)
         config = OuroConfig.from_dict(json.loads((folder / "config.json").read_text()))
         index_path = folder / "model.safetensors.index.json"
         index = json.loads(index_path.read_text())["weight_map"] if index_path.is_file() else None

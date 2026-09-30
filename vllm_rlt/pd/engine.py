@@ -13,7 +13,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
-from vllm_rlt.models import OuroConfig
+from vllm_rlt.models import OuroConfig, resolve_model_config
 from vllm_rlt.profiling import ProfileConfig
 from vllm_rlt.profiling_artifacts import _write_json_atomic, profile_timestamp
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
@@ -77,6 +77,8 @@ class PDEngine:
     ):
         if speculative_config is not None:
             raise ValueError("speculative decoding is not yet supported by PD")
+        if isinstance(model, (str, Path)):
+            model, revision, _ = resolve_model_config(model, revision=revision)
         self.config = pd_config or PDConfig()
         self.exit_config = exit_config or ExitConfig("ouro_delayed")
         execution = execution_config or ExecutionConfig(async_scheduling=True)
