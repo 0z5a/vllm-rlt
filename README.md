@@ -24,8 +24,7 @@
 
 > [!IMPORTANT]
 > **Contributing? Read the [Developer Must-Read](docs/developer-guide.md) first.**
-> Good code starts before coding: understand the requirement, verify the implementation,
-> analyze performance, and complete the [refactoring skill review](.agents/skills/rlt-refactor/SKILL.md) before marking your change ready.
+> Good code starts before coding. Follow the development workflow and completion criteria before marking your change ready.
 
 ## About
 
@@ -205,8 +204,7 @@ for the target architecture, module breakdown, and implementation sequence.
 ## 🤝 Contributing
 
 Start with the **[Developer Must-Read](docs/developer-guide.md)** for the development
-workflow, required evidence, and completion criteria. Use the
-[refactoring skill](.agents/skills/rlt-refactor/SKILL.md) for code-quality review.
+workflow, required evidence, and completion criteria.
 
 Help us build efficient inference for recurrent language models. vllm-rlt is
 open to contributors working on systems, models, evaluation, and documentation.
