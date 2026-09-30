@@ -106,18 +106,13 @@ def test_remote_download_with_recipe_alias(tmp_path, monkeypatch):
     assert downloaded_repo[0][0] == "Nanbeige/Nanbeige4.2-3B"
 
 
-def test_resolve_local_model_from_artifacts(tmp_path, monkeypatch):
+def test_artifacts_basename_does_not_override_repository(tmp_path, monkeypatch):
     from vllm_rlt.models import resolve_local_model_path
 
-    dummy = tmp_path / "artifacts" / "models" / "Ouro-1.4B"
+    dummy = tmp_path / "artifacts/models/same-name"
     dummy.mkdir(parents=True)
     (dummy / "config.json").write_text("{}")
-
     monkeypatch.chdir(tmp_path)
-    resolved = resolve_local_model_path("ByteDance/Ouro-1.4B")
-    assert resolved is not None
-    assert (resolved / "config.json").is_file()
-
-    resolved_alias = resolve_local_model_path("ouro")
-    assert resolved_alias is not None
-    assert (resolved_alias / "config.json").is_file()
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    assert resolve_local_model_path("other-org/same-name") is None
+    assert resolve_local_model_path(dummy) == dummy

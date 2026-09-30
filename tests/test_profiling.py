@@ -475,7 +475,7 @@ def test_http_wait_after_partial_pd_start_failure(tmp_path):
 
 
 @pytest.mark.parametrize("cleanup_fails", [False, True])
-def test_pd_load_profile_failure_closes_engine(monkeypatch, cleanup_fails):
+def test_pd_load_profile_failure_closes_engine(monkeypatch, cleanup_fails, tmp_path):
     from tokenizers.decoders import ByteLevel
     from transformers import AutoTokenizer
 
@@ -503,8 +503,9 @@ def test_pd_load_profile_failure_closes_engine(monkeypatch, cleanup_fails):
         "profile_config_from_args",
         lambda args: ProfileConfig(output_dir="/tmp/profiles"),
     )
+    (tmp_path / "config.json").write_text('{"model_type": "ouro"}')
     args = SimpleNamespace(
-        model="local-model",
+        model=str(tmp_path),
         revision=None,
         tokenizer=None,
         tokenizer_revision=None,

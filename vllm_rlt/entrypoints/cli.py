@@ -6,12 +6,13 @@ from dataclasses import asdict
 import torch
 
 from vllm_rlt import LLM, SamplingParams, SchedulerConfig
+from vllm_rlt.entrypoints.model_loading import approve_download
 from vllm_rlt.entrypoints.runtime_args import (
     add_runtime_args,
     profile_config_from_args,
     runtime_configs,
 )
-from vllm_rlt.models import OuroConfig, OuroForCausalLM, resolve_local_model_path
+from vllm_rlt.models import OuroConfig, OuroForCausalLM
 from vllm_rlt.recipes import OURO_MODEL_ID
 
 
@@ -112,27 +113,8 @@ def main():
                 device=args.device, dtype=getattr(torch, args.dtype)
             )
     else:
-        local_path = resolve_local_model_path(args.model)
-        if local_path is not None:
-            model = str(local_path)
-        else:
-            model = args.model
-            if args.assume_yes:
-                allow_download = True
-            elif sys.stdin.isatty():
-                prompt_msg = (
-                    f"Model '{args.model}' not found locally. Download from HuggingFace? (y/yes): "
-                )
-                response = input(prompt_msg).strip().lower()
-                if response in ("y", "yes"):
-                    allow_download = True
-                else:
-                    parser.error(f"Download of '{args.model}' was not approved.")
-            else:
-                parser.error(
-                    f"Model '{args.model}' is not available locally. In non-interactive "
-                    f"environments, pass -y/--yes to approve downloading from HuggingFace."
-                )
+        model = args.model
+        allow_download = approve_download(args, parser)
     llm = LLM(
         model,
         revision=args.revision,

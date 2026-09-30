@@ -3,7 +3,7 @@ from dataclasses import replace
 import torch
 
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import AutoModelForCausalLM
+from vllm_rlt.models import AutoModelForCausalLM, resolve_model_config, resolve_model_source
 from vllm_rlt.sampling_params import SamplingParams
 
 
@@ -27,8 +27,12 @@ class LLM:
         speculative_config=None,
     ):
         self._tokenizer_source = None
+        self._allow_download = allow_download
         if isinstance(model, str):
-            model_name = model
+            tokenizer_source = resolve_model_source(model)
+            model_name, revision, _ = resolve_model_config(
+                model, revision=revision, allow_download=allow_download
+            )
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
                 revision=revision,
@@ -37,7 +41,7 @@ class LLM:
                 allow_download=allow_download,
             )
             if tokenizer is None:
-                self._tokenizer_source = (model_name, revision)
+                self._tokenizer_source = (tokenizer_source, revision)
         self.tokenizer = tokenizer
         self.engine = LLMEngine(
             model,
@@ -68,7 +72,10 @@ class LLM:
 
                         source, revision = self._tokenizer_source
                         self.tokenizer = AutoTokenizer.from_pretrained(
-                            source, revision=revision, trust_remote_code=False
+                            source,
+                            revision=revision,
+                            trust_remote_code=False,
+                            local_files_only=not self._allow_download,
                         )
                     if self.tokenizer is None:
                         raise ValueError(

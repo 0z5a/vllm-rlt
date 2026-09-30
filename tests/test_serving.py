@@ -191,7 +191,7 @@ def test_byte_decoder_unicode_special_tokens_and_final_flush(monkeypatch):
 
 
 @pytest.mark.parametrize("byte_level", [False, True])
-def test_load_engine_checks_decoder_before_loading_model(monkeypatch, byte_level):
+def test_load_engine_checks_decoder_before_loading_model(monkeypatch, byte_level, tmp_path):
     tokenizers = pytest.importorskip("tokenizers")
     transformers = pytest.importorskip("transformers")
     from vllm_rlt.entrypoints.serve import load_engine
@@ -208,7 +208,7 @@ def test_load_engine_checks_decoder_before_loading_model(monkeypatch, byte_level
     monkeypatch.setattr(AutoModelForCausalLM, "from_pretrained", load_model)
     monkeypatch.setattr(OuroForCausalLM, "from_pretrained", load_model)
     args = SimpleNamespace(
-        model="local-model",
+        model=str(tmp_path),
         tokenizer=None,
         revision=None,
         tokenizer_revision=None,
@@ -221,6 +221,7 @@ def test_load_engine_checks_decoder_before_loading_model(monkeypatch, byte_level
         mode="refill",
         attention_backend="torch",
     )
+    (tmp_path / "config.json").write_text(json.dumps({"model_type": "ouro"}))
     if byte_level:
         engine, actual = load_engine(args)
         assert actual is tokenizer and loaded
@@ -231,7 +232,7 @@ def test_load_engine_checks_decoder_before_loading_model(monkeypatch, byte_level
         assert not loaded
 
 
-def test_load_engine_allows_non_byte_level_tokenizer_for_nanbeige(monkeypatch):
+def test_load_engine_allows_non_byte_level_tokenizer_for_nanbeige(monkeypatch, tmp_path):
     tokenizers = pytest.importorskip("tokenizers")
     transformers = pytest.importorskip("transformers")
     from tests.helpers import tiny_nanbeige_config
@@ -249,7 +250,7 @@ def test_load_engine_allows_non_byte_level_tokenizer_for_nanbeige(monkeypatch):
 
     monkeypatch.setattr(AutoModelForCausalLM, "from_pretrained", load_model)
     args = SimpleNamespace(
-        model="nanbeige",
+        model=str(tmp_path),
         tokenizer=None,
         revision=None,
         tokenizer_revision=None,
@@ -262,6 +263,7 @@ def test_load_engine_allows_non_byte_level_tokenizer_for_nanbeige(monkeypatch):
         mode="refill",
         attention_backend="torch",
     )
+    (tmp_path / "config.json").write_text(json.dumps({"model_type": "nanbeige"}))
     engine, actual = load_engine(args)
     assert actual is tokenizer and loaded
 

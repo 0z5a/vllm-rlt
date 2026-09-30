@@ -18,26 +18,63 @@ MODEL_MAPPING = {
 }
 
 
-def resolve_local_model_path(path_or_repo: str | Path) -> Path | None:
-    """Find a locally available checkpoint directory containing config.json."""
+def resolve_model_source(path_or_repo: str | Path) -> str:
+    """Expand explicit local paths or recipe aliases without changing revision."""
     folder = Path(path_or_repo).expanduser()
-    if folder.is_dir() and (folder / "config.json").is_file():
-        return folder
-
+    if folder.is_dir():
+        return str(folder.resolve())
     raw = str(path_or_repo)
-    candidates = [
-        Path("artifacts/models") / raw,
-        Path("artifacts/models") / raw.split("/")[-1],
-    ]
     recipe = get_recipe(raw)
-    if recipe is not None:
-        candidates.append(Path("artifacts/models") / recipe.model_id.split("/")[-1])
-        candidates.append(Path("artifacts/models") / recipe.model_id)
+    # A full repository ID is already an explicit source.
+    return recipe.model_id if "/" not in raw and recipe is not None else raw
 
-    for cand in candidates:
-        if cand.is_dir() and (cand / "config.json").is_file():
-            return cand
+
+def resolve_local_model_path(path_or_repo: str | Path, revision=None) -> Path | None:
+    """Find an explicit directory or a complete, revision-specific HF snapshot."""
+    from huggingface_hub import try_to_load_from_cache
+
+    source = resolve_model_source(path_or_repo)
+    folder = Path(source)
+    if folder.is_dir():
+        return folder
+    cached = try_to_load_from_cache(source, "config.json", revision=revision)
+    if not isinstance(cached, str):
+        return None
+    folder = Path(cached).parent
+    index = folder / "model.safetensors.index.json"
+    if index.is_file():
+        names = set(json.loads(index.read_text())["weight_map"].values())
+        if names and all((folder / name).is_file() for name in names):
+            return folder
+    elif (folder / "model.safetensors").is_file():
+        return folder
     return None
+
+
+def resolve_model_config(path_or_repo, *, revision=None, allow_download=False):
+    """Resolve an approved source and inspect its config before loading weights."""
+    source = resolve_model_source(path_or_repo)
+    local = resolve_local_model_path(source, revision=revision)
+    if local is not None:
+        source = str(local)
+        config_path = local / "config.json"
+    else:
+        if not allow_download:
+            raise RuntimeError(
+                f"Model '{path_or_repo}' is not available locally. Download requires approval: "
+                "pass allow_download=True or confirm at the interactive entrypoint."
+            )
+        from huggingface_hub import hf_hub_download
+
+        config_path = Path(hf_hub_download(source, "config.json", revision=revision))
+    config = json.loads(config_path.read_text())
+    model_type = config.get("model_type", "").lower()
+    if model_type not in MODEL_MAPPING:
+        raise ValueError(f"Unsupported model_type {model_type!r} for {path_or_repo}")
+    # Pin an approved remote load to the snapshot whose configuration was read.
+    if config_path.parent.parent.name == "snapshots":
+        revision = config_path.parent.name
+    return source, revision, config
 
 
 class AutoModelForCausalLM:
@@ -75,41 +112,11 @@ class AutoModelForCausalLM:
         dtype: torch.dtype = torch.bfloat16,
         allow_download: bool = False,
     ):
-        local_folder = resolve_local_model_path(path_or_repo)
-
-        # 1. Load locally when available (never access network if config.json exists locally)
-        if local_folder is not None:
-            config_data = json.loads((local_folder / "config.json").read_text())
-            return cls._dispatch_from_config(
-                config_data, local_folder, revision=revision, device=device, dtype=dtype
-            )
-
-        # 2. Check recipe aliases if applicable
-        recipe = get_recipe(str(path_or_repo))
-        repo_id = recipe.model_id if recipe is not None else str(path_or_repo)
-        if revision is None and recipe is not None:
-            revision = recipe.revision
-
-        # 3. Remote model requires explicit download approval
-        if not allow_download:
-            raise RuntimeError(
-                f"Model '{path_or_repo}' is not available locally. Download requires approval: "
-                f"pass allow_download=True or confirm at the interactive entrypoint."
-            )
-
-        # 4. Download config.json from Hub; surface errors directly without guessing or falling back
-        from huggingface_hub import hf_hub_download
-
-        config_path = hf_hub_download(
-            repo_id=repo_id,
-            filename="config.json",
-            revision=revision,
+        source, resolved_revision, config = resolve_model_config(
+            path_or_repo, revision=revision, allow_download=allow_download
         )
-        config_data = json.loads(Path(config_path).read_text())
-
-        # 5. Select implementation strictly based on config.json
         return cls._dispatch_from_config(
-            config_data, repo_id, revision=revision, device=device, dtype=dtype
+            config, source, revision=resolved_revision, device=device, dtype=dtype
         )
 
 
@@ -120,4 +127,6 @@ __all__ = [
     "NanbeigeForCausalLM",
     "AutoModelForCausalLM",
     "resolve_local_model_path",
+    "resolve_model_source",
+    "resolve_model_config",
 ]
