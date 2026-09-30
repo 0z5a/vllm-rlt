@@ -172,6 +172,12 @@ def test_nanbeige_caller_revision_is_consistently_used_without_override(
         called.update(kwargs)
         return str(tmp_path)
 
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "yes")
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "huggingface_hub.hf_hub_download", lambda *a, **k: str(tmp_path / "config.json")
+    )
     monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
     NanbeigeForCausalLM.from_pretrained("Nanbeige/Nanbeige4.2-3B", revision=None)
     assert called["revision"] is None

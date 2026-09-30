@@ -160,6 +160,12 @@ def test_official_repo_is_pinned_and_remote_code_is_not_requested(tmp_path, mode
         called.update(kwargs)
         return str(tmp_path)
 
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "yes")
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "huggingface_hub.hf_hub_download", lambda *a, **k: str(tmp_path / "config.json")
+    )
     monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
     loaded = OuroForCausalLM.from_pretrained("test-org/checkpoint", revision="test-revision")
     for name, parameter in loaded.named_parameters():
@@ -179,6 +185,12 @@ def test_caller_revision_is_consistently_used_without_override(tmp_path, model, 
         called.update(kwargs)
         return str(tmp_path)
 
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "yes")
+    monkeypatch.setattr("huggingface_hub.try_to_load_from_cache", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "huggingface_hub.hf_hub_download", lambda *a, **k: str(tmp_path / "config.json")
+    )
     monkeypatch.setattr("huggingface_hub.snapshot_download", snapshot_download)
     OuroForCausalLM.from_pretrained("test-org/checkpoint", revision=None)
     assert called["revision"] is None
