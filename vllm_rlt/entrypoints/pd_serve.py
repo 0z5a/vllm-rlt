@@ -64,9 +64,16 @@ def load_engine(args):
         attention_backend=args.attention_backend,
         **options,
     )
-    profiling = profile_config(args)
-    if profiling.enabled:
-        engine.start_profile(profiling, scheduled=True)
+    try:
+        profiling = profile_config(args)
+        if profiling.enabled:
+            engine.start_profile(profiling, scheduled=True)
+    except BaseException:
+        try:
+            engine.close()
+        except BaseException:
+            logging.getLogger(__name__).exception("PD engine cleanup after initialization failed")
+        raise
     return engine, tokenizer
 
 

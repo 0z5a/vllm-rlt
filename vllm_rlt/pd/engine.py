@@ -447,6 +447,14 @@ class PDEngine:
                 for rank, name in enumerate(self.peers)
             },
         )
+        result["artifacts_complete"] = all(
+            rank.get("artifacts_complete", False) for rank in result["ranks"].values()
+        )
+        result["success"] = (
+            bool(result["ranks"])
+            and not result["errors"]
+            and all(rank.get("success", False) for rank in result["ranks"].values())
+        )
         if self._profile_session:
             result["capture_time"] = self._profile_timestamp
             _json(self._profile_root / f"manifest-{self._profile_timestamp}.json", result)
@@ -554,10 +562,7 @@ class PDEngine:
         while self._profile_session:
             remaining = None if deadline is None else max(0, deadline - time.monotonic())
             result = self._profile_control("status", timeout=remaining)
-            if all(
-                s.get("artifacts_complete", not s.get("session_id"))
-                for s in self._profile_statuses.values()
-            ):
+            if all(s.get("artifacts_complete", False) for s in self._profile_statuses.values()):
                 return result
             if deadline is not None and time.monotonic() >= deadline:
                 raise TimeoutError("PD profile artifacts are still processing")

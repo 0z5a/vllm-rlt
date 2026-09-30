@@ -2,9 +2,11 @@
 
 import asyncio
 import csv
+import gc
 import json
 import tarfile
 import threading
+import weakref
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -377,3 +379,142 @@ def test_serving_control_runs_on_owner_thread():
         assert len(threads) == 1 and threads[0] != threading.get_ident()
     finally:
         worker.executor.shutdown(wait=True)
+
+
+def test_completed_sessions_release_native_objects(tmp_path, native):
+    controller = ProfileController("cpu")
+    previous = None
+    try:
+        for _ in range(3):
+            controller.start(config(tmp_path, record_shapes=True, with_stack=True))
+            if previous is not None:
+                gc.collect()
+                assert previous() is None
+            profiler = weakref.ref(native.pop())
+            previous = weakref.ref(controller.current)
+            controller.stop()
+            assert controller.current.profiler is None
+            assert controller.wait(5)["success"]
+            gc.collect()
+            assert profiler() is None
+    finally:
+        controller.close()
+
+
+def test_stop_failure_releases_native_profiler(tmp_path, native, monkeypatch):
+    controller = ProfileController("cpu")
+    controller.start(config(tmp_path))
+
+    def fail():
+        raise RuntimeError("native stop failed")
+
+    monkeypatch.setattr(native[0], "stop", fail)
+    try:
+        controller.stop()
+        result = controller.wait(5)
+        assert controller.current.profiler is None
+        assert result["artifacts_complete"] and not result["success"]
+        assert "native stop failed" in result["errors"]
+    finally:
+        controller.close()
+
+
+def test_http_wait_after_partial_pd_start_failure(tmp_path):
+    from vllm_rlt.pd.engine import PDEngine
+    from vllm_rlt.serving.worker import EngineWorker
+
+    engine = PDEngine.__new__(PDEngine)
+    engine.peers = {"p": None, "d": None}
+    engine._profile_session = "failed-start"
+    engine._profile_timestamp = "20260930T021015Z"
+    engine._profile_root = tmp_path
+    engine._profile_recording = False
+    engine._profile_errors = ["decode start failed"]
+    engine._profile_statuses = {
+        "p": {"recording": False, "artifacts_complete": False, "success": False},
+        "d": ProfileController("cpu").status(),
+    }
+    polls = []
+
+    def status():
+        polls.append(True)
+        if len(polls) == 2:
+            engine._profile_statuses["p"].update(artifacts_complete=True, success=True)
+        return engine._profile_manifest()
+
+    worker = EngineWorker(lambda: (None, None))
+    worker.engine = SimpleNamespace(profile_status=status)
+    worker.ready = True
+    try:
+        result = asyncio.run(worker.profile_control("wait", timeout=1))
+        assert len(polls) == 2  # Wait for P's real work, never for unstarted D.
+        assert result["artifacts_complete"] and not result["success"]
+        assert result["errors"] == ["decode start failed"]
+        assert result["ranks"]["1"]["state"] == "not_started"
+    finally:
+        worker.executor.shutdown(wait=True)
+
+
+@pytest.mark.parametrize("failure_stage", ["config", "start"])
+@pytest.mark.parametrize("cleanup_fails", [False, True])
+def test_pd_load_profile_failure_closes_engine(monkeypatch, failure_stage, cleanup_fails):
+    from tokenizers.decoders import ByteLevel
+    from transformers import AutoTokenizer
+
+    from vllm_rlt.config import CacheConfig
+    from vllm_rlt.entrypoints import pd_serve
+
+    tokenizer = SimpleNamespace(backend_tokenizer=SimpleNamespace(decoder=ByteLevel()))
+    monkeypatch.setattr(AutoTokenizer, "from_pretrained", lambda *a, **k: tokenizer)
+    monkeypatch.setattr(pd_serve, "runtime_configs", lambda args: {"cache_config": CacheConfig()})
+    original = RuntimeError("profile initialization failed")
+    closed = []
+
+    def fail(*args, **kwargs):
+        raise original
+
+    def close():
+        closed.append(True)
+        if cleanup_fails:
+            raise RuntimeError("cleanup also failed")
+
+    engine = SimpleNamespace(start_profile=fail, close=close)
+    monkeypatch.setattr(pd_serve, "PDEngine", lambda *a, **k: engine)
+    monkeypatch.setattr(
+        pd_serve,
+        "profile_config",
+        fail if failure_stage == "config" else lambda args: SimpleNamespace(enabled=True),
+    )
+    args = SimpleNamespace(
+        model="local-model",
+        revision=None,
+        tokenizer=None,
+        tokenizer_revision=None,
+        dtype="float32",
+        prefill_devices=[0],
+        decode_devices=[1],
+        pd_transfer_chunk_bytes=1024,
+        pd_max_inflight_bytes=4096,
+        pd_max_transfer_descriptors=8,
+        max_requests=8,
+        request_timeout=1,
+        pd_startup_timeout=1,
+        shutdown_timeout=1,
+        nixl_backend="UCX",
+        pd_max_receiving_requests=2,
+        pd_max_draining_requests=2,
+        prefill_num_blocks=16,
+        decode_num_blocks=16,
+        prefill_max_num_seqs=2,
+        prefill_max_num_batched_tokens=16,
+        prefill_chunk_size=16,
+        decode_max_num_seqs=2,
+        decode_max_num_batched_tokens=16,
+        mode="refill",
+        min_coda_batch_size=1,
+        attention_backend="torch",
+    )
+    with pytest.raises(RuntimeError) as error:
+        pd_serve.load_engine(args)
+    assert error.value is original
+    assert closed == [True]

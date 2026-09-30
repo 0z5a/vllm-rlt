@@ -670,6 +670,9 @@ class ProfileSession:
                 self.errors.append(str(exc))
                 logger.exception("profiler stop failed")
             finally:
+                # Export has snapshotted everything needed by the artifact worker.
+                # Drop native events (including shapes/stacks) on the owner thread.
+                self.profiler = None
                 self.recording = False
                 self.metadata["stopped_at_ns"] = time.time_ns()
                 self.done.set()
@@ -686,15 +689,11 @@ class ProfileSession:
 
 
 class ProfileController:
-    """Owner-thread control; sessions retain their independent artifact workers."""
+    """Owner-thread control retaining only the latest capture's status."""
 
     def __init__(self, device):
         self.device = device
-        self.sessions = []
-
-    @property
-    def current(self):
-        return self.sessions[-1] if self.sessions else None
+        self.current = None
 
     @property
     def recording(self):
@@ -709,19 +708,30 @@ class ProfileController:
             return {"recording": False, "disabled": True}
         if self.current is not None and not self.current.status()["artifacts_complete"]:
             raise RuntimeError("previous profile artifacts are still processing")
-        self.sessions.append(ProfileSession(config, self.device, scheduled=scheduled, **identity))
+        if self.current is not None:
+            self.current.wait()  # Finish the last status write before releasing the session.
+        self.current = ProfileSession(config, self.device, scheduled=scheduled, **identity)
         return self.status()
 
     def stop(self):
         return self.current.stop() if self.current else self.status()
 
     def status(self):
-        return self.current.status() if self.current else {"recording": False, "jobs": {}}
+        return (
+            self.current.status()
+            if self.current
+            else {
+                "state": "not_started",
+                "recording": False,
+                "jobs": {},
+                "artifacts_complete": True,
+                "success": False,
+            }
+        )
 
     def wait(self, timeout=None):
-        deadline = None if timeout is None else time.monotonic() + timeout
-        for session in self.sessions:
-            session.wait(None if deadline is None else max(0, deadline - time.monotonic()))
+        if self.current is not None:
+            return self.current.wait(timeout)
         return self.status()
 
     def step(self):
