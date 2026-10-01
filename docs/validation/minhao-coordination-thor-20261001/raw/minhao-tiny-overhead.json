@@ -1,0 +1,2669 @@
+{
+  "sync": {
+    "seconds": {
+      "none": [
+        0.09519798499991339
+      ],
+      "raw": [
+        0.11991658300007657
+      ],
+      "processed": [
+        0.11633255899982942
+      ]
+    },
+    "median_seconds": {
+      "none": 0.09519798499991339,
+      "raw": 0.11991658300007657,
+      "processed": 0.11633255899982942
+    },
+    "tokens_per_second": {
+      "none": 672.2831370859186,
+      "raw": 533.7043334528564,
+      "processed": 550.1469283426821
+    },
+    "peak_extra_allocated_bytes": {
+      "none": [
+        758784
+      ],
+      "raw": [
+        823808
+      ],
+      "processed": [
+        791040
+      ]
+    },
+    "profiles": {
+      "none-ops": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1624,
+          "self_cpu_us": 33297.56899999986,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 19800.59699999992,
+          "self_device_us": 11.039000000033411,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2004,
+          "self_cpu_us": 19130.309000000445,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 2020,
+          "self_cpu_us": 9735.057999999846,
+          "self_device_us": 3466.580000000014,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 1348,
+          "self_cpu_us": 6787.842999999959,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "Activity Buffer Request",
+          "count": 3,
+          "self_cpu_us": 4397.798999999917,
+          "self_device_us": 17.24599999999691,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1556,
+          "self_cpu_us": 2589.577999999135,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2440.773999999882,
+          "self_device_us": 1127.5460000000476,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 208,
+          "self_cpu_us": 2438.501999999814,
+          "self_device_us": 416.11600000010685,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 64,
+          "self_cpu_us": 2014.048999999999,
+          "self_device_us": 681.3790000000336,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 716,
+          "self_cpu_us": 2006.413000000081,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 64,
+          "self_cpu_us": 1787.3960000001898,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::clone",
+          "count": 560,
+          "self_cpu_us": 1310.3229999998512,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::to",
+          "count": 1012,
+          "self_cpu_us": 1157.6350000001703,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 188,
+          "self_cpu_us": 1153.9850000001802,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sigmoid",
+          "count": 124,
+          "self_cpu_us": 1078.1530000000166,
+          "self_device_us": 288.4610000001521,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty",
+          "count": 384,
+          "self_cpu_us": 1031.721999999896,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 2415,
+          "self_cpu_us": 989.9190000005906,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 128,
+          "self_cpu_us": 935.0519999999015,
+          "self_device_us": 286.7849999999162,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sum",
+          "count": 64,
+          "self_cpu_us": 901.8880000001336,
+          "self_device_us": 541.9650000000875,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "none-full": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1624,
+          "self_cpu_us": 96740.21499999995,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 29828.6660000002,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 124,
+          "self_cpu_us": 19172.10899999903,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2004,
+          "self_cpu_us": 16537.040000000692,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/core/kv_cache_manager.py(442): _prepare_batches",
+          "count": 128,
+          "self_cpu_us": 15321.057999998613,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 2020,
+          "self_cpu_us": 13304.200000000319,
+          "self_device_us": 9814.611000000457,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method tensor of type object at 0xffff23b2d638>",
+          "count": 288,
+          "self_cpu_us": 9246.910000000378,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 1348,
+          "self_cpu_us": 8824.270000000583,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 26818560
+        },
+        {
+          "operator": "<string>(2): __init__",
+          "count": 780,
+          "self_cpu_us": 7972.586999999223,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(352): _execute",
+          "count": 188,
+          "self_cpu_us": 7952.3179999991335,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -232448
+        },
+        {
+          "operator": "torch/autograd/grad_mode.py(290): __enter__",
+          "count": 312,
+          "self_cpu_us": 5820.944000000607,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1556,
+          "self_cpu_us": 5617.165999999186,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method tolist of Tensor object at 0xfffc4c776fd0>",
+          "count": 156,
+          "self_cpu_us": 5495.474999999722,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/core/kv_cache_manager.py(606): _write_prepared",
+          "count": 8,
+          "self_cpu_us": 4696.361000000001,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 716,
+          "self_cpu_us": 4452.799999999923,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method copy_ of Tensor object at 0xfffec52a45f0>",
+          "count": 744,
+          "self_cpu_us": 4376.564999998955,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/engine/llm_engine.py(370): _update",
+          "count": 188,
+          "self_cpu_us": 4297.467999999419,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/core/scheduler.py(287): _make_scheduled_item",
+          "count": 376,
+          "self_cpu_us": 4069.740999999527,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "Activity Buffer Request",
+          "count": 2,
+          "self_cpu_us": 4064.9590000000353,
+          "self_device_us": 8.286999999976615,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/core/scheduler.py(323): _take",
+          "count": 188,
+          "self_cpu_us": 3937.9390000010226,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "raw-ops": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1818,
+          "self_cpu_us": 108719.8060000003,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 24011.792999999805,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2194,
+          "self_cpu_us": 15252.708000000432,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 316,
+          "self_cpu_us": 13507.98999999966,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 2212,
+          "self_cpu_us": 11690.644999998814,
+          "self_device_us": 8416.399999999961,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 1540,
+          "self_cpu_us": 7301.129000000332,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 272,
+          "self_cpu_us": 4101.939999999672,
+          "self_device_us": 1255.3850000000248,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 844,
+          "self_cpu_us": 2997.545000000003,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2510.9329999999395,
+          "self_device_us": 2639.002999999942,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1558,
+          "self_cpu_us": 2464.008999998726,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::stack",
+          "count": 252,
+          "self_cpu_us": 2282.966000000388,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 64,
+          "self_cpu_us": 2134.255999999961,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::unsqueeze",
+          "count": 1132,
+          "self_cpu_us": 1791.3630000006428,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 3537,
+          "self_cpu_us": 1679.8659999990111,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::clone",
+          "count": 624,
+          "self_cpu_us": 1648.1559999993642,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::to",
+          "count": 1140,
+          "self_cpu_us": 1481.7340000004865,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sigmoid",
+          "count": 124,
+          "self_cpu_us": 1324.1299999998773,
+          "self_device_us": 683.1499999999578,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 64,
+          "self_cpu_us": 1257.5680000000211,
+          "self_device_us": 1779.3249999999916,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty",
+          "count": 384,
+          "self_cpu_us": 1212.7460000002857,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 128,
+          "self_cpu_us": 1187.963000000027,
+          "self_device_us": 634.3850000001239,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "raw-full": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1818,
+          "self_cpu_us": 101858.63600000048,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 19925.880999999914,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2194,
+          "self_cpu_us": 13766.511999999813,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 124,
+          "self_cpu_us": 13020.369000001338,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -512
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 2212,
+          "self_cpu_us": 10548.945999998652,
+          "self_device_us": 9764.56400000026,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/core/kv_cache_manager.py(442): _prepare_batches",
+          "count": 128,
+          "self_cpu_us": 10036.862999999756,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 316,
+          "self_cpu_us": 8070.916999999871,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 1540,
+          "self_cpu_us": 6907.167000000017,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 39434240
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(352): _execute",
+          "count": 188,
+          "self_cpu_us": 5716.320000000458,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -232448
+        },
+        {
+          "operator": "<built-in method tensor of type object at 0xffff23b2d638>",
+          "count": 288,
+          "self_cpu_us": 3870.769999999612,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 844,
+          "self_cpu_us": 3773.934000000846,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 272,
+          "self_cpu_us": 3767.767999999496,
+          "self_device_us": 1359.2739999999485,
+          "self_device_memory_bytes": 337920
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1558,
+          "self_cpu_us": 3737.9029999998384,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/engine/llm_engine.py(370): _update",
+          "count": 188,
+          "self_cpu_us": 3170.4539999998087,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method copy_ of Tensor object at 0xfffec52a45f0>",
+          "count": 744,
+          "self_cpu_us": 3001.5509999997157,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "torch/utils/_contextlib.py(120): decorate_context",
+          "count": 390,
+          "self_cpu_us": 2973.905000000177,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -6689280
+        },
+        {
+          "operator": "vllm_rlt/core/scheduler.py(323): _take",
+          "count": 188,
+          "self_cpu_us": 2791.1890000001,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::stack",
+          "count": 252,
+          "self_cpu_us": 2571.306999999335,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2479.8980000000774,
+          "self_device_us": 2988.58499999993,
+          "self_device_memory_bytes": 6881280
+        },
+        {
+          "operator": "aten::clone",
+          "count": 624,
+          "self_cpu_us": 2234.690999999897,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "processed-ops": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1754,
+          "self_cpu_us": 97750.7149999996,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 22683.500000000073,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2322,
+          "self_cpu_us": 20361.571000000113,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 316,
+          "self_cpu_us": 13013.803999999898,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 2148,
+          "self_cpu_us": 11927.50900000012,
+          "self_device_us": 8301.904999999215,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 1476,
+          "self_cpu_us": 6909.296999999731,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 272,
+          "self_cpu_us": 4398.034999999721,
+          "self_device_us": 1229.2659999998846,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 844,
+          "self_cpu_us": 3254.1110000007093,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2565.4240000000195,
+          "self_device_us": 2622.8850000000243,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1558,
+          "self_cpu_us": 2342.3889999999733,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::stack",
+          "count": 252,
+          "self_cpu_us": 2110.396999999586,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 64,
+          "self_cpu_us": 2086.5779999999377,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 3537,
+          "self_cpu_us": 1777.3179999996833,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 192,
+          "self_cpu_us": 1635.8050000000076,
+          "self_device_us": 899.7680000000564,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::unsqueeze",
+          "count": 1132,
+          "self_cpu_us": 1635.431000000337,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::to",
+          "count": 1140,
+          "self_cpu_us": 1513.9589999994594,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::clone",
+          "count": 560,
+          "self_cpu_us": 1491.8950000000768,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sigmoid",
+          "count": 124,
+          "self_cpu_us": 1314.6709999997838,
+          "self_device_us": 686.7049999998162,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty",
+          "count": 384,
+          "self_cpu_us": 1258.967999999892,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 64,
+          "self_cpu_us": 1243.792000000154,
+          "self_device_us": 1745.1790000000492,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "processed-full": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1754,
+          "self_cpu_us": 103497.714000001,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 20846.46299999978,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2322,
+          "self_cpu_us": 15129.085999998966,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 124,
+          "self_cpu_us": 13175.480000000473,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -1024
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 2148,
+          "self_cpu_us": 10448.986999999888,
+          "self_device_us": 10015.051999999127,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/core/kv_cache_manager.py(442): _prepare_batches",
+          "count": 128,
+          "self_cpu_us": 10255.892999999633,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 316,
+          "self_cpu_us": 8545.498999999993,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 1476,
+          "self_cpu_us": 6776.009000000365,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 39401472
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(352): _execute",
+          "count": 188,
+          "self_cpu_us": 5816.4070000001375,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -232448
+        },
+        {
+          "operator": "<built-in method tensor of type object at 0xffff23b2d638>",
+          "count": 288,
+          "self_cpu_us": 3927.1879999986068,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 844,
+          "self_cpu_us": 3912.425999998626,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 272,
+          "self_cpu_us": 3884.787000000045,
+          "self_device_us": 1454.8620000000992,
+          "self_device_memory_bytes": 337920
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1558,
+          "self_cpu_us": 3826.4770000002713,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/engine/llm_engine.py(370): _update",
+          "count": 188,
+          "self_cpu_us": 3287.5009999989925,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "torch/utils/_contextlib.py(120): decorate_context",
+          "count": 390,
+          "self_cpu_us": 3132.696000000161,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -6689280
+        },
+        {
+          "operator": "<built-in method copy_ of Tensor object at 0xfffec52a45f0>",
+          "count": 744,
+          "self_cpu_us": 3023.1649999991896,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2872.8629999997174,
+          "self_device_us": 3133.3969999999745,
+          "self_device_memory_bytes": 6881280
+        },
+        {
+          "operator": "vllm_rlt/core/scheduler.py(323): _take",
+          "count": 188,
+          "self_cpu_us": 2871.759000000642,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::stack",
+          "count": 252,
+          "self_cpu_us": 2640.3929999992906,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::unsqueeze",
+          "count": 1132,
+          "self_cpu_us": 2423.540000000653,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        }
+      ]
+    },
+    "tokens_unchanged": true
+  },
+  "async": {
+    "seconds": {
+      "none": [
+        0.11112063099994884
+      ],
+      "raw": [
+        0.12377583400007097
+      ],
+      "processed": [
+        0.12324414399995476
+      ]
+    },
+    "median_seconds": {
+      "none": 0.11112063099994884,
+      "raw": 0.12377583400007097,
+      "processed": 0.12324414399995476
+    },
+    "tokens_per_second": {
+      "none": 575.9506531242562,
+      "raw": 517.0637751466356,
+      "processed": 519.2944502095247
+    },
+    "peak_extra_allocated_bytes": {
+      "none": [
+        790016
+      ],
+      "raw": [
+        822272
+      ],
+      "processed": [
+        822272
+      ]
+    },
+    "profiles": {
+      "none-ops": [
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 16279.262000000004,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 1850,
+          "self_cpu_us": 8762.216999999695,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1037,
+          "self_cpu_us": 6619.0009999997255,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1439,
+          "self_cpu_us": 5515.489000000218,
+          "self_device_us": 2130.588000000116,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 2769,
+          "self_cpu_us": 4635.025999999778,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cuLaunchKernelEx",
+          "count": 658,
+          "self_cpu_us": 4584.934999999944,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 601,
+          "self_cpu_us": 2461.7410000001278,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2147.010999999959,
+          "self_device_us": 809.0290000000505,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 3851,
+          "self_cpu_us": 1570.322000000206,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 64,
+          "self_cpu_us": 1314.6100000000988,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::select",
+          "count": 629,
+          "self_cpu_us": 1276.088999999649,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sigmoid",
+          "count": 124,
+          "self_cpu_us": 990.0759999999482,
+          "self_device_us": 233.5900000000729,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaEventSynchronize",
+          "count": 378,
+          "self_cpu_us": 940.6050000001692,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 64,
+          "self_cpu_us": 864.0409999999702,
+          "self_device_us": 601.2849999999398,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 128,
+          "self_cpu_us": 782.1960000001072,
+          "self_device_us": 233.108000000002,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::record_stream",
+          "count": 436,
+          "self_cpu_us": 745.8910000001142,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mul",
+          "count": 116,
+          "self_cpu_us": 660.8229999999921,
+          "self_device_us": 266.3260000000107,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 281,
+          "self_cpu_us": 619.7590000002324,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaEventRecordWithFlags",
+          "count": 698,
+          "self_cpu_us": 613.4480000000897,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sum",
+          "count": 64,
+          "self_cpu_us": 609.95099999999,
+          "self_device_us": 486.4459999999799,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "none-full": [
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 17218.51800000001,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "triton/runtime/jit.py(708): run",
+          "count": 570,
+          "self_cpu_us": 9886.790999998972,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 124,
+          "self_cpu_us": 9667.236999999815,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 1850,
+          "self_cpu_us": 9417.455000000573,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(450): submit",
+          "count": 188,
+          "self_cpu_us": 8362.155000000257,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1037,
+          "self_cpu_us": 7480.238000000069,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 2769,
+          "self_cpu_us": 7326.50600000022,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/async_state.py(169): prepare",
+          "count": 188,
+          "self_cpu_us": 6628.762999999737,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1439,
+          "self_cpu_us": 6172.138999999667,
+          "self_device_us": 7529.890999999854,
+          "self_device_memory_bytes": -1024
+        },
+        {
+          "operator": "cuLaunchKernelEx",
+          "count": 658,
+          "self_cpu_us": 5232.246999999894,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in function launch>",
+          "count": 570,
+          "self_cpu_us": 4782.417000000076,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "torch/cuda/_utils.py(557): _get_device_index",
+          "count": 1504,
+          "self_cpu_us": 4636.270000000101,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/engine/llm_engine.py(517): _step_async",
+          "count": 189,
+          "self_cpu_us": 4530.803999999982,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -79872
+        },
+        {
+          "operator": "vllm_rlt/worker/async_state.py(46): transfer",
+          "count": 188,
+          "self_cpu_us": 4478.493999999459,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(352): _execute",
+          "count": 188,
+          "self_cpu_us": 3908.4060000003046,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -105472
+        },
+        {
+          "operator": "<built-in method record of Event object at 0xfffc4e548fa0>",
+          "count": 688,
+          "self_cpu_us": 3038.3940000000453,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 601,
+          "self_cpu_us": 2837.559999999785,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 26515968
+        },
+        {
+          "operator": "<built-in method copy_ of Tensor object at 0xfffc446db4d0>",
+          "count": 904,
+          "self_cpu_us": 2774.022999999871,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "torch/cuda/__init__.py(1235): current_stream",
+          "count": 1126,
+          "self_cpu_us": 2606.9919999999374,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2567.98200000016,
+          "self_device_us": 3231.842000000015,
+          "self_device_memory_bytes": 6881280
+        }
+      ],
+      "raw-ops": [
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 129,
+          "self_cpu_us": 35043.07600000008,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 27261.345000000074,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1231,
+          "self_cpu_us": 26212.683000000343,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2040,
+          "self_cpu_us": 17226.433999998942,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cuLaunchKernelEx",
+          "count": 658,
+          "self_cpu_us": 9567.590000000226,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1631,
+          "self_cpu_us": 7822.165999999748,
+          "self_device_us": 7616.087999999582,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 2771,
+          "self_cpu_us": 5809.952999998892,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 793,
+          "self_cpu_us": 3797.753000000337,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2782.3519999998025,
+          "self_device_us": 2836.7000000000608,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 4973,
+          "self_cpu_us": 2576.1720000005644,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 64,
+          "self_cpu_us": 1843.8050000004368,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::select",
+          "count": 693,
+          "self_cpu_us": 1734.2529999999033,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 116,
+          "self_cpu_us": 1597.180999999936,
+          "self_device_us": 645.6439999999984,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 409,
+          "self_cpu_us": 1295.4429999995746,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::unsqueeze",
+          "count": 1132,
+          "self_cpu_us": 1207.970999999644,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sigmoid",
+          "count": 124,
+          "self_cpu_us": 1207.7140000000436,
+          "self_device_us": 744.3319999997984,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 128,
+          "self_cpu_us": 1078.0610000000052,
+          "self_device_us": 684.6229999998395,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::stack",
+          "count": 96,
+          "self_cpu_us": 1074.36400000082,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 64,
+          "self_cpu_us": 1062.3739999999489,
+          "self_device_us": 1878.7700000000477,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaEventSynchronize",
+          "count": 378,
+          "self_cpu_us": 1000.1569999997646,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "raw-full": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1231,
+          "self_cpu_us": 20903.29400000006,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 18533.75499999998,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 129,
+          "self_cpu_us": 11627.489999999798,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2040,
+          "self_cpu_us": 11486.406999999133,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "triton/runtime/jit.py(708): run",
+          "count": 570,
+          "self_cpu_us": 10235.82400000188,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 124,
+          "self_cpu_us": 9755.430000000004,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 2771,
+          "self_cpu_us": 8791.236000000776,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in function launch>",
+          "count": 570,
+          "self_cpu_us": 8558.017999999998,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(450): submit",
+          "count": 188,
+          "self_cpu_us": 8461.214000000378,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1631,
+          "self_cpu_us": 7077.14399999875,
+          "self_device_us": 7515.524999999724,
+          "self_device_memory_bytes": -1024
+        },
+        {
+          "operator": "vllm_rlt/worker/async_state.py(169): prepare",
+          "count": 188,
+          "self_cpu_us": 6816.739999999478,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cuLaunchKernelEx",
+          "count": 658,
+          "self_cpu_us": 5592.861000000013,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/engine/llm_engine.py(517): _step_async",
+          "count": 189,
+          "self_cpu_us": 4809.259999999384,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -112640
+        },
+        {
+          "operator": "torch/cuda/_utils.py(557): _get_device_index",
+          "count": 1504,
+          "self_cpu_us": 4741.460000002217,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/async_state.py(46): transfer",
+          "count": 188,
+          "self_cpu_us": 4577.247000000707,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(352): _execute",
+          "count": 188,
+          "self_cpu_us": 4044.835999999861,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -105472
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 793,
+          "self_cpu_us": 3699.4469999996372,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 39131648
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 4973,
+          "self_cpu_us": 3092.7339999997967,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method record of Event object at 0xfffc4e548fa0>",
+          "count": 688,
+          "self_cpu_us": 3059.046000000157,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2879.6480000001075,
+          "self_device_us": 2809.507000000074,
+          "self_device_memory_bytes": 6881280
+        }
+      ],
+      "processed-ops": [
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 129,
+          "self_cpu_us": 40731.565000000046,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 18052.8380000001,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2168,
+          "self_cpu_us": 11742.620000000232,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1167,
+          "self_cpu_us": 10820.819999999676,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1567,
+          "self_cpu_us": 6499.077000000206,
+          "self_device_us": 8344.468000000634,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cuLaunchKernelEx",
+          "count": 658,
+          "self_cpu_us": 5100.179999999666,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 2771,
+          "self_cpu_us": 4953.838000000167,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 729,
+          "self_cpu_us": 2996.4449999999683,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2412.3269999999034,
+          "self_device_us": 3132.7200000000075,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 4973,
+          "self_cpu_us": 2234.7580000002854,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 64,
+          "self_cpu_us": 1542.5300000003408,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::select",
+          "count": 693,
+          "self_cpu_us": 1528.0179999995985,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 192,
+          "self_cpu_us": 1305.0059999999976,
+          "self_device_us": 1111.3880000001209,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 116,
+          "self_cpu_us": 1274.8779999999783,
+          "self_device_us": 721.4030000000266,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::unsqueeze",
+          "count": 1132,
+          "self_cpu_us": 1105.1659999998597,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sigmoid",
+          "count": 124,
+          "self_cpu_us": 1061.8390000001273,
+          "self_device_us": 851.0689999999304,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 409,
+          "self_cpu_us": 1038.5240000001413,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 64,
+          "self_cpu_us": 956.9540000000325,
+          "self_device_us": 2173.455000000007,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::stack",
+          "count": 96,
+          "self_cpu_us": 929.1470000001209,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaEventSynchronize",
+          "count": 378,
+          "self_cpu_us": 908.5779999999498,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "processed-full": [
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 124,
+          "self_cpu_us": 19562.78000000015,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1167,
+          "self_cpu_us": 12463.96400000043,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2168,
+          "self_cpu_us": 11787.197999999762,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "triton/runtime/jit.py(708): run",
+          "count": 570,
+          "self_cpu_us": 10282.645999998535,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 124,
+          "self_cpu_us": 9901.121999998875,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 129,
+          "self_cpu_us": 9359.13800000002,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(450): submit",
+          "count": 188,
+          "self_cpu_us": 8651.15399999867,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 2771,
+          "self_cpu_us": 7960.596999999834,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1567,
+          "self_cpu_us": 6933.717000000461,
+          "self_device_us": 7324.400999999833,
+          "self_device_memory_bytes": -1024
+        },
+        {
+          "operator": "vllm_rlt/worker/async_state.py(169): prepare",
+          "count": 188,
+          "self_cpu_us": 6819.291999999174,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cuLaunchKernelEx",
+          "count": 658,
+          "self_cpu_us": 5430.379000000365,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in function launch>",
+          "count": 570,
+          "self_cpu_us": 5054.977999999375,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/engine/llm_engine.py(517): _step_async",
+          "count": 189,
+          "self_cpu_us": 4980.245000000294,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -112640
+        },
+        {
+          "operator": "torch/cuda/_utils.py(557): _get_device_index",
+          "count": 1504,
+          "self_cpu_us": 4827.424999998944,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/async_state.py(46): transfer",
+          "count": 188,
+          "self_cpu_us": 4674.382999999931,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/model_runner.py(352): _execute",
+          "count": 188,
+          "self_cpu_us": 4062.3459999991246,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -105472
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 729,
+          "self_cpu_us": 3426.792000000013,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 39098880
+        },
+        {
+          "operator": "<built-in method record of Event object at 0xfffc3667cc90>",
+          "count": 688,
+          "self_cpu_us": 3211.9410000003777,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 4973,
+          "self_cpu_us": 3122.0590000002553,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 88,
+          "self_cpu_us": 2800.17300000012,
+          "self_device_us": 2851.515000000054,
+          "self_device_memory_bytes": 6881280
+        }
+      ]
+    },
+    "tokens_unchanged": true
+  },
+  "speculative": {
+    "seconds": {
+      "none": [
+        0.0662261480001689
+      ],
+      "raw": [
+        0.06795481500012102
+      ],
+      "processed": [
+        0.06800570499990499
+      ]
+    },
+    "median_seconds": {
+      "none": 0.0662261480001689,
+      "raw": 0.06795481500012102,
+      "processed": 0.06800570499990499
+    },
+    "tokens_per_second": {
+      "none": 966.385663859489,
+      "raw": 941.8022843544792,
+      "processed": 941.0975152759523
+    },
+    "peak_extra_allocated_bytes": {
+      "none": [
+        2750976
+      ],
+      "raw": [
+        2790912
+      ],
+      "processed": [
+        2774528
+      ]
+    },
+    "profiles": {
+      "none-ops": [
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 156,
+          "self_cpu_us": 14250.309000000101,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2245,
+          "self_cpu_us": 10531.197000000051,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1128,
+          "self_cpu_us": 8562.952999999969,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1277,
+          "self_cpu_us": 3761.6589999999446,
+          "self_device_us": 1806.0290000000139,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 143,
+          "self_cpu_us": 2708.568000000006,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 592,
+          "self_cpu_us": 2201.785999999958,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 78,
+          "self_cpu_us": 1515.5650000001278,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1219,
+          "self_cpu_us": 1244.1550000002997,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 206,
+          "self_cpu_us": 1168.2059999999747,
+          "self_device_us": 362.9779999999464,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 57,
+          "self_cpu_us": 1026.8629999999969,
+          "self_device_us": 156.73599999999442,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mul",
+          "count": 175,
+          "self_cpu_us": 995.331999999973,
+          "self_device_us": 317.34799999996153,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 78,
+          "self_cpu_us": 917.5149999999649,
+          "self_device_us": 683.0130000000008,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::lt",
+          "count": 128,
+          "self_cpu_us": 843.7139999999272,
+          "self_device_us": 172.83400000001166,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sum",
+          "count": 87,
+          "self_cpu_us": 790.9519999999757,
+          "self_device_us": 621.252999999977,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 77,
+          "self_cpu_us": 775.0059999999964,
+          "self_device_us": 124.67199999998161,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 2113,
+          "self_cpu_us": 760.4689999999889,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty",
+          "count": 315,
+          "self_cpu_us": 759.0639999997917,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::argmax",
+          "count": 110,
+          "self_cpu_us": 756.3700000000226,
+          "self_device_us": 1531.8530000000064,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 348,
+          "self_cpu_us": 708.1709999999481,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_softmax",
+          "count": 119,
+          "self_cpu_us": 698.9639999999526,
+          "self_device_us": 1821.2669999999434,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "none-full": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1128,
+          "self_cpu_us": 50386.84900000042,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 156,
+          "self_cpu_us": 18524.925000000065,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2245,
+          "self_cpu_us": 12642.707000000097,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 112,
+          "self_cpu_us": 10299.16400000074,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -1536
+        },
+        {
+          "operator": "vllm_rlt/core/kv_cache_manager.py(442): _prepare_batches",
+          "count": 60,
+          "self_cpu_us": 6868.614000000468,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 143,
+          "self_cpu_us": 6569.547999999943,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/speculative.py(96): execute",
+          "count": 12,
+          "self_cpu_us": 5634.887000000228,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -40443392
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1277,
+          "self_cpu_us": 4802.597999998776,
+          "self_device_us": 6307.480999999992,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 592,
+          "self_cpu_us": 3066.6099999999415,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 52925952
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1219,
+          "self_cpu_us": 2758.779000000186,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method copy_ of Tensor object at 0xfffc3cb350e0>",
+          "count": 716,
+          "self_cpu_us": 2436.3480000002855,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/sampling.py(51): rejection_sample",
+          "count": 50,
+          "self_cpu_us": 2412.122000000076,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -3634176
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 78,
+          "self_cpu_us": 2321.6109999999353,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -15654912
+        },
+        {
+          "operator": "<built-in method tensor of type object at 0xffff23b2d638>",
+          "count": 133,
+          "self_cpu_us": 1901.2210000000298,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 2113,
+          "self_cpu_us": 1567.9659999997698,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 206,
+          "self_cpu_us": 1554.9709999999468,
+          "self_device_us": 1259.2209999998413,
+          "self_device_memory_bytes": 25165824
+        },
+        {
+          "operator": "torch/utils/_contextlib.py(120): decorate_context",
+          "count": 186,
+          "self_cpu_us": 1469.638999999961,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -20741632
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 348,
+          "self_cpu_us": 1457.5210000002992,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mul",
+          "count": 175,
+          "self_cpu_us": 1289.5729999998493,
+          "self_device_us": 1402.8940000000239,
+          "self_device_memory_bytes": 1404416
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 78,
+          "self_cpu_us": 1265.5860000001667,
+          "self_device_us": 2400.320000000047,
+          "self_device_memory_bytes": 79872
+        }
+      ],
+      "raw-ops": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1219,
+          "self_cpu_us": 32791.54100000013,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 156,
+          "self_cpu_us": 17470.00599999995,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2394,
+          "self_cpu_us": 12090.505000000023,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 168,
+          "self_cpu_us": 4819.1389999999865,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1428,
+          "self_cpu_us": 4432.517000000222,
+          "self_device_us": 4649.904999999926,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 743,
+          "self_cpu_us": 2811.108999999853,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 78,
+          "self_cpu_us": 1714.3729999998868,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1221,
+          "self_cpu_us": 1327.7300000001896,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 206,
+          "self_cpu_us": 1264.6509999999944,
+          "self_device_us": 774.6999999999425,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 100,
+          "self_cpu_us": 1105.010999999929,
+          "self_device_us": 438.56399999991436,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mul",
+          "count": 175,
+          "self_cpu_us": 1051.4090000000483,
+          "self_device_us": 1278.6749999999424,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 2669,
+          "self_cpu_us": 1050.9589999995637,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 57,
+          "self_cpu_us": 1045.2189999999996,
+          "self_device_us": 741.7150000000001,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 78,
+          "self_cpu_us": 980.1500000000906,
+          "self_device_us": 1307.7370000000465,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 435,
+          "self_cpu_us": 938.0559999998939,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::lt",
+          "count": 128,
+          "self_cpu_us": 902.338000000078,
+          "self_device_us": 333.67199999995864,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sum",
+          "count": 87,
+          "self_cpu_us": 879.014999999983,
+          "self_device_us": 1192.532999999974,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty",
+          "count": 315,
+          "self_cpu_us": 833.2999999999356,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::argmax",
+          "count": 110,
+          "self_cpu_us": 790.916999999994,
+          "self_device_us": 2837.7279999999555,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::select",
+          "count": 579,
+          "self_cpu_us": 769.0820000001117,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "raw-full": [
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 156,
+          "self_cpu_us": 17014.585000000065,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1219,
+          "self_cpu_us": 15616.989000000358,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2394,
+          "self_cpu_us": 12305.728000000006,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 112,
+          "self_cpu_us": 9651.556000000543,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -512
+        },
+        {
+          "operator": "vllm_rlt/core/kv_cache_manager.py(442): _prepare_batches",
+          "count": 60,
+          "self_cpu_us": 6259.108999999342,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/speculative.py(96): execute",
+          "count": 12,
+          "self_cpu_us": 4917.951999999987,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -40443392
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1428,
+          "self_cpu_us": 4794.027999999778,
+          "self_device_us": 4887.427999999511,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 168,
+          "self_cpu_us": 4222.749999999923,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 743,
+          "self_cpu_us": 3183.7439999999515,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 65541632
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1221,
+          "self_cpu_us": 2523.371999999762,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method copy_ of Tensor object at 0xfffc3cb350e0>",
+          "count": 716,
+          "self_cpu_us": 2202.935999999663,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 78,
+          "self_cpu_us": 2086.883999999831,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -15654912
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 435,
+          "self_cpu_us": 1783.7669999996692,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method tensor of type object at 0xffff23b2d638>",
+          "count": 133,
+          "self_cpu_us": 1756.5959999997158,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 2669,
+          "self_cpu_us": 1639.7709999998492,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/sampling.py(51): rejection_sample",
+          "count": 50,
+          "self_cpu_us": 1436.0750000000262,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -3634176
+        },
+        {
+          "operator": "aten::select",
+          "count": 579,
+          "self_cpu_us": 1346.087000000095,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 206,
+          "self_cpu_us": 1336.519999999975,
+          "self_device_us": 813.8999999999978,
+          "self_device_memory_bytes": 25165824
+        },
+        {
+          "operator": "torch/utils/_contextlib.py(120): decorate_context",
+          "count": 186,
+          "self_cpu_us": 1293.4269999999624,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -20741632
+        },
+        {
+          "operator": "aten::mul",
+          "count": 175,
+          "self_cpu_us": 1222.6059999999607,
+          "self_device_us": 738.8599999998873,
+          "self_device_memory_bytes": 1404416
+        }
+      ],
+      "processed-ops": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1155,
+          "self_cpu_us": 30564.47400000023,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 156,
+          "self_cpu_us": 16297.44999999991,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2522,
+          "self_cpu_us": 12829.769999999564,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 168,
+          "self_cpu_us": 6427.685000000046,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1364,
+          "self_cpu_us": 4445.575999999577,
+          "self_device_us": 4287.241000000021,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 679,
+          "self_cpu_us": 2640.5459999999166,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 78,
+          "self_cpu_us": 1695.7159999999421,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 270,
+          "self_cpu_us": 1634.4419999999154,
+          "self_device_us": 895.1859999999397,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1221,
+          "self_cpu_us": 1283.0529999999708,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::cat",
+          "count": 100,
+          "self_cpu_us": 1112.1259999999893,
+          "self_device_us": 597.6139999999978,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_softmax",
+          "count": 183,
+          "self_cpu_us": 1092.33499999993,
+          "self_device_us": 4761.238999999965,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mul",
+          "count": 175,
+          "self_cpu_us": 1076.8700000000263,
+          "self_device_us": 1272.6010000000606,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::mm",
+          "count": 57,
+          "self_cpu_us": 1041.7010000000118,
+          "self_device_us": 734.4430000000102,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 2669,
+          "self_cpu_us": 1010.8409999999494,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::aminmax",
+          "count": 78,
+          "self_cpu_us": 1003.2569999999541,
+          "self_device_us": 1286.9970000000249,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 435,
+          "self_cpu_us": 993.8319999999167,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::lt",
+          "count": 128,
+          "self_cpu_us": 919.8220000000947,
+          "self_device_us": 318.9200000000674,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::sum",
+          "count": 87,
+          "self_cpu_us": 879.4340000000484,
+          "self_device_us": 1155.8990000000413,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty",
+          "count": 315,
+          "self_cpu_us": 858.7320000000709,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::argmax",
+          "count": 110,
+          "self_cpu_us": 807.774000000074,
+          "self_device_us": 2808.9659999999603,
+          "self_device_memory_bytes": 0
+        }
+      ],
+      "processed-full": [
+        {
+          "operator": "cudaMemcpyAsync",
+          "count": 1155,
+          "self_cpu_us": 20902.823999999953,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaGraphLaunch",
+          "count": 156,
+          "self_cpu_us": 16891.75100000009,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaLaunchKernel",
+          "count": 2522,
+          "self_cpu_us": 15932.245000000374,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/cuda_graph.py(65): run",
+          "count": 112,
+          "self_cpu_us": 9363.272999999954,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -512
+        },
+        {
+          "operator": "vllm_rlt/core/kv_cache_manager.py(442): _prepare_batches",
+          "count": 60,
+          "self_cpu_us": 6491.891000000185,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "cudaStreamSynchronize",
+          "count": 168,
+          "self_cpu_us": 5420.91799999993,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/speculative.py(96): execute",
+          "count": 12,
+          "self_cpu_us": 5071.345999999881,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -40443392
+        },
+        {
+          "operator": "aten::copy_",
+          "count": 1364,
+          "self_cpu_us": 4659.201999999755,
+          "self_device_us": 5583.503000000237,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::empty_strided",
+          "count": 679,
+          "self_cpu_us": 3039.1240000001817,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 65508864
+        },
+        {
+          "operator": "aten::bitwise_and",
+          "count": 87,
+          "self_cpu_us": 2845.459999999992,
+          "self_device_us": 366.18600000001607,
+          "self_device_memory_bytes": 44544
+        },
+        {
+          "operator": "aten::slice",
+          "count": 1221,
+          "self_cpu_us": 2434.940000000655,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "<built-in method copy_ of Tensor object at 0xfffc3cb350e0>",
+          "count": 716,
+          "self_cpu_us": 2247.8800000001356,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::eq",
+          "count": 87,
+          "self_cpu_us": 2212.9000000000815,
+          "self_device_us": 339.5000000001128,
+          "self_device_memory_bytes": 44544
+        },
+        {
+          "operator": "aten::multinomial",
+          "count": 78,
+          "self_cpu_us": 2182.421999999704,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -15654912
+        },
+        {
+          "operator": "<built-in method tensor of type object at 0xffff23b2d638>",
+          "count": 133,
+          "self_cpu_us": 1826.42999999996,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::div",
+          "count": 270,
+          "self_cpu_us": 1732.066999999999,
+          "self_device_us": 1221.016000000127,
+          "self_device_memory_bytes": 37748736
+        },
+        {
+          "operator": "aten::as_strided",
+          "count": 2669,
+          "self_cpu_us": 1720.8809999998857,
+          "self_device_us": 0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "aten::_to_copy",
+          "count": 435,
+          "self_cpu_us": 1615.1079999998499,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": 0
+        },
+        {
+          "operator": "vllm_rlt/worker/sampling.py(51): rejection_sample",
+          "count": 50,
+          "self_cpu_us": 1522.9489999999714,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -3634176
+        },
+        {
+          "operator": "vllm_rlt/worker/sampling.py(6): probabilities",
+          "count": 181,
+          "self_cpu_us": 1390.739999999816,
+          "self_device_us": 0.0,
+          "self_device_memory_bytes": -35586048
+        }
+      ]
+    },
+    "tokens_unchanged": true
+  }
+}

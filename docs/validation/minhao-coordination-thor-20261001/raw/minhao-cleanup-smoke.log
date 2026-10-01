@@ -1,0 +1,40 @@
+[transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+USDT:2026-10-01 20:16:37 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:16:37 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:16:39 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:16:39 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:16:46 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:16:47 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:16:50 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:16:50 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:16:59 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:16:59 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:17:02 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:17:02 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+sync {'none': 0.08066848499993284, 'raw': 0.0914349139998194, 'processed': 0.08466345700026068}
+USDT:2026-10-01 20:17:12 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:17:12 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:17:16 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:17:16 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:17:31 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:17:31 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:17:34 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:17:35 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:17:52 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:17:52 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:17:56 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:17:56 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+async {'none': 0.1108772420002424, 'raw': 0.1287477310002032, 'processed': 0.12239944100019784}
+USDT:2026-10-01 20:18:14 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:18:14 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:18:16 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:18:16 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:18:22 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:18:22 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:18:25 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:18:25 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:18:32 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:18:32 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+USDT:2026-10-01 20:18:35 72873:72873 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-10-01 20:18:35 72873:72873 SyncActivityProfilerHandler.cpp:59] profiler_stop
+speculative {'none': 0.06240307000007306, 'raw': 0.0662938270002087, 'processed': 0.06682750300024054}
