@@ -9,14 +9,19 @@ import torch
 
 def _capture(hidden, stream, pool, run):
     """Warm and capture one stable-input graph on its own stream."""
-    torch.cuda.synchronize(hidden.device)
+    current_stream = torch.cuda.current_stream(hidden.device)
+    stream.wait_stream(current_stream)
     with torch.cuda.stream(stream):
         for _ in range(2):
             run()
-    stream.synchronize()
-    graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(graph, pool=pool, stream=stream):
-        output = run()
+        graph = torch.cuda.CUDAGraph()
+        # torch.cuda.graph() would synchronize the whole device on entry.
+        graph.capture_begin(pool=pool)
+        try:
+            output = run()
+        finally:
+            graph.capture_end()
+    current_stream.wait_stream(stream)
     return graph, output
 
 
