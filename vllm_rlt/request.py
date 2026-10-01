@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
+from secrets import randbits
 
 import torch
 
@@ -46,6 +47,10 @@ class Request:
     exit_trace: tuple[int, ...] = field(default=(), repr=False)
     weight_version: int = 0
     log_probs: list[torch.Tensor] = field(default_factory=list, repr=False)
+
+    def __post_init__(self):
+        if self.sampling_params.seed is None:
+            self.sampling_params = replace(self.sampling_params, seed=randbits(63))
 
     @property
     def num_scheduled_outputs(self) -> int:

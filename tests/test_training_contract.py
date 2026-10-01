@@ -16,6 +16,7 @@ from vllm_rlt import (
     SchedulerConfig,
     SpeculativeConfig,
 )
+from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
 from vllm_rlt.request import Request
 from vllm_rlt.worker.sampling import generator_for, probabilities
@@ -179,6 +180,57 @@ class TrainingContractTest(unittest.TestCase):
                 SamplingParams(**values)
         with self.assertRaises(ValueError):
             llm(model()).generate([[3]], SamplingParams(stop_token_ids=(64,)))
+
+    def test_entropy_seed_is_reported_and_replays_the_same_policy(self):
+        params = SamplingParams(
+            max_tokens=8, temperature=0.9, seed=None, logprobs=0, ignore_eos=True
+        )
+        for options in ({}, {"asynchronous": True}, {"speculative": True}):
+            rollout = llm(model(), graphs=DEVICE == "cuda", **options)
+            output = rollout.generate([[3, 4, 5]], params)[0]
+            self.assertIsInstance(output.sampling_params.seed, int)
+            self.assertLess(output.sampling_params.seed, 2**63)
+            replay = rollout.generate([[3, 4, 5]], output.sampling_params)[0]
+            self.assertEqual(output.token_ids, replay.token_ids)
+            self.assertEqual(output.log_probs, replay.log_probs)
+            self.assertEqual(output.exit_depths, replay.exit_depths)
+            rollout.engine.add_request("unstarted", [3], replace(params, temperature=0))
+            aborted = rollout.engine.abort_request("unstarted")
+            self.assertIsInstance(aborted.sampling_params.seed, int)
+            self.assertEqual(aborted.log_probs, [])
+            rollout.close()
+        self.assertIsNone(params.seed)
+
+    def test_preemption_preserves_selected_scores_and_rng(self):
+        native = model()
+        params = SamplingParams(
+            max_tokens=8, temperature=0.8, seed=45, logprobs=0, exit_threshold=0, ignore_eos=True
+        )
+        results = []
+        for suspend in (False, True):
+            engine = LLMEngine(
+                native,
+                cache_config=CacheConfig(64, 2),
+                scheduler_config=SchedulerConfig(enable_preemption=True),
+                attention_backend="triton" if DEVICE == "cuda" else "torch",
+            )
+            engine.add_request("a", [1, 2, 3], params)
+            while len(engine.scheduler.requests["a"].generated_token_ids) < 3:
+                engine.step()
+            if suspend:
+                engine.add_request("b", [5], SamplingParams(max_tokens=1))
+                engine.scheduler.selected_request_ids.clear()
+                self.assertTrue(engine.preemption.preempt(engine.scheduler.requests["b"]))
+            while engine.has_unfinished_requests():
+                for output in engine.step():
+                    if output.request_id == "a" and output.finished:
+                        results.append(output)
+            if suspend:
+                self.assertEqual(engine.preemption.resumptions, 1)
+            engine.close()
+        self.assertEqual(results[0].token_ids, results[1].token_ids)
+        self.assertEqual(results[0].log_probs, results[1].log_probs)
+        self.assertEqual(results[0].exit_depths, results[1].exit_depths)
 
 
 if __name__ == "__main__":

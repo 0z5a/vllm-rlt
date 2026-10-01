@@ -26,7 +26,10 @@ filtering. Greedy requests return the raw score in either mode. Speculative
 outputs use the verified **target** policy's score, including correction/bonus
 tokens; proposal or rejection-residual probabilities are never exposed as the
 policy score. Explicit `stop_token_ids` apply even with `ignore_eos=True`.
-`seed=None` creates an independent entropy-seeded request generator.
+`seed=None` resolves an independent seed in `[0, 2**63)` when the request is
+created. The effective seed is returned in `sampling_params`, including for an
+abort before sampling. Reusing those parameters replays the same request on the
+same policy and execution configuration. The default remains `seed=0`.
 
 Publication requires an idle engine. Each chunk is checked for duplicate names,
 unknown names and mismatched shapes before that chunk is copied. `finish_weight_update`
