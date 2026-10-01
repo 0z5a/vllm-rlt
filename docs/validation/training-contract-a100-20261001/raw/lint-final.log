@@ -1,4 +1,0 @@
-Required pre-commit hooks use language: system. pre_commit is absent; no installation performed.
-ruff 0.16.8
-All checks passed!
-88 files already formatted

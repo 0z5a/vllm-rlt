@@ -55,31 +55,3 @@ upstream self-speculation uses a full-depth target and synchronous execution;
 upstream PD does not implement self-speculation. Publication adds no such restriction
 to ordinary early-exit or async rollouts. Trainers must replay full-depth prompt
 prefill and the returned decode depths rather than assume the entire sequence used K.
-
-## Validation
-
-```bash
-python -m unittest tests.test_training_contract tests.test_pd_weight_control -v
-CONTRACT_DEVICE=cuda python -m unittest tests.test_training_contract -v
-python benchmarks/training_contract.py /models/Ouro-1.4B timings.json
-UCX_TLS=tcp,cuda_copy python benchmarks/nixl_preflight.py
-UCX_TLS=tcp,cuda_copy python benchmarks/pd_training_contract.py pd.json --cuda-graphs
-UCX_TLS=tcp,cuda_copy python benchmarks/pd_training_contract.py full-pd.json \
-  --model /models/Ouro-1.4B --cuda-graphs --max-num-seqs 1
-```
-
-CPU and Thor CUDA tests cover raw/processed probabilities against an independent
-dense oracle, speculative correction/bonus alignment, publication, pointer stability,
-prefix invalidation, early exit, async stop/abort and entropy seeds. The PD control
-test drives two real CPU engines and checks recovery after one peer commits and
-another fails. It uses in-process control delivery; it does **not** validate IPC or
-NIXL transport. The separate two-A100 run uses real spawned workers and NIXL:
-FP32 multi-request and full BF16 matched-batch checks cover three publications,
-raw/processed scores, graph replay, prefix reuse, explicit stop/abort and recovery
-to version five. See [PD evidence](validation/training-contract-a100-20261001/README.md).
-No PD workers were launched on single-GPU Thor, where NIXL is absent.
-
-This is a draft implementation of the
-[Phase 1 contract proposed in issue 70](https://github.com/ThinkFlowLab/vllm-rlt/issues/70#issuecomment-5888101273)
-on upstream `ecb1f8b505b7e831815b40aec3b4598619cca23a`; formal upstream agreement
-remains outside the scope of this contributor draft.
