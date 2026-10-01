@@ -1,12 +1,15 @@
 """Fixed-depth oracle, rollback, lifecycle and distribution tests for speculation."""
 
 import pickle
+import warnings
 from collections import Counter
 from contextlib import nullcontext
 
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
+from tests.reference import dense_reference
 from vllm_rlt import (
     LLM,
     CacheConfig,
@@ -17,15 +20,15 @@ from vllm_rlt import (
 )
 from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
-from vllm_rlt.models.reference import dense_reference
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.sampling import probabilities, rejection_sample
+from vllm_rlt.worker.speculative import greedy_accept
 
 
 def model(seed=123, dtype=torch.float32):
     torch.manual_seed(seed)
-    return OuroForCausalLM(OuroConfig.tiny()).to(dtype=dtype)
+    return OuroForCausalLM(tiny_ouro_config()).to(dtype=dtype)
 
 
 def engine(m, k=3, **kwargs):
@@ -77,7 +80,7 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
     m = model(dtype=dtype).to(device)
     if backend == "flash_attn_4":
         torch.manual_seed(123)
-        m = OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+        m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
             device=device, dtype=dtype
         )
     e = engine(m, k=3, cache_config=CacheConfig(128, 2), attention_backend=backend)
@@ -192,6 +195,17 @@ def test_each_rejection_position_and_bonus_commit_correct_frontier(rejected, mon
     )[0]
     final = drain(e)["r"]
     assert final.token_ids[len(out.token_ids) :] == expected.token_ids
+
+
+@pytest.mark.parametrize("k", [0, 1, 2, 4, 8])
+def test_greedy_accept_commits_target_prefix_through_first_mismatch(k):
+    candidates = list(range(100, 100 + k))
+    for rejected in range(k + 1):
+        # Rows before `rejected` agree; row `rejected` is the correction, or the bonus.
+        targets = candidates[:rejected] + [7] + list(range(200, 200 + k - rejected))
+        tokens, accepted = greedy_accept(candidates, targets)
+        assert accepted == rejected
+        assert tokens == candidates[:rejected] + [7]
 
 
 def test_eos_in_accepted_prefix_never_delivers_following_tokens(monkeypatch):
@@ -355,7 +369,7 @@ def test_priority_preempts_only_between_speculative_rounds_and_resumes(device, b
     m = (
         model()
         if device == "cpu"
-        else OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+        else OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
             "cuda", torch.bfloat16
         )
     )
@@ -406,7 +420,7 @@ def test_prefill_interleaves_between_draft_and_verify_without_changing_outputs(d
     m = (
         model()
         if device == "cpu"
-        else OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+        else OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
             "cuda", torch.bfloat16
         )
     )
@@ -445,7 +459,7 @@ def test_prefill_interleaves_between_draft_and_verify_without_changing_outputs(d
 @pytest.mark.gpu
 def test_cuda_graph_replay_with_intra_round_prefill():
     torch.manual_seed(123)
-    m = OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to("cuda", torch.bfloat16)
+    m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to("cuda", torch.bfloat16)
     params = SamplingParams(max_tokens=9, ignore_eos=True)
     expected = LLM(m, speculative_config=SpeculativeConfig(3), attention_backend="triton").generate(
         [[2, 3], [7, 8, 9]], params
@@ -547,7 +561,7 @@ def test_committed_round_migrates_kv_and_sampling_state(temperature, device, bac
     if device == "cuda":
         if torch.cuda.device_count() < 2:
             pytest.skip("migration requires two visible GPUs")
-        config = OuroConfig.tiny(hidden_size=256, head_dim=64)
+        config = tiny_ouro_config(hidden_size=256, head_dim=64)
         torch.manual_seed(123)
         m = OuroForCausalLM(config).to("cuda:0", torch.bfloat16)
         target_model = OuroForCausalLM(config).to("cuda:1", torch.bfloat16)
@@ -610,7 +624,7 @@ def test_invalid_k(k):
 @pytest.mark.parametrize("backend", ["triton", "flash_attn_4"])
 def test_gpu_sampling_and_greedy_match_replay_with_ragged_requests(backend):
     torch.manual_seed(123)
-    m = OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+    m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
         device="cuda", dtype=torch.bfloat16
     )
     prompts = [[2, 3, 4], [7, 8], [9]]
@@ -632,6 +646,32 @@ def test_gpu_sampling_and_greedy_match_replay_with_ragged_requests(backend):
     greedy = [SamplingParams(max_tokens=n, ignore_eos=True) for n in [8, 5, 3]]
     a, b = run(True, greedy), run(False, greedy)
     assert [o.token_ids for o in a] == [o.token_ids for o in b]
+
+
+@pytest.mark.gpu
+def test_greedy_round_reads_back_once_with_ragged_requests():
+    # Draft IDs stay on the device; every speculative round, including ragged and
+    # budget-shortened ones, synchronizes with the host exactly once.
+    torch.manual_seed(123)
+    m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
+        device="cuda", dtype=torch.bfloat16
+    )
+    e = engine(m, k=3, cache_config=CacheConfig(128, 16), attention_backend="triton")
+    for rid, prompt, n in [("a", [2, 3, 4], 9), ("b", [7, 8], 6), ("c", [9], 4)]:
+        e.add_request(rid, prompt, SamplingParams(max_tokens=n, ignore_eos=True))
+    rounds = 0
+    while e.has_unfinished_requests():
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            torch.cuda.set_sync_debug_mode("warn")
+            try:
+                e.step()
+            finally:
+                torch.cuda.set_sync_debug_mode("default")
+        if e.last_schedule.stage == Stage.SPECULATIVE:
+            rounds += 1
+            assert sum("synchroniz" in str(w.message) for w in caught) == 1
+    assert rounds > 1
 
 
 @pytest.mark.gpu
