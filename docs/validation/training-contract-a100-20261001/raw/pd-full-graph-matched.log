@@ -1,0 +1,11 @@
+2026-10-01 02:30:31 NIXL INFO    _api.py:407 Backend UCX was instantiated
+2026-10-01 02:30:31 NIXL INFO    _api.py:285 Initialized NIXL agent: cae75e7035744e8795024750bd65b22e-decode-1
+2026-10-01 02:30:31 NIXL INFO    _api.py:407 Backend UCX was instantiated
+2026-10-01 02:30:31 NIXL INFO    _api.py:285 Initialized NIXL agent: cae75e7035744e8795024750bd65b22e-prefill-0
+PARITY 1 2 raw {'local': 1.501969379838556, 'pd': 15.95300066191703} 0.0
+PARITY 1 2 processed {'local': 0.544591479934752, 'pd': 6.968707168009132} 0.0
+PARITY 2 3 raw {'local': 0.7185850627720356, 'pd': 14.518414614256471} 0.0
+PARITY 2 3 processed {'local': 0.66817781701684, 'pd': 7.080546109005809} 0.0
+PARITY 3 4 raw {'local': 0.849096744786948, 'pd': 14.640745197888464} 0.0
+PARITY 3 4 processed {'local': 0.7937315646559, 'pd': 7.206241376232356} 0.0
+PD_CONTRACT_PASSED pd-full-graph-matched.json

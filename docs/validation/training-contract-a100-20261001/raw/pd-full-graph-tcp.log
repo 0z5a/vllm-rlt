@@ -1,0 +1,16 @@
+2026-10-01 02:19:01 NIXL INFO    _api.py:407 Backend UCX was instantiated
+2026-10-01 02:19:01 NIXL INFO    _api.py:285 Initialized NIXL agent: 35f3775d875246919e95de82111ac017-prefill-0
+2026-10-01 02:19:01 NIXL INFO    _api.py:407 Backend UCX was instantiated
+2026-10-01 02:19:01 NIXL INFO    _api.py:285 Initialized NIXL agent: 35f3775d875246919e95de82111ac017-decode-1
+Traceback (most recent call last):
+  File "/workspace/0z5a/work/ouro-vime-contract-20261001/rlt/benchmarks/pd_training_contract.py", line 168, in <module>
+    main()
+  File "/workspace/0z5a/work/ouro-vime-contract-20261001/rlt/benchmarks/pd_training_contract.py", line 111, in main
+    torch.testing.assert_close(
+  File "/usr/local/lib/python3.12/dist-packages/torch/testing/_comparison.py", line 1631, in assert_close
+    raise error_metas[0].to_error(msg)
+AssertionError: Tensor-likes are not close!
+
+Mismatched elements: 6 / 6 (100.0%)
+Greatest absolute difference: 0.11199069023132324 at index (1,) (up to 2e-05 allowed)
+Greatest relative difference: 0.07553135603666306 at index (1,) (up to 2e-05 allowed)

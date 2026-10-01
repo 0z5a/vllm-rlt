@@ -1,0 +1,13 @@
+{
+  "torch": "2.13.0+cu130",
+  "triton": "3.7.1",
+  "nixl": "1.4.1",
+  "transformers": "5.17.0",
+  "numpy": "2.3.5",
+  "safetensors": "0.8.0",
+  "gpus": [
+    "NVIDIA A100-SXM4-40GB, 580.105.08, 40960 MiB",
+    "NVIDIA A100-SXM4-40GB, 580.105.08, 40960 MiB"
+  ],
+  "UCX_TLS": "tcp,cuda_copy"
+}
