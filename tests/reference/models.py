@@ -28,7 +28,7 @@ def dense_reference(model, token_ids, loops):
     future = torch.ones(length, length, dtype=torch.bool, device=hidden.device).triu(diagonal=1)
 
     def norm(value, name):
-        normalized = value.float() / torch.sqrt(
+        normalized = value.float() * torch.rsqrt(
             value.float().square().mean(dim=-1, keepdim=True) + config.rms_norm_eps
         )
         return normalized.to(value.dtype) * weights[name + ".weight"]
@@ -62,10 +62,14 @@ def dense_reference(model, token_ids, loops):
             groups = config.num_attention_heads // config.num_key_value_heads
             k = k.repeat_interleave(groups, dim=1)
             v = v.repeat_interleave(groups, dim=1)
-            scores = torch.einsum("thd,shd->hts", q, k) / config.head_dim**0.5
+            scores = torch.einsum("thd,shd->hts", q.float(), k.float()) / config.head_dim**0.5
             scores.masked_fill_(future, -torch.inf)
-            probabilities = scores.float().softmax(dim=-1).to(hidden.dtype)
-            attention = torch.einsum("hts,shd->thd", probabilities, v).reshape(length, -1)
+            probabilities = scores.softmax(dim=-1)
+            attention = (
+                torch.einsum("hts,shd->thd", probabilities, v.float())
+                .to(hidden.dtype)
+                .reshape(length, -1)
+            )
             attention = linear(attention, prefix + ".self_attn.o_proj")
             hidden = hidden + norm(attention, prefix + ".input_layernorm_2")
             mlp_input = norm(hidden, prefix + ".post_attention_layernorm")
@@ -101,7 +105,7 @@ def dense_nanbeige_reference(model, token_ids, loops):
     future = torch.ones(length, length, dtype=torch.bool, device=hidden.device).triu(diagonal=1)
 
     def norm(value, name):
-        normalized = value.float() / torch.sqrt(
+        normalized = value.float() * torch.rsqrt(
             value.float().square().mean(dim=-1, keepdim=True) + config.rms_norm_eps
         )
         return normalized.to(value.dtype) * weights[name + ".weight"]
@@ -135,10 +139,14 @@ def dense_nanbeige_reference(model, token_ids, loops):
             groups = config.num_attention_heads // config.num_key_value_heads
             k = k.repeat_interleave(groups, dim=1)
             v = v.repeat_interleave(groups, dim=1)
-            scores = torch.einsum("thd,shd->hts", q, k) / config.head_dim**0.5
+            scores = torch.einsum("thd,shd->hts", q.float(), k.float()) / config.head_dim**0.5
             scores.masked_fill_(future, -torch.inf)
-            probabilities = scores.float().softmax(dim=-1).to(hidden.dtype)
-            attention = torch.einsum("hts,shd->thd", probabilities, v).reshape(length, -1)
+            probabilities = scores.softmax(dim=-1)
+            attention = (
+                torch.einsum("hts,shd->thd", probabilities, v.float())
+                .to(hidden.dtype)
+                .reshape(length, -1)
+            )
             attention = linear(attention, prefix + ".self_attn.o_proj")
             hidden = hidden + attention
             mlp_input = norm(hidden, prefix + ".post_attention_layernorm")

@@ -20,7 +20,7 @@ def dense_huginn_reference(model, tokens, state):
 
     def norm(value, name):
         value32 = value.float()
-        value32 = value32 / torch.sqrt(value32.square().mean(-1, keepdim=True) + config.norm_eps)
+        value32 = value32 * torch.rsqrt(value32.square().mean(-1, keepdim=True) + config.norm_eps)
         return value32.to(value.dtype) * weights[name + ".weight"]
 
     def linear(value, name):
@@ -37,10 +37,10 @@ def dense_huginn_reference(model, tokens, state):
         shape = (length, config.n_heads, config.head_dim)
         bias = weights[name + ".attn.qk_bias"]
         q, k = rotate(q.reshape(shape) + bias[0]), rotate(k.reshape(shape) + bias[1])
-        scores = torch.einsum("thd,shd->hts", q, k) / math.sqrt(config.head_dim)
+        scores = torch.einsum("thd,shd->hts", q.float(), k.float()) / math.sqrt(config.head_dim)
         scores.masked_fill_(future, -torch.inf)
-        probabilities = scores.float().softmax(-1).to(v.dtype)
-        attended = torch.einsum("hts,shd->thd", probabilities, v.reshape(shape))
+        probabilities = scores.softmax(-1)
+        attended = torch.einsum("hts,shd->thd", probabilities, v.reshape(shape).float()).to(v.dtype)
         hidden = norm(
             linear(attended.reshape(length, -1), name + ".attn.proj") + hidden,
             name + ".norm_2",

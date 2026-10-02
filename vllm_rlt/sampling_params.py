@@ -9,6 +9,7 @@ class SamplingParams:
     top_p: float = 1.0
     top_k: int = -1
     seed: int | None = 0
+    latent_seed: int | None = None
     logprobs: int | None = None
     logprobs_mode: str = "raw"
     stop_token_ids: tuple[int, ...] = ()
@@ -42,6 +43,8 @@ class SamplingParams:
             raise ValueError("exit_threshold must be in [0, 1]")
         if self.seed is not None and (type(self.seed) is not int or not 0 <= self.seed < 2**63):
             raise ValueError("seed must be an integer in [0, 2**63)")
+        if self.latent_seed is not None and (type(self.latent_seed) is not int or not 0 <= self.latent_seed < 2**63):
+            raise ValueError("latent_seed must be an integer in [0, 2**63)")
         if self.logprobs is not None and (type(self.logprobs) is not int or self.logprobs != 0):
             raise ValueError("logprobs=0 returns the selected-token probability")
         if self.logprobs_mode not in ("raw", "processed"):

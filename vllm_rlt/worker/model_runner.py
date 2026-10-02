@@ -256,23 +256,55 @@ class ModelRunner:
                 ids = [i.request.request_id for i in active]
                 positions = [i.token_start + offset for i in active]
                 tokens = [i.request.prompt_token_ids[p] for i, p in zip(active, positions)]
-                hidden = self._prefill_tokens(ids, positions, tokens)
+                seeds = [i.request.sampling_params.latent_seed for i in active]
+                hidden = self._prefill_tokens(ids, positions, tokens, seeds)
                 for row, item in enumerate(active):
                     self._save(item.request, hidden[row])
             return
-        ids, positions, tokens = [], [], []
+        ids, positions, tokens, seeds = [], [], [], []
         for item in batch.items:
             start, count, request = item.token_start, item.token_count, item.request
             ids.extend([request.request_id] * count)
             positions.extend(range(start, start + count))
             tokens.extend(request.prompt_token_ids[start : start + count])
-        hidden = self._prefill_tokens(ids, positions, tokens)
+            seeds.extend([request.sampling_params.latent_seed] * count)
+        hidden = self._prefill_tokens(ids, positions, tokens, seeds)
         offset = 0
         for item in batch.items:
             offset += item.token_count
             self._save(item.request, hidden[offset - 1])
 
-    def _prefill_tokens(self, ids, positions, tokens):
+    def _boundary_prelude(self, tokens, boundary, positions, seeds):
+        if seeds is None or all(seed is None for seed in seeds):
+            return self.model.prelude_prepared(tokens, boundary, self.cache_manager)
+        from vllm_rlt.models.huginn_latents import replay_huginn_latents
+
+        # Unseeded requests retain the legacy prior when mixed with replayable ones.
+        parameter = next(self.model.parameters())
+        seeded = [seed for seed in seeds if seed is not None]
+        if len(seeded) == len(seeds):
+            state = replay_huginn_latents(
+                self.model.config.n_embd, seeded, positions, dtype=parameter.dtype, device=self.device,
+            )
+            return self.model.prelude_prepared(tokens, boundary, self.cache_manager, initial_state=state)
+        states = []
+        for seed, position in zip(seeds, positions, strict=True):
+            if seed is None:
+                state = torch.empty(1, self.model.config.n_embd, device=self.device, dtype=parameter.dtype)
+                torch.nn.init.trunc_normal_(
+                    state, std=self.model.config.initializer_range,
+                    a=-3 * self.model.config.initializer_range, b=3 * self.model.config.initializer_range,
+                )
+                states.append(state * math.sqrt(self.model.config.n_embd))
+            else:
+                states.append(replay_huginn_latents(
+                    self.model.config.n_embd, [seed], [position], dtype=parameter.dtype, device=self.device,
+                ))
+        return self.model.prelude_prepared(
+            tokens, boundary, self.cache_manager, initial_state=torch.cat(states),
+        )
+
+    def _prefill_tokens(self, ids, positions, tokens, seeds=None):
         cache = self.cache_manager
         if cache.layout == "last_exited" and getattr(cache.attention, "generation", None) == 4:
             # Prefill has genuinely ragged query sequences. Do not pad token rows
@@ -292,7 +324,7 @@ class ModelRunner:
             )
             if getattr(self.model, "requires_boundary_kv", False):
                 boundary = cache._prepare_batch(ids, [0] * len(ids), positions, packed_prefill=True)
-                hidden = self.model.prelude_prepared(tensor, boundary, cache)
+                hidden = self._boundary_prelude(tensor, boundary, positions, seeds)
             else:
                 hidden = self.model.prelude(tensor)
             for depth in range(self.model.config.total_ut_steps):
@@ -321,7 +353,7 @@ class ModelRunner:
         boundary = None
         if getattr(self.model, "requires_boundary_kv", False):
             boundary = cache._prepare_batch(ids, [0] * len(ids), positions)
-            hidden = self.model.prelude_prepared(tensor[: len(ids)], boundary, cache)
+            hidden = self._boundary_prelude(tensor[: len(ids)], boundary, positions, seeds)
         else:
             hidden = self.model.prelude(tensor)
         for depth in range(self.model.config.total_ut_steps):
@@ -401,8 +433,9 @@ class ModelRunner:
                     [0] * len(requests),
                     [r.position for r in requests],
                 )
-                hidden = self.model.prelude_prepared(
-                    tokens[: len(requests)], boundary, self.cache_manager
+                hidden = self._boundary_prelude(
+                    tokens[: len(requests)], boundary, [r.position for r in requests],
+                    [r.sampling_params.latent_seed for r in requests],
                 )
             else:
                 hidden = self.model.prelude(tokens)

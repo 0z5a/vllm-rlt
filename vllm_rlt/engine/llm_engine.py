@@ -156,6 +156,11 @@ class LLMEngine:
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
         params = sampling_params or SamplingParams()
+        if params.latent_seed is not None:
+            from vllm_rlt.models.huginn import HuginnForCausalLM
+
+            if not isinstance(self.model, HuginnForCausalLM):
+                raise ValueError("latent_seed requires a Huginn model")
         config = self.model.config
         if not prompt_token_ids:
             raise ValueError("prompt must contain at least one token")

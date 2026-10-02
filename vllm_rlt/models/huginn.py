@@ -244,19 +244,26 @@ class HuginnForCausalLM(nn.Module):
     def _freqs(self, batch):
         return self.freqs_cis[0].index_select(0, batch.position_ids)
 
-    def prelude_prepared(self, tokens, batch: "_PreparedKVBatch", cache: "KVCacheManager"):
+    def prelude_prepared(
+        self, tokens, batch: "_PreparedKVBatch", cache: "KVCacheManager", *, initial_state: torch.Tensor | None = None
+    ):
         hidden = self.transformer.wte(tokens) * math.sqrt(self.config.n_embd)
         freqs = self._freqs(batch)
         for block in self.transformer.prelude:
             hidden = block(hidden, freqs, batch, cache)
-        state = torch.randn_like(hidden)
-        torch.nn.init.trunc_normal_(
-            state,
-            std=self.config.initializer_range,
-            a=-3 * self.config.initializer_range,
-            b=3 * self.config.initializer_range,
-        )
-        state = state * math.sqrt(self.config.n_embd)
+        if initial_state is None:
+            state = torch.randn_like(hidden)
+            torch.nn.init.trunc_normal_(
+                state,
+                std=self.config.initializer_range,
+                a=-3 * self.config.initializer_range,
+                b=3 * self.config.initializer_range,
+            )
+            state = state * math.sqrt(self.config.n_embd)
+        else:
+            if initial_state.shape != hidden.shape or initial_state.dtype != hidden.dtype:
+                raise ValueError("Initial state must match the prelude shape and dtype")
+            state = initial_state
         return torch.cat((state, hidden), dim=-1)
 
     def recurrent_prepared(self, hidden, batch, cache, *, compute_gate=True):
