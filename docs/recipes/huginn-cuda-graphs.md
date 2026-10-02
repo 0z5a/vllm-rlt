@@ -89,13 +89,14 @@ files were documentation and tests. Those additions are excluded from this PR.
 
 The publication implementation is
 `d3329305bef0b7bee9eb819b2e054e63da85c88d`, based on actual upstream
-`ecb1f8b505b7e831815b40aec3b4598619cca23a`. Full publication pre-commit
-checks passed (425 CPU tests passed, 144 skipped), including Ruff lint and
-format checks. The Huginn adapter and benchmark are unchanged from the GPU
-campaign. Upstream's new shared KV metadata path requires a separate GPU
-recheck; validation on A100 and Thor is pending checkpoint preparation and
-shared-GPU admission. The
-performance numbers below belong to the completed campaign, not that recheck.
+`ecb1f8b505b7e831815b40aec3b4598619cca23a`. Source
+`4cfddab37e1f80c3410c1b5ada24073973a003de` also declares the repository's
+test package, preventing an installed `tests` package from shadowing fixtures.
+Its full pre-commit checks passed (425 CPU tests passed, 144 skipped), including
+Ruff lint and format checks. The Huginn adapter and benchmark are unchanged
+from the original GPU campaign. The separate A100 recheck below passed with
+upstream's newer shared KV metadata path. Thor GPU admission remains pending;
+the A800 numbers below belong to the original campaign.
 
 | Validation | Completed result |
 | --- | --- |
@@ -143,6 +144,76 @@ Ratios are eager time / Graph time. A ratio below 1 means Graph is slower.
 Raw result JSON SHA256: `c69ba1361192f44c80731b252a947f406340918a73b781c3abb891785db4a0ba`.
 Original logs, configs, checkpoint hashes and result JSON were retained in a
 verified archive before the completed campaign's task weights were removed.
+
+## A100 final-source recheck (2026-10-02)
+
+The recheck used source `4cfddab37e1f80c3410c1b5ada24073973a003de`,
+implementation `d3329305bef0b7bee9eb819b2e054e63da85c88d`, and actual upstream
+parent `ecb1f8b505b7e831815b40aec3b4598619cca23a`. The model pin, settings,
+five warmups per arm, and five alternating pairs per case match the recipe above.
+
+| Validation | Result |
+| --- | --- |
+| Full pre-commit | Ruff lint/format PASS; 425 CPU tests passed, 144 skipped |
+| Official tiny FP32 reference, 1/3/32 loops | Exact argmax; max absolute logit error 7.152557e-6; CUDA uninitialized |
+| Official real FP32 checkpoint, 32 loops, 3+2-token chunks | Exact five-token argmax; max absolute logit error 6.198883e-6; CUDA uninitialized |
+| BF16 GPU regressions | Three passed: state/logit/KV parity, heterogeneous requests/reuse, bounded-capture fallback |
+| Upstream speculative fixture | One passed |
+| Real BF16 checkpoint, 2 positions × 32 depths | State, logits and all four core-layer KV tensors bit-exact; 1 capture, 64 replays, 0 fallback; KV reclaimed |
+| All generation warmups and measured pairs | Exact token IDs and 32-loop depths; all KV reclaimed; no measured capture/fallback |
+
+Hardware: NVIDIA A100-SXM4-40GB, SM80, driver 595.71.05. Runtime:
+Python 3.12.3, Torch `2.13.0+cu130`, Triton `3.7.1`, Transformers `4.54.1`,
+safetensors `0.6.2`. Torch/CUDA/Triton were inherited read-only; other
+dependencies were task-local. This Torch version and the upstream KV metadata
+differ from the original A800 campaign, so the two campaigns do not isolate
+the effect of hardware.
+
+Model load (7.842400 s), capture and warmup were excluded. Peak allocated CUDA
+memory was 12,704,182,784 bytes (11.832 GiB).
+
+The whole-queue lock was held, with both GPUs reporting zero compute/memory at
+admission. The preceding CPU CI finished before admission. A later read-only
+NVML observer recorded 2,796 MiB of GPU1 compute outside the visible container
+namespace during the later/B4 timing window; Huginn ran on GPU0. All 18 samples
+from 16:53:57 through 16:54:32 UTC show that GPU1 occupancy. B1 had completed
+before the observer began, so its timing window has no continuous NVML coverage.
+These are observed paired timings on a shared host; physical two-GPU pool
+isolation is not established. Correctness assertions passed independently of
+this timing limitation. No other process was stopped.
+
+| Requests | Eager mean (s) | Graph mean (s) | Mean time ratio | Eager median (s) | Graph median (s) | Median time ratio | Median pair ratio |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 3.799333 | 2.022894 | 1.8782× | 3.805527 | 2.022825 | 1.8813× | 1.8814× |
+| 4 | 4.593691 | 2.849109 | 1.6123× | 4.593514 | 2.854773 | 1.6091× | 1.6110× |
+
+Ratios are eager time / Graph time. A ratio below 1 means Graph is slower.
+
+| Requests | Pair | Order | Eager (s) | Graph (s) | Ratio | Graph replays |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | 1 | eager → graph | 3.786784 | 2.024100 | 1.8708× | 480 |
+| 1 | 2 | graph → eager | 3.781354 | 2.022825 | 1.8693× | 480 |
+| 1 | 3 | eager → graph | 3.805527 | 2.022075 | 1.8820× | 480 |
+| 1 | 4 | graph → eager | 3.808277 | 2.024190 | 1.8814× | 480 |
+| 1 | 5 | eager → graph | 3.814721 | 2.021281 | 1.8873× | 480 |
+| 4 | 1 | eager → graph | 4.600710 | 2.836094 | 1.6222× | 482 |
+| 4 | 2 | graph → eager | 4.573389 | 2.832792 | 1.6144× | 482 |
+| 4 | 3 | eager → graph | 4.607586 | 2.860049 | 1.6110× | 482 |
+| 4 | 4 | graph → eager | 4.593258 | 2.861840 | 1.6050× | 482 |
+| 4 | 5 | eager → graph | 4.593514 | 2.854773 | 1.6091× | 482 |
+
+| Requests | Total captures including warmup | Total replays including warmup | Total fallbacks |
+| ---: | ---: | ---: | ---: |
+| 1 | 1 | 4800 | 0 |
+| 4 | 3 | 4820 | 0 |
+
+Raw result JSON SHA256: `27ad9db09d7f028e72e4e98af3daf9fde8aa159febd952119c167480666ccd5d`.
+The report, original failure logs, final source manifest, model hashes, CPU/GPU
+logs and timing observations were backed up with 198 individually verified files.
+Archive SHA256: `0f3641daa6554fbd1cfd3b43223b19efdae7a9bd61c2fc0c6a486aa60bad707b`.
+The finite queue exited naturally and its whole-queue lock was released.
+Thor has the same source prepared; its healthy existing workload retains GPU
+priority, and no Thor Huginn GPU result is claimed.
 
 ## Measurement scope
 
