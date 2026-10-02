@@ -290,9 +290,7 @@ class ModelRunner:
                 else torch.tensor(tokens, device=self.device, dtype=torch.long)
             )
             if getattr(self.model, "requires_boundary_kv", False):
-                boundary = cache._prepare_batch(
-                    ids, [0] * len(ids), positions, packed_prefill=True
-                )
+                boundary = cache._prepare_batch(ids, [0] * len(ids), positions, packed_prefill=True)
                 hidden = self.model.prelude_prepared(tensor, boundary, cache)
             else:
                 hidden = self.model.prelude(tensor)
