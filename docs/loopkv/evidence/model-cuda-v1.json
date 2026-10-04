@@ -1,0 +1,185 @@
+{
+  "plan_sha256": "6f1bebd65efa1629cf9d69ad1c74eb7453cc2cfd9a89e62c536911e8a6504647",
+  "gpu_uuid": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+  "scope": "tiny_cuda_correctness_not_official_model_or_performance",
+  "run": {
+    "source_sha": "5d49b2a8bec75a9866097183dce6002202864df0",
+    "returncode": 0,
+    "raw_sha256": "6db5494e42a0dbd23f011304afd22567299903060363bf8a87d0dc6f9ba60975",
+    "result": {
+      "scope": "tiny_model_correctness_not_official_or_performance",
+      "device": "cuda",
+      "torch": "2.12.1+cu130",
+      "cases": [
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 1,
+          "batch": 1,
+          "requests": 2,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 1,
+          "batch": 4,
+          "requests": 8,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 1,
+          "batch": 16,
+          "requests": 32,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 1,
+          "batch": 32,
+          "requests": 64,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 1,
+          "batch": 64,
+          "requests": 128,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 1,
+          "batch": 128,
+          "requests": 256,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 2,
+          "batch": 1,
+          "requests": 2,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 2,
+          "batch": 4,
+          "requests": 8,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 2,
+          "batch": 16,
+          "requests": 32,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 2,
+          "batch": 32,
+          "requests": 64,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 2,
+          "batch": 64,
+          "requests": 128,
+          "exact_four_modes": true
+        },
+        {
+          "model": "NanbeigeForCausalLM",
+          "loops": 2,
+          "batch": 128,
+          "requests": 256,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 1,
+          "batch": 1,
+          "requests": 2,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 1,
+          "batch": 4,
+          "requests": 8,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 1,
+          "batch": 16,
+          "requests": 32,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 1,
+          "batch": 32,
+          "requests": 64,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 1,
+          "batch": 64,
+          "requests": 128,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 1,
+          "batch": 128,
+          "requests": 256,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 3,
+          "batch": 1,
+          "requests": 2,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 3,
+          "batch": 4,
+          "requests": 8,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 3,
+          "batch": 16,
+          "requests": 32,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 3,
+          "batch": 32,
+          "requests": 64,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 3,
+          "batch": 64,
+          "requests": 128,
+          "exact_four_modes": true
+        },
+        {
+          "model": "HuginnForCausalLM",
+          "loops": 3,
+          "batch": 128,
+          "requests": 256,
+          "exact_four_modes": true
+        }
+      ]
+    }
+  }
+}
