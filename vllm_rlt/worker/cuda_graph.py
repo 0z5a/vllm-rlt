@@ -6,6 +6,8 @@ from types import SimpleNamespace
 
 import torch
 
+from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
+
 
 def _capture(hidden, stream, pool, run):
     """Warm and capture one stable-input graph on its own stream."""
@@ -33,6 +35,20 @@ class _DeviceCache:
 
     def _attend_prepared(self, layer, batch, q):
         cache = self.cache
+        if isinstance(cache, AliasKVCacheManager):
+            from vllm_rlt.kernels.triton_attention import paged_attention
+
+            return paged_attention(
+                q,
+                cache.key_cache[:, layer],
+                cache.value_cache[:, layer],
+                batch.block_tables,
+                batch.context_lengths,
+                source_depths=cache.source_depths,
+                depth_block_tables=batch.depth_block_tables,
+                query_depths=batch.query_depths,
+                alias_starts=batch.alias_starts,
+            )
         if batch.cu_seqlens_q is not None:
             return cache.attention.prefill(
                 q,
@@ -87,12 +103,15 @@ class RecurrentGraphs:
                 hidden, batch, self.cache, compute_gate=self.compute_gate
             )
         cache = self.cache
+        alias = isinstance(cache, AliasKVCacheManager)
         cache._require_live_batch(batch)
         # A speculative verification batch may write consecutive positions at
         # one depth. Its first position needs committed history; later rows are
         # written together before attention reads them.
         frontier = {}
         for allocation, depth, pos in batch.rows:
+            if alias and pos in cache._exits[id(allocation)]:
+                raise ValueError("cannot overwrite a finalized alias source")
             row_key = (id(allocation), depth)
             previous = frontier.get(row_key)
             if previous is None:
@@ -127,6 +146,17 @@ class RecurrentGraphs:
                         else None
                     ),
                     max_seqlen_q=batch.max_seqlen_q,
+                    depth_block_tables=torch.empty(
+                        (tables, cache.max_loops, width), device=cache.device, dtype=torch.int32
+                    )
+                    if alias
+                    else None,
+                    query_depths=torch.empty(count, device=cache.device, dtype=torch.int32)
+                    if alias
+                    else None,
+                    alias_starts=torch.zeros(count, device=cache.device, dtype=torch.int32)
+                    if alias
+                    else None,
                 ),
             )
         entry.hidden.copy_(hidden[:count])
@@ -138,6 +168,9 @@ class RecurrentGraphs:
             entry.metadata.cu_seqlens_q.copy_(batch.cu_seqlens_q)
         width = batch.block_tables.shape[1]
         entry.metadata.block_tables[:, :width].copy_(batch.block_tables)
+        if alias:
+            entry.metadata.depth_block_tables[:, :, :width].copy_(batch.depth_block_tables[:count])
+            entry.metadata.query_depths.copy_(batch.query_depths[:count])
         if key not in self.entries:
             proxy = _DeviceCache(cache)
             entry.graph, entry.output = _capture(
@@ -158,6 +191,8 @@ class RecurrentGraphs:
         for allocation, depth, pos in batch.rows:
             for layer in cache.recurrent_layers:
                 allocation.written[cache._plane(depth)][layer].add(pos)
+                if alias:
+                    cache._readable[id(allocation)][depth][layer].add(pos)
         self.replays += 1
         return output
 

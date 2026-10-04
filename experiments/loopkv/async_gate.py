@@ -104,12 +104,12 @@ def main():
     for batch in (1, 4, 16, 32, 64, 128):
         for use_uva in (False, True):
             baseline = None
-            for mode in ("sync", "native_async", "alias_async", "native_graph"):
+            for mode in ("sync", "native_async", "alias_async", "native_graph", "alias_graph"):
                 engine = LLMEngine(
                     model,
                     attention_backend="triton",
                     cache_config=CacheConfig(
-                        batch * 32, 2, alias_last_exited=mode == "alias_async"
+                        batch * 32, 2, alias_last_exited=mode in ("alias_async", "alias_graph")
                     ),
                     scheduler_config=SchedulerConfig(
                         max_num_seqs=batch, max_num_batched_tokens=max(4, batch)
@@ -119,9 +119,9 @@ def main():
                     ),
                     execution_config=ExecutionConfig(
                         async_scheduling=mode != "sync",
-                        cuda_graphs=mode == "native_graph",
-                        static_buffers=mode == "native_graph",
-                        pad_to_power_of_two=mode == "native_graph",
+                        cuda_graphs=mode in ("native_graph", "alias_graph"),
+                        static_buffers=mode in ("native_graph", "alias_graph"),
+                        pad_to_power_of_two=mode in ("native_graph", "alias_graph"),
                     ),
                 )
                 if engine.model_runner.async_state is not None:
@@ -177,6 +177,14 @@ def main():
                     "mode": mode,
                     "exact_two_rounds": True,
                 }
+                graphs = engine.model_runner.graphs
+                if graphs is not None:
+                    assert graphs.captures > 0 and graphs.replays > graphs.captures
+                    row["graphs"] = {
+                        "captures": graphs.captures,
+                        "replays": graphs.replays,
+                        "fallbacks": graphs.fallbacks,
+                    }
                 cases.append(row)
                 print(json.dumps(row), flush=True)
                 engine.close()
