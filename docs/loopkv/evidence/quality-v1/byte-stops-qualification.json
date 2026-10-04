@@ -1,0 +1,9 @@
+{
+  "scope": "ascii_text_stop_decode_qualification",
+  "single_token_checks": 49152,
+  "random_sequence_checks": 500,
+  "tokenizer_library": "tokenizers 0.21.4",
+  "tokenizer_sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d",
+  "stop_spec_sha256": "ed2c1427ef32c43de79cf1d063405476b0bc0ddb75c3b6a5a78dcc5865524cc5",
+  "qualified_at_unix": 1791144763.648604
+}
