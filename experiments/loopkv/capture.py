@@ -72,6 +72,7 @@ def main():
     parser.add_argument("--policy", choices=("ouro", "ouro_delayed"), default="ouro")
     parser.add_argument("--alias", action="store_true")
     parser.add_argument("--compact", action="store_true")
+    parser.add_argument("--reclaim-skipped-credits", action="store_true")
     parser.add_argument("--checkpoint-reader", choices=("native", "torch"), default="native")
     parser.add_argument("--async-scheduling", action="store_true")
     parser.add_argument("--graphs", action="store_true")
@@ -93,7 +94,11 @@ def main():
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
     cache_config = CacheConfig(
-        args.num_blocks, 16, alias_last_exited=args.alias, compact_last_exited=args.compact
+        args.num_blocks,
+        16,
+        alias_last_exited=args.alias,
+        compact_last_exited=args.compact,
+        reclaim_skipped_credits=args.reclaim_skipped_credits,
     )
     scheduler = SchedulerConfig(
         max_num_seqs=args.batch, max_num_batched_tokens=max(128, args.batch)
@@ -257,7 +262,9 @@ def main():
             "peak_unique_payload_bytes": cache.peak_live_records * shape.record_bytes,
             "peak_persistent_metadata_bytes": cache.peak_metadata_bytes,
             "live_records_after_drain": cache.live_records,
-            "admission": "full_worst_future_credits",
+            "admission": "reclaimed_past_skips_full_worst_future"
+            if args.reclaim_skipped_credits
+            else "full_worst_future_credits",
             "payload_fragmentation_bytes": 0,
         }
     dump(args.out / "run_summary.json", summary)
