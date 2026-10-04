@@ -6,7 +6,8 @@ residuals, KV, embedding, head, and exit gate stay at their baseline precision.
 
 This draft implements the first numerical and measurement building blocks:
 
-- Signed INT4 encoding and reconstruction, including partial groups.
+- Signed INT4 encoding and reconstruction, including partial groups; static-group
+  GPTQ error compensation with explicit per-loop Hessian row/energy accounting.
 - E4M3 FP8 encoding, a deterministic differentiable scale-only reference, and
   absolute loop-stage selection for reordered rows.
 - An Ouro adapter with explicit loop boundaries, differentiable full recurrence,
@@ -28,10 +29,10 @@ training adapter does not use the inference cache's no-gradient writes.
 
 ## Validation recorded on 2026-10-05
 
-The core CPU regression run passed 354 tests, skipped 3, and deselected 113 GPU
-cases. This run excludes serving and two GSM8K modules: full collection is still
-stalled in a macOS dependency load, with its process retained. A separate added
-BF16 eager-reference check passed exactly.
+The final full CPU regression run passed 454 tests, skipped 29, and deselected
+113 GPU cases. Earlier dependency-loading stalls resolved naturally without
+terminating either process. Ruff lint and formatting checks pass; the
+`pre-commit` wrapper itself is absent and was not installed.
 
 CPU checks cover encoding boundaries, tail groups, stable shared storage,
 scale gradients, padding, loop ordering, document isolation, token alignment,
@@ -67,7 +68,7 @@ See the [raw evidence and comparison table](experiments/loopquant-20261005/RESUL
 | Nanbeige4.2-3B | — | — | — | Not run |
 
 No official-model quantization quality, high-concurrency performance, or speedup
-is claimed. FP8 fusion, per-row mixed-depth execution, GPTQ, official-model QAT,
+is claimed. FP8 fusion, per-row mixed-depth execution, official-model GPTQ/QAT,
 GPU export qualification, and the remaining model adapters are subsequent work.
 
 ## Reproduction interfaces

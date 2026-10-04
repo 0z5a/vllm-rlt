@@ -41,13 +41,24 @@ BF16 baseline ranges and incremental KV correctness remain before PTQ searches.
 
 ## CPU checks
 
-[Core regression](core-cpu-attempt1.log): 354 passed, 3 skipped, 113 deselected;
-[JUnit](core-cpu-attempt1.xml). Serving and GSM8K modules were excluded because
-full collection is stalled in the existing macOS environment. No full-suite pass
-is claimed. [Quantization tests](loopquant-cpu-attempt2.log): 35 passed, 1 GPU test
-deselected, including exact Q0 checkpoint resumption. An additional
-[BF16 eager oracle check](bf16-adapter-cpu.log) passed exactly. The quantization
-tests are included in the core count; these counts must not be summed.
+[Final full regression](full-cpu-final.log): **454 passed, 29 skipped, 113 GPU
+cases deselected**; [JUnit](full-cpu-final.xml). Earlier full collection stalled
+inside an existing macOS dependency load; both processes subsequently completed
+naturally. The final run includes serving, GSM8K collection, and the latest
+quantization changes. Skipped optional/dependency/GPU paths are not claimed as
+passes. The earlier [core-only run](core-cpu-attempt1.log) is retained but does
+not need to be added to the final count.
+
+Checks include exact optimizer/RNG/data-position resumption, unchanged frozen
+weights, and [BF16 eager oracle equality](bf16-adapter-cpu.log).
+[GPTQ checks](gptq-cpu-attempt1.log) verify agreement with RTN for a diagonal
+Hessian, consistent blocked/sequential compensation, and masked row/energy
+accounting across loops. This signed static-group variant follows the
+[GPTQ algorithm](https://arxiv.org/abs/2210.17323); no model-level quality or
+native W4A16 performance has been measured.
+
+Ruff lint and formatting pass. The [pre-commit attempt](pre-commit-attempt1.log)
+reports that its wrapper is absent; no package was installed or upgraded.
 
 Formal results require exported-model noninferiority and independent paired
 E2E trials across C1/8/32/64, multiple batch limits, long/decode/mixed/open

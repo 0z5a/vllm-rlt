@@ -377,6 +377,40 @@ def test_q0_two_updates_and_exact_optimizer_resumption(tmp_path):
         resumed.step(batches[:1])
 
 
+def test_gptq_diagonal_matches_rtn_and_blocked_compensation():
+    from loopquant.gptq import gptq_int4
+
+    torch.manual_seed(17)
+    weight = torch.randn(5, 13)
+    diagonal = torch.diag(torch.rand(13) + 1)
+    packed, scales = gptq_int4(weight, diagonal, group_size=8, block_size=3)
+    expected, expected_scales = int4_pack(weight, group_size=8)
+    torch.testing.assert_close(packed, expected, atol=0, rtol=0)
+    torch.testing.assert_close(scales, expected_scales, atol=0, rtol=0)
+    values = torch.randn(100, 13)
+    values[:, 1] = values[:, 0] * 0.99 + values[:, 1] * 0.01
+    hessian = values.T @ values / 50
+    one, scales_one = gptq_int4(weight, hessian, group_size=8, block_size=1)
+    blocked, scales_blocked = gptq_int4(weight, hessian, group_size=8, block_size=4)
+    torch.testing.assert_close(one, blocked, atol=0, rtol=0)
+    torch.testing.assert_close(scales_one, scales_blocked, atol=0, rtol=0)
+    error = ((weight - int4_unpack(one, scales_one, 13)) @ values.T).square().sum()
+    rtn_error = ((weight - int4_unpack(expected, expected_scales, 13)) @ values.T).square().sum()
+    assert error < rtn_error
+
+
+def test_hessian_counts_all_loops_and_excludes_padding():
+    from loopquant.gptq import HessianStats
+
+    stats = HessianStats.create(2, torch.device("cpu"))
+    values = torch.tensor([[[1.0, 2.0], [1000.0, 1000.0]]])
+    stats.add(values, torch.tensor([[True, False]]), 0)
+    stats.add(values * 2, torch.tensor([[True, False]]), 3)
+    expected = torch.tensor([[1.0, 2.0], [2.0, 4.0]]) * 5
+    torch.testing.assert_close(stats.matrix(), expected, atol=0, rtol=0)
+    assert stats.loop_rows == {0: 1, 3: 1} and stats.loop_energy == {0: 5, 3: 20}
+
+
 @pytest.mark.gpu
 def test_native_fp8_matches_same_quantized_model_and_graph():
     from loopquant.backends import NativeFP8Linear
