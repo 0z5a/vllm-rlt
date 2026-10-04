@@ -1,0 +1,1058 @@
+{
+  "native": {
+    "score": {
+      "scope": "new_native_storage_quality_comparison_not_historical_hf_reproduction",
+      "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+      "requests_sha256": "48bc270ae840e70c16372eb1b252201924398b336ab36a1e6c0974bfe96c24cc",
+      "correct": 64,
+      "count": 100,
+      "strict_match": 0.64,
+      "missing_answer": 24,
+      "length_limited": 1,
+      "text_stopped": 99
+    },
+    "summary": {
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "seconds": 92.56847908720374,
+      "tokens_per_second": 123.94067735726661,
+      "completed_requests": 100,
+      "output_tokens": 11473,
+      "decode_exit_histogram": {
+        "4": 910,
+        "3": 9972,
+        "2": 491
+      },
+      "cached_decode_positions": 11373,
+      "executed_decode_loops": 34538,
+      "recurrent_batch_histogram": {
+        "2": 38,
+        "3": 68,
+        "5": 2,
+        "6": 39,
+        "8": 45,
+        "9": 6,
+        "10": 83,
+        "14": 21,
+        "16": 1689,
+        "15": 167,
+        "13": 5,
+        "12": 28,
+        "11": 22,
+        "7": 29,
+        "4": 12,
+        "1": 2053
+      },
+      "promotion_payload_bytes_from_trace": 2153644032,
+      "kv_arena_reserved_bytes": 17918066688,
+      "runtime_peak_allocated_bytes": 20828022784,
+      "runtime_peak_reserved_bytes": 21030240256,
+      "free_blocks_after_drain": 5696,
+      "geometry": {
+        "layers": 24,
+        "kv_heads": 16,
+        "head_dim": 128,
+        "loops": 4,
+        "element_bytes": 2,
+        "page_tokens": 16
+      },
+      "finalization_exposed_ms": null
+    },
+    "manifest": {
+      "checkpoint": {
+        "repo": "ByteDance/Ouro-1.4B",
+        "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+        "download_endpoint": "https://hf-mirror.com",
+        "files": [
+          {
+            "path": "config.json",
+            "bytes": 1472,
+            "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+          },
+          {
+            "path": "merges.txt",
+            "bytes": 466391,
+            "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+          },
+          {
+            "path": "model.safetensors",
+            "bytes": 2869336434,
+            "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "bytes": 825,
+            "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+          },
+          {
+            "path": "tokenizer.json",
+            "bytes": 3522644,
+            "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "bytes": 4211,
+            "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+          },
+          {
+            "path": "vocab.json",
+            "bytes": 800656,
+            "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+          }
+        ]
+      },
+      "checkpoint_reader": "torch",
+      "git_sha": "32e9c0211c831f26105e53bcd7a008943cec5fee",
+      "tracked_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "harness_sha256": "79eac4d19b829ae0122210361223c4425ec974ca75cb23a69fcdecbff3cc3bfd",
+      "prompts_sha256": "6a3be64d3797b9892d95bd4ffd422f76a41e9a08fc7fdbb93ee2bbd51bc3ce2c",
+      "python": "/root/miniconda3/bin/python",
+      "pid": 7515,
+      "packages": {
+        "torch": "2.12.1+cu130",
+        "triton": "3.7.1"
+      },
+      "modules": {
+        "vllm_rlt.engine.llm_engine": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/engine/llm_engine.py",
+          "sha256": "91fc8b4c436064a0ea1b4adfaf8adf4c36e12285df3c0ca8ebce0e09cef45d2d"
+        },
+        "vllm_rlt.core.alias_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/alias_kv_cache.py",
+          "sha256": "411cb4141a0566f8c913e270ec85c94703c74fb8f643ee57aaf8ab7d32f8277e"
+        },
+        "vllm_rlt.core.compact_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/compact_kv_cache.py",
+          "sha256": "f49b30a221b27066788267e95b27b09726a44adc1eaa59a8272ec5040cd75c15"
+        },
+        "vllm_rlt.core.kv_cache_manager": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/kv_cache_manager.py",
+          "sha256": "ae7478e86cb1d79d8779bfb028f6df4b50537a87a79eba065bfde315abbeb79d"
+        },
+        "vllm_rlt.kernels.triton_attention": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/kernels/triton_attention.py",
+          "sha256": "8eac28ff7746fb3483f1f7789db5b960f71b127cbf01989e317fe6552bb54a37"
+        },
+        "vllm_rlt.models.ouro": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/models/ouro.py",
+          "sha256": "89d9af962e39e940f81f1193016c09090090dbff3f157068b18514b96eb1e0bd"
+        },
+        "experiments.loopkv.checkpoint": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/experiments/loopkv/checkpoint.py",
+          "sha256": "418f465d633c200f89c1ddd2873f584c73b8f568319e875ab989007b4e5146c0"
+        },
+        "experiments.loopkv.text_stops": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/experiments/loopkv/text_stops.py",
+          "sha256": "18b52280e91d4c8d3d82d68e849bc74f873d62472c17851ca55be4cb6b81b4fe"
+        }
+      },
+      "environment": {
+        "CUDA_VISIBLE_DEVICES": "1",
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4",
+        "TRITON_CACHE_DIR": null,
+        "CUDA_CACHE_PATH": null,
+        "PYTHONPATH": null
+      },
+      "cache": {
+        "num_blocks": 5696,
+        "block_size": 16,
+        "layout": "last_exited",
+        "gpu_memory_utilization": 0.9,
+        "kv_cache_memory_bytes": null,
+        "memory_reserve_bytes": 268435456,
+        "enable_prefix_caching": false,
+        "incremental_allocation": false,
+        "watermark_ratio": 0.0,
+        "alias_last_exited": false,
+        "compact_last_exited": false
+      },
+      "scheduler": {
+        "max_num_seqs": 16,
+        "max_num_batched_tokens": 128,
+        "mode": "refill",
+        "min_coda_batch_size": 1,
+        "admission_scan_limit": 64,
+        "max_admission_bypasses": 8,
+        "prefill_chunk_size": 128,
+        "max_prefill_batches_before_decode": 1,
+        "policy": "fcfs",
+        "enable_preemption": false
+      },
+      "execution": {
+        "async_scheduling": false,
+        "multi_stream": true,
+        "static_buffers": false,
+        "pad_to_power_of_two": false,
+        "cuda_graphs": false,
+        "cuda_graph_max_batch_size": 128,
+        "cuda_graph_max_graphs": 16,
+        "cuda_graph_memory_reserve_bytes": 1073741824,
+        "prefill_uva": false
+      },
+      "policy": "ouro",
+      "sampling": {
+        "max_tokens": 1024,
+        "exit_threshold": 0.5,
+        "min_loops": 2,
+        "max_loops": null,
+        "seed": 17,
+        "ignore_eos": false
+      },
+      "quality_stops_sha256": "ed2c1427ef32c43de79cf1d063405476b0bc0ddb75c3b6a5a78dcc5865524cc5",
+      "request_count": 100,
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "warmup_rounds": 0,
+      "profile_range": false,
+      "measurement_boundary": "all submissions through full drain, after warmup",
+      "gpu": "index, uuid, name, memory.total [MiB], driver_version\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n"
+    }
+  },
+  "hybrid_alias": {
+    "score": {
+      "scope": "new_native_storage_quality_comparison_not_historical_hf_reproduction",
+      "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+      "requests_sha256": "48bc270ae840e70c16372eb1b252201924398b336ab36a1e6c0974bfe96c24cc",
+      "correct": 64,
+      "count": 100,
+      "strict_match": 0.64,
+      "missing_answer": 24,
+      "length_limited": 1,
+      "text_stopped": 99
+    },
+    "summary": {
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "seconds": 97.06519882008433,
+      "tokens_per_second": 118.19890279384101,
+      "completed_requests": 100,
+      "output_tokens": 11473,
+      "decode_exit_histogram": {
+        "4": 910,
+        "3": 9972,
+        "2": 491
+      },
+      "cached_decode_positions": 11373,
+      "executed_decode_loops": 34538,
+      "recurrent_batch_histogram": {
+        "2": 38,
+        "3": 68,
+        "5": 2,
+        "6": 39,
+        "8": 45,
+        "9": 6,
+        "10": 83,
+        "14": 21,
+        "16": 1689,
+        "15": 167,
+        "13": 5,
+        "12": 28,
+        "11": 22,
+        "7": 29,
+        "4": 12,
+        "1": 2053
+      },
+      "promotion_payload_bytes_from_trace": 2153644032,
+      "kv_arena_reserved_bytes": 17918066688,
+      "runtime_peak_allocated_bytes": 20828387328,
+      "runtime_peak_reserved_bytes": 21030240256,
+      "free_blocks_after_drain": 5696,
+      "geometry": {
+        "layers": 24,
+        "kv_heads": 16,
+        "head_dim": 128,
+        "loops": 4,
+        "element_bytes": 2,
+        "page_tokens": 16
+      },
+      "finalization_exposed_ms": null
+    },
+    "manifest": {
+      "checkpoint": {
+        "repo": "ByteDance/Ouro-1.4B",
+        "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+        "download_endpoint": "https://hf-mirror.com",
+        "files": [
+          {
+            "path": "config.json",
+            "bytes": 1472,
+            "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+          },
+          {
+            "path": "merges.txt",
+            "bytes": 466391,
+            "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+          },
+          {
+            "path": "model.safetensors",
+            "bytes": 2869336434,
+            "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "bytes": 825,
+            "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+          },
+          {
+            "path": "tokenizer.json",
+            "bytes": 3522644,
+            "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "bytes": 4211,
+            "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+          },
+          {
+            "path": "vocab.json",
+            "bytes": 800656,
+            "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+          }
+        ]
+      },
+      "checkpoint_reader": "torch",
+      "git_sha": "32e9c0211c831f26105e53bcd7a008943cec5fee",
+      "tracked_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "harness_sha256": "79eac4d19b829ae0122210361223c4425ec974ca75cb23a69fcdecbff3cc3bfd",
+      "prompts_sha256": "6a3be64d3797b9892d95bd4ffd422f76a41e9a08fc7fdbb93ee2bbd51bc3ce2c",
+      "python": "/root/miniconda3/bin/python",
+      "pid": 8177,
+      "packages": {
+        "torch": "2.12.1+cu130",
+        "triton": "3.7.1"
+      },
+      "modules": {
+        "vllm_rlt.engine.llm_engine": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/engine/llm_engine.py",
+          "sha256": "91fc8b4c436064a0ea1b4adfaf8adf4c36e12285df3c0ca8ebce0e09cef45d2d"
+        },
+        "vllm_rlt.core.alias_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/alias_kv_cache.py",
+          "sha256": "411cb4141a0566f8c913e270ec85c94703c74fb8f643ee57aaf8ab7d32f8277e"
+        },
+        "vllm_rlt.core.compact_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/compact_kv_cache.py",
+          "sha256": "f49b30a221b27066788267e95b27b09726a44adc1eaa59a8272ec5040cd75c15"
+        },
+        "vllm_rlt.core.kv_cache_manager": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/kv_cache_manager.py",
+          "sha256": "ae7478e86cb1d79d8779bfb028f6df4b50537a87a79eba065bfde315abbeb79d"
+        },
+        "vllm_rlt.kernels.triton_attention": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/kernels/triton_attention.py",
+          "sha256": "8eac28ff7746fb3483f1f7789db5b960f71b127cbf01989e317fe6552bb54a37"
+        },
+        "vllm_rlt.models.ouro": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/models/ouro.py",
+          "sha256": "89d9af962e39e940f81f1193016c09090090dbff3f157068b18514b96eb1e0bd"
+        },
+        "experiments.loopkv.checkpoint": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/experiments/loopkv/checkpoint.py",
+          "sha256": "418f465d633c200f89c1ddd2873f584c73b8f568319e875ab989007b4e5146c0"
+        },
+        "experiments.loopkv.text_stops": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/experiments/loopkv/text_stops.py",
+          "sha256": "18b52280e91d4c8d3d82d68e849bc74f873d62472c17851ca55be4cb6b81b4fe"
+        }
+      },
+      "environment": {
+        "CUDA_VISIBLE_DEVICES": "1",
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4",
+        "TRITON_CACHE_DIR": null,
+        "CUDA_CACHE_PATH": null,
+        "PYTHONPATH": null
+      },
+      "cache": {
+        "num_blocks": 5696,
+        "block_size": 16,
+        "layout": "last_exited",
+        "gpu_memory_utilization": 0.9,
+        "kv_cache_memory_bytes": null,
+        "memory_reserve_bytes": 268435456,
+        "enable_prefix_caching": false,
+        "incremental_allocation": false,
+        "watermark_ratio": 0.0,
+        "alias_last_exited": true,
+        "compact_last_exited": false
+      },
+      "scheduler": {
+        "max_num_seqs": 16,
+        "max_num_batched_tokens": 128,
+        "mode": "refill",
+        "min_coda_batch_size": 1,
+        "admission_scan_limit": 64,
+        "max_admission_bypasses": 8,
+        "prefill_chunk_size": 128,
+        "max_prefill_batches_before_decode": 1,
+        "policy": "fcfs",
+        "enable_preemption": false
+      },
+      "execution": {
+        "async_scheduling": false,
+        "multi_stream": true,
+        "static_buffers": false,
+        "pad_to_power_of_two": false,
+        "cuda_graphs": false,
+        "cuda_graph_max_batch_size": 128,
+        "cuda_graph_max_graphs": 16,
+        "cuda_graph_memory_reserve_bytes": 1073741824,
+        "prefill_uva": false
+      },
+      "policy": "ouro",
+      "sampling": {
+        "max_tokens": 1024,
+        "exit_threshold": 0.5,
+        "min_loops": 2,
+        "max_loops": null,
+        "seed": 17,
+        "ignore_eos": false
+      },
+      "quality_stops_sha256": "ed2c1427ef32c43de79cf1d063405476b0bc0ddb75c3b6a5a78dcc5865524cc5",
+      "request_count": 100,
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "warmup_rounds": 0,
+      "profile_range": false,
+      "measurement_boundary": "all submissions through full drain, after warmup",
+      "gpu": "index, uuid, name, memory.total [MiB], driver_version\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n"
+    }
+  },
+  "compact_before_fix": {
+    "score": {
+      "scope": "new_native_storage_quality_comparison_not_historical_hf_reproduction",
+      "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+      "requests_sha256": "564e815687cd509f5fe05e95fc7788a57f6f9f0d6bf64257007fd6ac38f311a5",
+      "correct": 63,
+      "count": 100,
+      "strict_match": 0.63,
+      "missing_answer": 24,
+      "length_limited": 1,
+      "text_stopped": 99
+    },
+    "summary": {
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "seconds": 80.22828528657556,
+      "tokens_per_second": 142.80499650560373,
+      "completed_requests": 100,
+      "output_tokens": 11457,
+      "decode_exit_histogram": {
+        "4": 904,
+        "3": 9965,
+        "2": 488
+      },
+      "cached_decode_positions": 11357,
+      "executed_decode_loops": 34487,
+      "recurrent_batch_histogram": {
+        "2": 35,
+        "3": 79,
+        "5": 7,
+        "6": 43,
+        "8": 44,
+        "9": 22,
+        "12": 14,
+        "13": 17,
+        "14": 22,
+        "15": 163,
+        "16": 1693,
+        "11": 32,
+        "10": 47,
+        "7": 29,
+        "4": 7,
+        "1": 2054
+      },
+      "promotion_payload_bytes_from_trace": 2151088128,
+      "kv_arena_reserved_bytes": 17918066688,
+      "runtime_peak_allocated_bytes": 20828816384,
+      "runtime_peak_reserved_bytes": 21030240256,
+      "free_blocks_after_drain": 5696,
+      "geometry": {
+        "layers": 24,
+        "kv_heads": 16,
+        "head_dim": 128,
+        "loops": 4,
+        "element_bytes": 2,
+        "page_tokens": 16
+      },
+      "finalization_exposed_ms": null,
+      "compact": {
+        "peak_live_records": 25538,
+        "record_bytes": 196608,
+        "peak_unique_payload_bytes": 5020975104,
+        "peak_persistent_metadata_bytes": 799784,
+        "live_records_after_drain": 0,
+        "admission": "full_worst_future_credits",
+        "payload_fragmentation_bytes": 0
+      }
+    },
+    "manifest": {
+      "checkpoint": {
+        "repo": "ByteDance/Ouro-1.4B",
+        "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+        "download_endpoint": "https://hf-mirror.com",
+        "files": [
+          {
+            "path": "config.json",
+            "bytes": 1472,
+            "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+          },
+          {
+            "path": "merges.txt",
+            "bytes": 466391,
+            "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+          },
+          {
+            "path": "model.safetensors",
+            "bytes": 2869336434,
+            "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "bytes": 825,
+            "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+          },
+          {
+            "path": "tokenizer.json",
+            "bytes": 3522644,
+            "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "bytes": 4211,
+            "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+          },
+          {
+            "path": "vocab.json",
+            "bytes": 800656,
+            "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+          }
+        ]
+      },
+      "checkpoint_reader": "torch",
+      "git_sha": "32e9c0211c831f26105e53bcd7a008943cec5fee",
+      "tracked_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "harness_sha256": "79eac4d19b829ae0122210361223c4425ec974ca75cb23a69fcdecbff3cc3bfd",
+      "prompts_sha256": "6a3be64d3797b9892d95bd4ffd422f76a41e9a08fc7fdbb93ee2bbd51bc3ce2c",
+      "python": "/root/miniconda3/bin/python",
+      "pid": 8549,
+      "packages": {
+        "torch": "2.12.1+cu130",
+        "triton": "3.7.1"
+      },
+      "modules": {
+        "vllm_rlt.engine.llm_engine": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/engine/llm_engine.py",
+          "sha256": "91fc8b4c436064a0ea1b4adfaf8adf4c36e12285df3c0ca8ebce0e09cef45d2d"
+        },
+        "vllm_rlt.core.alias_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/alias_kv_cache.py",
+          "sha256": "411cb4141a0566f8c913e270ec85c94703c74fb8f643ee57aaf8ab7d32f8277e"
+        },
+        "vllm_rlt.core.compact_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/compact_kv_cache.py",
+          "sha256": "f49b30a221b27066788267e95b27b09726a44adc1eaa59a8272ec5040cd75c15"
+        },
+        "vllm_rlt.core.kv_cache_manager": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/kv_cache_manager.py",
+          "sha256": "ae7478e86cb1d79d8779bfb028f6df4b50537a87a79eba065bfde315abbeb79d"
+        },
+        "vllm_rlt.kernels.triton_attention": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/kernels/triton_attention.py",
+          "sha256": "8eac28ff7746fb3483f1f7789db5b960f71b127cbf01989e317fe6552bb54a37"
+        },
+        "vllm_rlt.models.ouro": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/models/ouro.py",
+          "sha256": "89d9af962e39e940f81f1193016c09090090dbff3f157068b18514b96eb1e0bd"
+        },
+        "experiments.loopkv.checkpoint": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/experiments/loopkv/checkpoint.py",
+          "sha256": "418f465d633c200f89c1ddd2873f584c73b8f568319e875ab989007b4e5146c0"
+        },
+        "experiments.loopkv.text_stops": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/experiments/loopkv/text_stops.py",
+          "sha256": "18b52280e91d4c8d3d82d68e849bc74f873d62472c17851ca55be4cb6b81b4fe"
+        }
+      },
+      "environment": {
+        "CUDA_VISIBLE_DEVICES": "1",
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4",
+        "TRITON_CACHE_DIR": null,
+        "CUDA_CACHE_PATH": null,
+        "PYTHONPATH": null
+      },
+      "cache": {
+        "num_blocks": 5696,
+        "block_size": 16,
+        "layout": "last_exited",
+        "gpu_memory_utilization": 0.9,
+        "kv_cache_memory_bytes": null,
+        "memory_reserve_bytes": 268435456,
+        "enable_prefix_caching": false,
+        "incremental_allocation": false,
+        "watermark_ratio": 0.0,
+        "alias_last_exited": false,
+        "compact_last_exited": true
+      },
+      "scheduler": {
+        "max_num_seqs": 16,
+        "max_num_batched_tokens": 128,
+        "mode": "refill",
+        "min_coda_batch_size": 1,
+        "admission_scan_limit": 64,
+        "max_admission_bypasses": 8,
+        "prefill_chunk_size": 128,
+        "max_prefill_batches_before_decode": 1,
+        "policy": "fcfs",
+        "enable_preemption": false
+      },
+      "execution": {
+        "async_scheduling": false,
+        "multi_stream": true,
+        "static_buffers": false,
+        "pad_to_power_of_two": false,
+        "cuda_graphs": false,
+        "cuda_graph_max_batch_size": 128,
+        "cuda_graph_max_graphs": 16,
+        "cuda_graph_memory_reserve_bytes": 1073741824,
+        "prefill_uva": false
+      },
+      "policy": "ouro",
+      "sampling": {
+        "max_tokens": 1024,
+        "exit_threshold": 0.5,
+        "min_loops": 2,
+        "max_loops": null,
+        "seed": 17,
+        "ignore_eos": false
+      },
+      "quality_stops_sha256": "ed2c1427ef32c43de79cf1d063405476b0bc0ddb75c3b6a5a78dcc5865524cc5",
+      "request_count": 100,
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "warmup_rounds": 0,
+      "profile_range": false,
+      "measurement_boundary": "all submissions through full drain, after warmup",
+      "gpu": "index, uuid, name, memory.total [MiB], driver_version\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n"
+    }
+  },
+  "compact_after_fix": {
+    "score": {
+      "scope": "new_native_storage_quality_comparison_not_historical_hf_reproduction",
+      "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+      "requests_sha256": "48bc270ae840e70c16372eb1b252201924398b336ab36a1e6c0974bfe96c24cc",
+      "correct": 64,
+      "count": 100,
+      "strict_match": 0.64,
+      "missing_answer": 24,
+      "length_limited": 1,
+      "text_stopped": 99
+    },
+    "summary": {
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "seconds": 80.71324491500854,
+      "tokens_per_second": 142.14519577401612,
+      "completed_requests": 100,
+      "output_tokens": 11473,
+      "decode_exit_histogram": {
+        "4": 910,
+        "3": 9972,
+        "2": 491
+      },
+      "cached_decode_positions": 11373,
+      "executed_decode_loops": 34538,
+      "recurrent_batch_histogram": {
+        "2": 38,
+        "3": 68,
+        "5": 2,
+        "6": 39,
+        "8": 45,
+        "9": 6,
+        "10": 83,
+        "14": 21,
+        "16": 1689,
+        "15": 167,
+        "13": 5,
+        "12": 28,
+        "11": 22,
+        "7": 29,
+        "4": 12,
+        "1": 2053
+      },
+      "promotion_payload_bytes_from_trace": 2153644032,
+      "kv_arena_reserved_bytes": 17918066688,
+      "runtime_peak_allocated_bytes": 20828816384,
+      "runtime_peak_reserved_bytes": 21030240256,
+      "free_blocks_after_drain": 5696,
+      "geometry": {
+        "layers": 24,
+        "kv_heads": 16,
+        "head_dim": 128,
+        "loops": 4,
+        "element_bytes": 2,
+        "page_tokens": 16
+      },
+      "finalization_exposed_ms": null,
+      "compact": {
+        "peak_live_records": 25605,
+        "record_bytes": 196608,
+        "peak_unique_payload_bytes": 5034147840,
+        "peak_persistent_metadata_bytes": 799964,
+        "live_records_after_drain": 0,
+        "admission": "full_worst_future_credits",
+        "payload_fragmentation_bytes": 0
+      }
+    },
+    "manifest": {
+      "checkpoint": {
+        "repo": "ByteDance/Ouro-1.4B",
+        "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+        "download_endpoint": "https://hf-mirror.com",
+        "files": [
+          {
+            "path": "config.json",
+            "bytes": 1472,
+            "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+          },
+          {
+            "path": "merges.txt",
+            "bytes": 466391,
+            "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+          },
+          {
+            "path": "model.safetensors",
+            "bytes": 2869336434,
+            "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "bytes": 825,
+            "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+          },
+          {
+            "path": "tokenizer.json",
+            "bytes": 3522644,
+            "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "bytes": 4211,
+            "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+          },
+          {
+            "path": "vocab.json",
+            "bytes": 800656,
+            "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+          }
+        ]
+      },
+      "checkpoint_reader": "torch",
+      "git_sha": "7ca67d64599b421d0128f062c48325cc2a857b36",
+      "tracked_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "harness_sha256": "79eac4d19b829ae0122210361223c4425ec974ca75cb23a69fcdecbff3cc3bfd",
+      "prompts_sha256": "6a3be64d3797b9892d95bd4ffd422f76a41e9a08fc7fdbb93ee2bbd51bc3ce2c",
+      "python": "/root/miniconda3/bin/python",
+      "pid": 8954,
+      "packages": {
+        "torch": "2.12.1+cu130",
+        "triton": "3.7.1"
+      },
+      "modules": {
+        "vllm_rlt.engine.llm_engine": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v4/vllm_rlt/engine/llm_engine.py",
+          "sha256": "91fc8b4c436064a0ea1b4adfaf8adf4c36e12285df3c0ca8ebce0e09cef45d2d"
+        },
+        "vllm_rlt.core.alias_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v4/vllm_rlt/core/alias_kv_cache.py",
+          "sha256": "411cb4141a0566f8c913e270ec85c94703c74fb8f643ee57aaf8ab7d32f8277e"
+        },
+        "vllm_rlt.core.compact_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v4/vllm_rlt/core/compact_kv_cache.py",
+          "sha256": "f49b30a221b27066788267e95b27b09726a44adc1eaa59a8272ec5040cd75c15"
+        },
+        "vllm_rlt.core.kv_cache_manager": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v4/vllm_rlt/core/kv_cache_manager.py",
+          "sha256": "ae7478e86cb1d79d8779bfb028f6df4b50537a87a79eba065bfde315abbeb79d"
+        },
+        "vllm_rlt.kernels.triton_attention": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v4/vllm_rlt/kernels/triton_attention.py",
+          "sha256": "8eac28ff7746fb3483f1f7789db5b960f71b127cbf01989e317fe6552bb54a37"
+        },
+        "vllm_rlt.models.ouro": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v4/vllm_rlt/models/ouro.py",
+          "sha256": "89d9af962e39e940f81f1193016c09090090dbff3f157068b18514b96eb1e0bd"
+        },
+        "experiments.loopkv.checkpoint": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v4/experiments/loopkv/checkpoint.py",
+          "sha256": "418f465d633c200f89c1ddd2873f584c73b8f568319e875ab989007b4e5146c0"
+        },
+        "experiments.loopkv.text_stops": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v4/experiments/loopkv/text_stops.py",
+          "sha256": "18b52280e91d4c8d3d82d68e849bc74f873d62472c17851ca55be4cb6b81b4fe"
+        }
+      },
+      "environment": {
+        "CUDA_VISIBLE_DEVICES": "0",
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4",
+        "TRITON_CACHE_DIR": null,
+        "CUDA_CACHE_PATH": null,
+        "PYTHONPATH": null
+      },
+      "cache": {
+        "num_blocks": 5696,
+        "block_size": 16,
+        "layout": "last_exited",
+        "gpu_memory_utilization": 0.9,
+        "kv_cache_memory_bytes": null,
+        "memory_reserve_bytes": 268435456,
+        "enable_prefix_caching": false,
+        "incremental_allocation": false,
+        "watermark_ratio": 0.0,
+        "alias_last_exited": false,
+        "compact_last_exited": true
+      },
+      "scheduler": {
+        "max_num_seqs": 16,
+        "max_num_batched_tokens": 128,
+        "mode": "refill",
+        "min_coda_batch_size": 1,
+        "admission_scan_limit": 64,
+        "max_admission_bypasses": 8,
+        "prefill_chunk_size": 128,
+        "max_prefill_batches_before_decode": 1,
+        "policy": "fcfs",
+        "enable_preemption": false
+      },
+      "execution": {
+        "async_scheduling": false,
+        "multi_stream": true,
+        "static_buffers": false,
+        "pad_to_power_of_two": false,
+        "cuda_graphs": false,
+        "cuda_graph_max_batch_size": 128,
+        "cuda_graph_max_graphs": 16,
+        "cuda_graph_memory_reserve_bytes": 1073741824,
+        "prefill_uva": false
+      },
+      "policy": "ouro",
+      "sampling": {
+        "max_tokens": 1024,
+        "exit_threshold": 0.5,
+        "min_loops": 2,
+        "max_loops": null,
+        "seed": 17,
+        "ignore_eos": false
+      },
+      "quality_stops_sha256": "ed2c1427ef32c43de79cf1d063405476b0bc0ddb75c3b6a5a78dcc5865524cc5",
+      "request_count": 100,
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "warmup_rounds": 0,
+      "profile_range": false,
+      "measurement_boundary": "all submissions through full drain, after warmup",
+      "gpu": "index, uuid, name, memory.total [MiB], driver_version\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n"
+    }
+  },
+  "full4": {
+    "score": {
+      "scope": "new_native_storage_quality_comparison_not_historical_hf_reproduction",
+      "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+      "requests_sha256": "e2413346af8a6d782dc44f3a05760556604d9a53226e1b2692b1cd1faac65f58",
+      "correct": 63,
+      "count": 100,
+      "strict_match": 0.63,
+      "missing_answer": 26,
+      "length_limited": 1,
+      "text_stopped": 99
+    },
+    "summary": {
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "seconds": 101.1708365008235,
+      "tokens_per_second": 114.7366217527075,
+      "completed_requests": 100,
+      "output_tokens": 11608,
+      "decode_exit_histogram": {
+        "4": 11508
+      },
+      "cached_decode_positions": 11508,
+      "executed_decode_loops": 46032,
+      "recurrent_batch_histogram": {
+        "2": 164,
+        "3": 15,
+        "5": 4,
+        "6": 5,
+        "8": 101,
+        "9": 3,
+        "10": 66,
+        "14": 17,
+        "16": 2247,
+        "15": 251,
+        "13": 28,
+        "12": 8,
+        "11": 4,
+        "7": 7,
+        "4": 31,
+        "1": 3482
+      },
+      "promotion_payload_bytes_from_trace": 0,
+      "kv_arena_reserved_bytes": 17918066688,
+      "runtime_peak_allocated_bytes": 20828022784,
+      "runtime_peak_reserved_bytes": 21030240256,
+      "free_blocks_after_drain": 5696,
+      "geometry": {
+        "layers": 24,
+        "kv_heads": 16,
+        "head_dim": 128,
+        "loops": 4,
+        "element_bytes": 2,
+        "page_tokens": 16
+      },
+      "finalization_exposed_ms": null
+    },
+    "manifest": {
+      "checkpoint": {
+        "repo": "ByteDance/Ouro-1.4B",
+        "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+        "download_endpoint": "https://hf-mirror.com",
+        "files": [
+          {
+            "path": "config.json",
+            "bytes": 1472,
+            "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+          },
+          {
+            "path": "merges.txt",
+            "bytes": 466391,
+            "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+          },
+          {
+            "path": "model.safetensors",
+            "bytes": 2869336434,
+            "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "bytes": 825,
+            "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+          },
+          {
+            "path": "tokenizer.json",
+            "bytes": 3522644,
+            "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "bytes": 4211,
+            "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+          },
+          {
+            "path": "vocab.json",
+            "bytes": 800656,
+            "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+          }
+        ]
+      },
+      "checkpoint_reader": "torch",
+      "git_sha": "32e9c0211c831f26105e53bcd7a008943cec5fee",
+      "tracked_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "harness_sha256": "79eac4d19b829ae0122210361223c4425ec974ca75cb23a69fcdecbff3cc3bfd",
+      "prompts_sha256": "6a3be64d3797b9892d95bd4ffd422f76a41e9a08fc7fdbb93ee2bbd51bc3ce2c",
+      "python": "/root/miniconda3/bin/python",
+      "pid": 8718,
+      "packages": {
+        "torch": "2.12.1+cu130",
+        "triton": "3.7.1"
+      },
+      "modules": {
+        "vllm_rlt.engine.llm_engine": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/engine/llm_engine.py",
+          "sha256": "91fc8b4c436064a0ea1b4adfaf8adf4c36e12285df3c0ca8ebce0e09cef45d2d"
+        },
+        "vllm_rlt.core.alias_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/alias_kv_cache.py",
+          "sha256": "411cb4141a0566f8c913e270ec85c94703c74fb8f643ee57aaf8ab7d32f8277e"
+        },
+        "vllm_rlt.core.compact_kv_cache": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/compact_kv_cache.py",
+          "sha256": "f49b30a221b27066788267e95b27b09726a44adc1eaa59a8272ec5040cd75c15"
+        },
+        "vllm_rlt.core.kv_cache_manager": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/core/kv_cache_manager.py",
+          "sha256": "ae7478e86cb1d79d8779bfb028f6df4b50537a87a79eba065bfde315abbeb79d"
+        },
+        "vllm_rlt.kernels.triton_attention": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/kernels/triton_attention.py",
+          "sha256": "8eac28ff7746fb3483f1f7789db5b960f71b127cbf01989e317fe6552bb54a37"
+        },
+        "vllm_rlt.models.ouro": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/vllm_rlt/models/ouro.py",
+          "sha256": "89d9af962e39e940f81f1193016c09090090dbff3f157068b18514b96eb1e0bd"
+        },
+        "experiments.loopkv.checkpoint": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/experiments/loopkv/checkpoint.py",
+          "sha256": "418f465d633c200f89c1ddd2873f584c73b8f568319e875ab989007b4e5146c0"
+        },
+        "experiments.loopkv.text_stops": {
+          "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/quality-v3/experiments/loopkv/text_stops.py",
+          "sha256": "18b52280e91d4c8d3d82d68e849bc74f873d62472c17851ca55be4cb6b81b4fe"
+        }
+      },
+      "environment": {
+        "CUDA_VISIBLE_DEVICES": "1",
+        "OMP_NUM_THREADS": "4",
+        "MKL_NUM_THREADS": "4",
+        "TRITON_CACHE_DIR": null,
+        "CUDA_CACHE_PATH": null,
+        "PYTHONPATH": null
+      },
+      "cache": {
+        "num_blocks": 5696,
+        "block_size": 16,
+        "layout": "last_exited",
+        "gpu_memory_utilization": 0.9,
+        "kv_cache_memory_bytes": null,
+        "memory_reserve_bytes": 268435456,
+        "enable_prefix_caching": false,
+        "incremental_allocation": false,
+        "watermark_ratio": 0.0,
+        "alias_last_exited": false,
+        "compact_last_exited": false
+      },
+      "scheduler": {
+        "max_num_seqs": 16,
+        "max_num_batched_tokens": 128,
+        "mode": "refill",
+        "min_coda_batch_size": 1,
+        "admission_scan_limit": 64,
+        "max_admission_bypasses": 8,
+        "prefill_chunk_size": 128,
+        "max_prefill_batches_before_decode": 1,
+        "policy": "fcfs",
+        "enable_preemption": false
+      },
+      "execution": {
+        "async_scheduling": false,
+        "multi_stream": true,
+        "static_buffers": false,
+        "pad_to_power_of_two": false,
+        "cuda_graphs": false,
+        "cuda_graph_max_batch_size": 128,
+        "cuda_graph_max_graphs": 16,
+        "cuda_graph_memory_reserve_bytes": 1073741824,
+        "prefill_uva": false
+      },
+      "policy": "ouro",
+      "sampling": {
+        "max_tokens": 1024,
+        "exit_threshold": 0.5,
+        "min_loops": 4,
+        "max_loops": 4,
+        "seed": 17,
+        "ignore_eos": false
+      },
+      "quality_stops_sha256": "ed2c1427ef32c43de79cf1d063405476b0bc0ddb75c3b6a5a78dcc5865524cc5",
+      "request_count": 100,
+      "scope": "quality_engine_generation_with_eos_and_text_stops",
+      "warmup_rounds": 0,
+      "profile_range": false,
+      "measurement_boundary": "all submissions through full drain, after warmup",
+      "gpu": "index, uuid, name, memory.total [MiB], driver_version\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n"
+    }
+  }
+}
