@@ -17,7 +17,7 @@ from vllm_rlt.core.kv_cache_manager import _PreparedKVBatch
 class RoutingBank:
     def __init__(self, owner, rows, *, control_only=False):
         self.owner = owner
-        self.host = torch.empty((rows, 3), dtype=torch.int64, pin_memory=True)
+        self.host = torch.empty((rows, 4 if owner.alias else 3), dtype=torch.int64, pin_memory=True)
         self.done = self.ready_event = None
         self.uploads = []
         self.imports = []
@@ -38,8 +38,6 @@ class RoutingBank:
                 (rows, owner.planes, owner.width), dtype=torch.int32, device=device
             )
             self.depths = torch.empty(rows, dtype=torch.int32, device=device)
-            # Until resident first-alias positions are published, resolve every
-            # tile. A context-length fallback would incorrectly bypass aliases.
             self.alias_starts = torch.zeros(rows, dtype=torch.int32, device=device)
         self.hidden = torch.empty(
             (rows, owner.hidden.shape[1]), dtype=owner.hidden.dtype, device=device
@@ -81,6 +79,7 @@ class RoutingBank:
             self.tables,
             self.depth_tables,
             self.depths,
+            self.alias_starts,
             self.count,
             self.size,
             self.owner.width,
@@ -89,6 +88,7 @@ class RoutingBank:
             self.width,
             256,
             self.owner.alias and batch is not None,
+            self.host.shape[1],
         )
         self.ready_event = torch.cuda.Event()
         self.ready_event.record(torch.cuda.current_stream(self.owner.cache.device))
@@ -205,6 +205,18 @@ class AsyncState:
             (self.ensure_slot(r, bank), d if recurrent or finalize else 0, p)
             for r, d, p in zip(requests, depths, positions)
         ]
+        if self.alias:
+            descriptors = [
+                (
+                    *row,
+                    self.cache._alias_starts[id(self.cache._get_allocation(request.request_id))][
+                        depth
+                    ]
+                    if recurrent
+                    else 0,
+                )
+                for request, depth, row in zip(requests, depths, descriptors)
+            ]
         # A normal list is CPU-owned; only the contiguous pinned snapshot is GPU-readable.
         bank.host.numpy()[: len(descriptors)] = descriptors
         batch = None

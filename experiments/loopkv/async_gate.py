@@ -109,7 +109,7 @@ def main():
                     model,
                     attention_backend="triton",
                     cache_config=CacheConfig(
-                        batch * 32, 2, alias_last_exited=mode in ("alias_async", "alias_graph")
+                        batch * 80, 2, alias_last_exited=mode in ("alias_async", "alias_graph")
                     ),
                     scheduler_config=SchedulerConfig(
                         max_num_seqs=batch, max_num_batched_tokens=max(4, batch)
@@ -131,7 +131,7 @@ def main():
                     for i in range(2 * batch):
                         engine.add_request(
                             str(i),
-                            [2 + i % 5, 9 + round_index],
+                            [2 + i % 5, 9 + round_index] * 17,
                             SamplingParams(
                                 max_tokens=6,
                                 min_loops=1,
@@ -144,7 +144,7 @@ def main():
                         engine.abort_request("0")
                         engine.add_request(
                             "0",
-                            [7, 8, 9],
+                            [7, 8, 9] * 11,
                             SamplingParams(
                                 max_tokens=6,
                                 min_loops=1,
@@ -164,7 +164,7 @@ def main():
                                 )
                     engine.model_runner.synchronize()
                     assert len(completed) == 2 * batch
-                    assert engine.cache_manager.num_free_blocks == batch * 32
+                    assert engine.cache_manager.num_free_blocks == batch * 80
                     assert not engine.model_runner.state_slots
                     rounds.append(completed)
                 if baseline is None:
