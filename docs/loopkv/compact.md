@@ -103,5 +103,8 @@ Fixed allocation now needs no additional growth reservation. The same fixture
 admits all four requests for both rectangular and compact caches. This correction
 is not included in the pilot numbers above. CPU validation after the correction:
 102 cache/runtime/engine tests and 36 subtests passed; prefix/growth regression
-7 passed with 4 CUDA skips. GPU and timed results for the corrected source remain
-separate from the retained original pilot.
+7 passed with 4 CUDA skips. The corrected source completes the identical GSM8K100 cohort with exact
+Native-S token/exit/stop identity and 64/100 strict answers. The old source
+failed31 request comparisons and scored63/100; both outcomes are preserved in
+[the quality report](quality.md). Timed validation of the corrected source
+remains separate from the retained original pilot.
