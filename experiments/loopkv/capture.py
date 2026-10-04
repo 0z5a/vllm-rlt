@@ -154,6 +154,7 @@ def main():
         "vllm_rlt.kernels.triton_attention",
         "vllm_rlt.models.ouro",
         "vllm_rlt.models.nanbeige",
+        "vllm_rlt.models.huginn",
         "experiments.loopkv.checkpoint",
         "experiments.loopkv.text_stops",
     ):
