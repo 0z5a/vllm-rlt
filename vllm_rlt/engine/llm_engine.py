@@ -303,23 +303,24 @@ class LLMEngine:
     def close(self):
         self.profiling.close()
 
-    def step(self) -> list[RequestOutput]:
+    def step(self, *, final_only: bool = False) -> list[RequestOutput]:
+        """Advance all requests; optionally materialize only completed outputs."""
         if self._update_version is not None:
             raise RuntimeError("Generation is unavailable during a weight update")
         if not self.profiling.recording:
-            return self._step()
+            return self._step(final_only=final_only)
         try:
-            outputs = self._step()
+            outputs = self._step(final_only=final_only)
             self.profiling.step()
             return outputs
         except BaseException:
             self.profiling.stop()
             raise
 
-    def _step(self) -> list[RequestOutput]:
+    def _step(self, *, final_only: bool = False) -> list[RequestOutput]:
         if self.execution_config.async_scheduling:
             try:
-                return self._step_async()
+                return self._step_async(final_only=final_only)
             except Exception:
                 # A submission can fail before recording an event. Drain owned
                 # streams before invalidating requests or recycling any memory.
@@ -340,9 +341,9 @@ class LLMEngine:
         try:
             if batch.stage == Stage.SPECULATIVE:
                 result = self.speculative_runner.execute(batch)
-                return self._update_speculative(batch, result)
+                return self._update_speculative(batch, result, final_only=final_only)
             result = self.model_runner.execute(batch)
-            return self._update(batch, result)
+            return self._update(batch, result, final_only=final_only)
         except Exception:
             # A failed execution may have partially written KV; invalidate the affected requests.
             for item in batch.items:
@@ -350,7 +351,7 @@ class LLMEngine:
                     self.abort_request(item.request.request_id)
             raise
 
-    def _update_speculative(self, batch, results):
+    def _update_speculative(self, batch, results, *, final_only: bool = False):
         outputs = []
         for item, result in zip(batch.items, results):
             request = item.request
@@ -380,10 +381,11 @@ class LLMEngine:
                 self.cache_manager.truncate_suffix(request.request_id, item.token_start + emitted)
                 request.loops_done = 0
                 self.scheduler.enqueue(request, Stage.SPECULATIVE)
-            outputs.append(RequestOutput.from_request(request))
+            if not final_only or request.stage == Stage.FINISHED:
+                outputs.append(RequestOutput.from_request(request))
         return outputs
 
-    def _update(self, batch, result) -> list[RequestOutput]:
+    def _update(self, batch, result, *, final_only: bool = False) -> list[RequestOutput]:
         outputs = []
         for index, item in enumerate(batch.items):
             request = item.request
@@ -443,7 +445,8 @@ class LLMEngine:
                     self.scheduler.enqueue(
                         request, Stage.SPECULATIVE if self.speculative_config else Stage.PRELUDE
                     )
-                outputs.append(RequestOutput.from_request(request))
+                if not final_only or request.stage == Stage.FINISHED:
+                    outputs.append(RequestOutput.from_request(request))
         return outputs
 
     def _should_exit(self, request: Request) -> bool:
@@ -492,7 +495,7 @@ class LLMEngine:
             and score >= params.exit_threshold
         )
 
-    def _deliver_coda(self, ticket):
+    def _deliver_coda(self, ticket, *, final_only: bool = False):
         outputs = []
         result = ticket.collect()
         for index, item in enumerate(ticket.batch.items):
@@ -515,25 +518,26 @@ class LLMEngine:
                 self._finish(request, FinishReason.STOP)
             elif len(request.generated_token_ids) >= params.max_tokens:
                 self._finish(request, FinishReason.LENGTH)
-            outputs.append(RequestOutput.from_request(request))
+            if not final_only or request.stage == Stage.FINISHED:
+                outputs.append(RequestOutput.from_request(request))
         return outputs
 
-    def _collect_coda(self, wait=False):
+    def _collect_coda(self, wait=False, *, final_only: bool = False):
         outputs = []
         pending = []
         for ticket in self._pending_coda:
             if ticket.ready() or wait:
-                outputs.extend(self._deliver_coda(ticket))
+                outputs.extend(self._deliver_coda(ticket, final_only=final_only))
                 wait = False
             else:
                 pending.append(ticket)
         self._pending_coda = pending
         return outputs
 
-    def _step_async(self):
+    def _step_async(self, *, final_only: bool = False):
         # Hold readback buffers until their DMA completes, even for discarded scores.
         self._inflight = [t for t in self._inflight if not t.ready()]
-        outputs = self._collect_coda()
+        outputs = self._collect_coda(final_only=final_only)
         batch = self.scheduler.schedule(
             # If the preceding core is still running, boundary work can overlap
             # the independent next core. Once it has completed, refill first:
@@ -546,7 +550,7 @@ class LLMEngine:
         if batch is None:
             # PD imports wait for external KV completion; yield to the IPC loop.
             if self._pending_coda:
-                outputs.extend(self._collect_coda(wait=True))
+                outputs.extend(self._collect_coda(wait=True, final_only=final_only))
             elif any(r.stage != Stage.RECEIVING for r in self.scheduler.requests.values()):
                 raise RuntimeError("scheduler made no progress")
             return outputs
@@ -555,7 +559,7 @@ class LLMEngine:
             # core may run before delivery (including a possible EOS), but never
             # sample another token until that output's stop decision is known.
             while any(i.request.num_output_placeholders for i in batch.items):
-                outputs.extend(self._collect_coda(wait=True))
+                outputs.extend(self._collect_coda(wait=True, final_only=final_only))
             batch = replace(
                 batch,
                 items=[
