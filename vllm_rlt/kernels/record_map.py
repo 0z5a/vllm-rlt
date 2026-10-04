@@ -20,3 +20,16 @@ def publish_records(pointers, widths, depths, positions, records):
     _publish[(triton.cdiv(pointers.numel(), 128),)](
         pointers, widths, depths, positions, records, pointers.numel(), 128
     )
+
+
+@triton.jit
+def _publish_exits(POINTERS, DEPTHS, N: tl.constexpr, BLOCK: tl.constexpr):
+    rows = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
+    valid = rows < N
+    targets = tl.load(POINTERS + rows, valid, other=0).to(tl.pointer_type(tl.int32))
+    depths = tl.load(DEPTHS + rows, valid, other=0).to(tl.int32)
+    tl.store(targets, depths, valid)
+
+
+def publish_exits(pointers, depths):
+    _publish_exits[(triton.cdiv(pointers.numel(), 128),)](pointers, depths, pointers.numel(), 128)
