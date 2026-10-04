@@ -95,6 +95,7 @@ def main():
     parser.add_argument("--measure", action="store_true")
     parser.add_argument("--profile-range", action="store_true")
     parser.add_argument("--quality-stops", type=Path)
+    parser.add_argument("--load-lock", type=Path)
     args = parser.parse_args()
     scope = (
         "finite_batch_engine_e2e" if args.measure else "diagnostic_engine_capture_not_performance"
@@ -208,6 +209,12 @@ def main():
             ),
         },
     )
+    load_lock = None
+    if args.load_lock is not None:
+        import fcntl
+
+        load_lock = args.load_lock.open("a")
+        fcntl.flock(load_lock, fcntl.LOCK_EX)
     if args.checkpoint_reader == "native":
         model = AutoModelForCausalLM.from_pretrained(
             str(args.model), device="cuda", dtype=torch.bfloat16
@@ -223,6 +230,8 @@ def main():
         load_weights(model, args.model, torch.device("cuda"), torch.bfloat16)
         model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device="cuda")
         model.eval()
+    if load_lock is not None:
+        load_lock.close()
     config = model.config
     shape = Geometry(
         config.num_hidden_layers, config.num_key_value_heads, config.head_dim, config.total_ut_steps
