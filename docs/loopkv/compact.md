@@ -90,3 +90,18 @@ Three pilot pairs do not establish a formal confidence interval or serving
 latency. [Raw comparisons](evidence/compact-pilot-pairs.json) retain all pairs.
 [Rectangular Nsight attribution](profile.md) motivates the subsequent reader
 experiment, but is not a profile of compact storage.
+
+## Admission correction after the first pilot
+
+The original compact pilot used the frozen source above. Subsequent pressure
+validation found a duplicated prefill reservation: fixed compact allocations
+already held the full future budget, while the scheduler inferred another growth
+budget from their deliberately empty rectangular block tables. A four-request
+fixture admitted only two requests despite sufficient reserved capacity.
+
+Fixed allocation now needs no additional growth reservation. The same fixture
+admits all four requests for both rectangular and compact caches. This correction
+is not included in the pilot numbers above. CPU validation after the correction:
+102 cache/runtime/engine tests and 36 subtests passed; prefix/growth regression
+7 passed with 4 CUDA skips. GPU and timed results for the corrected source remain
+separate from the retained original pilot.

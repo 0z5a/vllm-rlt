@@ -121,3 +121,17 @@ def test_compact_graph_and_transfer_rejected():
         )
     with pytest.raises(ValueError, match="alias KV transfer"):
         PDEngine(tiny_ouro_config(), decode_cache_config=config)
+
+
+@pytest.mark.parametrize("cache_type", [KVCacheManager, CompactKVCacheManager])
+def test_fixed_reservation_admits_the_same_initial_batch(cache_type):
+    from vllm_rlt.core.scheduler import Scheduler
+    from vllm_rlt.request import Request
+
+    cache = make_cache(cache_type)
+    scheduler = Scheduler(SchedulerConfig(max_num_seqs=4, max_num_batched_tokens=16), cache)
+    for index in range(4):
+        scheduler.add_request(Request(str(index), [2, 3, 4, 5], SamplingParams(max_tokens=3)))
+    scheduler._admit()
+    assert len(cache._allocations) == 4
+    assert cache.num_free_blocks == 0
