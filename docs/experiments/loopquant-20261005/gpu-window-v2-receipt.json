@@ -1,0 +1,32 @@
+[
+  {
+    "job": "device-stats-probe-attempt1",
+    "returncode": 0,
+    "start_unix": 1791151724.076735,
+    "end_unix": 1791151727.2900507
+  },
+  {
+    "job": "ouro-calibration-trace-device-attempt1",
+    "returncode": 0,
+    "start_unix": 1791151727.2905765,
+    "end_unix": 1791151786.3633962
+  },
+  {
+    "job": "ouro-calibration-device-parity-attempt1",
+    "returncode": 0,
+    "start_unix": 1791151786.3641186,
+    "end_unix": 1791151793.5757816
+  },
+  {
+    "job": "fused-fp8-probe-attempt1",
+    "returncode": 1,
+    "start_unix": 1791151793.5765793,
+    "end_unix": 1791151797.4998271
+  },
+  {
+    "job": "ouro-row-shape-control-attempt1",
+    "returncode": 0,
+    "start_unix": 1791151797.5006661,
+    "end_unix": 1791152008.3990076
+  }
+]

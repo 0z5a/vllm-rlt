@@ -6,8 +6,8 @@ There are no measured E2E speedups yet; missing values are not zero speedup.
 | Model | Baseline tok/s | Candidate tok/s | Paired speedup | Speed change | Lower 95% bound | Status |
 |---|---:|---:|---:|---:|---:|---|
 | Ouro-1.4B | — | — | — | — | — | G0 incomplete |
-| Ouro-2.6B | — | — | — | — | — | Official CPU comparison running |
-| Huginn-3.5B | — | — | — | — | — | Tiny adapter checks in separate draft |
+| Ouro-2.6B | — | — | — | — | — | Official CPU exact; GPU/E2E pending |
+| Huginn-3.5B | — | — | — | — | — | Full official CPU comparison running |
 | Nanbeige4.2-3B | — | — | — | — | — | Tiny adapter checks only |
 
 ## Native FP8 correctness
@@ -61,8 +61,8 @@ fixed-tolerance failures (maximum logit error 0.00420481).
 
 ## CPU checks
 
-[Final full regression](full-cpu-final.log): **454 passed, 29 skipped, 113 GPU
-cases deselected**; [JUnit](full-cpu-final.xml). Earlier full collection stalled
+[Latest full regression](full-cpu-native-formats-attempt1.log): **471 passed, 29 skipped, 128 GPU
+cases deselected**; [JUnit](full-cpu-native-formats-attempt1.xml). Earlier full collection stalled
 inside an existing macOS dependency load; both processes subsequently completed
 naturally. The final run includes serving, GSM8K collection, and the latest
 quantization changes. Skipped optional/dependency/GPU paths are not claimed as
@@ -128,9 +128,8 @@ prefill/SDPA comparison. PyTorch documents that batch shapes and BF16 reduction
 choices can change floating-point results ([numerical accuracy](https://docs.pytorch.org/docs/2.12/notes/numerical_accuracy.html)).
 The original failures remain visible and no threshold has been relaxed.
 
-The unmodified official HF class is running a separate full-weight CPU
-comparison using the existing Transformers 4.54.1 environment and independently
-verified weights. Its full result remains pending.
+The unmodified official HF classes completed full-weight CPU comparisons using
+existing Transformers 4.54.1 and independently verified weights; see below.
 
 ## Nanbeige adapter qualification
 
@@ -209,20 +208,24 @@ Reservoir sampling remains uniform and bounded at 4,096 observations; its
 seed and device are recorded because CPU/CUDA RNG streams differ. Nonfinite
 CUDA data causes rejection when statistics or policies are materialized.
 [49 CPU checks](loopquant-device-stats-cpu-attempt1.log) pass; two GPU checks
-were deselected. GPU parity and calibration-cost comparison remain pending.
+were deselected. GPU parity now passes as detailed below; formal performance remains pending.
 
 Huginn's separately based adapter is in
 [draft 0z5a/vllm-rlt#10](https://github.com/0z5a/vllm-rlt/pull/10), on a frozen
 integration of native Huginn PR82 and this quantization harness. Its eight
 original-class tiny comparisons are bitwise exact and 59 targeted CPU checks
-pass. It has not run its full checkpoint or E2E matrix.
+pass. Its full-checkpoint CPU R8/16/32 comparison is running; its E2E matrix is pending.
 
-A native fused-producer implementation is now staged for GPU qualification:
-explicit caller-owned scratch, E4M3 row casting/padding, optional RMSNorm,
-DYN or absolute-loop static selection, and the installed rowwise CUTLASS GEMM.
-It has no custom GEMM or installed dependency changes. Its finite GPU probe
-covers 120 configurations and three graph replays; these checks are **not run**
-until the next resource handoff. It is not yet integrated into model serving.
+The first fused-producer probe passed six cases, then failed the unchanged exact
+scale comparison at M17/K64 under DYN (four FP32 scales differ by at most
+9.313225746154785e-10). Packed activation values are identical. The retained
+sample isolates RN division versus Torch's rounded reciprocal multiplication.
+[Raw failure](fused-fp8-probe-attempt1.log), [diagnosis and sample hash](fused-fp8-failure-analysis.json).
+The implementation now matches the reciprocal product; repeat GPU qualification
+is pending. No threshold was relaxed. Native model integration and a reference
+NVFP4 block16/global-scale encoder are also staged, without a performance claim.
+Shared scratch uses one allocation per feature width, with row-bucket views,
+rather than allocating a separate buffer for every batch shape.
 
 ## Mixed-depth metadata and fixed-depth workload checks
 
@@ -242,3 +245,37 @@ The registered model recurrence must also match R. Previous R4 receipts are
 unaffected. [49 targeted CPU checks](loopquant-fixed-depth-cpu-attempt1.log)
 pass with 29 GPU cases deselected, including a real R2 cohort and rejection of
 R4-prefill/R2-decode mislabeled as fixed R2.
+
+## Additional full-model and device results
+
+Ouro-2.6B's unmodified pinned official class and adapter agree bitwise at all
+128 BF16 eager state/logit comparisons (32 inputs × R1–R4); process natural
+exit0, 3372.82s. [Receipt](official-ouro-2.6b-cpu-attempt1.json).
+
+The complete row-shape control fixes both Linear and RMSNorm to one row per
+call. All **512/512 incremental/full comparisons are bitwise exact**, with
+unchanged prior KV prefixes, disjoint depth tables and zero remaining
+allocations. Separate prefill/SDPA comparisons still fail at all128 points,
+max logit difference10.4140625 with20 argmax disagreements. The diagnostic
+controls establish the source of shape-dependent arithmetic; they are not a
+serving baseline or an overall G0 pass. [Receipt](ouro-row-shape-control-attempt1.json).
+
+Device-local statistics pass K64/2048/5632 tests, reproduce their seeded
+reservoirs, reject active nonfinite inputs and show no item/local-scalar/nonzero
+operation in the profiled updates. [Receipt](device-stats-probe-attempt1.json).
+Replaying the original four-window calibration gives exact2896 group keys,
+counts, amax, activation scales, token traces and loop depths. Maximum RMS
+and channel-energy differences are4.44e-16 and1.14e-13, below the preregistered
+criteria. Device-specific reservoir percentiles are intentionally not compared.
+[Parity](calibration-device-parity-attempt1.json).
+
+The five-child window has actual return codes0/0/0/1/0; controller/SSH exit0
+does not hide the FP8 failure. All14 collected files were independently hashed.
+[Window receipt](gpu-window-v2-receipt.json), [completion](gpu-window-v2-complete.json).
+The instrumented replay took59.07s, but runs overlapped peer non-timed work and
+are not paired throughput trials, so no E2E speedup is inferred.
+
+NVFP4 CPU checks cover all256 packed bytes (including signed zero), nearest-even
+midpoints, tail padding, fixed scale reuse and independent swizzle coordinates.
+[Three checks pass](nvfp4-format-cpu-attempt1.log). Native installed NVFP4 ABI
+and the new FP8 model/graph checks remain unrun.

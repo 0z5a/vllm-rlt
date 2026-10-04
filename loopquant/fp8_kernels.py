@@ -33,7 +33,8 @@ def quantize_rows(
         # Match the protected BF16 norm boundary, including its two roundings.
         x = (normalized * gain).to(dtype).to(tl.float32)
     if DYNAMIC:
-        scale = tl.div_rn(tl.maximum(tl.max(tl.abs(x), 0), 1.0e-12), 448.0)
+        # Torch's scalar division uses the rounded FP32 reciprocal product.
+        scale = tl.maximum(tl.max(tl.abs(x), 0), 1.0e-12) * (1.0 / 448.0)
     else:
         stage = tl.full((), 0, tl.int32)
         if len(BOUNDARIES):
