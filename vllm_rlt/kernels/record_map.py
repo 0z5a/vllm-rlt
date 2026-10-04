@@ -23,7 +23,7 @@ def publish_records(pointers, widths, depths, positions, records):
 
 
 @triton.jit
-def _publish_exits(POINTERS, DEPTHS, N: tl.constexpr, BLOCK: tl.constexpr):
+def _publish_exits(POINTERS, DEPTHS, N, BLOCK: tl.constexpr):
     rows = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
     valid = rows < N
     targets = tl.load(POINTERS + rows, valid, other=0).to(tl.pointer_type(tl.int32))
