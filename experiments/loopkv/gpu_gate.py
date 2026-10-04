@@ -1,3 +1,4 @@
+import argparse
 import json
 import time
 from pathlib import Path
@@ -6,10 +7,16 @@ import torch
 
 from vllm_rlt import LLM, CacheConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
+from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
 
-out = Path("evidence/gpu-alias-gate-v1.json")
+parser = argparse.ArgumentParser()
+parser.add_argument("--storage", choices=("alias", "compact"), default="alias")
+parser.add_argument("--out", type=Path, default=Path("evidence/gpu-alias-gate-v1.json"))
+args = parser.parse_args()
+out = args.out
+candidate_type = CompactKVCacheManager if args.storage == "compact" else AliasKVCacheManager
 torch.set_num_threads(2)
 torch.manual_seed(321)
 torch.backends.cuda.matmul.allow_tf32 = False
@@ -25,7 +32,7 @@ caches = [
         device="cuda",
         backend="triton",
     )
-    for cls in (KVCacheManager, AliasKVCacheManager)
+    for cls in (KVCacheManager, candidate_type)
 ]
 for cache in caches:
     cache.key_cache.fill_(float("nan"))
@@ -55,10 +62,17 @@ for position, count in enumerate((4, 4, 4, 1, 4, 2, 1, 3)):
             if depth >= count:
                 cache = caches[1]
                 allocation = cache._get_allocation("a")
-                block = allocation.block_tables[depth][position // 2]
-                assert torch.isnan(cache.key_cache[block, layer, position % 2]).all()
+                if args.storage == "compact":
+                    assert (depth, position) not in cache._records[id(allocation)]
+                    assert cache._maps[id(allocation)][depth, position].item() == -1
+                else:
+                    block = allocation.block_tables[depth][position // 2]
+                    assert torch.isnan(cache.key_cache[block, layer, position % 2]).all()
                 assert position not in allocation.written[depth][layer]
                 poison += 1
+if args.storage == "compact":
+    assert caches[1].live_records == 23
+    assert caches[1].peak_live_records == 23
 for cache in caches:
     cache.free("a")
 rows = []
@@ -85,7 +99,12 @@ for batch in (1, 4, 16, 32, 64, 128):
         engine = LLM(
             model,
             attention_backend="triton",
-            cache_config=CacheConfig(batch * 24, 2, alias_last_exited=alias),
+            cache_config=CacheConfig(
+                batch * 24,
+                2,
+                alias_last_exited=alias and args.storage == "alias",
+                compact_last_exited=alias and args.storage == "compact",
+            ),
             scheduler_config=SchedulerConfig(
                 max_num_seqs=batch, max_num_batched_tokens=2 * batch, prefill_chunk_size=2
             ),
@@ -101,6 +120,7 @@ for batch in (1, 4, 16, 32, 64, 128):
 torch.cuda.synchronize()
 result = {
     "scope": "tiny_weight_cuda_correctness_not_official_e2e_performance",
+    "storage": args.storage,
     "torch": torch.__version__,
     "cuda": torch.version.cuda,
     "gpu": torch.cuda.get_device_name(),

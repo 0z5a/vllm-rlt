@@ -71,6 +71,7 @@ def main():
     parser.add_argument("--threshold", type=float, required=True)
     parser.add_argument("--policy", choices=("ouro", "ouro_delayed"), default="ouro")
     parser.add_argument("--alias", action="store_true")
+    parser.add_argument("--compact", action="store_true")
     parser.add_argument("--checkpoint-reader", choices=("native", "torch"), default="native")
     parser.add_argument("--async-scheduling", action="store_true")
     parser.add_argument("--graphs", action="store_true")
@@ -91,7 +92,9 @@ def main():
     torch.manual_seed(17)
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
-    cache_config = CacheConfig(args.num_blocks, 16, alias_last_exited=args.alias)
+    cache_config = CacheConfig(
+        args.num_blocks, 16, alias_last_exited=args.alias, compact_last_exited=args.compact
+    )
     scheduler = SchedulerConfig(
         max_num_seqs=args.batch, max_num_batched_tokens=max(128, args.batch)
     )
@@ -246,6 +249,17 @@ def main():
         "geometry": asdict(shape),
         "finalization_exposed_ms": None,
     }
+    if args.compact:
+        cache = engine.cache_manager
+        summary["compact"] = {
+            "peak_live_records": cache.peak_live_records,
+            "record_bytes": shape.record_bytes,
+            "peak_unique_payload_bytes": cache.peak_live_records * shape.record_bytes,
+            "peak_persistent_metadata_bytes": cache.peak_metadata_bytes,
+            "live_records_after_drain": cache.live_records,
+            "admission": "full_worst_future_credits",
+            "payload_fragmentation_bytes": 0,
+        }
     dump(args.out / "run_summary.json", summary)
     for filename, values in (("requests.jsonl", completed.values()), ("steps.jsonl", steps)):
         (args.out / filename).write_text("".join(json.dumps(row) + "\n" for row in values))
