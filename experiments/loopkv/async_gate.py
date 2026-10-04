@@ -17,7 +17,7 @@ def routing_lifetime_gate(model, use_uva):
         attention_backend="triton",
         cache_config=CacheConfig(128, 2, alias_last_exited=True),
         scheduler_config=SchedulerConfig(max_num_seqs=1, max_num_batched_tokens=4),
-        exit_config=ExitConfig("trace", depths_by_request={"frozen": [1, 4]}),
+        exit_config=ExitConfig("trace", depths_by_request={"frozen": [4, 1]}),
         execution_config=ExecutionConfig(async_scheduling=True),
     )
     state, cache = engine.model_runner.async_state, engine.cache_manager
