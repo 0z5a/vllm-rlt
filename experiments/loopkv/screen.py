@@ -16,6 +16,7 @@ from experiments.loopkv.capture import drive, dump
 from experiments.loopkv.checkpoint import load_model
 from experiments.loopkv.metrics import WorkCounters
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
+from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
 
 
@@ -63,7 +64,13 @@ def main():
                 model,
                 attention_backend="triton",
                 exit_config=ExitConfig(plan["policy"]),
-                cache_config=CacheConfig(case["blocks"], 16, alias_last_exited=arm["alias"]),
+                cache_config=CacheConfig(
+                    case["blocks"],
+                    16,
+                    alias_last_exited=arm["alias"],
+                    compact_last_exited=arm.get("compact", False),
+                    reclaim_skipped_credits=arm.get("reclaim", False),
+                ),
                 scheduler_config=SchedulerConfig(
                     max_num_seqs=case["batch"], max_num_batched_tokens=max(128, case["batch"])
                 ),
@@ -95,7 +102,7 @@ def main():
             dump(folder / "steps.json", steps)
             assert len(completed) == case["requests"]
             assert engine.cache_manager.num_free_blocks == case["blocks"]
-            if not arm["alias"]:
+            if not arm["alias"] and not arm.get("compact", False):
                 baselines[arm["execution"]] = completed
             baseline = baselines[arm["execution"]]
             summary = {
@@ -116,6 +123,16 @@ def main():
                 "free_blocks_after_drain": engine.cache_manager.num_free_blocks,
                 **counters.summary(),
             }
+            if isinstance(engine.cache_manager, CompactKVCacheManager):
+                cache = engine.cache_manager
+                assert cache.live_records == cache._reserved_records == 0
+                summary["compact"] = {
+                    "peak_live_records": cache.peak_live_records,
+                    "peak_metadata_bytes": cache.peak_metadata_bytes,
+                    "live_records_after_drain": cache.live_records,
+                    "reserved_records_after_drain": cache._reserved_records,
+                }
+                del cache
             if engine.model_runner.graphs is not None:
                 graphs = engine.model_runner.graphs
                 assert graphs.captures and graphs.replays > graphs.captures
