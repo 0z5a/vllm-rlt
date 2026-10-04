@@ -91,7 +91,12 @@ class LLM:
                 request_ids.append(request_id)
             results = {}
             while self.engine.has_unfinished_requests():
-                for output in self.engine.step():
+                outputs = (
+                    self.engine.step(final_only=True)
+                    if isinstance(self.engine, LLMEngine)
+                    else self.engine.step()
+                )
+                for output in outputs:
                     if output.finished:
                         if self.tokenizer is not None:
                             output = replace(
