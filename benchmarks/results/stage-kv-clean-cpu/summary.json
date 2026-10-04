@@ -1,0 +1,137 @@
+[
+  {
+    "loops": 3,
+    "concurrency": 1,
+    "speed_ratio": 1.098199053100458,
+    "speed_ratio_ci95_t_log": [
+      0.6153247933356444,
+      1.9600074193221677
+    ],
+    "wall_seconds_geomean": {
+      "parent": 0.05608814805013788,
+      "stage": 0.05107284320796734
+    },
+    "per_seed_ratios": [
+      1.3099415028474122,
+      1.1993319606016355,
+      0.8430471905213267
+    ],
+    "kv_tensor_bytes": {
+      "parent": 30720,
+      "stage": 20480
+    },
+    "completion_latency_p95_seconds": {
+      "parent": 0.073069125,
+      "stage": 0.079603458
+    },
+    "completed_requests": 24
+  },
+  {
+    "loops": 3,
+    "concurrency": 16,
+    "speed_ratio": 1.1882088363240961,
+    "speed_ratio_ci95_t_log": [
+      0.8957242887887187,
+      1.5761995698786777
+    ],
+    "wall_seconds_geomean": {
+      "parent": 0.37544472559300174,
+      "stage": 0.3159753690727438
+    },
+    "per_seed_ratios": [
+      1.3435754713049322,
+      1.0734107744312111,
+      1.1631890800653664
+    ],
+    "kv_tensor_bytes": {
+      "parent": 491520,
+      "stage": 327680
+    },
+    "completion_latency_p95_seconds": {
+      "parent": 0.41932075,
+      "stage": 0.338537709
+    },
+    "completed_requests": 384
+  },
+  {
+    "loops": 3,
+    "concurrency": 64,
+    "speed_ratio": 1.2081013401673557,
+    "speed_ratio_ci95_t_log": [
+      0.9928072932917333,
+      1.4700827219701829
+    ],
+    "wall_seconds_geomean": {
+      "parent": 1.318400722042199,
+      "stage": 1.0912997761094807
+    },
+    "per_seed_ratios": [
+      1.3183241274656834,
+      1.1832983565099235,
+      1.1302997629726224
+    ],
+    "kv_tensor_bytes": {
+      "parent": 1966080,
+      "stage": 1310720
+    },
+    "completion_latency_p95_seconds": {
+      "parent": 1.457113375,
+      "stage": 1.333136125
+    },
+    "completed_requests": 1536
+  },
+  {
+    "loops": 32,
+    "concurrency": 1,
+    "speed_ratio": 1.0655647697796868,
+    "speed_ratio_ci95_t_log": [
+      0.8275830459053277,
+      1.3719810769607352
+    ],
+    "wall_seconds_geomean": {
+      "parent": 0.384788354162548,
+      "stage": 0.36111212107932744
+    },
+    "per_seed_ratios": [
+      0.9973477340919786,
+      1.0125847893014917,
+      1.1980130669983486
+    ],
+    "kv_tensor_bytes": {
+      "parent": 327680,
+      "stage": 168960
+    },
+    "completion_latency_p95_seconds": {
+      "parent": 0.46313225,
+      "stage": 0.514206792
+    },
+    "completed_requests": 24
+  },
+  {
+    "loops": 32,
+    "concurrency": 16,
+    "speed_ratio": 0.9812092256233504,
+    "speed_ratio_ci95_t_log": [
+      0.8043908725711453,
+      1.1968951628839144
+    ],
+    "wall_seconds_geomean": {
+      "parent": 2.5140846543457216,
+      "stage": 2.5622309581817824
+    },
+    "per_seed_ratios": [
+      0.913760347387361,
+      0.9662882400048709,
+      1.069906600391622
+    ],
+    "kv_tensor_bytes": {
+      "parent": 5242880,
+      "stage": 2703360
+    },
+    "completion_latency_p95_seconds": {
+      "parent": 2.833434125,
+      "stage": 2.702388958
+    },
+    "completed_requests": 384
+  }
+]

@@ -82,18 +82,13 @@ class PreemptionManager:
         blocks = [b for table in allocation.block_tables for b in table]
         # Copy views one page at a time: a pressure recovery must not allocate
         # another request-sized temporary on an already full GPU.
-        keys = torch.empty((len(blocks), *cache.key_cache.shape[1:]), dtype=cache.dtype)
-        values = torch.empty_like(keys)
-        for row, block in enumerate(blocks):
-            keys[row].copy_(cache.key_cache[block])
-            values[row].copy_(cache.value_cache[block])
+        pages = cache.snapshot_pages(blocks)
         snapshot = dict(
             stage=victim.stage,
             maximum=allocation.max_tokens,
             pages=len(allocation.block_tables[0]),
             written=deepcopy(allocation.written),
-            keys=keys,
-            values=values,
+            pools=pages,
             hidden=None if victim.hidden_state is None else victim.hidden_state.cpu().clone(),
             token=None
             if victim.input_token_tensor is None
@@ -127,9 +122,7 @@ class PreemptionManager:
             return False
         allocation = cache._get_allocation(request.request_id)
         blocks = [b for table in allocation.block_tables for b in table]
-        for row, block in enumerate(blocks):
-            cache.key_cache[block].copy_(state["keys"][row])
-            cache.value_cache[block].copy_(state["values"][row])
+        cache.restore_pages(blocks, state["pools"])
         allocation.written = state["written"]
         request.hidden_state = None if state["hidden"] is None else state["hidden"].to(cache.device)
         request.input_token_tensor = (

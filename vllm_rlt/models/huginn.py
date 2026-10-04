@@ -16,6 +16,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from vllm_rlt.core.kv_group import KVGroupSpec
 from vllm_rlt.layers import RMSNorm
 
 if TYPE_CHECKING:
@@ -211,6 +212,20 @@ class HuginnForCausalLM(nn.Module):
                 config.n_layers_in_prelude + config.n_layers_in_recurrent_block,
             )
         )
+        self.kv_groups = (
+            KVGroupSpec("prelude", tuple(range(config.n_layers_in_prelude)), 1),
+            KVGroupSpec("core", self.recurrent_kv_layers, config.mean_recurrence),
+            KVGroupSpec(
+                "coda",
+                tuple(
+                    range(
+                        config.n_layers_in_prelude + config.n_layers_in_recurrent_block,
+                        config.n_layers,
+                    )
+                ),
+                1,
+            ),
+        )
         self.transformer = nn.ModuleDict(
             dict(
                 wte=nn.Embedding(config.padded_vocab_size, config.n_embd),
@@ -245,7 +260,12 @@ class HuginnForCausalLM(nn.Module):
         return self.freqs_cis[0].index_select(0, batch.position_ids)
 
     def prelude_prepared(
-        self, tokens, batch: "_PreparedKVBatch", cache: "KVCacheManager", *, initial_state: torch.Tensor | None = None
+        self,
+        tokens,
+        batch: "_PreparedKVBatch",
+        cache: "KVCacheManager",
+        *,
+        initial_state: torch.Tensor | None = None,
     ):
         hidden = self.transformer.wte(tokens) * math.sqrt(self.config.n_embd)
         freqs = self._freqs(batch)

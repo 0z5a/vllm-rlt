@@ -1,0 +1,39 @@
+{
+  "baseline": "Candidate-tree rectangular ablation; inherited from46145be but includes common KV access refactor",
+  "profile": "CPU FP32, tiny Huginn width16/vocab13, stages2+4+2; one thread",
+  "scope": "In-process generation from burst admission through final scores; no network or RL",
+  "design": "Three fresh starts, seeds31/32/33, three APPA blocks after both-arm warmups",
+  "interval": "t interval on three per-start log ratios, df2; shared host, not independent training seeds",
+  "excluded": [
+    "model/engine construction",
+    "tokenization",
+    "network",
+    "reward",
+    "reference",
+    "optimizer",
+    "publication",
+    "checkpoint"
+  ],
+  "raw_sha256": {
+    "outputs-s31-r3-c1.json": "d33f43d29ab8aee72546c1acfee21c17d77f3f5615a95a120121fdeee0f70e4b",
+    "outputs-s31-r3-c16.json": "37f08daaa5913c81677a11edba09f5664af9c52e850a9e89954be9b437113ede",
+    "outputs-s31-r3-c64.json": "5ae8e5a98e36f946c670777a1c4094f13afcd2e5b9e7726f7a0a36ac6786f19a",
+    "outputs-s31-r32-c1.json": "3f060a9bafd6e771c758cefee477e08cda52e2e89e915a493a5e05c1b3a71e72",
+    "outputs-s31-r32-c16.json": "70967d47135374678e3dc5e3d0871af58b0495eef458cd2060edf3a86c4a0361",
+    "outputs-s32-r3-c1.json": "27f5e57ae67e27b30ddc00b03a759bf8c5d1bbc855411463cd9ae2114e84fb17",
+    "outputs-s32-r3-c16.json": "4fe0ecc8573233ab9a83405e7e297003edf4e706e0c5a7ac15e0cc3b18647127",
+    "outputs-s32-r3-c64.json": "b4dd0aba43d3447d20992006b418dfe96403686320f597ea90f8dea5ee54afbd",
+    "outputs-s32-r32-c1.json": "104339b8759ae4bedacd75a764e5f59b4b10f346b40a88755f9af33b79dc4b76",
+    "outputs-s32-r32-c16.json": "1cf036755105c9db0809130b173e63423d12ff57d2af1256c5858ff09e0bd7f5",
+    "outputs-s33-r3-c1.json": "9077ff90f84f7039d9831784a222c0d9da14fb033be0de923cde2674dbdd7528",
+    "outputs-s33-r3-c16.json": "734a2022228eaf9d23a44986135b3783d9e626720731c9ce8132a3a0aee9fa78",
+    "outputs-s33-r3-c64.json": "3bfb7943fc201f98d664b71a633f6e070678fa4e52ba0b6bde9352fddac7b12a",
+    "outputs-s33-r32-c1.json": "eb91945937d103f4bbbe091dcb072f8597653ca834eb278d4cd227d505748e3a",
+    "outputs-s33-r32-c16.json": "1050bc4a6306d3b374cfcafd8819892900ab80de31a7d801c27387ef99c16d0c",
+    "seed-31.jsonl": "35af45130e869a8eb8bef7f283ff0664b712f0e6101a5106ec9d92a6da73d697",
+    "seed-32.jsonl": "83c5c949bda78c8879893695db09989d63a18abef5dfca5ab7e3aa0a3bbeef5a",
+    "seed-33.jsonl": "f6795f1856c4dbc46271364ef50a1d4722da192957106a8d1465cc955f2b0e91",
+    "summary.json": "47423eab0253fc8d60ee314f4f43b45b0ee0f36b5b35ea3ac70e94bd78150464",
+    "validation.json": "fbd6e6faa6d384a7ea9739890b7b20dcbd5a7ecfc5322bdceaa0daac76c55817"
+  }
+}

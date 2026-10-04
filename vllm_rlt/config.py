@@ -19,8 +19,11 @@ class CacheConfig:
     enable_prefix_caching: bool = False
     incremental_allocation: bool = False
     watermark_ratio: float = 0.0
+    stage_aware: bool = False
 
     def __post_init__(self):
+        if type(self.stage_aware) is not bool:
+            raise ValueError("stage_aware must be a boolean")
         for name in ("enable_prefix_caching", "incremental_allocation"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be a boolean")
