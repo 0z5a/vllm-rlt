@@ -8,6 +8,7 @@ from vllm_rlt.core.memory import plan_cache
 from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS
+from vllm_rlt.models.huginn import HuginnForCausalLM
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
@@ -35,8 +36,18 @@ class LLMEngine:
         scheduler_config = scheduler_config or SchedulerConfig()
         parameter = next(model.parameters())
         config = model.config
+        if isinstance(model, HuginnForCausalLM):
+            if cache_config.layout != "last_exited":
+                raise ValueError("Huginn requires last_exited KV")
+            if cache_config.enable_prefix_caching:
+                raise ValueError("Huginn prefix caching is not yet supported")
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
+        if isinstance(model, HuginnForCausalLM):
+            if self.execution_config.async_scheduling or self.execution_config.prefill_uva:
+                raise ValueError("Huginn requires synchronous scheduling without prefill UVA")
+            if speculative_config is not None:
+                raise ValueError("Huginn speculative decoding is not yet supported")
         self.speculative_config = speculative_config
         if speculative_config is not None:
             if cache_config.layout != "last_exited":
@@ -113,6 +124,9 @@ class LLMEngine:
                 if cache_config.compact_last_exited
                 else {}
             ),
+            recurrent_layers=model.recurrent_kv_layers
+            if isinstance(model, HuginnForCausalLM)
+            else None,
         )
         if self.execution_config.prefill_uva and (
             parameter.device.type != "cuda"

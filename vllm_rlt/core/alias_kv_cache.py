@@ -95,9 +95,16 @@ class AliasKVCacheManager(KVCacheManager):
         return tuple(result)
 
     def _write_prepared(self, layer, batch, k, v):
+        self._validate_layer(layer)
         self._require_live_batch(batch)
-        if any(position in self._exits[id(a)] for a, _, position in batch.rows):
-            raise ValueError("cannot overwrite a finalized alias source")
+        for allocation, depth, position in batch.rows:
+            boundary = layer not in self.recurrent_layers
+            if boundary and depth != 0:
+                raise ValueError("boundary KV must use depth zero")
+            if position in self._exits[id(allocation)] and (
+                not boundary or position in allocation.written[0][layer]
+            ):
+                raise ValueError("cannot overwrite a finalized alias source")
         super()._write_prepared(layer, batch, k, v)
         for allocation, depth, position in batch.rows:
             self._readable[id(allocation)][depth][layer].add(position)
@@ -111,7 +118,7 @@ class AliasKVCacheManager(KVCacheManager):
         self._validate_depth(exit_depth)
         self._validate_position(allocation, position)
         for depth in range(exit_depth + 1):
-            for layer in range(self.num_layers):
+            for layer in self.recurrent_layers:
                 if position not in allocation.written[depth][layer]:
                     raise RuntimeError("cannot finalize before every executed version is written")
         if position in self._exits[id(allocation)]:
@@ -123,7 +130,7 @@ class AliasKVCacheManager(KVCacheManager):
         for depth in range(exit_depth + 1, self.max_loops):
             starts = self._alias_starts[id(allocation)]
             starts[depth] = min(starts[depth], position)
-            for layer in range(self.num_layers):
+            for layer in self.recurrent_layers:
                 self._readable[id(allocation)][depth][layer].add(position)
 
     def _attend_prepared(self, layer, batch, q):
