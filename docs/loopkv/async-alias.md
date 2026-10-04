@@ -23,6 +23,7 @@ retirement waits for the final reader before freeing the allocation and slot.
 |---|---|
 | CPU cache/model/async regression before explicit reset event | 162 passed, 43 CUDA/official-input skips, 36 subtests |
 | CPU async/reset regression after explicit reset event | 31 passed, 2 CUDA skips |
+| Capture workload counters | 3 CPU tests passed; sync/async mixed-depth accounting and call-weighted percentiles |
 | Frozen mixed-depth trace with held coda delivery | Exact output/exit objects versus native synchronous |
 | Cancel and reuse same request ID across three rounds | All three requests complete; all block credits return |
 | CUDA UVA/H2D banks and native Graph control | Queued in `experiments.loopkv.async_gate` |
@@ -36,3 +37,10 @@ retirement waits for the final reader before freeing the allocation and slot.
 CPU scheduling tests cannot establish CUDA event ordering. The forthcoming
 CUDA gate covers both mapped-host and H2D descriptors, B1–128/C2B, mixed-depth
 traces, cancellation/reuse, and the native Graph control before official runs.
+
+Future timed captures collect the same CPU submission counters in both arms:
+recurrent batch histograms, rows per depth, prefill tokens and observed residency.
+They add no device reads. The reported residency is sampled after each engine
+step. Batch percentiles weight core calls and use the nearest-rank definition.
+Submitted rows include work discarded before output delivery; exit-depth sums
+describe emitted outputs and are reported separately.
