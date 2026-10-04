@@ -1,7 +1,7 @@
 # Direct prefix and alias tail
 
-Status: CPU and CUDA correctness passed; official-checkpoint quality and speed
-validation are running separately.
+Status: CPU and CUDA correctness passed; official-checkpoint quality passed; independent speed
+pilots are running.
 
 The rectangular alias cache now tracks the first skipped position for each
 request and query depth. Before that position, every needed version has its own
@@ -25,7 +25,7 @@ unsupported by the experimental cache modes.
 | CUDA payload / skipped poison | 64/64 exact; 18/18 retained |
 | Tiny CUDA full engine, B1/4/16/32/64/128, C=2B | All output tokens and exit depths exact |
 | Text-stop streaming boundary tests | 2 passed; separate quality harness |
-| Official Ouro-1.4B cohort with EOS and text stops | Running |
+| Official Ouro-1.4B GSM8K100, EOS and text stops | 100/100 requests and11,473 tokens/exits/stops exact; strict64/100 |
 
 CUDA runtime source `87504bb1d213e6396a0b0e7a9f8ab1fcf3ebe7bf`, RTX 5090,
 Torch 2.12.1+cu130 and Triton 3.7.1. [Raw gate](evidence/hybrid-gpu-v1.json).
@@ -48,3 +48,6 @@ engine API, preserves its terminal output and records the matched byte offset.
 The underlying engine reports `abort` for that logical text-stop action; no OS
 process is signaled. Scoring trims at the recorded text boundary. This is a new
 100-question frozen GSM8K cohort, not a reproduction of a historical HF score.
+
+[Full quality report](quality.md) preserves the Native-S/full4 controls, original
+compact scheduling failure, corrected rerun and all source/input fingerprints.
