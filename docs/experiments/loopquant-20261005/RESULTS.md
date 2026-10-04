@@ -216,3 +216,10 @@ Huginn's separately based adapter is in
 integration of native Huginn PR82 and this quantization harness. Its eight
 original-class tiny comparisons are bitwise exact and 59 targeted CPU checks
 pass. It has not run its full checkpoint or E2E matrix.
+
+A native fused-producer implementation is now staged for GPU qualification:
+explicit caller-owned scratch, E4M3 row casting/padding, optional RMSNorm,
+DYN or absolute-loop static selection, and the installed rowwise CUTLASS GEMM.
+It has no custom GEMM or installed dependency changes. Its finite GPU probe
+covers 120 configurations and three graph replays; these checks are **not run**
+until the next resource handoff. It is not yet integrated into model serving.
