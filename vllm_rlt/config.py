@@ -20,11 +20,16 @@ class CacheConfig:
     incremental_allocation: bool = False
     watermark_ratio: float = 0.0
     alias_last_exited: bool = False
+    compact_last_exited: bool = False
 
     def __post_init__(self):
         if type(self.alias_last_exited) is not bool:
             raise ValueError("alias_last_exited must be a boolean")
-        if self.alias_last_exited and (
+        if type(self.compact_last_exited) is not bool:
+            raise ValueError("compact_last_exited must be a boolean")
+        if self.alias_last_exited and self.compact_last_exited:
+            raise ValueError("choose rectangular alias or compact storage")
+        if (self.alias_last_exited or self.compact_last_exited) and (
             self.layout != "last_exited"
             or self.enable_prefix_caching
             or self.incremental_allocation

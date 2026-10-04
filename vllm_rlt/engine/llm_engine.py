@@ -2,6 +2,7 @@ from dataclasses import replace
 
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
+from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
 from vllm_rlt.core.scheduler import Scheduler
@@ -73,7 +74,7 @@ class LLMEngine:
                 *FLASH_BACKENDS,
             ):
                 raise ValueError("CUDA async scheduling requires Triton or FlashAttention")
-        if cache_config.alias_last_exited and (
+        if (cache_config.alias_last_exited or cache_config.compact_last_exited) and (
             self.execution_config.async_scheduling
             or self.execution_config.static_buffers
             or self.execution_config.cuda_graphs
@@ -86,7 +87,13 @@ class LLMEngine:
         num_blocks, self.memory_plan = plan_cache(
             model, cache_config, scheduler_config, self.execution_config, attention_backend
         )
-        cache_type = AliasKVCacheManager if cache_config.alias_last_exited else KVCacheManager
+        cache_type = (
+            CompactKVCacheManager
+            if cache_config.compact_last_exited
+            else AliasKVCacheManager
+            if cache_config.alias_last_exited
+            else KVCacheManager
+        )
         self.cache_manager = cache_type(
             num_layers=config.num_hidden_layers,
             num_kv_heads=config.num_key_value_heads,
