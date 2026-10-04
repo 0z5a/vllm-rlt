@@ -135,3 +135,79 @@ def test_fixed_reservation_admits_the_same_initial_batch(cache_type):
     scheduler._admit()
     assert len(cache._allocations) == 4
     assert cache.num_free_blocks == 0
+
+
+def test_reclaimed_past_credits_survive_future_full_depth():
+    cache = CompactKVCacheManager(
+        2,
+        2,
+        32,
+        48,
+        2,
+        max_loops=4,
+        dtype=torch.float32,
+        device="cpu",
+        backend="torch",
+        reclaim_skipped_credits=True,
+    )
+    assert cache.allocate("a", 13)
+    assert not cache.allocate("b", 13)
+
+    def write_position(rid, position, loops):
+        for depth in range(loops):
+            for layer in range(2):
+                payload = torch.full((1, 2, 32), position * 100.0 + depth * 10 + layer)
+                cache.write(layer, [rid], [depth], [position], payload, -payload)
+                assert cache.live_records <= cache._reserved_records <= 96
+        cache.finalize_token(rid, position, loops - 1)
+        assert cache.live_records <= cache._reserved_records <= 96
+
+    for position in range(6):
+        write_position("a", position, 1)
+    assert cache._reserved_records == 38  # 56 initial, 18 provably unused past versions.
+    assert cache.allocate("b", 13)
+    assert cache._reserved_records == 94
+    # Every future token switches to maximum depth; no new credit is needed.
+    for position in range(6, 13):
+        write_position("a", position, 4)
+    for position in range(13):
+        write_position("b", position, 4)
+    assert cache.live_records == 86
+    for rid in ("a", "b"):
+        for depth in range(4):
+            keys, values = cache.read(0, rid, depth, 13)
+            expected = torch.tensor(
+                [p * 100.0 + (0 if rid == "a" and p < 6 else depth) * 10 for p in range(13)]
+            )[:, None, None].expand_as(keys)
+            assert torch.equal(keys, expected)
+            assert torch.equal(values, -expected)
+        cache.free(rid)
+    assert cache.live_records == cache._reserved_records == 0
+    assert cache.num_free_blocks == 48
+
+
+def test_prepared_unwritten_versions_keep_their_credit():
+    cache = CompactKVCacheManager(
+        2,
+        2,
+        32,
+        48,
+        2,
+        max_loops=4,
+        dtype=torch.float32,
+        device="cpu",
+        backend="torch",
+        reclaim_skipped_credits=True,
+    )
+    assert cache.allocate("a", 3)
+    batches = cache._prepare_batches(["a"], [[0], [1], [2], [3]], [0])
+    payload = torch.ones(1, 2, 32)
+    for layer in range(2):
+        cache._write_prepared(layer, batches[0], payload, payload)
+    before = cache._reserved_records
+    cache.finalize_token("a", 0, 0)
+    assert cache._reserved_records == before
+    with pytest.raises(ValueError, match="overwrite"):
+        cache._write_prepared(0, batches[3], payload, payload)
+    cache.free("a")
+    assert cache.live_records == cache._reserved_records == 0

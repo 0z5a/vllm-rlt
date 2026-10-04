@@ -13,10 +13,12 @@ from vllm_rlt.core.kv_cache_manager import _Allocation, _PreparedKVBatch, _Writt
 
 
 class CompactKVCacheManager(AliasKVCacheManager):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, reclaim_skipped_credits=False, **kwargs):
         super().__init__(*args, **kwargs)
+        self.reclaim_skipped_credits = reclaim_skipped_credits
         self._free_records = list(reversed(range(self.num_blocks * self.block_size)))
-        self._reserved_blocks = 0
+        self._reserved_records = 0
+        self._credits: dict[int, int] = {}
         self._records: dict[int, dict[tuple[int, int], int]] = {}
         self._maps: dict[int, torch.Tensor] = {}
         self.peak_live_records = 0
@@ -25,7 +27,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
     @property
     def num_free_blocks(self):
         """Uncommitted worst-future credits, not unused physical records."""
-        return self.num_blocks - self._reserved_blocks
+        return (self.num_blocks * self.block_size - self._reserved_records) // self.block_size
 
     @property
     def live_records(self):
@@ -54,7 +56,8 @@ class CompactKVCacheManager(AliasKVCacheManager):
         self._maps[key] = torch.full(
             (self.max_loops + 1, max_tokens), -1, dtype=torch.int32, device=self.device
         )
-        self._reserved_blocks += required
+        self._credits[key] = required * self.block_size
+        self._reserved_records += self._credits[key]
         self.peak_metadata_bytes = max(
             self.peak_metadata_bytes,
             sum(t.numel() * t.element_size() for t in self._maps.values())
@@ -76,7 +79,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
             return
         key = id(allocation)
         self._free_records.extend(self._records.pop(key).values())
-        self._reserved_blocks -= self.required_blocks(allocation.max_tokens)
+        self._reserved_records -= self._credits.pop(key)
         del self._maps[key], self._readable[key], self._exits[key]
 
     def _prepare_batches(
@@ -158,6 +161,13 @@ class CompactKVCacheManager(AliasKVCacheManager):
                     raise RuntimeError("cannot finalize an unwritten executed version")
         self._maps[key][self.max_loops, position].fill_(exit_depth)
         self._exits[key][position] = exit_depth
+        if self.reclaim_skipped_credits:
+            released = sum(
+                (depth, position) not in self._records[key]
+                for depth in range(exit_depth + 1, self.max_loops)
+            )
+            self._credits[key] -= released
+            self._reserved_records -= released
         for depth in range(exit_depth + 1, self.max_loops):
             for layer in range(self.num_layers):
                 self._readable[key][depth][layer].add(position)
