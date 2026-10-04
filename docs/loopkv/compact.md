@@ -1,6 +1,6 @@
 # Compact records: first implementation
 
-Status: CPU validation passed; CUDA and official-checkpoint results pending.
+Status: CPU and CUDA gates passed; official-checkpoint results pending.
 Incremental reference: rectangular alias branch at
 `9894e0e` (the exact parent is recorded in Git).
 
@@ -30,9 +30,15 @@ Cross-stream retirement and stable graph metadata remain future work.
 | Skipped versions | No allocated record; device-map entry stays -1 | CPU payload/attention equality |
 | Free and reuse | All records and credits returned; stale descriptor rejected | Repeated request ID |
 | Full tiny-model engine | B1/4/16, C=2B token/exit parity | Conservative admission and refills |
-| CUDA general reader | Pending | No performance claim |
+| CUDA general reader | 46 bitwise attention, 64 exact payload checks | RTX 5090, BF16; no dense K/V reconstruction |
+| CUDA skipped entries | 18 checks passed | No physical record; map entry remains -1 |
+| CUDA full tiny-model engine | B1/4/16/32/64/128, C=2B all exact | Up to 256 requests; tiny weights only |
+| Rectangular alias on updated kernel | All original CUDA gates passed | Shared-kernel regression check |
 
 Reproduce the standalone GPU gate with
 `python -m experiments.loopkv.gpu_gate --storage compact --out result.json`.
 The official checkpoint harness accepts `--compact`; `--measure` remains the
 finite-batch E2E mode, and neither mode stands in for HTTP serving.
+
+Raw CUDA evidence: [compact](evidence/compact-gpu-v1.json) and
+[rectangular regression](evidence/compact-branch-alias-regression-v1.json).
