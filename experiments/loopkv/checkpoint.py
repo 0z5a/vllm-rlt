@@ -9,6 +9,25 @@ from pathlib import Path
 import torch
 from torch import nn
 
+from vllm_rlt.models import NanbeigeConfig, NanbeigeForCausalLM, OuroConfig, OuroForCausalLM
+
+
+def load_model(
+    folder: Path, device: torch.device, dtype: torch.dtype
+) -> OuroForCausalLM | NanbeigeForCausalLM:
+    """Construct a native recurrent model without optional Hub dependencies."""
+    config = json.loads((folder / "config.json").read_text())
+    with torch.device("meta"):
+        if config["model_type"] == "ouro":
+            model = OuroForCausalLM(OuroConfig.from_dict(config))
+        elif config["model_type"] == "nanbeige":
+            model = NanbeigeForCausalLM(NanbeigeConfig.from_dict(config))
+        else:
+            raise ValueError("the standalone reader supports Ouro and Nanbeige")
+    load_weights(model, folder, device, dtype)
+    model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device=device)
+    return model.eval()
+
 
 def load_weights(model: nn.Module, folder: Path, device: torch.device, dtype: torch.dtype) -> None:
     """Stream each tensor into owned storage; never retain the file-backed mapping."""

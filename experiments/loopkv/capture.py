@@ -23,7 +23,7 @@ import torch
 from experiments.loopkv.capacity import Geometry, account
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import AutoModelForCausalLM, OuroConfig, OuroForCausalLM
+from vllm_rlt.models import AutoModelForCausalLM
 from vllm_rlt.request import Stage
 
 
@@ -153,6 +153,7 @@ def main():
         "vllm_rlt.core.kv_cache_manager",
         "vllm_rlt.kernels.triton_attention",
         "vllm_rlt.models.ouro",
+        "vllm_rlt.models.nanbeige",
         "experiments.loopkv.checkpoint",
         "experiments.loopkv.text_stops",
     ):
@@ -225,16 +226,9 @@ def main():
             str(args.model), device="cuda", dtype=torch.bfloat16
         )
     else:
-        from experiments.loopkv.checkpoint import load_weights
+        from experiments.loopkv.checkpoint import load_model
 
-        config_data = json.loads((args.model / "config.json").read_text())
-        if config_data["model_type"] != "ouro":
-            raise ValueError("the standalone reader is qualified for Ouro only")
-        with torch.device("meta"):
-            model = OuroForCausalLM(OuroConfig.from_dict(config_data))
-        load_weights(model, args.model, torch.device("cuda"), torch.bfloat16)
-        model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device="cuda")
-        model.eval()
+        model = load_model(args.model, torch.device("cuda"), torch.bfloat16)
     if load_lock is not None:
         load_lock.close()
     config = model.config
