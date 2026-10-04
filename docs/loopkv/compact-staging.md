@@ -18,11 +18,19 @@ selection, credit policy or reserved memory.
 | CUDA skipped maps and unused payload poison | Passed |
 | CUDA stale request descriptor | Rejected after free/reuse |
 | Tiny CUDA engine B1/4/16/32/64/128, C=2B | Exact tokens and exits |
+| Official Ouro-1.4B P128/D128 B limit64/C128, fixed6GiB arena | All128 requests /16,384 output tokens and exits exactly match native |
 
 [Raw CUDA gate](evidence/compact-staging-gpu-v2.json) runs at frozen source
 `a5e74191529715e6657dfdd5f335592cd2c82b85` on RTX5090, Torch2.12.1+cu130,
-Triton3.7.1. Official-checkpoint and independent timed staging comparisons remain
-pending. The corrected compact quality result in [the quality report](quality.md)
+Triton3.7.1. Independent timed staging comparisons remain pending.
+The official capture uses descendant source
+`cf70584d60913e1664439fb1b4acf603e2dff105` with credit reclamation disabled.
+Native and staging have identical full request objects and actual batch/exit
+histograms, maximum32 residents, and all2048 block credits return after drain.
+The repeated prompt fixture and per-step capture are a mechanism diagnostic,
+not a quality score or speed comparison. [Official manifests and receipts](evidence/compact-staging-official-v1.json).
+
+The corrected compact quality result in [the quality report](quality.md)
 uses the original five-transfer descriptor and must not be counted as validation
 of this descriptor optimization.
 
