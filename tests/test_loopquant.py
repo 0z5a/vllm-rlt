@@ -176,7 +176,8 @@ def test_torch_only_loader_matches_safetensors(tmp_path, dtype):
 
 
 @pytest.mark.parametrize("loops", [1, 2, 3, 4])
-def test_ouro_dense_adapter_matches_independent_oracle(loops):
+@pytest.mark.parametrize("attention_backend", ["eager", "sdpa"])
+def test_ouro_dense_adapter_matches_independent_oracle(loops, attention_backend):
     from loopquant.adapters.ouro import OuroAdapter
     from tests.helpers import tiny_ouro_config
     from tests.reference import dense_reference
@@ -184,7 +185,7 @@ def test_ouro_dense_adapter_matches_independent_oracle(loops):
 
     torch.manual_seed(71)
     model = OuroForCausalLM(tiny_ouro_config())
-    adapter = OuroAdapter(model)
+    adapter = OuroAdapter(model, attention_backend=attention_backend)
     tokens = torch.tensor([[5, 7, 2, 11], [3, 9, 6, 0]])
     valid = torch.tensor([[True, True, True, True], [True, True, True, False]])
     actual = adapter(tokens, valid, loops)
@@ -313,9 +314,9 @@ def test_export_preserves_encoded_model_without_fp_weight_duplicates(tmp_path):
     module = adapter.quantized[name.replace(".", "__")]
     values = torch.randn(5, model.config.hidden_size, dtype=torch.bfloat16)
     scale = payload["activation_scales"][name]
-    activation = (fp8_encode(values, scale).float() * scale).to(values.dtype)
-    weight = (payload["packed"][name].t().float() * payload["weight_scales"][name]).to(values.dtype)
-    expected = nn.functional.linear(activation, weight)
+    activation = fp8_encode(values, scale).float() * scale
+    weight = payload["packed"][name].t().float() * payload["weight_scales"][name]
+    expected = nn.functional.linear(activation, weight).to(values.dtype)
     torch.testing.assert_close(
         module(values, torch.zeros(5, dtype=torch.long)), expected, atol=0, rtol=0
     )
@@ -420,6 +421,7 @@ def test_native_fp8_matches_same_quantized_model_and_graph():
     torch.manual_seed(17)
     linear = nn.Linear(64, 32, bias=False, device="cuda", dtype=torch.bfloat16)
     module = NativeFP8Linear(linear, torch.tensor(0.01, device="cuda"))
+    fake = FP8FakeLinear(linear, torch.tensor([0.01], device="cuda"), ScaleLayout(4))
     values = torch.randn(17, 64, device="cuda", dtype=torch.bfloat16)
     storage = module.packed_weight.data_ptr()
     warmup = torch.cuda.Stream()
@@ -433,6 +435,14 @@ def test_native_fp8_matches_same_quantized_model_and_graph():
         output = module(values)
     for scale in (0.01, 0.02):
         module.activation_scale.fill_(scale)
+        with torch.no_grad():
+            fake.log_scale.fill_(math.log(scale))
         graph.replay()
         torch.testing.assert_close(output, module.reference(values), atol=0.02, rtol=0.02)
+        torch.testing.assert_close(
+            output,
+            fake(values, torch.zeros(len(values), dtype=torch.long, device="cuda")),
+            atol=0.02,
+            rtol=0.02,
+        )
         assert module.packed_weight.data_ptr() == storage

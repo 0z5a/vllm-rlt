@@ -1,6 +1,7 @@
 """Dense, differentiable Ouro path with explicit loop IDs and BF16 state boundaries."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 import torch
 from torch import nn
@@ -26,9 +27,17 @@ class OuroAdapter(nn.Module):
     intentionally avoids the inference cache's no-grad writes during QAT.
     """
 
-    def __init__(self, model: OuroForCausalLM) -> None:
+    def __init__(
+        self,
+        model: OuroForCausalLM,
+        *,
+        attention_backend: Literal["eager", "sdpa"] = "eager",
+    ) -> None:
         super().__init__()
+        if attention_backend not in ("eager", "sdpa"):
+            raise ValueError("reference attention must be explicitly eager or sdpa")
         self.model = model
+        self.attention_backend = attention_backend
         self.quantized = nn.ModuleDict()
         self.statistics: dict[tuple[str, int], ActivationStats] = {}
         self.collect = False
@@ -79,14 +88,19 @@ class OuroAdapter(nn.Module):
                 q = q.reshape(batch, length, -1, config.head_dim).transpose(1, 2)
                 k = k.reshape(batch, length, -1, config.head_dim).transpose(1, 2)
                 v = v.reshape(batch, length, -1, config.head_dim).transpose(1, 2)
-                # Follow the pinned official eager path for differentiable numerical checks.
-                groups = config.num_attention_heads // config.num_key_value_heads
-                k = k.repeat_interleave(groups, dim=1)
-                v = v.repeat_interleave(groups, dim=1)
-                scores = (q @ k.transpose(-2, -1)) * config.head_dim**-0.5
-                scores = scores.masked_fill(~mask, torch.finfo(q.dtype).min)
-                probabilities = scores.softmax(dim=-1, dtype=torch.float32).to(q.dtype)
-                attention = probabilities @ v
+                if self.attention_backend == "sdpa":
+                    attention = F.scaled_dot_product_attention(
+                        q, k, v, attn_mask=mask, enable_gqa=True
+                    )
+                else:
+                    # Follow the pinned official eager path and its BF16 boundaries.
+                    groups = config.num_attention_heads // config.num_key_value_heads
+                    k = k.repeat_interleave(groups, dim=1)
+                    v = v.repeat_interleave(groups, dim=1)
+                    scores = (q @ k.transpose(-2, -1)) * config.head_dim**-0.5
+                    scores = scores.masked_fill(~mask, torch.finfo(q.dtype).min)
+                    probabilities = scores.softmax(dim=-1, dtype=torch.float32).to(q.dtype)
+                    attention = probabilities @ v
                 attention = attention.transpose(1, 2).reshape(batch, length, -1)
                 projected = self._linear(
                     prefix + ".self_attn.o_proj", attn.o_proj, attention, loop, valid

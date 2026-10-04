@@ -56,8 +56,11 @@ FP64 reference check on the failing input passed at the unchanged tolerance:
 native maximum error 0.000120017, adapter maximum error 0.000032414. The original
 failures are retained. A subsequent 32-input FP64 comparison failed at prompt
 15, loop 3 in the SDPA adapter: one of 2,310,144 logits differed by 0.000332700.
-The adapter now follows the pinned official eager attention operator order;
-full-model qualification of that change is pending. Tolerances are unchanged.
+The complete follow-up audit found the BF16 adapter state/logits bitwise equal
+to the official eager oracle at all 32 inputs and four depths. Native Torch
+attention differs (25 logit argmax differences across 6,896 positions), and
+the fixed FP32 criterion still fails. Incremental-cache and deployment-backend
+qualification remain before overall G0. Tolerances are unchanged.
 See the [raw evidence and comparison table](experiments/loopquant-20261005/RESULTS.md).
 
 | Model | Baseline tok/s | Candidate tok/s | Paired speedup | Status |

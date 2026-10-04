@@ -55,6 +55,7 @@ def export_ouro(adapter: OuroAdapter, folder: Path, *, model_revision: str) -> N
         "scale_policy": "SH1",
         "model_revision": model_revision,
         "model_config": adapter.model.config.to_dict(),
+        "reference_attention": adapter.attention_backend,
         "packed_weight_matrices": len(weights),
         "packed_weight_copies": 1,
         "packed_weight_bytes": sum(weight.numel() for weight in weights.values()),

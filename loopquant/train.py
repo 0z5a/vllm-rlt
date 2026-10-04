@@ -44,7 +44,7 @@ class Q0Trainer:
         if min(config.kl_weight, config.trajectory_weight) < 0 or config.temperature <= 0:
             raise ValueError("invalid loss coefficients or temperature")
         self.student = student
-        self.teacher = OuroAdapter(student.model)
+        self.teacher = OuroAdapter(student.model, attention_backend=student.attention_backend)
         self.config = config
         self.parameters = dict(student.quantized.named_parameters())
         self.optimizer = torch.optim.AdamW(

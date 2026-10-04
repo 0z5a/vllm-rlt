@@ -80,6 +80,8 @@ class FP8FakeLinear(nn.Module):
 
     def forward(self, values: torch.Tensor, loop_ids: torch.Tensor) -> torch.Tensor:
         scale = self.log_scale.exp()[self.layout.indices(loop_ids)].unsqueeze(-1)
-        activation = fp8_fake_quant(values, scale)
-        weight = (self.packed_weight.float() * self.weight_scale).to(values.dtype)
-        return nn.functional.linear(activation, weight)
+        # Decode in FP32 so the reference does not insert BF16 rounding before
+        # the native FP8 GEMM's accumulation and final output conversion.
+        activation = fp8_fake_quant(values.float(), scale)
+        weight = self.packed_weight.float() * self.weight_scale
+        return nn.functional.linear(activation, weight).to(values.dtype)

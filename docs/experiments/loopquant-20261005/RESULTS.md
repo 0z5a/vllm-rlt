@@ -36,8 +36,28 @@ Official Ouro revision `574fa66cb8bf5abdc979642d01cf2b79b16bfab1`, runtime base 
 | [3](ouro-g0-attempt3.log) | FP32 vs FP64 oracle over the smoke set | Adapter failed at smoke-14 R3; abs 0.000332700 |
 
 Attempt3 stopped after the first failed assertion; later inputs were not checked.
-The independent failure logs are preserved. Eager-attention adapter qualification,
-BF16 baseline ranges and incremental KV correctness remain before PTQ searches.
+The original logs remain retained.
+
+The next [complete audit](ouro-g0-attempt4b.json) collected all 32 inputs at R1–R4
+in both FP32 and BF16. Its process naturally exited 0, but the fixed FP32
+criterion failed in 36 of 128 combinations across the five checked tensors.
+See the [aggregated counts](ouro-g0-attempt4b-summary.json). The first launch
+had a [missing prompt path](ouro-g0-attempt4.log) and exited before GPU work;
+the corrected launch has a separate [raw log](ouro-g0-attempt4b.log).
+
+| BF16 comparison against official eager arithmetic | Maximum absolute error | Logit argmax disagreements / token positions |
+|---|---:|---:|
+| Dense adapter state | 0 (bitwise equal at all 128 points) | — |
+| Dense adapter logits | 0 (bitwise equal at all 128 points) | 0 / 6,896 |
+| Native torch attention state | 6.03125 | — |
+| Native torch attention logits | 8.8984375 | 25 / 6,896 |
+
+The native Torch backend computes attention scores and value accumulation in
+FP32; the official eager path rounds scores and probabilities to BF16. These
+are baseline differences requiring incremental-cache and deployment-backend
+qualification, not a passed overall G0 or a quantization quality result. The
+FP32 comparison had zero logit argmax disagreements but retained nonzero
+fixed-tolerance failures (maximum logit error 0.00420481).
 
 ## CPU checks
 
@@ -63,3 +83,16 @@ reports that its wrapper is absent; no package was installed or upgraded.
 Formal results require exported-model noninferiority and independent paired
 E2E trials across C1/8/32/64, multiple batch limits, long/decode/mixed/open
 workloads. Failed cohorts and captures during timing cannot establish a speedup.
+
+After that run, FakeQuant's reference was corrected to preserve decoded values
+in FP32 until the GEMM output conversion. This avoids an extra pre-matmul BF16
+rounding absent from the native FP8 operation. The targeted
+[38 CPU checks](loopquant-cpu-attempt3.log) pass; full GPU export parity remains
+pending. Recurrent state and residual outputs remain BF16.
+
+An explicit `attention_backend` selects eager or SDPA arithmetic for the adapter;
+the Q0 teacher inherits that selection and export records it. The latest
+[42 CPU checks](loopquant-cpu-attempt4.log) cover both choices. GPU SDPA/Triton
+and incremental-cache qualification are queued. The installed compatible local
+Transformers runtime can instantiate the unmodified pinned official class; its
+full-weight CPU comparison is pending a separate verified public download.
