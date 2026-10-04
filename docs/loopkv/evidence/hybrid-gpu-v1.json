@@ -1,0 +1,50 @@
+{
+  "scope": "tiny_weight_cuda_correctness_not_official_e2e_performance",
+  "storage": "alias",
+  "torch": "2.12.1+cu130",
+  "cuda": "13.0",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "capability": [
+    12,
+    0
+  ],
+  "attention_bitwise_checks": 46,
+  "hybrid_prefix_bitwise_checks": 8,
+  "payload_identity_checks": 64,
+  "skipped_poison_checks": 18,
+  "stale_descriptor_reuse": true,
+  "unallocated_record_poison": false,
+  "engine_cases": [
+    {
+      "batch": 1,
+      "requests": 2,
+      "token_exit_parity": true
+    },
+    {
+      "batch": 4,
+      "requests": 8,
+      "token_exit_parity": true
+    },
+    {
+      "batch": 16,
+      "requests": 32,
+      "token_exit_parity": true
+    },
+    {
+      "batch": 32,
+      "requests": 64,
+      "token_exit_parity": true
+    },
+    {
+      "batch": 64,
+      "requests": 128,
+      "token_exit_parity": true
+    },
+    {
+      "batch": 128,
+      "requests": 256,
+      "token_exit_parity": true
+    }
+  ],
+  "finished_at_unix": 1791144816.6293468
+}
