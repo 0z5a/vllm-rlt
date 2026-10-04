@@ -86,7 +86,7 @@ class LLMEngine:
             ):
                 raise ValueError("CUDA async scheduling requires Triton or FlashAttention")
         if (cache_config.alias_last_exited or cache_config.compact_last_exited) and (
-            self.execution_config.async_scheduling
+            (cache_config.compact_last_exited and self.execution_config.async_scheduling)
             or self.execution_config.static_buffers
             or self.execution_config.cuda_graphs
             or self.execution_config.prefill_uva
@@ -94,7 +94,7 @@ class LLMEngine:
             or speculative_config is not None
             or attention_backend not in ("torch", "triton")
         ):
-            raise ValueError("alias storage currently supports eager execution without preemption")
+            raise ValueError("alias storage: unsupported execution or preemption mode")
         num_blocks, self.memory_plan = plan_cache(
             model, cache_config, scheduler_config, self.execution_config, attention_backend
         )
