@@ -11,8 +11,8 @@ class AliasKVCacheManager(KVCacheManager):
     """Keep every executed version; skipped depths resolve to its canonical source.
 
     The payload pool remains rectangular. This mode removes promotion writes,
-    but does not reduce reserved payload memory. Only eager, non-transfer
-    execution is supported until asynchronous descriptors are adapted.
+    but does not reduce reserved payload memory. Eager synchronous and resident
+    asynchronous execution use private allocations; transfer is unsupported.
     """
 
     def __init__(self, *args, **kwargs):
