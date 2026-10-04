@@ -84,6 +84,8 @@ def main():
     parser.add_argument("--requests", type=int)
     parser.add_argument("--num-blocks", type=int, required=True)
     parser.add_argument("--threshold", type=float, required=True)
+    parser.add_argument("--min-loops", type=int, default=2)
+    parser.add_argument("--max-loops", type=int)
     parser.add_argument("--policy", choices=("ouro", "ouro_delayed"), default="ouro")
     parser.add_argument("--alias", action="store_true")
     parser.add_argument("--compact", action="store_true")
@@ -183,6 +185,8 @@ def main():
             "sampling": {
                 "max_tokens": args.max_tokens,
                 "exit_threshold": args.threshold,
+                "min_loops": args.min_loops,
+                "max_loops": args.max_loops,
                 "seed": 17,
                 "ignore_eos": stop_spec is None,
             },
@@ -239,6 +243,8 @@ def main():
     params = SamplingParams(
         max_tokens=args.max_tokens,
         exit_threshold=args.threshold,
+        min_loops=args.min_loops,
+        max_loops=args.max_loops,
         seed=17,
         ignore_eos=stop_spec is None,
     )
