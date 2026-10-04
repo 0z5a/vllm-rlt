@@ -6,9 +6,9 @@ There are no measured E2E speedups yet; missing values are not zero speedup.
 | Model | Baseline tok/s | Candidate tok/s | Paired speedup | Speed change | Lower 95% bound | Status |
 |---|---:|---:|---:|---:|---:|---|
 | Ouro-1.4B | — | — | — | — | — | G0 incomplete |
-| Ouro-2.6B | — | — | — | — | — | Not run |
-| Huginn-3.5B | — | — | — | — | — | Not run |
-| Nanbeige4.2-3B | — | — | — | — | — | Not run |
+| Ouro-2.6B | — | — | — | — | — | Official CPU comparison running |
+| Huginn-3.5B | — | — | — | — | — | Tiny adapter checks in separate draft |
+| Nanbeige4.2-3B | — | — | — | — | — | Tiny adapter checks only |
 
 ## Native FP8 correctness
 
@@ -148,3 +148,71 @@ and attention for the BF16 teacher. The first shared Q0 implementation and
 Ouro checks remain covered after extracting common projection bookkeeping.
 
 Q0 now reuses one FP32 decoded reference matrix per physical projection during training, so backward does not retain a separate decoded copy per loop. It is a nonpersistent training buffer and is excluded from checkpoints and deployment exports. [48 CPU checks](loopquant-reference-cache-cpu-attempt1.log) pass, including four-loop saved-storage accounting and exact cache reconstruction after loading the packed state. This is a training-memory change, not a native serving-memory claim.
+
+
+## Unmodified official Ouro-1.4B class
+
+The pinned Hugging Face model loaded through existing Transformers 4.54.1 and
+our dense adapter agree **bitwise at all 128 state/logit comparisons**: 32
+inputs × R1–R4, BF16 eager attention. The full CPU run naturally exited 0 in
+3221.96 s. [Raw receipt](official-ouro-cpu-attempt1.json). This confirms the
+adapter against the original class, independently of the earlier functional
+oracle. It does not qualify native attention, model quality after quantization,
+or serving throughput. Its completed local duplicate weight was removed;
+remote weights needed by later experiments remain retained.
+
+## Complete per-token GEMM control
+
+The [full 32-input control](ouro-gemm-full-per-token-attempt1.json) extends the
+earlier two-input result. Disabling BF16 reduced-precision GEMM reduction and
+using one token per Linear call removes most incremental/full-prefill drift,
+but **does not remove all of it**: 53/512 state and 66/512 logit comparisons fail
+the unchanged `atol=rtol=0.02`; maximum logit difference is 3.734375. All 512
+logit argmax checks agree. Prior KV prefixes remain unchanged and allocations
+are released. Prefill against SDPA still fails at all 128 points. Therefore the
+two-input bitwise result must not be generalized to the full smoke set.
+
+## Native rowwise FP8
+
+The installed Torch 2.12.1+cu130 `torch._scaled_mm` accepts rowwise A scales
+`[M,1]` and columnwise B scales `[1,N]` on RTX 5090/SM120. All 20 combinations
+of M=1/17/32/64/128 and (K,N)=(64,32), (2048,2048), (2048,5632),
+(5632,2048) pass the registered 0.02 absolute/relative encoding comparison;
+maximum absolute difference is 0.015625. Two FakeQuant/native scale checks
+also pass. [Raw receipt](rowwise-fp8-probe-attempt1.json). Rowwise graph replay,
+producer fusion, model-level quality and performance remain untested.
+
+## Four-window native closed-loop calibration pilot
+
+The pilot completed four 512-token calibration windows, C4, scheduler token
+budget 128, R4, and 32 generated tokens per request with native Triton
+attention. It produced 69,142 trace calls and 2,896 statistics groups, with zero
+failed requests and zero KV allocations after drain. Every loop/projection
+received 2,048 prefill and 124 decode rows; the latter counts the 31 generated
+tokens actually fed back per request. [Receipt and artifact hashes](ouro-calibration-trace-pilot-summary.json).
+
+| Layer-0 q-projection input | Loop 0 | Loop 1 | Loop 2 | Loop 3 |
+|---|---:|---:|---:|---:|
+| Prefill amax | 2.125 | 6.625 | 6.6875 | 6.625 |
+| Decode amax | 1.71875 | 3.34375 | 3.015625 | 2.921875 |
+| Prefill RMS | 0.132093 | 0.142895 | 0.147032 | 0.149037 |
+| Decode RMS | 0.132585 | 0.144288 | 0.147717 | 0.149526 |
+
+These are pilot statistics, not the required 128-window calibration or scale
+selection on dev data. Raw compressed statistics (65,519,837 bytes) and trace
+(1,240,886 bytes) are retained locally with independent SHA checks. The
+instrumented 247.98 s process interval is not serving performance.
+
+The next collector accumulates statistics on the activation device and reuses
+prepared row indices, removing per-update scalar/boolean-index synchronization.
+Reservoir sampling remains uniform and bounded at 4,096 observations; its
+seed and device are recorded because CPU/CUDA RNG streams differ. Nonfinite
+CUDA data causes rejection when statistics or policies are materialized.
+[49 CPU checks](loopquant-device-stats-cpu-attempt1.log) pass; two GPU checks
+were deselected. GPU parity and calibration-cost comparison remain pending.
+
+Huginn's separately based adapter is in
+[draft 0z5a/vllm-rlt#10](https://github.com/0z5a/vllm-rlt/pull/10), on a frozen
+integration of native Huginn PR82 and this quantization harness. Its eight
+original-class tiny comparisons are bitwise exact and 59 targeted CPU checks
+pass. It has not run its full checkpoint or E2E matrix.

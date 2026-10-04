@@ -1,7 +1,7 @@
 """Stream native Ouro activations using the engine's actual row metadata.
 
-This diagnostic path synchronizes statistics to the CPU. It is not a timed
-serving backend and must run outside CUDA graphs.
+Statistics stay on the activation device until summary/export. This is a
+diagnostic path, not a timed serving backend, and must run outside CUDA graphs.
 """
 
 import json
@@ -33,6 +33,8 @@ class ActivationTrace:
         self.stream = stream
         self.prompt_lengths = dict(prompt_lengths)
         self.rows: tuple[TraceRow, ...] = ()
+        self.groups: dict[tuple[int, str], list[int]] = {}
+        self.indices: dict[tuple[int, str], torch.Tensor] = {}
         self.statistics: dict[tuple[str, str, int, str], ActivationStats] = {}
         self.calls = 0
 
@@ -47,6 +49,12 @@ class ActivationTrace:
             raise ValueError("trace metadata exceeds the activation row count")
         rows.extend(TraceRow(None, -1, -1, "padding", False) for _ in range(size - len(rows)))
         self.rows = tuple(rows)
+        groups: dict[tuple[int, str], list[int]] = defaultdict(list)
+        for index, row in enumerate(rows):
+            if row.valid_mask:
+                groups[row.loop_id, row.phase].append(index)
+        self.groups = dict(groups)
+        self.indices = {}
 
     def record(
         self, name: str, site: str, module: nn.Linear | RMSNorm, values: torch.Tensor
@@ -55,15 +63,16 @@ class ActivationTrace:
             return
         if values.ndim != 2 or values.shape[0] != len(self.rows):
             raise ValueError("native activations must align with the prepared packed rows")
-        groups: dict[tuple[int, str], list[int]] = defaultdict(list)
-        for index, row in enumerate(self.rows):
-            if row.valid_mask:
-                groups[row.loop_id, row.phase].append(index)
-        for (loop, phase), indices in groups.items():
-            valid = torch.zeros(len(self.rows), device=values.device, dtype=torch.bool)
-            valid[indices] = True
+        if not self.indices:
+            self.indices = {
+                key: torch.tensor(indices, device=values.device, dtype=torch.long)
+                for key, indices in self.groups.items()
+            }
+        for (loop, phase), indices in self.indices.items():
             key = (name, site, loop, phase)
-            self.statistics.setdefault(key, ActivationStats()).update(values, valid)
+            if key not in self.statistics:
+                self.statistics[key] = ActivationStats()
+            self.statistics[key].update_rows(values, indices)
         self.stream.write(
             json.dumps(
                 dict(

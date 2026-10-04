@@ -30,9 +30,9 @@ class QuantizedProjections(nn.Module):
         self, name: str, module: nn.Linear, values: torch.Tensor, loop: int, valid: torch.Tensor
     ) -> torch.Tensor:
         if self.collect:
-            self.statistics.setdefault((name, loop), ActivationStats()).update(
-                values.flatten(0, 1), valid.flatten()
-            )
+            if (name, loop) not in self.statistics:
+                self.statistics[name, loop] = ActivationStats()
+            self.statistics[name, loop].update(values.flatten(0, 1), valid.flatten())
         key = name.replace(".", "__")
         if key in self.quantized:
             loops = torch.full(values.shape[:-1], loop, device=values.device, dtype=torch.long)

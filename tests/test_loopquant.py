@@ -106,6 +106,36 @@ def test_reservoir_is_reproducible_and_bounded():
     torch.testing.assert_close(a.samples, b.samples)
 
 
+def test_prepared_indices_exclude_nonfinite_padding_and_match_mask_statistics():
+    indexed, masked = ActivationStats(sample_limit=7), ActivationStats(sample_limit=7)
+    for step in range(3):
+        values = torch.arange(24).reshape(4, 6).float() + step
+        values[1] = float("nan")
+        indexed.update_rows(values, torch.tensor([0, 2, 3]))
+        masked.update(values, torch.tensor([True, False, True, True]))
+    assert indexed.summary() == masked.summary()
+    with pytest.raises(ValueError, match="nonfinite"):
+        indexed.update_rows(values, torch.tensor([1]))
+
+
+@pytest.mark.gpu
+def test_cuda_calibration_has_no_per_update_scalar_or_boolean_index_sync():
+    values = torch.arange(256, device="cuda").reshape(4, 64).float()
+    values[-1] = float("nan")
+    indices = torch.tensor([0, 2], device="cuda")
+    stats = ActivationStats(sample_limit=32)
+    stats.update_rows(values, indices)
+    with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU]) as profile:
+        stats.update_rows(values, indices)
+    events = {event.key for event in profile.key_averages()}
+    assert not {"aten::item", "aten::_local_scalar_dense", "aten::nonzero"} & events
+    assert stats.rows == 4 and stats.amax == 191
+    assert stats.samples.device.type == "cuda" and stats.samples.numel() == 32
+    stats.update_rows(values, torch.tensor([3], device="cuda"))
+    with pytest.raises(ValueError, match="nonfinite"):
+        stats.summary()
+
+
 def test_next_token_shift_and_padding():
     ids = torch.tensor([[0, 1, 2, 0]])
     logits = torch.full((1, 4, 3), -20.0)

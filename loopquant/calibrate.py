@@ -18,6 +18,7 @@ def activation_scales(
         raise ValueError("percentile must be in (0, 100]")
     grouped: dict[str, dict[int, list[ActivationStats]]] = defaultdict(lambda: defaultdict(list))
     for (module, loop), stats in statistics.items():
+        stats.validate()
         if loop not in range(layout.max_loops):
             raise ValueError("observed loop outside registered range")
         stage = sum(loop >= boundary for boundary in layout.boundaries)
