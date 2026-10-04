@@ -21,6 +21,7 @@ class RoutingBank:
         self.done = self.ready_event = None
         self.uploads = []
         self.imports = []
+        self.dependencies = []
         self.descriptor = None
         if control_only:
             return
@@ -51,11 +52,14 @@ class RoutingBank:
             self.done.synchronize()
         self.uploads.clear()
         self.imports.clear()
+        self.dependencies.clear()
         self.descriptor = None
 
     def transfer(self, batch=None):
         from vllm_rlt.kernels.routing import metadata_kernel
 
+        for ready in self.dependencies:
+            torch.cuda.current_stream(self.owner.cache.device).wait_event(ready)
         for slot, table in self.uploads:
             self.owner.tables[slot, :, : table.shape[1]].copy_(table, non_blocking=True)
         for slot, hidden in self.imports:
@@ -177,6 +181,8 @@ class AsyncState:
         slot = self.free.pop()
         self.slots[rid] = slot
         self.owners[rid] = (id(request), id(allocation))
+        if self.alias:
+            bank.dependencies.append(self.cache._allocation_ready[id(allocation)])
         table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
         bank.uploads.append((slot, table))
         self.table_versions[rid] = allocation.block_tables

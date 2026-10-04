@@ -27,6 +27,7 @@ class AliasKVCacheManager(KVCacheManager):
         self._readable: dict[int, list[list[_WrittenPositions]]] = {}
         self._exits: dict[int, dict[int, int]] = {}
         self._alias_starts: dict[int, list[int]] = {}
+        self._allocation_ready: dict[int, torch.cuda.Event] = {}
         self.promotion_copy_bytes = 0
         self.materialization_bytes = 0
 
@@ -43,6 +44,10 @@ class AliasKVCacheManager(KVCacheManager):
         self._alias_starts[id(allocation)] = [max_tokens] * self.max_loops
         for block in allocation.block_tables[0]:
             self.source_depths[block].fill_(-1)
+        if self.device.type == "cuda":
+            ready = torch.cuda.Event()
+            ready.record(torch.cuda.current_stream(self.device))
+            self._allocation_ready[id(allocation)] = ready
         return True
 
     def free(self, request_id):
@@ -52,6 +57,7 @@ class AliasKVCacheManager(KVCacheManager):
             self._readable.pop(id(allocation))
             self._exits.pop(id(allocation))
             self._alias_starts.pop(id(allocation))
+            self._allocation_ready.pop(id(allocation), None)
 
     def pin_transfer(self, request_id, transfer_id):
         raise ValueError("alias KV transfer is not implemented")
