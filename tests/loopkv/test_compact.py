@@ -16,6 +16,8 @@ def compact_payload_check(device):
     counts = [4, 4, 4, 1, 4, 2, 1, 3]
     for cache in (reference, compact):
         assert cache.allocate("a", 9)
+    compact.key_cache.fill_(float("nan"))
+    compact.value_cache.fill_(float("nan"))
     assert compact.live_records == 0  # Admission creates credits, not payload records.
     for position, count in enumerate(counts):
         for depth in range(count):
@@ -44,6 +46,11 @@ def compact_payload_check(device):
                 assert compact._maps[id(allocation)][depth, position].item() == -1
         assert compact.live_records == sum(counts[: position + 1])
     assert compact.peak_live_records == 23
+    unused = torch.tensor(compact._free_records, device=device, dtype=torch.int64)
+    for payload in (compact.key_cache, compact.value_cache):
+        assert torch.isnan(
+            payload[unused // compact.block_size, :, unused % compact.block_size]
+        ).all()
     assert compact.promotion_copy_bytes == 0
     descriptor = compact._prepare_batch(["a"], [3], [7], for_write=False)
     compact.free("a")

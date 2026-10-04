@@ -1,6 +1,6 @@
 # Compact records: first implementation
 
-Status: CPU and CUDA gates passed; official-checkpoint results pending.
+Status: CPU/CUDA gates and full official-checkpoint token/exit parity passed; performance pending.
 Incremental reference: rectangular alias branch at
 `9894e0e` (the exact parent is recorded in Git).
 
@@ -42,3 +42,29 @@ finite-batch E2E mode, and neither mode stands in for HTTP serving.
 
 Raw CUDA evidence: [compact](evidence/compact-gpu-v1.json) and
 [rectangular regression](evidence/compact-branch-alias-regression-v1.json).
+
+## Official Ouro-1.4B diagnostic
+
+A full-weight P128/D256, B32/C64 natural-gate run completed 64 requests and
+16,384 output tokens. Prompt IDs, output IDs and exit depths exactly match the
+native reference, including all 36,254 executed decode loops. The run is
+instrumented diagnostic evidence, not a throughput comparison.
+
+| Metric | Rectangular storage | Compact records |
+|---|---:|---:|
+| Peak allocator-owned payload units | 9.000 GiB | 6.056 GiB (33,072 records) |
+| Reserved payload arena | 9.000 GiB | 9.000 GiB |
+| Maximum active requests | 32 | 32 |
+| Records remaining after drain | — | 0 |
+| Free admission blocks after drain | 3,072 | 3,072 |
+| E2E speedup | Reference | Pending timed pairs |
+
+Rectangular ownership is derived from the observed peak 32 resident requests,
+each reserving 96 pages. Compact ownership counts actual assigned records.
+These metrics count allocator-owned units, not only initialized bytes. Compact
+persistent GPU address metadata peaked at 441,728 bytes; runtime peak allocated
+memory was 12,574,126,080 bytes. Reserved memory did not improve in this version.
+[Raw summary and hashes](evidence/compact-official-main-v1.json) preserve the
+measurement scope. [Additional CUDA checks](evidence/compact-gpu-v2.json) verify
+all unused payload records remain poisoned and stale descriptors are rejected
+after request-ID reuse.

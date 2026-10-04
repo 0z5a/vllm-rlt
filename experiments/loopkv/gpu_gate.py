@@ -1,6 +1,7 @@
 import argparse
 import json
 import time
+import unittest
 from pathlib import Path
 
 import torch
@@ -73,7 +74,16 @@ for position, count in enumerate((4, 4, 4, 1, 4, 2, 1, 3)):
 if args.storage == "compact":
     assert caches[1].live_records == 23
     assert caches[1].peak_live_records == 23
+    cache = caches[1]
+    unused = torch.tensor(cache._free_records, device="cuda", dtype=torch.int64)
+    for payload in (cache.key_cache, cache.value_cache):
+        assert torch.isnan(payload[unused // cache.block_size, :, unused % cache.block_size]).all()
 for cache in caches:
+    old = cache._prepare_batch(["a"], [3], [7], for_write=False)
+    cache.free("a")
+    assert cache.allocate("a", 9)
+    with unittest.TestCase().assertRaisesRegex(RuntimeError, "stale"):
+        cache._attend_prepared(0, old, torch.zeros(1, 4, 32, device="cuda", dtype=cache.dtype))
     cache.free("a")
 rows = []
 config = OuroConfig(
@@ -128,6 +138,8 @@ result = {
     "attention_bitwise_checks": attention,
     "payload_identity_checks": identity,
     "skipped_poison_checks": poison,
+    "stale_descriptor_reuse": True,
+    "unallocated_record_poison": args.storage == "compact",
     "engine_cases": rows,
     "finished_at_unix": time.time(),
 }
