@@ -1,0 +1,242 @@
+[
+  {
+    "case": {
+      "name": "b32-c64-p128-d256",
+      "prompts": "experiments/loopkv/configs/prompts-p128.json",
+      "batch": 32,
+      "concurrency": 64,
+      "outputs": 256,
+      "num_blocks": 3072,
+      "threshold": 0.5,
+      "policy": "ouro"
+    },
+    "pair": 0,
+    "order": [
+      true,
+      false
+    ],
+    "exact_outputs": true,
+    "runs": {
+      "alias": {
+        "scope": "finite_batch_engine_e2e",
+        "seconds": 24.11971553787589,
+        "tokens_per_second": 679.278326241938,
+        "completed_requests": 64,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12706,
+          "3": 3614
+        },
+        "cached_decode_positions": 16320,
+        "executed_decode_loops": 36254,
+        "recurrent_batch_histogram": null,
+        "promotion_payload_bytes_from_trace": 5706743808,
+        "kv_arena_reserved_bytes": 9663676416,
+        "runtime_peak_allocated_bytes": 12573899264,
+        "runtime_peak_reserved_bytes": 12775849984,
+        "free_blocks_after_drain": 3072,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null
+      },
+      "native": {
+        "scope": "finite_batch_engine_e2e",
+        "seconds": 23.24352140724659,
+        "tokens_per_second": 704.8845875346577,
+        "completed_requests": 64,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12706,
+          "3": 3614
+        },
+        "cached_decode_positions": 16320,
+        "executed_decode_loops": 36254,
+        "recurrent_batch_histogram": null,
+        "promotion_payload_bytes_from_trace": 5706743808,
+        "kv_arena_reserved_bytes": 9663676416,
+        "runtime_peak_allocated_bytes": 12573685760,
+        "runtime_peak_reserved_bytes": 12775849984,
+        "free_blocks_after_drain": 3072,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null
+      }
+    },
+    "request_hashes": {
+      "alias": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132",
+      "native": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132"
+    }
+  },
+  {
+    "case": {
+      "name": "b32-c64-p128-d256",
+      "prompts": "experiments/loopkv/configs/prompts-p128.json",
+      "batch": 32,
+      "concurrency": 64,
+      "outputs": 256,
+      "num_blocks": 3072,
+      "threshold": 0.5,
+      "policy": "ouro"
+    },
+    "pair": 1,
+    "order": [
+      false,
+      true
+    ],
+    "exact_outputs": true,
+    "runs": {
+      "native": {
+        "scope": "finite_batch_engine_e2e",
+        "seconds": 23.57476357370615,
+        "tokens_per_second": 694.9804586067498,
+        "completed_requests": 64,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12706,
+          "3": 3614
+        },
+        "cached_decode_positions": 16320,
+        "executed_decode_loops": 36254,
+        "recurrent_batch_histogram": null,
+        "promotion_payload_bytes_from_trace": 5706743808,
+        "kv_arena_reserved_bytes": 9663676416,
+        "runtime_peak_allocated_bytes": 12573685760,
+        "runtime_peak_reserved_bytes": 12775849984,
+        "free_blocks_after_drain": 3072,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null
+      },
+      "alias": {
+        "scope": "finite_batch_engine_e2e",
+        "seconds": 23.76602763682604,
+        "tokens_per_second": 689.3873999629872,
+        "completed_requests": 64,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12706,
+          "3": 3614
+        },
+        "cached_decode_positions": 16320,
+        "executed_decode_loops": 36254,
+        "recurrent_batch_histogram": null,
+        "promotion_payload_bytes_from_trace": 5706743808,
+        "kv_arena_reserved_bytes": 9663676416,
+        "runtime_peak_allocated_bytes": 12573899264,
+        "runtime_peak_reserved_bytes": 12775849984,
+        "free_blocks_after_drain": 3072,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null
+      }
+    },
+    "request_hashes": {
+      "native": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132",
+      "alias": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132"
+    }
+  },
+  {
+    "case": {
+      "name": "b32-c64-p128-d256",
+      "prompts": "experiments/loopkv/configs/prompts-p128.json",
+      "batch": 32,
+      "concurrency": 64,
+      "outputs": 256,
+      "num_blocks": 3072,
+      "threshold": 0.5,
+      "policy": "ouro"
+    },
+    "pair": 2,
+    "order": [
+      false,
+      true
+    ],
+    "exact_outputs": true,
+    "runs": {
+      "native": {
+        "scope": "finite_batch_engine_e2e",
+        "seconds": 23.149883218109608,
+        "tokens_per_second": 707.7357516509277,
+        "completed_requests": 64,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12706,
+          "3": 3614
+        },
+        "cached_decode_positions": 16320,
+        "executed_decode_loops": 36254,
+        "recurrent_batch_histogram": null,
+        "promotion_payload_bytes_from_trace": 5706743808,
+        "kv_arena_reserved_bytes": 9663676416,
+        "runtime_peak_allocated_bytes": 12573685760,
+        "runtime_peak_reserved_bytes": 12775849984,
+        "free_blocks_after_drain": 3072,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null
+      },
+      "alias": {
+        "scope": "finite_batch_engine_e2e",
+        "seconds": 24.17873851582408,
+        "tokens_per_second": 677.6201326333583,
+        "completed_requests": 64,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12706,
+          "3": 3614
+        },
+        "cached_decode_positions": 16320,
+        "executed_decode_loops": 36254,
+        "recurrent_batch_histogram": null,
+        "promotion_payload_bytes_from_trace": 5706743808,
+        "kv_arena_reserved_bytes": 9663676416,
+        "runtime_peak_allocated_bytes": 12573899264,
+        "runtime_peak_reserved_bytes": 12775849984,
+        "free_blocks_after_drain": 3072,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null
+      }
+    },
+    "request_hashes": {
+      "native": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132",
+      "alias": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132"
+    }
+  }
+]

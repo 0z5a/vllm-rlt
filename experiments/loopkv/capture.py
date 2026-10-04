@@ -7,6 +7,7 @@ Prompt files contain a JSON list of token-ID lists, with a recorded SHA256.
 
 import argparse
 import hashlib
+import importlib
 import json
 import os
 import subprocess
@@ -106,6 +107,17 @@ def main():
         for d in metadata.distributions()
         if d.metadata["Name"].lower() in ("torch", "triton", "safetensors", "transformers")
     }
+    modules = {}
+    for name in (
+        "vllm_rlt.engine.llm_engine",
+        "vllm_rlt.core.alias_kv_cache",
+        "vllm_rlt.core.kv_cache_manager",
+        "vllm_rlt.kernels.triton_attention",
+        "vllm_rlt.models.ouro",
+        "experiments.loopkv.checkpoint",
+    ):
+        path = Path(importlib.import_module(name).__file__).resolve()
+        modules[name] = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
     dump(
         args.out / "manifest.json",
         {
@@ -120,6 +132,18 @@ def main():
             "python": sys.executable,
             "pid": os.getpid(),
             "packages": packages,
+            "modules": modules,
+            "environment": {
+                key: os.environ.get(key)
+                for key in (
+                    "CUDA_VISIBLE_DEVICES",
+                    "OMP_NUM_THREADS",
+                    "MKL_NUM_THREADS",
+                    "TRITON_CACHE_DIR",
+                    "CUDA_CACHE_PATH",
+                    "PYTHONPATH",
+                )
+            },
             "cache": asdict(cache_config),
             "scheduler": asdict(scheduler),
             "execution": asdict(execution),
