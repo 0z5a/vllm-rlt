@@ -156,6 +156,9 @@ class Scheduler:
         reclaim capacity by suspending another request later.
         """
         cache = self.cache_manager
+        if not cache.incremental_allocation:
+            # Fixed allocations already reserve the complete request budget.
+            return 0
         reserved = 0
         for request in self.requests.values():
             active = request.stage not in (Stage.WAITING, Stage.RECEIVING)
