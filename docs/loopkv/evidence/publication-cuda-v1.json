@@ -1,0 +1,189 @@
+{
+  "plan_sha256": "6f1bebd65efa1629cf9d69ad1c74eb7453cc2cfd9a89e62c536911e8a6504647",
+  "gpu_uuid": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+  "scope": "tiny_cuda_correctness_not_official_model_or_performance",
+  "runs": {
+    "publication": {
+      "source_sha": "c0180b7a7b2bf41c3ef4eae147cde939762e3088",
+      "returncode": 0,
+      "raw_sha256": "6106bbf527f5e3cbf7ed2136ae6adb015e8deb1d7c41ad59dcbaed6eec764688",
+      "result": {
+        "scope": "cuda_publication_correctness_not_performance",
+        "torch": "2.12.1+cu130",
+        "gpu": "NVIDIA GeForce RTX 5090",
+        "cases": [
+          {
+            "storage": "AliasKVCacheManager",
+            "requests": 1,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "AliasKVCacheManager",
+            "requests": 127,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "AliasKVCacheManager",
+            "requests": 128,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "AliasKVCacheManager",
+            "requests": 129,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "AliasKVCacheManager",
+            "requests": 257,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "CompactKVCacheManager",
+            "requests": 1,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "CompactKVCacheManager",
+            "requests": 127,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "CompactKVCacheManager",
+            "requests": 128,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "CompactKVCacheManager",
+            "requests": 129,
+            "exact_versions": true,
+            "payload_unchanged": true
+          },
+          {
+            "storage": "CompactKVCacheManager",
+            "requests": 257,
+            "exact_versions": true,
+            "payload_unchanged": true
+          }
+        ]
+      }
+    },
+    "alias-sync": {
+      "source_sha": "c0180b7a7b2bf41c3ef4eae147cde939762e3088",
+      "returncode": 0,
+      "raw_sha256": "97ee31701fc038b40137c17a0e9c82a10f77fd5c4f8d8b10c82fd15037645abb",
+      "result": {
+        "scope": "tiny_weight_cuda_correctness_not_official_e2e_performance",
+        "storage": "alias",
+        "torch": "2.12.1+cu130",
+        "cuda": "13.0",
+        "gpu": "NVIDIA GeForce RTX 5090",
+        "capability": [
+          12,
+          0
+        ],
+        "attention_bitwise_checks": 46,
+        "hybrid_prefix_bitwise_checks": 8,
+        "payload_identity_checks": 64,
+        "skipped_poison_checks": 18,
+        "stale_descriptor_reuse": true,
+        "unallocated_record_poison": false,
+        "engine_cases": [
+          {
+            "batch": 1,
+            "requests": 2,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 4,
+            "requests": 8,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 16,
+            "requests": 32,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 32,
+            "requests": 64,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 64,
+            "requests": 128,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 128,
+            "requests": 256,
+            "token_exit_parity": true
+          }
+        ],
+        "finished_at_unix": 1791151544.9976354
+      }
+    },
+    "compact-sync": {
+      "source_sha": "c0180b7a7b2bf41c3ef4eae147cde939762e3088",
+      "returncode": 0,
+      "raw_sha256": "78cfdff77b8ce90d55938ec911500a6e0b951382af2ccf0b3c9de6e6eae4041d",
+      "result": {
+        "scope": "tiny_weight_cuda_correctness_not_official_e2e_performance",
+        "storage": "compact",
+        "torch": "2.12.1+cu130",
+        "cuda": "13.0",
+        "gpu": "NVIDIA GeForce RTX 5090",
+        "capability": [
+          12,
+          0
+        ],
+        "attention_bitwise_checks": 46,
+        "hybrid_prefix_bitwise_checks": 0,
+        "payload_identity_checks": 64,
+        "skipped_poison_checks": 18,
+        "stale_descriptor_reuse": true,
+        "unallocated_record_poison": true,
+        "engine_cases": [
+          {
+            "batch": 1,
+            "requests": 2,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 4,
+            "requests": 8,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 16,
+            "requests": 32,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 32,
+            "requests": 64,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 64,
+            "requests": 128,
+            "token_exit_parity": true
+          },
+          {
+            "batch": 128,
+            "requests": 256,
+            "token_exit_parity": true
+          }
+        ],
+        "finished_at_unix": 1791151551.719086
+      }
+    }
+  }
+}
