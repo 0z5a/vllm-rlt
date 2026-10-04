@@ -18,6 +18,9 @@ def _paged_attention_kernel(
     TABLES,
     LENGTHS,
     OUT,
+    EXITS,
+    DEPTH_TABLES,
+    QUERY_DEPTHS,
     q_batch_stride: tl.constexpr,
     q_head_stride: tl.constexpr,
     q_dim_stride: tl.constexpr,
@@ -30,6 +33,9 @@ def _paged_attention_kernel(
     v_head_stride: tl.constexpr,
     v_dim_stride: tl.constexpr,
     table_stride: tl.constexpr,
+    depth_row_stride: tl.constexpr,
+    depth_stride: tl.constexpr,
+    ALIAS: tl.constexpr,
     out_batch_stride: tl.constexpr,
     out_head_stride: tl.constexpr,
     out_dim_stride: tl.constexpr,
@@ -56,11 +62,33 @@ def _paged_attention_kernel(
     for start in range(0, length, BLOCK_T):
         positions = start + tl.arange(0, BLOCK_T)
         valid_tokens = positions < length
-        blocks = tl.load(
-            TABLES + row * table_stride + positions // PAGE_SIZE,
-            mask=valid_tokens,
-            other=0,
-        ).to(tl.int64)
+        if ALIAS:
+            query_depth = tl.load(QUERY_DEPTHS + row)
+            first_blocks = tl.load(
+                DEPTH_TABLES + row * depth_row_stride + positions // PAGE_SIZE,
+                mask=valid_tokens,
+                other=0,
+            ).to(tl.int64)
+            exit_depths = tl.load(
+                EXITS + first_blocks * PAGE_SIZE + positions % PAGE_SIZE,
+                mask=valid_tokens,
+                other=-1,
+            )
+            sources = tl.where(exit_depths >= 0, tl.minimum(query_depth, exit_depths), query_depth)
+            blocks = tl.load(
+                DEPTH_TABLES
+                + row * depth_row_stride
+                + sources * depth_stride
+                + positions // PAGE_SIZE,
+                mask=valid_tokens,
+                other=0,
+            ).to(tl.int64)
+        else:
+            blocks = tl.load(
+                TABLES + row * table_stride + positions // PAGE_SIZE,
+                mask=valid_tokens,
+                other=0,
+            ).to(tl.int64)
         # Physical IDs fit in int32, but ID * block_stride can exceed 2**31
         # elements in a large KV pool. Promote BEFORE multiplying, for K and V.
         offsets = positions % PAGE_SIZE
@@ -97,7 +125,17 @@ def _paged_attention_kernel(
     )
 
 
-def paged_attention(q, key_cache, value_cache, block_tables, context_lengths):
+def paged_attention(
+    q,
+    key_cache,
+    value_cache,
+    block_tables,
+    context_lengths,
+    *,
+    source_depths=None,
+    depth_block_tables=None,
+    query_depths=None,
+):
     """Launch over [batch row, query head]; inputs are validated by the manager."""
     output = torch.empty_like(q)
     if q.shape[0] == 0:
@@ -109,10 +147,16 @@ def paged_attention(q, key_cache, value_cache, block_tables, context_lengths):
         block_tables,
         context_lengths,
         output,
+        source_depths if source_depths is not None else block_tables,
+        depth_block_tables if depth_block_tables is not None else block_tables,
+        query_depths if query_depths is not None else context_lengths,
         *q.stride(),
         *key_cache.stride(),
         *value_cache.stride(),
         block_tables.stride(0),
+        depth_block_tables.stride(0) if depth_block_tables is not None else 0,
+        depth_block_tables.stride(1) if depth_block_tables is not None else 0,
+        source_depths is not None,
         *output.stride(),
         HEAD_DIM=q.shape[-1],
         HEAD_GROUPS=q.shape[1] // key_cache.shape[2],

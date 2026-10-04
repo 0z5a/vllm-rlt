@@ -19,8 +19,17 @@ class CacheConfig:
     enable_prefix_caching: bool = False
     incremental_allocation: bool = False
     watermark_ratio: float = 0.0
+    alias_last_exited: bool = False
 
     def __post_init__(self):
+        if type(self.alias_last_exited) is not bool:
+            raise ValueError("alias_last_exited must be a boolean")
+        if self.alias_last_exited and (
+            self.layout != "last_exited"
+            or self.enable_prefix_caching
+            or self.incremental_allocation
+        ):
+            raise ValueError("alias storage requires fixed private LAST_EXITED allocations")
         for name in ("enable_prefix_caching", "incremental_allocation"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be a boolean")

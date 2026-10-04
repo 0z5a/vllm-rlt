@@ -1,0 +1,10 @@
+{
+  "questions": [
+    "Explain how gravity affects the motion of planets and why their orbits are elliptical.",
+    "Alice has twelve apples and gives five to Bob. How many apples does she have left? Explain each step.",
+    "Write a Python function to sort a list of integers and explain its computational complexity.",
+    "Compare solar energy and wind energy, considering cost, storage and reliability."
+  ],
+  "method": "repeat context 12 times then truncate to first 128 tokens; controlled prompt-length workload",
+  "tokenizer_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1"
+}

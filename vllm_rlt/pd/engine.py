@@ -77,6 +77,10 @@ class PDEngine:
     ):
         if speculative_config is not None:
             raise ValueError("speculative decoding is not yet supported by PD")
+        if (prefill_cache_config and prefill_cache_config.alias_last_exited) or (
+            decode_cache_config and decode_cache_config.alias_last_exited
+        ):
+            raise ValueError("alias KV transfer is not implemented")
         if isinstance(model, (str, Path)):
             model, revision, _ = resolve_model_config(model, revision=revision)
         self.config = pd_config or PDConfig()

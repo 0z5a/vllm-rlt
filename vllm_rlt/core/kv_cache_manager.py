@@ -69,6 +69,8 @@ class _PreparedKVBatch:
     writable: bool
     cu_seqlens_q: torch.Tensor | None = None
     max_seqlen_q: int = 1
+    depth_block_tables: torch.Tensor | None = None
+    query_depths: torch.Tensor | None = None
 
 
 class KVCacheManager:
