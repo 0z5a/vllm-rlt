@@ -1,0 +1,10 @@
+{
+  "native-stats_cuda_api_sum.csv": "b33bd5ef0aa7b6a82658d7ed9fb4f853331430f50e28186de5f75740bf916b80",
+  "alias-stats_cuda_gpu_kern_sum.csv": "551d3490059f436886f208bc32c4898abb1cbf164989591876d0b98fb4d69036",
+  "native-stats.log": "e3dfddb0d08fa91438dabdcac7f499cff79278a2445c597603680d6e1eccf65e",
+  "alias-stats_cuda_api_sum.csv": "75f3e108f41e5a1e7b6773882928e88c80d919c59c23319c03477b778f4a0ff1",
+  "alias-stats.log": "c2f3a5d11becee02e6f9f41fd8235b45b53ae149d6b03b9fd0ba3b61101bc128",
+  "native-stats_cuda_gpu_mem_time_sum.csv": "38eb6677a34d761f00f70d5e605e53fa6e30cbdc803d6fd3f5327a14d9bdd9e2",
+  "alias-stats_cuda_gpu_mem_time_sum.csv": "fac9ee2a6f9553a4f22c803e2e91b98c62d3b07b79b95ff1ba05bb28db9e10bf",
+  "native-stats_cuda_gpu_kern_sum.csv": "ffb774a33a26b1d5a074f83c92f27d5dda65224e63205559733a229514c60805"
+}
