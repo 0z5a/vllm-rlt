@@ -1,6 +1,6 @@
 # Compact records: first implementation
 
-Status: CPU/CUDA gates and full official-checkpoint token/exit parity passed; performance pending.
+Status: CPU/CUDA gates and full official-checkpoint token/exit parity passed; first timed pilot regresses.
 Incremental reference: rectangular alias branch at
 `9894e0e` (the exact parent is recorded in Git).
 
@@ -57,7 +57,7 @@ instrumented diagnostic evidence, not a throughput comparison.
 | Maximum active requests | 32 | 32 |
 | Records remaining after drain | — | 0 |
 | Free admission blocks after drain | 3,072 | 3,072 |
-| E2E speedup | Reference | Pending timed pairs |
+| E2E speedup, separate timed pilot | Reference | 0.974× median of 3 pairs |
 
 Rectangular ownership is derived from the observed peak 32 resident requests,
 each reserving 96 pages. Compact ownership counts actual assigned records.
@@ -68,3 +68,25 @@ memory was 12,574,126,080 bytes. Reserved memory did not improve in this version
 measurement scope. [Additional CUDA checks](evidence/compact-gpu-v2.json) verify
 all unused payload records remain poisoned and stale descriptors are rejected
 after request-ID reuse.
+
+## First timed pilot
+
+All six fresh processes completed the full 64-request workload after their own
+complete warmup. Every pair has exact prompt IDs, output IDs and exit depths.
+The frozen source is `74ea87a5fdbb9fa7b0a9736e9a4fcfbf977b8b66`; model,
+inputs, hardware and gate match the diagnostic above. This table compares the
+whole compact stack to Native-S. The incremental alias-to-compact comparison
+remains outstanding.
+
+| Pair | Order | Native tokens/s | Compact tokens/s | Speedup |
+|---|---|---:|---:|---:|
+| 1 | compact / native | 699.31 | 685.80 | 0.981× |
+| 2 | native / compact | 701.27 | 682.72 | 0.974× |
+| 3 | native / compact | 692.54 | 660.33 | 0.953× |
+
+Median paired ratio is **0.974×**, range 0.953–0.981×. It is a throughput
+regression despite fewer occupied payload records; reservation remains 9 GiB.
+Three pilot pairs do not establish a formal confidence interval or serving
+latency. [Raw comparisons](evidence/compact-pilot-pairs.json) retain all pairs.
+[Rectangular Nsight attribution](profile.md) motivates the subsequent reader
+experiment, but is not a profile of compact storage.
