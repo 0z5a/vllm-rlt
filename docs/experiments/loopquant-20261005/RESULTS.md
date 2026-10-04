@@ -92,7 +92,42 @@ pending. Recurrent state and residual outputs remain BF16.
 
 An explicit `attention_backend` selects eager or SDPA arithmetic for the adapter;
 the Q0 teacher inherits that selection and export records it. The latest
-[42 CPU checks](loopquant-cpu-attempt4.log) cover both choices. GPU SDPA/Triton
-and incremental-cache qualification are queued. The installed compatible local
-Transformers runtime can instantiate the unmodified pinned official class; its
-full-weight CPU comparison is pending a separate verified public download.
+[44 CPU checks](loopquant-cpu-trace-attempt1.log) cover both choices and native
+trace metadata. A real tiny-engine cohort confirms that tracing preserves the
+generated tokens and accounts for prefill/decode rows at every loop. A separate
+reordered-depth/padding check excludes poisoned padding rows from statistics.
+
+## Incremental cache and GEMM row shape
+
+The [complete cache audit](ouro-cache-g0-attempt1.json) naturally exited 0. Both
+Torch and Triton preserve every previous K/V prefix bitwise, keep depth tables
+disjoint, and free every allocation. Each backend also has zero incremental
+versus full-prefill logit argmax disagreements across 512 comparisons. The
+registered `atol=rtol=0.02` element criterion nevertheless fails; process success
+does not turn those numerical failures into passes.
+
+| Native backend | Incremental/full maximum logit error | Failed logit comparisons | Logit argmax disagreements |
+|---|---:|---:|---:|
+| Torch | 6.046875 | 511 / 512 | 0 / 512 |
+| Triton | 6.8984375 | 511 / 512 | 0 / 512 |
+
+Two calibration smoke inputs with large differences were selected before the
+[GEMM diagnostic](gemm-diagnostic-preregister.json). Neither variant changes the
+criterion or the checkpoint. Per-token Linear is a diagnostic control, not a
+performance baseline.
+
+| Control | Incremental/full maximum logit error | Failed state / logit comparisons |
+|---|---:|---:|
+| [Disable BF16 reduced-precision reduction](ouro-gemm-fp32-batched-attempt1.json) | 6.34375 | 32 / 32; 32 / 32 |
+| [Also fix Linear to single-token GEMM](ouro-gemm-fp32-per-token-attempt1.json) | 0 | 0 / 32; 0 / 32 |
+
+The latter yields bitwise state and logit equality for these two inputs. It
+isolates the Linear row-shape path as the cause of their incremental differences;
+it is not a complete 32-input result. Both variants still fail the separate
+prefill/SDPA comparison. PyTorch documents that batch shapes and BF16 reduction
+choices can change floating-point results ([numerical accuracy](https://docs.pytorch.org/docs/2.12/notes/numerical_accuracy.html)).
+The original failures remain visible and no threshold has been relaxed.
+
+The unmodified official HF class is running a separate full-weight CPU
+comparison using the existing Transformers 4.54.1 environment and independently
+verified weights. Its full result remains pending.

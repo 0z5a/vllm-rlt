@@ -1,0 +1,804 @@
+{
+  "reduction": "fp32",
+  "linear_mode": "per_token",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "dtype": "bfloat16",
+  "scope": "prefill/incremental and SDPA baseline, no quantization",
+  "atol": 0.02,
+  "rtol": 0.02,
+  "numerical_status": "fail",
+  "failed_records": 8,
+  "cache_prefix_integrity": "pass",
+  "depth_tables_disjoint": true,
+  "all_allocations_freed": true,
+  "records": [
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 1,
+      "state_vs_sdpa": {
+        "max_abs": 0.125,
+        "mismatched": 422,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 0.15625,
+        "mismatched": 62999,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 2,
+      "state_vs_sdpa": {
+        "max_abs": 0.6640625,
+        "mismatched": 7466,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 0.9375,
+        "mismatched": 277419,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 3,
+      "state_vs_sdpa": {
+        "max_abs": 2.8125,
+        "mismatched": 13064,
+        "finite": true,
+        "argmax_mismatches": 1
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 5.6484375,
+        "mismatched": 404712,
+        "finite": true,
+        "argmax_mismatches": 1
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 4,
+      "state_vs_sdpa": {
+        "max_abs": 4.5,
+        "mismatched": 17595,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 7.375,
+        "mismatched": 518385,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 30,
+      "kv_prefix": 31,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 30,
+      "kv_prefix": 31,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 30,
+      "kv_prefix": 31,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 30,
+      "kv_prefix": 31,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 31,
+      "kv_prefix": 32,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 31,
+      "kv_prefix": 32,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 31,
+      "kv_prefix": 32,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 31,
+      "kv_prefix": 32,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 32,
+      "kv_prefix": 33,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 32,
+      "kv_prefix": 33,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 32,
+      "kv_prefix": 33,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 32,
+      "kv_prefix": 33,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 33,
+      "kv_prefix": 34,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 33,
+      "kv_prefix": 34,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 33,
+      "kv_prefix": 34,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 33,
+      "kv_prefix": 34,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 1,
+      "state_vs_sdpa": {
+        "max_abs": 0.21875,
+        "mismatched": 1502,
+        "finite": true,
+        "argmax_mismatches": 2
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 0.375,
+        "mismatched": 158807,
+        "finite": true,
+        "argmax_mismatches": 1
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 2,
+      "state_vs_sdpa": {
+        "max_abs": 1.65625,
+        "mismatched": 14106,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 3.25,
+        "mismatched": 442324,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 3,
+      "state_vs_sdpa": {
+        "max_abs": 4.84375,
+        "mismatched": 31884,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 7.1484375,
+        "mismatched": 876775,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 4,
+      "state_vs_sdpa": {
+        "max_abs": 4.59375,
+        "mismatched": 42458,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 6.921875,
+        "mismatched": 1111196,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 60,
+      "kv_prefix": 61,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 60,
+      "kv_prefix": 61,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 60,
+      "kv_prefix": 61,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 60,
+      "kv_prefix": 61,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 61,
+      "kv_prefix": 62,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 61,
+      "kv_prefix": 62,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 61,
+      "kv_prefix": 62,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 61,
+      "kv_prefix": 62,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 62,
+      "kv_prefix": 63,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 62,
+      "kv_prefix": 63,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 62,
+      "kv_prefix": 63,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 62,
+      "kv_prefix": 63,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 63,
+      "kv_prefix": 64,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 63,
+      "kv_prefix": 64,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 63,
+      "kv_prefix": 64,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 63,
+      "kv_prefix": 64,
+      "state_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.0,
+        "mismatched": 0,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    }
+  ],
+  "pid": 8748,
+  "start_unix": 1791145876.8200903,
+  "end_unix": 1791145885.8260765,
+  "source_sha256": "ca3561633ab2b496efafe296a71fb9a8118de81ed72631985fe5d7dd97cf13b0"
+}

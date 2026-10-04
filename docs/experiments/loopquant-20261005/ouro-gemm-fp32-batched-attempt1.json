@@ -1,0 +1,804 @@
+{
+  "reduction": "fp32",
+  "linear_mode": "batched",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "dtype": "bfloat16",
+  "scope": "prefill/incremental and SDPA baseline, no quantization",
+  "atol": 0.02,
+  "rtol": 0.02,
+  "numerical_status": "fail",
+  "failed_records": 40,
+  "cache_prefix_integrity": "pass",
+  "depth_tables_disjoint": true,
+  "all_allocations_freed": true,
+  "records": [
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 1,
+      "state_vs_sdpa": {
+        "max_abs": 0.25,
+        "mismatched": 499,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 0.25,
+        "mismatched": 71592,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 2,
+      "state_vs_sdpa": {
+        "max_abs": 0.40625,
+        "mismatched": 6613,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 0.802734375,
+        "mismatched": 227933,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 3,
+      "state_vs_sdpa": {
+        "max_abs": 2.60546875,
+        "mismatched": 10283,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 6.375,
+        "mismatched": 351969,
+        "finite": true,
+        "argmax_mismatches": 1
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 4,
+      "state_vs_sdpa": {
+        "max_abs": 4.4375,
+        "mismatched": 14026,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 8.3125,
+        "mismatched": 413283,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 30,
+      "kv_prefix": 31,
+      "state_vs_full": {
+        "max_abs": 0.0625,
+        "mismatched": 32,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.1875,
+        "mismatched": 3079,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 30,
+      "kv_prefix": 31,
+      "state_vs_full": {
+        "max_abs": 0.09375,
+        "mismatched": 73,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 3953,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 30,
+      "kv_prefix": 31,
+      "state_vs_full": {
+        "max_abs": 0.109375,
+        "mismatched": 452,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.234375,
+        "mismatched": 10959,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 30,
+      "kv_prefix": 31,
+      "state_vs_full": {
+        "max_abs": 0.1875,
+        "mismatched": 424,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.265625,
+        "mismatched": 15154,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 31,
+      "kv_prefix": 32,
+      "state_vs_full": {
+        "max_abs": 0.046875,
+        "mismatched": 9,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.09375,
+        "mismatched": 1830,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 31,
+      "kv_prefix": 32,
+      "state_vs_full": {
+        "max_abs": 0.056640625,
+        "mismatched": 60,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 3082,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 31,
+      "kv_prefix": 32,
+      "state_vs_full": {
+        "max_abs": 0.08984375,
+        "mismatched": 235,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.21875,
+        "mismatched": 6997,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 31,
+      "kv_prefix": 32,
+      "state_vs_full": {
+        "max_abs": 0.171875,
+        "mismatched": 794,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.554443359375,
+        "mismatched": 19113,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 32,
+      "kv_prefix": 33,
+      "state_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 3,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 3147,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 32,
+      "kv_prefix": 33,
+      "state_vs_full": {
+        "max_abs": 0.140625,
+        "mismatched": 655,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.28125,
+        "mismatched": 13927,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 32,
+      "kv_prefix": 33,
+      "state_vs_full": {
+        "max_abs": 0.869140625,
+        "mismatched": 1769,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 2.3125,
+        "mismatched": 42731,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 32,
+      "kv_prefix": 33,
+      "state_vs_full": {
+        "max_abs": 2.078125,
+        "mismatched": 1914,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 5.1015625,
+        "mismatched": 46224,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 33,
+      "kv_prefix": 34,
+      "state_vs_full": {
+        "max_abs": 0.09375,
+        "mismatched": 22,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.1328125,
+        "mismatched": 4371,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 33,
+      "kv_prefix": 34,
+      "state_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 48,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.140625,
+        "mismatched": 4111,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 33,
+      "kv_prefix": 34,
+      "state_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 140,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.203125,
+        "mismatched": 6147,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-9",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 33,
+      "kv_prefix": 34,
+      "state_vs_full": {
+        "max_abs": 0.1875,
+        "mismatched": 514,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.28125,
+        "mismatched": 13777,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 1,
+      "state_vs_sdpa": {
+        "max_abs": 0.3125,
+        "mismatched": 2025,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 0.875,
+        "mismatched": 187130,
+        "finite": true,
+        "argmax_mismatches": 1
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 2,
+      "state_vs_sdpa": {
+        "max_abs": 1.984375,
+        "mismatched": 20442,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 3.5,
+        "mismatched": 585253,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 3,
+      "state_vs_sdpa": {
+        "max_abs": 4.3125,
+        "mismatched": 33921,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 6.0625,
+        "mismatched": 973090,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "prefill",
+      "loops": 4,
+      "state_vs_sdpa": {
+        "max_abs": 4.2109375,
+        "mismatched": 43991,
+        "finite": true,
+        "argmax_mismatches": 2
+      },
+      "logits_vs_sdpa": {
+        "max_abs": 6.3974609375,
+        "mismatched": 1157493,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 60,
+      "kv_prefix": 61,
+      "state_vs_full": {
+        "max_abs": 0.046875,
+        "mismatched": 15,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 1897,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 60,
+      "kv_prefix": 61,
+      "state_vs_full": {
+        "max_abs": 0.0703125,
+        "mismatched": 17,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 1551,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 60,
+      "kv_prefix": 61,
+      "state_vs_full": {
+        "max_abs": 0.078125,
+        "mismatched": 23,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 2502,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 60,
+      "kv_prefix": 61,
+      "state_vs_full": {
+        "max_abs": 0.05078125,
+        "mismatched": 20,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 1465,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 61,
+      "kv_prefix": 62,
+      "state_vs_full": {
+        "max_abs": 0.046875,
+        "mismatched": 13,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 1067,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 61,
+      "kv_prefix": 62,
+      "state_vs_full": {
+        "max_abs": 0.0625,
+        "mismatched": 21,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 2345,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 61,
+      "kv_prefix": 62,
+      "state_vs_full": {
+        "max_abs": 0.0625,
+        "mismatched": 19,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.25,
+        "mismatched": 1424,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 61,
+      "kv_prefix": 62,
+      "state_vs_full": {
+        "max_abs": 0.09375,
+        "mismatched": 35,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.25,
+        "mismatched": 6873,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 62,
+      "kv_prefix": 63,
+      "state_vs_full": {
+        "max_abs": 0.0390625,
+        "mismatched": 2,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 501,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 62,
+      "kv_prefix": 63,
+      "state_vs_full": {
+        "max_abs": 0.71875,
+        "mismatched": 1748,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 1.484375,
+        "mismatched": 41315,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 62,
+      "kv_prefix": 63,
+      "state_vs_full": {
+        "max_abs": 4.25,
+        "mismatched": 1942,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 5.625,
+        "mismatched": 46261,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 62,
+      "kv_prefix": 63,
+      "state_vs_full": {
+        "max_abs": 4.0,
+        "mismatched": 1944,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 6.34375,
+        "mismatched": 46198,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 1,
+      "position": 63,
+      "kv_prefix": 64,
+      "state_vs_full": {
+        "max_abs": 0.0625,
+        "mismatched": 20,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.125,
+        "mismatched": 2798,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 2,
+      "position": 63,
+      "kv_prefix": 64,
+      "state_vs_full": {
+        "max_abs": 0.09375,
+        "mismatched": 54,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 0.15625,
+        "mismatched": 3661,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 3,
+      "position": 63,
+      "kv_prefix": 64,
+      "state_vs_full": {
+        "max_abs": 0.640625,
+        "mismatched": 1555,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 1.0625,
+        "mismatched": 34356,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    },
+    {
+      "request_id": "smoke-18",
+      "backend": "torch",
+      "phase": "incremental",
+      "loops": 4,
+      "position": 63,
+      "kv_prefix": 64,
+      "state_vs_full": {
+        "max_abs": 0.75,
+        "mismatched": 1478,
+        "finite": true,
+        "argmax_mismatches": 0
+      },
+      "logits_vs_full": {
+        "max_abs": 1.0703125,
+        "mismatched": 35667,
+        "finite": true,
+        "argmax_mismatches": 0
+      }
+    }
+  ],
+  "pid": 8714,
+  "start_unix": 1791145866.576983,
+  "end_unix": 1791145875.0392053,
+  "source_sha256": "ca3561633ab2b496efafe296a71fb9a8118de81ed72631985fe5d7dd97cf13b0"
+}

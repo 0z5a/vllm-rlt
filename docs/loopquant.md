@@ -19,6 +19,9 @@ This draft implements the first numerical and measurement building blocks:
   optimizer/RNG/data-position resumption; one-packed-weight SH1 export/reload.
 - Native-engine cohorts measure admission through final drain, fixed output work,
   TTFT/TPOT, loop depths, graph counters, and post-drain KV usage.
+- Native activation traces use actual prepared request/position/loop metadata,
+  retain physical weight storage identities, and separate prefill/decode norm
+  and projection statistics. Padding is excluded. Tracing is diagnostic only.
 - Fixed norm equalization across all consumers, a PyTorch-only reader for
   verified floating-point safetensors, document-split checks, masked next-token
   NLL, paired document PPL intervals, and paired throughput tables.
@@ -59,8 +62,11 @@ failures are retained. A subsequent 32-input FP64 comparison failed at prompt
 The complete follow-up audit found the BF16 adapter state/logits bitwise equal
 to the official eager oracle at all 32 inputs and four depths. Native Torch
 attention differs (25 logit argmax differences across 6,896 positions), and
-the fixed FP32 criterion still fails. Incremental-cache and deployment-backend
-qualification remain before overall G0. Tolerances are unchanged.
+the fixed FP32 criterion still fails. Both native backends preserve every old
+KV prefix and match full-prefill argmax on all 512 incremental checks. Numerical
+element tolerances still fail. A two-input diagnostic fixes every Linear to a
+single-row GEMM and restores bitwise incremental/full equality on all 32 checks;
+SDPA differences remain. The complete G0 remains open. Tolerances are unchanged.
 See the [raw evidence and comparison table](experiments/loopquant-20261005/RESULTS.md).
 
 | Model | Baseline tok/s | Candidate tok/s | Paired speedup | Status |
