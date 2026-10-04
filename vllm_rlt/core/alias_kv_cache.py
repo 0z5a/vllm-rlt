@@ -97,8 +97,10 @@ class AliasKVCacheManager(KVCacheManager):
     def _write_prepared(self, layer, batch, k, v):
         self._validate_layer(layer)
         self._require_live_batch(batch)
+        boundary = (
+            len(self.recurrent_layers) != self.num_layers and layer not in self.recurrent_layers
+        )
         for allocation, depth, position in batch.rows:
-            boundary = layer not in self.recurrent_layers
             if boundary and depth != 0:
                 raise ValueError("boundary KV must use depth zero")
             if position in self._exits[id(allocation)] and (
