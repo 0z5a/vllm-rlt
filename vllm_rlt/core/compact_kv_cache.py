@@ -3,7 +3,8 @@
 The arena uses the existing [page, layer, offset, head, dim] strides. Records
 are individual offsets across all layers; unused offsets are globally reusable.
 Prompt and decode positions share this arena without page-boundary rounding.
-The conservative admission reservation remains unchanged in this first version.
+Future positions reserve every depth; optional credit reclamation applies only
+to finalized historical positions whose skipped versions have no record.
 """
 
 import torch
