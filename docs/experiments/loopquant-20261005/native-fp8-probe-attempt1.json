@@ -1,0 +1,50 @@
+{
+  "status": "pass",
+  "scope": "native FP8 and graph correctness only",
+  "capability": {
+    "device": "NVIDIA GeForce RTX 5090",
+    "architecture": [
+      12,
+      0
+    ],
+    "torch_version": "2.12.1+cu130",
+    "cuda_version": "13.0",
+    "kernel_api": "torch._scaled_mm",
+    "weight_format": "fp8_e4m3fn",
+    "activation_format": "fp8_e4m3fn",
+    "scale_granularity": "per_tensor",
+    "packed_weight_copies": 1,
+    "fused_producer_quantization": false,
+    "mixed_loop_row_scales": false,
+    "cuda_graph": "pass: stable scale buffer updated between two replays",
+    "native_probe": "pass"
+  },
+  "shapes": [
+    {
+      "rows": 1,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 17,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 32,
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 64,
+      "max_abs": 1.1920928955078125e-07
+    },
+    {
+      "rows": 128,
+      "max_abs": 0.0
+    }
+  ],
+  "start_unix": 1791140762.871442,
+  "end_unix": 1791140763.9922075,
+  "pid": 2554,
+  "device_census": "index, uuid, memory.used [MiB], utilization.gpu [%]\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 MiB, 0 %\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 MiB, 0 %\n",
+  "source_sha256": "8edd45b6c82dea9e84f6671079a8c4fa1bfb152f6c2951e86465f494aa604657",
+  "packed_weight_bytes": 2048
+}

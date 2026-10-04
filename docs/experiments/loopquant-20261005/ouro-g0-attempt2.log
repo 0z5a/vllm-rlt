@@ -1,0 +1,42 @@
+{"event": "begin", "pid": 3036, "prompts": 32}
+{"request_id": "smoke-0", "loops": 1, "tokens": 5, "native_max_abs": 3.814697265625e-06, "adapter_max_abs": 4.76837158203125e-06}
+{"request_id": "smoke-0", "loops": 2, "tokens": 5, "native_max_abs": 5.7220458984375e-06, "adapter_max_abs": 7.62939453125e-06}
+{"request_id": "smoke-0", "loops": 3, "tokens": 5, "native_max_abs": 5.7220458984375e-06, "adapter_max_abs": 5.7220458984375e-06}
+{"request_id": "smoke-0", "loops": 4, "tokens": 5, "native_max_abs": 5.7220458984375e-06, "adapter_max_abs": 1.1444091796875e-05}
+{"request_id": "smoke-1", "loops": 1, "tokens": 10, "native_max_abs": 5.7220458984375e-06, "adapter_max_abs": 4.76837158203125e-06}
+{"request_id": "smoke-1", "loops": 2, "tokens": 10, "native_max_abs": 6.198883056640625e-06, "adapter_max_abs": 1.52587890625e-05}
+{"request_id": "smoke-1", "loops": 3, "tokens": 10, "native_max_abs": 1.239776611328125e-05, "adapter_max_abs": 1.6450881958007812e-05}
+{"request_id": "smoke-1", "loops": 4, "tokens": 10, "native_max_abs": 1.5497207641601562e-05, "adapter_max_abs": 2.2470951080322266e-05}
+{"request_id": "smoke-2", "loops": 1, "tokens": 16, "native_max_abs": 1.9073486328125e-05, "adapter_max_abs": 4.1961669921875e-05}
+{"request_id": "smoke-2", "loops": 2, "tokens": 16, "native_max_abs": 1.52587890625e-05, "adapter_max_abs": 1.9073486328125e-05}
+{"request_id": "smoke-2", "loops": 3, "tokens": 16, "native_max_abs": 1.9550323486328125e-05, "adapter_max_abs": 1.811981201171875e-05}
+{"request_id": "smoke-2", "loops": 4, "tokens": 16, "native_max_abs": 2.193450927734375e-05, "adapter_max_abs": 2.3603439331054688e-05}
+{"request_id": "smoke-3", "loops": 1, "tokens": 16, "native_max_abs": 9.5367431640625e-06, "adapter_max_abs": 1.71661376953125e-05}
+{"request_id": "smoke-3", "loops": 2, "tokens": 16, "native_max_abs": 1.1444091796875e-05, "adapter_max_abs": 9.298324584960938e-06}
+{"request_id": "smoke-3", "loops": 3, "tokens": 16, "native_max_abs": 9.5367431640625e-06, "adapter_max_abs": 1.9073486328125e-05}
+{"request_id": "smoke-3", "loops": 4, "tokens": 16, "native_max_abs": 7.62939453125e-06, "adapter_max_abs": 1.0251998901367188e-05}
+{"request_id": "smoke-4", "loops": 1, "tokens": 26, "native_max_abs": 2.09808349609375e-05, "adapter_max_abs": 3.24249267578125e-05}
+{"request_id": "smoke-4", "loops": 2, "tokens": 26, "native_max_abs": 2.765655517578125e-05, "adapter_max_abs": 5.53131103515625e-05}
+{"request_id": "smoke-4", "loops": 3, "tokens": 26, "native_max_abs": 2.288818359375e-05, "adapter_max_abs": 2.956390380859375e-05}
+{"request_id": "smoke-4", "loops": 4, "tokens": 26, "native_max_abs": 4.00543212890625e-05, "adapter_max_abs": 4.9591064453125e-05}
+{"request_id": "smoke-5", "loops": 1, "tokens": 21, "native_max_abs": 4.9591064453125e-05, "adapter_max_abs": 3.814697265625e-05}
+{"request_id": "smoke-5", "loops": 2, "tokens": 21, "native_max_abs": 1.621246337890625e-05, "adapter_max_abs": 2.09808349609375e-05}
+{"request_id": "smoke-5", "loops": 3, "tokens": 21, "native_max_abs": 5.7697296142578125e-05, "adapter_max_abs": 7.677078247070312e-05}
+{"request_id": "smoke-5", "loops": 4, "tokens": 21, "native_max_abs": 9.918212890625e-05, "adapter_max_abs": 0.00016498565673828125}
+{"request_id": "smoke-6", "loops": 1, "tokens": 23, "native_max_abs": 1.9073486328125e-05, "adapter_max_abs": 4.38690185546875e-05}
+{"request_id": "smoke-6", "loops": 2, "tokens": 23, "native_max_abs": 0.00011038780212402344, "adapter_max_abs": 0.000125885009765625}
+{"request_id": "smoke-6", "loops": 3, "tokens": 23, "native_max_abs": 0.00023746490478515625, "adapter_max_abs": 0.00017786026000976562}
+{"request_id": "smoke-6", "loops": 4, "tokens": 23, "native_max_abs": 0.00022220611572265625, "adapter_max_abs": 0.000186920166015625}
+{"request_id": "smoke-7", "loops": 1, "tokens": 26, "native_max_abs": 2.09808349609375e-05, "adapter_max_abs": 2.47955322265625e-05}
+{"request_id": "smoke-7", "loops": 2, "tokens": 26, "native_max_abs": 1.52587890625e-05, "adapter_max_abs": 3.6716461181640625e-05}
+{"request_id": "smoke-7", "loops": 3, "tokens": 26, "native_max_abs": 7.784366607666016e-05, "adapter_max_abs": 9.298324584960938e-05}
+Traceback (most recent call last):
+  File "/root/autodl-tmp/0z5a/loopquant-20261005/source-g0-v2/../run_ouro_g0_v2.py", line 60, in <module>
+    torch.testing.assert_close(actual.logits[0], expected[loop][2], atol=3e-4, rtol=3e-4)
+  File "/root/miniconda3/lib/python3.12/site-packages/torch/testing/_comparison.py", line 1631, in assert_close
+    raise error_metas[0].to_error(msg)
+AssertionError: Tensor-likes are not close!
+
+Mismatched elements: 1 / 1277952 (0.0%)
+Greatest absolute difference: 0.00032836198806762695 at index (24, 22266) (up to 0.0003 allowed)
+Greatest relative difference: 0.005040721967816353 at index (24, 22266) (up to 0.0003 allowed)
