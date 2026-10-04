@@ -1,0 +1,14 @@
+{
+  "scope": "synthetic_tiny_cuda_pressure_not_official_model_or_performance",
+  "source_sha": "cf70584d60913e1664439fb1b4acf603e2dff105",
+  "torch": "2.12.1+cu130",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "future_full_depth_after_six_r1_positions": true,
+  "exact_16_request_outputs": true,
+  "peak_residents_native_fixed_credits": [
+    2,
+    2,
+    3
+  ],
+  "all_records_and_credits_returned": true
+}
