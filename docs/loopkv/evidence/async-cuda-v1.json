@@ -1,0 +1,365 @@
+{
+  "plan_sha256": "6f1bebd65efa1629cf9d69ad1c74eb7453cc2cfd9a89e62c536911e8a6504647",
+  "gpu_uuid": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+  "scope": "tiny_cuda_correctness_not_official_model_or_performance",
+  "run": {
+    "source_sha": "28fd63584f68b0574b1a4d6e51ce4b312cf87eda",
+    "returncode": 0,
+    "raw_sha256": "bf461caa0bd3da0394f19fb141b5ea94cd667167bbdc023954d79bcda90511d0",
+    "result": {
+      "scope": "tiny_cuda_routing_lifetime_not_official_or_performance",
+      "torch": "2.12.1+cu130",
+      "gpu": "NVIDIA GeForce RTX 5090",
+      "lifetime": [
+        {
+          "use_uva": false,
+          "allocation_reset_ordered": true,
+          "bank_reader_retired": true
+        },
+        {
+          "use_uva": true,
+          "allocation_reset_ordered": true,
+          "bank_reader_retired": true
+        }
+      ],
+      "cases": [
+        {
+          "batch": 1,
+          "requests_per_round": 2,
+          "use_uva": false,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 1,
+          "requests_per_round": 2,
+          "use_uva": false,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 1,
+          "requests_per_round": 2,
+          "use_uva": false,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 1,
+          "requests_per_round": 2,
+          "use_uva": false,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 1,
+          "requests_per_round": 2,
+          "use_uva": true,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 1,
+          "requests_per_round": 2,
+          "use_uva": true,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 1,
+          "requests_per_round": 2,
+          "use_uva": true,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 1,
+          "requests_per_round": 2,
+          "use_uva": true,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 4,
+          "requests_per_round": 8,
+          "use_uva": false,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 4,
+          "requests_per_round": 8,
+          "use_uva": false,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 4,
+          "requests_per_round": 8,
+          "use_uva": false,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 4,
+          "requests_per_round": 8,
+          "use_uva": false,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 4,
+          "requests_per_round": 8,
+          "use_uva": true,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 4,
+          "requests_per_round": 8,
+          "use_uva": true,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 4,
+          "requests_per_round": 8,
+          "use_uva": true,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 4,
+          "requests_per_round": 8,
+          "use_uva": true,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 16,
+          "requests_per_round": 32,
+          "use_uva": false,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 16,
+          "requests_per_round": 32,
+          "use_uva": false,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 16,
+          "requests_per_round": 32,
+          "use_uva": false,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 16,
+          "requests_per_round": 32,
+          "use_uva": false,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 16,
+          "requests_per_round": 32,
+          "use_uva": true,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 16,
+          "requests_per_round": 32,
+          "use_uva": true,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 16,
+          "requests_per_round": 32,
+          "use_uva": true,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 16,
+          "requests_per_round": 32,
+          "use_uva": true,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 32,
+          "requests_per_round": 64,
+          "use_uva": false,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 32,
+          "requests_per_round": 64,
+          "use_uva": false,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 32,
+          "requests_per_round": 64,
+          "use_uva": false,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 32,
+          "requests_per_round": 64,
+          "use_uva": false,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 32,
+          "requests_per_round": 64,
+          "use_uva": true,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 32,
+          "requests_per_round": 64,
+          "use_uva": true,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 32,
+          "requests_per_round": 64,
+          "use_uva": true,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 32,
+          "requests_per_round": 64,
+          "use_uva": true,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 64,
+          "requests_per_round": 128,
+          "use_uva": false,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 64,
+          "requests_per_round": 128,
+          "use_uva": false,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 64,
+          "requests_per_round": 128,
+          "use_uva": false,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 64,
+          "requests_per_round": 128,
+          "use_uva": false,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 64,
+          "requests_per_round": 128,
+          "use_uva": true,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 64,
+          "requests_per_round": 128,
+          "use_uva": true,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 64,
+          "requests_per_round": 128,
+          "use_uva": true,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 64,
+          "requests_per_round": 128,
+          "use_uva": true,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 128,
+          "requests_per_round": 256,
+          "use_uva": false,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 128,
+          "requests_per_round": 256,
+          "use_uva": false,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 128,
+          "requests_per_round": 256,
+          "use_uva": false,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 128,
+          "requests_per_round": 256,
+          "use_uva": false,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 128,
+          "requests_per_round": 256,
+          "use_uva": true,
+          "mode": "sync",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 128,
+          "requests_per_round": 256,
+          "use_uva": true,
+          "mode": "native_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 128,
+          "requests_per_round": 256,
+          "use_uva": true,
+          "mode": "alias_async",
+          "exact_two_rounds": true
+        },
+        {
+          "batch": 128,
+          "requests_per_round": 256,
+          "use_uva": true,
+          "mode": "native_graph",
+          "exact_two_rounds": true
+        }
+      ]
+    }
+  }
+}
