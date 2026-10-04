@@ -1,6 +1,6 @@
 # Rectangular alias CUDA Graph path
 
-Status: implemented, CUDA qualification pending. The change builds on resident
+Status: tiny-model CUDA qualification passed; official-weight qualification pending. The change builds on resident
 async alias routing and enables recurrent-core graphs for that path. Compact
 graphs and synchronous alias graphs remain unsupported.
 
@@ -21,9 +21,15 @@ replays; the configuration flag alone does not count as coverage.
 | Validation | Result |
 |---|---|
 | Affected CPU alias/async/counter tests | 29 passed, 12 CUDA skips |
-| CUDA graph gate | Pending |
+| CUDA graph gate | 60 execution arms pass; 24 Graph arms execute 116 captures and 1,116 replays with zero fallbacks |
 | Official model/policy parity | Pending |
 
 | Fixed-policy E2E comparison | Native Graph tokens/s | Alias Graph tokens/s | Speedup |
 |---|---:|---:|---:|
 | Official checkpoint | — | — | Not measured |
+
+Frozen source `4adada84b66e31a71697a662893d007872f1e5b5` naturally completed0
+on RTX5090/Torch2.12.1+cu130. All60 arms match native synchronous output/exit
+sequences over two rounds and return all block credits/state slots. Cross-stream
+allocation-reset and final-reader probes pass in both descriptor modes.
+[All cases, Graph counters and immutable raw hash](evidence/alias-graph-cuda-v1.json).
