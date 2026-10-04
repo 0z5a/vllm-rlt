@@ -56,3 +56,18 @@ eight unavailable CUDA/official-checkpoint cases skipped. Official Nanbeige and
 Huginn full-weight CUDA E2E remains pending. HRM-Text's public1B checkpoint is
 registered for a separate PrefixLM/hierarchical-recurrence adapter; it is not
 covered by these results.
+
+### Tiny-model CUDA qualification
+
+Frozen source `5d49b2a8bec75a9866097183dce6002202864df0` passed the finite
+RTX5090/Torch2.12.1+cu130 gate and naturally exited0. Nanbeige R1/R2 and
+Huginn R1/R3 each pass B1/4/16/32/64/128 with C2B: all four native, alias,
+compact and reclaimed-credit modes return identical output/exit sequences and
+all block credits. This is24 model/depth/batch points and96 execution arms
+using tiny generated weights, not official checkpoint qualification.
+[Exact source, raw hash and all24 points](evidence/model-cuda-v1.json).
+
+| Model | B / C | Native–alias–compact–credits | Official E2E speedup |
+|---|---|---|---|
+| Tiny Nanbeige | B1–128 / C2B | Exact tokens/exits; all credits returned | Not measured |
+| Tiny Huginn | B1–128 / C2B | Exact tokens/exits; all credits returned | Not measured |
