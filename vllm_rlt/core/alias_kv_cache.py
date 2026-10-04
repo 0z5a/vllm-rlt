@@ -26,6 +26,7 @@ class AliasKVCacheManager(KVCacheManager):
         )
         self._readable: dict[int, list[list[_WrittenPositions]]] = {}
         self._exits: dict[int, dict[int, int]] = {}
+        self._alias_starts: dict[int, list[int]] = {}
         self.promotion_copy_bytes = 0
         self.materialization_bytes = 0
 
@@ -39,6 +40,7 @@ class AliasKVCacheManager(KVCacheManager):
             [_WrittenPositions() for _ in range(self.num_layers)] for _ in range(self.max_loops)
         ]
         self._exits[id(allocation)] = {}
+        self._alias_starts[id(allocation)] = [max_tokens] * self.max_loops
         for block in allocation.block_tables[0]:
             self.source_depths[block].fill_(-1)
         return True
@@ -49,6 +51,7 @@ class AliasKVCacheManager(KVCacheManager):
         if allocation is not None:
             self._readable.pop(id(allocation))
             self._exits.pop(id(allocation))
+            self._alias_starts.pop(id(allocation))
 
     def pin_transfer(self, request_id, transfer_id):
         raise ValueError("alias KV transfer is not implemented")
@@ -61,20 +64,35 @@ class AliasKVCacheManager(KVCacheManager):
         if not batches[0].rows:
             return batches
         width = batches[0].block_tables.shape[1]
-        tables = []
+        plans = []
+        for index, batch in enumerate(batches):
+            starts = [self._alias_starts[id(a)][d] for a, d, _ in batch.rows]
+            if any(start <= p for start, (_, _, p) in zip(starts, batch.rows)):
+                plans.append((index, starts))
+        if not plans:
+            return batches
+        metadata = []
         for allocation, _, _ in batches[0].rows:
             for table in allocation.block_tables:
                 row = table[:width]
-                tables.extend((*row, *([-1] * (width - len(row)))))
-        device_tables = self._stage(tables, torch.int32).reshape(-1, self.max_loops, width)
-        return tuple(
-            replace(
-                batch,
+                metadata.extend((*row, *([-1] * (width - len(row)))))
+        table_size = len(metadata)
+        for index, starts in plans:
+            metadata.extend(depth for _, depth, _ in batches[index].rows)
+            metadata.extend(starts)
+        staged = self._stage(metadata, torch.int32)
+        device_tables = staged[:table_size].reshape(-1, self.max_loops, width)
+        result = list(batches)
+        offset, rows = table_size, len(batches[0].rows)
+        for index, _ in plans:
+            result[index] = replace(
+                batches[index],
                 depth_block_tables=device_tables,
-                query_depths=self._stage([depth for _, depth, _ in batch.rows], torch.int32),
+                query_depths=staged[offset : offset + rows],
+                alias_starts=staged[offset + rows : offset + 2 * rows],
             )
-            for batch in batches
-        )
+            offset += 2 * rows
+        return tuple(result)
 
     def _write_prepared(self, layer, batch, k, v):
         self._require_live_batch(batch)
@@ -98,10 +116,13 @@ class AliasKVCacheManager(KVCacheManager):
                     raise RuntimeError("cannot finalize before every executed version is written")
         if position in self._exits[id(allocation)]:
             raise ValueError("position already finalized")
-        block = allocation.block_tables[0][position // self.block_size]
-        self.source_depths[block, position % self.block_size].fill_(exit_depth)
+        if exit_depth + 1 < self.max_loops:
+            block = allocation.block_tables[0][position // self.block_size]
+            self.source_depths[block, position % self.block_size].fill_(exit_depth)
         self._exits[id(allocation)][position] = exit_depth
         for depth in range(exit_depth + 1, self.max_loops):
+            starts = self._alias_starts[id(allocation)]
+            starts[depth] = min(starts[depth], position)
             for layer in range(self.num_layers):
                 self._readable[id(allocation)][depth][layer].add(position)
 
@@ -122,9 +143,10 @@ class AliasKVCacheManager(KVCacheManager):
                 self.value_cache[:, layer],
                 batch.block_tables,
                 batch.context_lengths,
-                source_depths=self.source_depths,
+                source_depths=self.source_depths if batch.alias_starts is not None else None,
                 depth_block_tables=batch.depth_block_tables,
                 query_depths=batch.query_depths,
+                alias_starts=batch.alias_starts,
             )
         # CPU verification only. The GPU candidate loads aliased payload directly.
         output = torch.empty_like(q)

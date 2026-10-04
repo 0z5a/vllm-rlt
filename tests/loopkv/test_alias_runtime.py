@@ -147,3 +147,30 @@ def test_pd_alias_rejected_before_worker_start():
 
     with pytest.raises(ValueError, match="alias KV transfer"):
         PDEngine(tiny_ouro_config(), decode_cache_config=CacheConfig(alias_last_exited=True))
+
+
+def test_direct_depths_and_first_alias_metadata():
+    cache = make_cache(AliasKVCacheManager)
+    assert cache.allocate("a", 6)
+    payload = torch.ones(1, 2, 32)
+    for position, loops in enumerate((4, 2, 1)):
+        for depth in range(loops):
+            for layer in range(2):
+                cache.write(layer, ["a"], [depth], [position], payload, payload)
+        cache.finalize_token("a", position, loops - 1)
+    batches = cache._prepare_batches(["a"], [[0], [1], [2], [3]], [2], for_write=False)
+    assert batches[0].depth_block_tables is None
+    for batch, expected in zip(batches[1:], (2, 1, 1)):
+        assert batch.alias_starts.tolist() == [expected]
+        assert batch.query_depths.tolist() == [batch.rows[0][1]]
+        # All alias metadata in the traversal shares one staged buffer.
+        assert (
+            batch.alias_starts.untyped_storage().data_ptr()
+            == batches[1].query_depths.untyped_storage().data_ptr()
+        )
+    allocation = cache._get_allocation("a")
+    block = allocation.block_tables[0][0]
+    assert cache.source_depths[block, 0] == -1  # Full-depth needs no publication.
+    cache.free("a")
+    assert cache.allocate("a", 6)
+    assert cache._prepare_batch(["a"], [3], [2]).alias_starts is None

@@ -71,6 +71,7 @@ class _PreparedKVBatch:
     max_seqlen_q: int = 1
     depth_block_tables: torch.Tensor | None = None
     query_depths: torch.Tensor | None = None
+    alias_starts: torch.Tensor | None = None
     record_map_pointers: torch.Tensor | None = None
     record_map_widths: torch.Tensor | None = None
 

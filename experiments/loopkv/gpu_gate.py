@@ -86,6 +86,47 @@ for cache in caches:
         cache._attend_prepared(0, old, torch.zeros(1, 4, 32, device="cuda", dtype=cache.dtype))
     cache.free("a")
 rows = []
+hybrid_checks = 0
+if args.storage == "alias":
+    # Straddle the reader's 32-token tile boundary with mixed request histories.
+    hybrid = [
+        cls(2, 2, 32, 96, 16, max_loops=4, dtype=torch.bfloat16, device="cuda", backend="triton")
+        for cls in (KVCacheManager, AliasKVCacheManager)
+    ]
+    histories = {"a": [4] * 33 + [1, 4, 2], "b": [4] * 32 + [2, 3, 4, 4], "c": [4] * 36}
+    for cache in hybrid:
+        cache.key_cache.fill_(float("nan"))
+        cache.value_cache.fill_(float("nan"))
+        for rid in histories:
+            assert cache.allocate(rid, 36)
+    for depth in range(4):
+        addresses = [
+            (rid, p)
+            for rid, counts in histories.items()
+            for p, count in enumerate(counts)
+            if depth < count
+        ]
+        rids, positions = zip(*addresses)
+        for layer in range(2):
+            k = torch.randn(len(rids), 2, 32, device="cuda", dtype=torch.bfloat16)
+            v = torch.randn_like(k)
+            for cache in hybrid:
+                cache.write(layer, rids, [depth] * len(rids), positions, k, v)
+    for cache in hybrid:
+        for rid, counts in histories.items():
+            for position, count in enumerate(counts):
+                cache.finalize_token(rid, position, count - 1)
+    for depths in ([0, 1, 3], [1, 2, 0], [3, 3, 3], [2, 0, 1]):
+        for layer in range(2):
+            q = torch.randn(3, 4, 32, device="cuda", dtype=torch.bfloat16)
+            outputs = [
+                cache.attend(layer, ["a", "b", "c"], depths, [35] * 3, q) for cache in hybrid
+            ]
+            assert torch.equal(*outputs), depths
+            hybrid_checks += 1
+    for cache in hybrid:
+        for rid in histories:
+            cache.free(rid)
 config = OuroConfig(
     vocab_size=64,
     hidden_size=32,
@@ -136,6 +177,7 @@ result = {
     "gpu": torch.cuda.get_device_name(),
     "capability": torch.cuda.get_device_capability(),
     "attention_bitwise_checks": attention,
+    "hybrid_prefix_bitwise_checks": hybrid_checks,
     "payload_identity_checks": identity,
     "skipped_poison_checks": poison,
     "stale_descriptor_reuse": True,

@@ -1,0 +1,1497 @@
+{
+  "status": "all_30_arms_and_controller_natural_exit_0",
+  "plan": {
+    "plan": {
+      "stage": "hybrid_batch_scaling_pilot_not_formal",
+      "source_sha": "7ca67d64599b421d0128f062c48325cc2a857b36",
+      "model": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/models/ouro-1.4b",
+      "pairs": 3,
+      "order_seed": 1705,
+      "cases": [
+        {
+          "name": "b32-c64-p128-d256",
+          "prompts": "experiments/loopkv/configs/prompts-p128.json",
+          "batch": 32,
+          "concurrency": 64,
+          "outputs": 256,
+          "num_blocks": 3072,
+          "threshold": 0.5,
+          "policy": "ouro"
+        },
+        {
+          "name": "b8-c16-p128-d128",
+          "prompts": "experiments/loopkv/configs/prompts-p128.json",
+          "batch": 8,
+          "concurrency": 16,
+          "outputs": 128,
+          "num_blocks": 512,
+          "threshold": 0.5,
+          "policy": "ouro"
+        },
+        {
+          "name": "b16-c32-p128-d128",
+          "prompts": "experiments/loopkv/configs/prompts-p128.json",
+          "batch": 16,
+          "concurrency": 32,
+          "outputs": 128,
+          "num_blocks": 1024,
+          "threshold": 0.5,
+          "policy": "ouro"
+        },
+        {
+          "name": "b32-c64-p128-d128",
+          "prompts": "experiments/loopkv/configs/prompts-p128.json",
+          "batch": 32,
+          "concurrency": 64,
+          "outputs": 128,
+          "num_blocks": 2048,
+          "threshold": 0.5,
+          "policy": "ouro"
+        },
+        {
+          "name": "b64-c128-p128-d128",
+          "prompts": "experiments/loopkv/configs/prompts-p128.json",
+          "batch": 64,
+          "concurrency": 128,
+          "outputs": 128,
+          "num_blocks": 4096,
+          "threshold": 0.5,
+          "policy": "ouro"
+        }
+      ],
+      "candidate": "alias"
+    },
+    "plan_sha256": "b4aae30bac34b48c1c36c827fc291d31ad3b900fa40bdbfbcdf816c43e1c845a",
+    "driver_sha256": "88fae5bfa191259c57d2ea0830fc9de5a62a04bd8f58190c8b394862cacb7535"
+  },
+  "summary": [
+    {
+      "case": {
+        "name": "b16-c32-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 16,
+        "concurrency": 32,
+        "outputs": 128,
+        "num_blocks": 1024,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pairs": 3,
+      "all_exact": true,
+      "native_median_tokens_s": 379.6525465809723,
+      "alias_median_tokens_s": 369.446730829366,
+      "median_paired_speedup": 0.9603674302054573,
+      "min_paired_speedup": 0.9599648130353868,
+      "max_paired_speedup": 0.9978147633944274,
+      "ratios": [
+        0.9599648130353868,
+        0.9978147633944274,
+        0.9603674302054573
+      ]
+    },
+    {
+      "case": {
+        "name": "b32-c64-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 32,
+        "concurrency": 64,
+        "outputs": 128,
+        "num_blocks": 2048,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pairs": 3,
+      "all_exact": true,
+      "native_median_tokens_s": 600.6135792380031,
+      "alias_median_tokens_s": 575.5569696393185,
+      "median_paired_speedup": 0.9582816465280823,
+      "min_paired_speedup": 0.9472457728786182,
+      "max_paired_speedup": 0.9870960813695039,
+      "ratios": [
+        0.9472457728786182,
+        0.9870960813695039,
+        0.9582816465280823
+      ]
+    },
+    {
+      "case": {
+        "name": "b32-c64-p128-d256",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 32,
+        "concurrency": 64,
+        "outputs": 256,
+        "num_blocks": 3072,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pairs": 3,
+      "all_exact": true,
+      "native_median_tokens_s": 697.4002662345725,
+      "alias_median_tokens_s": 704.0928665603552,
+      "median_paired_speedup": 1.0057147269587552,
+      "min_paired_speedup": 0.9765421716288512,
+      "max_paired_speedup": 1.0095964980941543,
+      "ratios": [
+        1.0057147269587552,
+        1.0095964980941543,
+        0.9765421716288512
+      ]
+    },
+    {
+      "case": {
+        "name": "b64-c128-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 64,
+        "concurrency": 128,
+        "outputs": 128,
+        "num_blocks": 4096,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pairs": 3,
+      "all_exact": true,
+      "native_median_tokens_s": 894.5437099959079,
+      "alias_median_tokens_s": 807.5742874380878,
+      "median_paired_speedup": 0.8964595679200117,
+      "min_paired_speedup": 0.8904890261504599,
+      "max_paired_speedup": 0.958666873721479,
+      "ratios": [
+        0.8904890261504599,
+        0.8964595679200117,
+        0.958666873721479
+      ]
+    },
+    {
+      "case": {
+        "name": "b8-c16-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 8,
+        "concurrency": 16,
+        "outputs": 128,
+        "num_blocks": 512,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pairs": 3,
+      "all_exact": true,
+      "native_median_tokens_s": 218.1846878945755,
+      "alias_median_tokens_s": 216.02220903456984,
+      "median_paired_speedup": 0.9900887689192446,
+      "min_paired_speedup": 0.9252727168646446,
+      "max_paired_speedup": 1.0450076651419522,
+      "ratios": [
+        0.9900887689192446,
+        0.9252727168646446,
+        1.0450076651419522
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "case": {
+        "name": "b16-c32-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 16,
+        "concurrency": 32,
+        "outputs": 128,
+        "num_blocks": 1024,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 0,
+      "order": [
+        true,
+        false
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 11.345996167510748,
+          "tokens_per_second": 361.00840680070854,
+          "completed_requests": 32,
+          "output_tokens": 4096,
+          "decode_exit_histogram": {
+            "2": 3101,
+            "3": 963
+          },
+          "cached_decode_positions": 4064,
+          "executed_decode_loops": 9091,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 1408696320,
+          "kv_arena_reserved_bytes": 3221225472,
+          "runtime_peak_allocated_bytes": 6131234816,
+          "runtime_peak_reserved_bytes": 6333399040,
+          "free_blocks_after_drain": 1024,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146789.68249,
+          "end_unix": 1791146816.707547,
+          "manifest_sha256": "aff3313a7348a2c70378897d54beba8410be15dc96423216ccdd0e1d3a9f0c7b"
+        },
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 10.89175708964467,
+          "tokens_per_second": 376.0642076652874,
+          "completed_requests": 32,
+          "output_tokens": 4096,
+          "decode_exit_histogram": {
+            "2": 3101,
+            "3": 963
+          },
+          "cached_decode_positions": 4064,
+          "executed_decode_loops": 9091,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 1408696320,
+          "kv_arena_reserved_bytes": 3221225472,
+          "runtime_peak_allocated_bytes": 6131169280,
+          "runtime_peak_reserved_bytes": 6333399040,
+          "free_blocks_after_drain": 1024,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146816.9236946,
+          "end_unix": 1791146843.6480906,
+          "manifest_sha256": "eae4e1af68e018592e87eb6ff3bb0b395dcff2e111213cc54753af8729220f31"
+        }
+      },
+      "request_hashes": {
+        "alias": "af08c18716fe11518f3f7849de7f5a685829f45a617f975bf9a4246823f89cdc",
+        "native": "af08c18716fe11518f3f7849de7f5a685829f45a617f975bf9a4246823f89cdc"
+      },
+      "speedup": 0.9599648130353868
+    },
+    {
+      "case": {
+        "name": "b16-c32-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 16,
+        "concurrency": 32,
+        "outputs": 128,
+        "num_blocks": 1024,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 1,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 10.788812130689621,
+          "tokens_per_second": 379.6525465809723,
+          "completed_requests": 32,
+          "output_tokens": 4096,
+          "decode_exit_histogram": {
+            "2": 3101,
+            "3": 963
+          },
+          "cached_decode_positions": 4064,
+          "executed_decode_loops": 9091,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 1408696320,
+          "kv_arena_reserved_bytes": 3221225472,
+          "runtime_peak_allocated_bytes": 6131169280,
+          "runtime_peak_reserved_bytes": 6333399040,
+          "free_blocks_after_drain": 1024,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146843.9685762,
+          "end_unix": 1791146870.3244333,
+          "manifest_sha256": "bd95aaed7e61ac3557b209316054dd77f1f7b50603b3b74c5a35dca8c9e64722"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 10.812439870089293,
+          "tokens_per_second": 378.82291593878466,
+          "completed_requests": 32,
+          "output_tokens": 4096,
+          "decode_exit_histogram": {
+            "2": 3101,
+            "3": 963
+          },
+          "cached_decode_positions": 4064,
+          "executed_decode_loops": 9091,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 1408696320,
+          "kv_arena_reserved_bytes": 3221225472,
+          "runtime_peak_allocated_bytes": 6131234816,
+          "runtime_peak_reserved_bytes": 6333399040,
+          "free_blocks_after_drain": 1024,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146870.5293913,
+          "end_unix": 1791146896.7922485,
+          "manifest_sha256": "005a128412ea5a92cfc2d56daed8d0e2c53422410a17dd90fdc6490fcfe58cbd"
+        }
+      },
+      "request_hashes": {
+        "native": "af08c18716fe11518f3f7849de7f5a685829f45a617f975bf9a4246823f89cdc",
+        "alias": "af08c18716fe11518f3f7849de7f5a685829f45a617f975bf9a4246823f89cdc"
+      },
+      "speedup": 0.9978147633944274
+    },
+    {
+      "case": {
+        "name": "b16-c32-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 16,
+        "concurrency": 32,
+        "outputs": 128,
+        "num_blocks": 1024,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 2,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 10.647448375821114,
+          "tokens_per_second": 384.6931072520108,
+          "completed_requests": 32,
+          "output_tokens": 4096,
+          "decode_exit_histogram": {
+            "2": 3101,
+            "3": 963
+          },
+          "cached_decode_positions": 4064,
+          "executed_decode_loops": 9091,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 1408696320,
+          "kv_arena_reserved_bytes": 3221225472,
+          "runtime_peak_allocated_bytes": 6131169280,
+          "runtime_peak_reserved_bytes": 6333399040,
+          "free_blocks_after_drain": 1024,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146897.0614033,
+          "end_unix": 1791146923.0369608,
+          "manifest_sha256": "6504c818055f35abc690380c05c5fbab094646b88d0e98f2d6113cc490c341a2"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 11.086848679929972,
+          "tokens_per_second": 369.446730829366,
+          "completed_requests": 32,
+          "output_tokens": 4096,
+          "decode_exit_histogram": {
+            "2": 3101,
+            "3": 963
+          },
+          "cached_decode_positions": 4064,
+          "executed_decode_loops": 9091,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 1408696320,
+          "kv_arena_reserved_bytes": 3221225472,
+          "runtime_peak_allocated_bytes": 6131234816,
+          "runtime_peak_reserved_bytes": 6333399040,
+          "free_blocks_after_drain": 1024,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146923.2936683,
+          "end_unix": 1791146950.037236,
+          "manifest_sha256": "d48cfe7b10d2c698f306555ce0210376b7889887a6016acfb8d6e9e3953b4079"
+        }
+      },
+      "request_hashes": {
+        "native": "af08c18716fe11518f3f7849de7f5a685829f45a617f975bf9a4246823f89cdc",
+        "alias": "af08c18716fe11518f3f7849de7f5a685829f45a617f975bf9a4246823f89cdc"
+      },
+      "speedup": 0.9603674302054573
+    },
+    {
+      "case": {
+        "name": "b32-c64-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 32,
+        "concurrency": 64,
+        "outputs": 128,
+        "num_blocks": 2048,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 0,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 13.6111721098423,
+          "tokens_per_second": 601.8585272370723,
+          "completed_requests": 64,
+          "output_tokens": 8192,
+          "decode_exit_histogram": {
+            "2": 6186,
+            "3": 1942
+          },
+          "cached_decode_positions": 8128,
+          "executed_decode_loops": 18198,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 2814246912,
+          "kv_arena_reserved_bytes": 6442450944,
+          "runtime_peak_allocated_bytes": 9352460288,
+          "runtime_peak_reserved_bytes": 9554624512,
+          "free_blocks_after_drain": 2048,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146950.3879888,
+          "end_unix": 1791146982.547798,
+          "manifest_sha256": "9aec4cbeafff61193761f3925e2d742d724f2890ff5153005563a97d51eafb12"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 14.369208604097366,
+          "tokens_per_second": 570.1079457962674,
+          "completed_requests": 64,
+          "output_tokens": 8192,
+          "decode_exit_histogram": {
+            "2": 6186,
+            "3": 1942
+          },
+          "cached_decode_positions": 8128,
+          "executed_decode_loops": 18198,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 2814246912,
+          "kv_arena_reserved_bytes": 6442450944,
+          "runtime_peak_allocated_bytes": 9352591360,
+          "runtime_peak_reserved_bytes": 9554624512,
+          "free_blocks_after_drain": 2048,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146982.7831933,
+          "end_unix": 1791147016.4036891,
+          "manifest_sha256": "6312e78b7b7f91908ebfbb39b2980e24a2f8f0c20cf25dea57a08d7b9c8e6831"
+        }
+      },
+      "request_hashes": {
+        "native": "bf41da9240e5e0e844a33b369640d3820479270d7724dfafbc03d7b650b55916",
+        "alias": "bf41da9240e5e0e844a33b369640d3820479270d7724dfafbc03d7b650b55916"
+      },
+      "speedup": 0.9472457728786182
+    },
+    {
+      "case": {
+        "name": "b32-c64-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 32,
+        "concurrency": 64,
+        "outputs": 128,
+        "num_blocks": 2048,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 1,
+      "order": [
+        true,
+        false
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 14.01958505064249,
+          "tokens_per_second": 584.3254254964255,
+          "completed_requests": 64,
+          "output_tokens": 8192,
+          "decode_exit_histogram": {
+            "2": 6186,
+            "3": 1942
+          },
+          "cached_decode_positions": 8128,
+          "executed_decode_loops": 18198,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 2814246912,
+          "kv_arena_reserved_bytes": 6442450944,
+          "runtime_peak_allocated_bytes": 9352591360,
+          "runtime_peak_reserved_bytes": 9554624512,
+          "free_blocks_after_drain": 2048,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147016.636253,
+          "end_unix": 1791147049.4850123,
+          "manifest_sha256": "52fb825ee3680e0b08261b427e0dd31b959742676523f3e6f764b3d607e5f7eb"
+        },
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 13.83867746591568,
+          "tokens_per_second": 591.964081840674,
+          "completed_requests": 64,
+          "output_tokens": 8192,
+          "decode_exit_histogram": {
+            "2": 6186,
+            "3": 1942
+          },
+          "cached_decode_positions": 8128,
+          "executed_decode_loops": 18198,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 2814246912,
+          "kv_arena_reserved_bytes": 6442450944,
+          "runtime_peak_allocated_bytes": 9352460288,
+          "runtime_peak_reserved_bytes": 9554624512,
+          "free_blocks_after_drain": 2048,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147049.7472608,
+          "end_unix": 1791147082.2538412,
+          "manifest_sha256": "91dd7dfbacf222a9b37d85724fecb5cbe73c6c5b70f03decaec8069c327d55f2"
+        }
+      },
+      "request_hashes": {
+        "alias": "bf41da9240e5e0e844a33b369640d3820479270d7724dfafbc03d7b650b55916",
+        "native": "bf41da9240e5e0e844a33b369640d3820479270d7724dfafbc03d7b650b55916"
+      },
+      "speedup": 0.9870960813695039
+    },
+    {
+      "case": {
+        "name": "b32-c64-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 32,
+        "concurrency": 64,
+        "outputs": 128,
+        "num_blocks": 2048,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 2,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 13.639385260641575,
+          "tokens_per_second": 600.6135792380031,
+          "completed_requests": 64,
+          "output_tokens": 8192,
+          "decode_exit_histogram": {
+            "2": 6186,
+            "3": 1942
+          },
+          "cached_decode_positions": 8128,
+          "executed_decode_loops": 18198,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 2814246912,
+          "kv_arena_reserved_bytes": 6442450944,
+          "runtime_peak_allocated_bytes": 9352460288,
+          "runtime_peak_reserved_bytes": 9554624512,
+          "free_blocks_after_drain": 2048,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147082.5327735,
+          "end_unix": 1791147114.7791693,
+          "manifest_sha256": "61e8226944b3a8a50ffacaeb55e6909b1e477874c03f9e9f00c7b9919e155d6c"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 14.233169663697481,
+          "tokens_per_second": 575.5569696393185,
+          "completed_requests": 64,
+          "output_tokens": 8192,
+          "decode_exit_histogram": {
+            "2": 6186,
+            "3": 1942
+          },
+          "cached_decode_positions": 8128,
+          "executed_decode_loops": 18198,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 2814246912,
+          "kv_arena_reserved_bytes": 6442450944,
+          "runtime_peak_allocated_bytes": 9352591360,
+          "runtime_peak_reserved_bytes": 9554624512,
+          "free_blocks_after_drain": 2048,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147115.0408745,
+          "end_unix": 1791147148.2257364,
+          "manifest_sha256": "b5ac6cf943aa6be1ffc48d638ce47eb1985789fbe2f2545f22e00d1ae3baba39"
+        }
+      },
+      "request_hashes": {
+        "native": "bf41da9240e5e0e844a33b369640d3820479270d7724dfafbc03d7b650b55916",
+        "alias": "bf41da9240e5e0e844a33b369640d3820479270d7724dfafbc03d7b650b55916"
+      },
+      "speedup": 0.9582816465280823
+    },
+    {
+      "case": {
+        "name": "b32-c64-p128-d256",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 32,
+        "concurrency": 64,
+        "outputs": 256,
+        "num_blocks": 3072,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 0,
+      "order": [
+        true,
+        false
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 23.244993213564157,
+          "tokens_per_second": 704.8399562637618,
+          "completed_requests": 64,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12706,
+            "3": 3614
+          },
+          "cached_decode_positions": 16320,
+          "executed_decode_loops": 36254,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5706743808,
+          "kv_arena_reserved_bytes": 9663676416,
+          "runtime_peak_allocated_bytes": 12573882368,
+          "runtime_peak_reserved_bytes": 12775849984,
+          "free_blocks_after_drain": 3072,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146326.234566,
+          "end_unix": 1791146383.0178103,
+          "manifest_sha256": "afa5b9fa32a8c8e7a93a464794140104960b81b111e6b262c9f0c00264499019"
+        },
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 23.377832002937794,
+          "tokens_per_second": 700.8348763025199,
+          "completed_requests": 64,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12706,
+            "3": 3614
+          },
+          "cached_decode_positions": 16320,
+          "executed_decode_loops": 36254,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5706743808,
+          "kv_arena_reserved_bytes": 9663676416,
+          "runtime_peak_allocated_bytes": 12573685760,
+          "runtime_peak_reserved_bytes": 12775849984,
+          "free_blocks_after_drain": 3072,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146383.2435133,
+          "end_unix": 1791146434.8799286,
+          "manifest_sha256": "15e5e8ef27f69cb02680b5b49cda57482ab04f50e5ed9566d6de92a782adba18"
+        }
+      },
+      "request_hashes": {
+        "alias": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132",
+        "native": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132"
+      },
+      "speedup": 1.0057147269587552
+    },
+    {
+      "case": {
+        "name": "b32-c64-p128-d256",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 32,
+        "concurrency": 64,
+        "outputs": 256,
+        "num_blocks": 3072,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 1,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 23.492964934557676,
+          "tokens_per_second": 697.4002662345725,
+          "completed_requests": 64,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12706,
+            "3": 3614
+          },
+          "cached_decode_positions": 16320,
+          "executed_decode_loops": 36254,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5706743808,
+          "kv_arena_reserved_bytes": 9663676416,
+          "runtime_peak_allocated_bytes": 12573685760,
+          "runtime_peak_reserved_bytes": 12775849984,
+          "free_blocks_after_drain": 3072,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146435.2156684,
+          "end_unix": 1791146486.874187,
+          "manifest_sha256": "95405953632ed2906d575fcae2008f9204ea134017f0ce4ca0d1ec4d314d6647"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 23.26965770870447,
+          "tokens_per_second": 704.0928665603552,
+          "completed_requests": 64,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12706,
+            "3": 3614
+          },
+          "cached_decode_positions": 16320,
+          "executed_decode_loops": 36254,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5706743808,
+          "kv_arena_reserved_bytes": 9663676416,
+          "runtime_peak_allocated_bytes": 12573882368,
+          "runtime_peak_reserved_bytes": 12775849984,
+          "free_blocks_after_drain": 3072,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146487.141219,
+          "end_unix": 1791146538.3053048,
+          "manifest_sha256": "c3ddfe259d6df39dfa7d6c83981e52b9a052915b68e0e067f2f497e40785bb0a"
+        }
+      },
+      "request_hashes": {
+        "native": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132",
+        "alias": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132"
+      },
+      "speedup": 1.0095964980941543
+    },
+    {
+      "case": {
+        "name": "b32-c64-p128-d256",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 32,
+        "concurrency": 64,
+        "outputs": 256,
+        "num_blocks": 3072,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 2,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 23.941189266741276,
+          "tokens_per_second": 684.3436145739174,
+          "completed_requests": 64,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12706,
+            "3": 3614
+          },
+          "cached_decode_positions": 16320,
+          "executed_decode_loops": 36254,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5706743808,
+          "kv_arena_reserved_bytes": 9663676416,
+          "runtime_peak_allocated_bytes": 12573685760,
+          "runtime_peak_reserved_bytes": 12775849984,
+          "free_blocks_after_drain": 3072,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146538.5640776,
+          "end_unix": 1791146590.627525,
+          "manifest_sha256": "739c27f9cbdbdaeb2f9065e041e15f60a1aa146aeb00907fd907c57fa880567e"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 24.51628814637661,
+          "tokens_per_second": 668.2903995163508,
+          "completed_requests": 64,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12706,
+            "3": 3614
+          },
+          "cached_decode_positions": 16320,
+          "executed_decode_loops": 36254,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5706743808,
+          "kv_arena_reserved_bytes": 9663676416,
+          "runtime_peak_allocated_bytes": 12573882368,
+          "runtime_peak_reserved_bytes": 12775849984,
+          "free_blocks_after_drain": 3072,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146590.895018,
+          "end_unix": 1791146645.3233316,
+          "manifest_sha256": "7e9d012d99af3a800fd6ebf8f6745c2142f8b641736bd43b629c63894bd395c1"
+        }
+      },
+      "request_hashes": {
+        "native": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132",
+        "alias": "8b1855163867613f283297ea8d9fcf44e583a8be8b75cdb7e28a1a7b6a03d132"
+      },
+      "speedup": 0.9765421716288512
+    },
+    {
+      "case": {
+        "name": "b64-c128-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 64,
+        "concurrency": 128,
+        "outputs": 128,
+        "num_blocks": 4096,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 0,
+      "order": [
+        true,
+        false
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 20.567892849445343,
+          "tokens_per_second": 796.5813571632755,
+          "completed_requests": 128,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12349,
+            "3": 3907
+          },
+          "cached_decode_positions": 16256,
+          "executed_decode_loops": 36419,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5623971840,
+          "kv_arena_reserved_bytes": 12884901888,
+          "runtime_peak_allocated_bytes": 15795304448,
+          "runtime_peak_reserved_bytes": 15997075456,
+          "free_blocks_after_drain": 4096,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147148.4677293,
+          "end_unix": 1791147194.3951607,
+          "manifest_sha256": "b3d9511d1826799dcee42af777033c903e5f8f525a15ed655dc0c30dcea2a5a2"
+        },
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 18.31548287346959,
+          "tokens_per_second": 894.5437099959079,
+          "completed_requests": 128,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12349,
+            "3": 3907
+          },
+          "cached_decode_positions": 16256,
+          "executed_decode_loops": 36419,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5623971840,
+          "kv_arena_reserved_bytes": 12884901888,
+          "runtime_peak_allocated_bytes": 15795042304,
+          "runtime_peak_reserved_bytes": 15997075456,
+          "free_blocks_after_drain": 4096,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147194.6904526,
+          "end_unix": 1791147237.0148473,
+          "manifest_sha256": "81732108853a4e16a874547c3b5827bdd3ea2880c6e306d01b3516271dde0b53"
+        }
+      },
+      "request_hashes": {
+        "alias": "e642701f4988b247209596448452950c6155d6a292653db18f353bd7905d4d21",
+        "native": "e642701f4988b247209596448452950c6155d6a292653db18f353bd7905d4d21"
+      },
+      "speedup": 0.8904890261504599
+    },
+    {
+      "case": {
+        "name": "b64-c128-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 64,
+        "concurrency": 128,
+        "outputs": 128,
+        "num_blocks": 4096,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 1,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 18.18729718029499,
+          "tokens_per_second": 900.8485338740288,
+          "completed_requests": 128,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12349,
+            "3": 3907
+          },
+          "cached_decode_positions": 16256,
+          "executed_decode_loops": 36419,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5623971840,
+          "kv_arena_reserved_bytes": 12884901888,
+          "runtime_peak_allocated_bytes": 15795042304,
+          "runtime_peak_reserved_bytes": 15997075456,
+          "free_blocks_after_drain": 4096,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147237.2826717,
+          "end_unix": 1791147278.5825775,
+          "manifest_sha256": "474e4f058b757009915e0eb37881987c5d6b1b8fee9959b8243d721517494a54"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 20.287916857749224,
+          "tokens_per_second": 807.5742874380878,
+          "completed_requests": 128,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12349,
+            "3": 3907
+          },
+          "cached_decode_positions": 16256,
+          "executed_decode_loops": 36419,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5623971840,
+          "kv_arena_reserved_bytes": 12884901888,
+          "runtime_peak_allocated_bytes": 15795304448,
+          "runtime_peak_reserved_bytes": 15997075456,
+          "free_blocks_after_drain": 4096,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147278.8478374,
+          "end_unix": 1791147323.9598074,
+          "manifest_sha256": "c9123919011d0857cd786e30cb21ad0283983e95018c378961ea4d326ddabb43"
+        }
+      },
+      "request_hashes": {
+        "native": "e642701f4988b247209596448452950c6155d6a292653db18f353bd7905d4d21",
+        "alias": "e642701f4988b247209596448452950c6155d6a292653db18f353bd7905d4d21"
+      },
+      "speedup": 0.8964595679200117
+    },
+    {
+      "case": {
+        "name": "b64-c128-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 64,
+        "concurrency": 128,
+        "outputs": 128,
+        "num_blocks": 4096,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 2,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 19.06856544315815,
+          "tokens_per_second": 859.2151333480947,
+          "completed_requests": 128,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12349,
+            "3": 3907
+          },
+          "cached_decode_positions": 16256,
+          "executed_decode_loops": 36419,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5623971840,
+          "kv_arena_reserved_bytes": 12884901888,
+          "runtime_peak_allocated_bytes": 15795042304,
+          "runtime_peak_reserved_bytes": 15997075456,
+          "free_blocks_after_drain": 4096,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147324.2837887,
+          "end_unix": 1791147367.3783617,
+          "manifest_sha256": "3fa032e622545faafc88ad77344a053f2992ccbc4f02841a5491b10413ddfe9e"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 19.890710700303316,
+          "tokens_per_second": 823.7010857410016,
+          "completed_requests": 128,
+          "output_tokens": 16384,
+          "decode_exit_histogram": {
+            "2": 12349,
+            "3": 3907
+          },
+          "cached_decode_positions": 16256,
+          "executed_decode_loops": 36419,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 5623971840,
+          "kv_arena_reserved_bytes": 12884901888,
+          "runtime_peak_allocated_bytes": 15795304448,
+          "runtime_peak_reserved_bytes": 15997075456,
+          "free_blocks_after_drain": 4096,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791147367.6240215,
+          "end_unix": 1791147412.2696552,
+          "manifest_sha256": "6992438d076f36affdb040cda252e17aca574521706fd1b4fd7db89996517d57"
+        }
+      },
+      "request_hashes": {
+        "native": "e642701f4988b247209596448452950c6155d6a292653db18f353bd7905d4d21",
+        "alias": "e642701f4988b247209596448452950c6155d6a292653db18f353bd7905d4d21"
+      },
+      "speedup": 0.958666873721479
+    },
+    {
+      "case": {
+        "name": "b8-c16-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 8,
+        "concurrency": 16,
+        "outputs": 128,
+        "num_blocks": 512,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 0,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 9.386543206870556,
+          "tokens_per_second": 218.1846878945755,
+          "completed_requests": 16,
+          "output_tokens": 2048,
+          "decode_exit_histogram": {
+            "2": 1545,
+            "3": 487
+          },
+          "cached_decode_positions": 2032,
+          "executed_decode_loops": 4551,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 703266816,
+          "kv_arena_reserved_bytes": 1610612736,
+          "runtime_peak_allocated_bytes": 4520523776,
+          "runtime_peak_reserved_bytes": 4722786304,
+          "free_blocks_after_drain": 512,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146645.5834563,
+          "end_unix": 1791146669.2130322,
+          "manifest_sha256": "fb37682699ae59277324f611ad7422faae1aecb19543830d5fe5649c89a22ad4"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 9.48050669953227,
+          "tokens_per_second": 216.02220903456984,
+          "completed_requests": 16,
+          "output_tokens": 2048,
+          "decode_exit_histogram": {
+            "2": 1545,
+            "3": 487
+          },
+          "cached_decode_positions": 2032,
+          "executed_decode_loops": 4551,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 703266816,
+          "kv_arena_reserved_bytes": 1610612736,
+          "runtime_peak_allocated_bytes": 4520556544,
+          "runtime_peak_reserved_bytes": 4722786304,
+          "free_blocks_after_drain": 512,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146669.4481773,
+          "end_unix": 1791146693.304117,
+          "manifest_sha256": "92a7815afd76750ebd59a02c76d2de1aa5b6290c665414d8603e8d1f915f6854"
+        }
+      },
+      "request_hashes": {
+        "native": "2112ec2cf5a4ea0e3fb51d8759f73e10d0f69b20b5bcc51c01811a27c10d631b",
+        "alias": "2112ec2cf5a4ea0e3fb51d8759f73e10d0f69b20b5bcc51c01811a27c10d631b"
+      },
+      "speedup": 0.9900887689192446
+    },
+    {
+      "case": {
+        "name": "b8-c16-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 8,
+        "concurrency": 16,
+        "outputs": 128,
+        "num_blocks": 512,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 1,
+      "order": [
+        true,
+        false
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 9.554977469146252,
+          "tokens_per_second": 214.33854832344164,
+          "completed_requests": 16,
+          "output_tokens": 2048,
+          "decode_exit_histogram": {
+            "2": 1545,
+            "3": 487
+          },
+          "cached_decode_positions": 2032,
+          "executed_decode_loops": 4551,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 703266816,
+          "kv_arena_reserved_bytes": 1610612736,
+          "runtime_peak_allocated_bytes": 4520556544,
+          "runtime_peak_reserved_bytes": 4722786304,
+          "free_blocks_after_drain": 512,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146693.6137643,
+          "end_unix": 1791146717.7020366,
+          "manifest_sha256": "92b535e3c82ff5dd2e1094d312971f030fbce66d715b0ca469f6829ab7bbc35c"
+        },
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 8.840959962457418,
+          "tokens_per_second": 231.6490526703778,
+          "completed_requests": 16,
+          "output_tokens": 2048,
+          "decode_exit_histogram": {
+            "2": 1545,
+            "3": 487
+          },
+          "cached_decode_positions": 2032,
+          "executed_decode_loops": 4551,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 703266816,
+          "kv_arena_reserved_bytes": 1610612736,
+          "runtime_peak_allocated_bytes": 4520523776,
+          "runtime_peak_reserved_bytes": 4722786304,
+          "free_blocks_after_drain": 512,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146717.944797,
+          "end_unix": 1791146740.837827,
+          "manifest_sha256": "937bd91453f07b4e24aeab5e3ce7e8c0d76714c9e32ca60eda02cc3dabed177c"
+        }
+      },
+      "request_hashes": {
+        "alias": "2112ec2cf5a4ea0e3fb51d8759f73e10d0f69b20b5bcc51c01811a27c10d631b",
+        "native": "2112ec2cf5a4ea0e3fb51d8759f73e10d0f69b20b5bcc51c01811a27c10d631b"
+      },
+      "speedup": 0.9252727168646446
+    },
+    {
+      "case": {
+        "name": "b8-c16-p128-d128",
+        "prompts": "experiments/loopkv/configs/prompts-p128.json",
+        "batch": 8,
+        "concurrency": 16,
+        "outputs": 128,
+        "num_blocks": 512,
+        "threshold": 0.5,
+        "policy": "ouro"
+      },
+      "pair": 2,
+      "order": [
+        false,
+        true
+      ],
+      "exact_outputs": true,
+      "runs": {
+        "native": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 9.864433012902737,
+          "tokens_per_second": 207.6145681481342,
+          "completed_requests": 16,
+          "output_tokens": 2048,
+          "decode_exit_histogram": {
+            "2": 1545,
+            "3": 487
+          },
+          "cached_decode_positions": 2032,
+          "executed_decode_loops": 4551,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 703266816,
+          "kv_arena_reserved_bytes": 1610612736,
+          "runtime_peak_allocated_bytes": 4520523776,
+          "runtime_peak_reserved_bytes": 4722786304,
+          "free_blocks_after_drain": 512,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146741.090935,
+          "end_unix": 1791146765.5345912,
+          "manifest_sha256": "895ddd54a7c737a7e463ec4d91e12ffd028a915f496aca5ff19e7a9264adf80f"
+        },
+        "alias": {
+          "scope": "finite_batch_engine_e2e",
+          "seconds": 9.439579576253891,
+          "tokens_per_second": 216.95881510993644,
+          "completed_requests": 16,
+          "output_tokens": 2048,
+          "decode_exit_histogram": {
+            "2": 1545,
+            "3": 487
+          },
+          "cached_decode_positions": 2032,
+          "executed_decode_loops": 4551,
+          "recurrent_batch_histogram": null,
+          "promotion_payload_bytes_from_trace": 703266816,
+          "kv_arena_reserved_bytes": 1610612736,
+          "runtime_peak_allocated_bytes": 4520556544,
+          "runtime_peak_reserved_bytes": 4722786304,
+          "free_blocks_after_drain": 512,
+          "geometry": {
+            "layers": 24,
+            "kv_heads": 16,
+            "head_dim": 128,
+            "loops": 4,
+            "element_bytes": 2,
+            "page_tokens": 16
+          },
+          "finalization_exposed_ms": null,
+          "start_unix": 1791146765.7934573,
+          "end_unix": 1791146789.4041312,
+          "manifest_sha256": "4443f44a8843c994c8b02e0fc57ffcafc01f709b7a4370872214697fa31ac262"
+        }
+      },
+      "request_hashes": {
+        "native": "2112ec2cf5a4ea0e3fb51d8759f73e10d0f69b20b5bcc51c01811a27c10d631b",
+        "alias": "2112ec2cf5a4ea0e3fb51d8759f73e10d0f69b20b5bcc51c01811a27c10d631b"
+      },
+      "speedup": 1.0450076651419522
+    }
+  ],
+  "scope": "finite_batch_engine_e2e_after_complete_warmup_no_HTTP_or_P99"
+}
