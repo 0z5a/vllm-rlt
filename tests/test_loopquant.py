@@ -73,6 +73,29 @@ def test_padding_does_not_enter_activation_statistics():
     assert result["channel_energy"] == [4.5, 8.0]
 
 
+def test_q0_recurrence_reuses_decoded_storage_and_refreshes_on_resume():
+    linear = nn.Linear(16, 8, bias=False)
+    module = FP8FakeLinear(linear, torch.tensor([0.01]), ScaleLayout(4))
+    saved_weights = []
+
+    def pack(tensor):
+        if tensor.shape == (16, 8):
+            saved_weights.append(tensor.untyped_storage().data_ptr())
+        return tensor
+
+    with torch.autograd.graph.saved_tensors_hooks(pack, lambda tensor: tensor):
+        loss = sum(
+            module(torch.randn(3, 16), torch.full((3,), loop)).square().mean() for loop in range(4)
+        )
+        loss.backward()
+    assert len(saved_weights) == 4 and len(set(saved_weights)) == 1
+    assert "reference_weight" not in module.state_dict()
+    other = FP8FakeLinear(nn.Linear(16, 8, bias=False), torch.tensor([0.02]), ScaleLayout(4))
+    other.load_state_dict(module.state_dict())
+    values, loops = torch.randn(3, 16), torch.tensor([0, 1, 3])
+    torch.testing.assert_close(other(values, loops), module(values, loops), atol=0, rtol=0)
+
+
 def test_reservoir_is_reproducible_and_bounded():
     a, b = ActivationStats(sample_limit=5), ActivationStats(sample_limit=5)
     for i in range(10):

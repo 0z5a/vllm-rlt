@@ -146,3 +146,5 @@ case deselected. They include native Nanbeige fixed-loop output/mask checks and
 two scale updates through both recurrent steps, using the same architecture
 and attention for the BF16 teacher. The first shared Q0 implementation and
 Ouro checks remain covered after extracting common projection bookkeeping.
+
+Q0 now reuses one FP32 decoded reference matrix per physical projection during training, so backward does not retain a separate decoded copy per loop. It is a nonpersistent training buffer and is excluded from checkpoints and deployment exports. [48 CPU checks](loopquant-reference-cache-cpu-attempt1.log) pass, including four-loop saved-storage accounting and exact cache reconstruction after loading the packed state. This is a training-memory change, not a native serving-memory claim.

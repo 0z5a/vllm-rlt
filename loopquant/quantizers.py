@@ -75,13 +75,21 @@ class FP8FakeLinear(nn.Module):
         weight_scale = weight.abs().amax().clamp_min(torch.finfo(torch.float32).tiny) / 448
         self.register_buffer("packed_weight", fp8_encode(weight, weight_scale))
         self.register_buffer("weight_scale", weight_scale)
+        # Training/reference storage only; never serialize a second weight payload.
+        # Reuse it across recurrence so autograd does not retain R decoded copies.
+        self.register_buffer(
+            "reference_weight", self.packed_weight.float() * self.weight_scale, persistent=False
+        )
+        self.register_load_state_dict_post_hook(self._refresh_reference)
         self.log_scale = nn.Parameter(scales.detach().float().log())
         self.layout = layout
+
+    def _refresh_reference(self, module: nn.Module, incompatible_keys: object) -> None:
+        self.reference_weight.copy_(self.packed_weight.float() * self.weight_scale)
 
     def forward(self, values: torch.Tensor, loop_ids: torch.Tensor) -> torch.Tensor:
         scale = self.log_scale.exp()[self.layout.indices(loop_ids)].unsqueeze(-1)
         # Decode in FP32 so the reference does not insert BF16 rounding before
         # the native FP8 GEMM's accumulation and final output conversion.
         activation = fp8_fake_quant(values.float(), scale)
-        weight = self.packed_weight.float() * self.weight_scale
-        return nn.functional.linear(activation, weight).to(values.dtype)
+        return nn.functional.linear(activation, self.reference_weight).to(values.dtype)
