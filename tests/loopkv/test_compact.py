@@ -211,3 +211,46 @@ def test_prepared_unwritten_versions_keep_their_credit():
         cache._write_prepared(0, batches[3], payload, payload)
     cache.free("a")
     assert cache.live_records == cache._reserved_records == 0
+
+
+def test_credit_pressure_engine_completes_after_depth_increase():
+    from vllm_rlt.engine.llm_engine import LLMEngine
+
+    torch.manual_seed(32)
+    model = OuroForCausalLM(tiny_ouro_config()).eval()
+    arms, peaks = [], []
+    for compact, reclaim in ((False, False), (True, False), (True, True)):
+        engine = LLMEngine(
+            model,
+            cache_config=CacheConfig(
+                96, 2, compact_last_exited=compact, reclaim_skipped_credits=reclaim
+            ),
+            scheduler_config=SchedulerConfig(max_num_seqs=8, max_num_batched_tokens=16),
+        )
+        for index in range(16):
+            loops = 2 if index < 8 else 4
+            engine.add_request(
+                str(index),
+                [2, 3, 4, 5],
+                SamplingParams(max_tokens=16, min_loops=loops, max_loops=loops, ignore_eos=True),
+            )
+        completed, peak = {}, 0
+        while engine.has_unfinished_requests():
+            for output in engine.step():
+                if output.finished:
+                    completed[output.request_id] = (output.token_ids, output.exit_depths)
+            peak = max(peak, len(engine.cache_manager._allocations))
+            if compact:
+                assert (
+                    engine.cache_manager.live_records
+                    <= engine.cache_manager._reserved_records
+                    <= 192
+                )
+        assert len(completed) == 16
+        assert engine.cache_manager.num_free_blocks == 96
+        arms.append(completed)
+        peaks.append(peak)
+        engine.close()
+    assert arms[0] == arms[1] == arms[2]
+    assert peaks[0] == peaks[1] == 2
+    assert peaks[2] > 2
