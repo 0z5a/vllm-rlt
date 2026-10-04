@@ -38,8 +38,8 @@ the frozen `gsm8k_cot` v0.4.9.2 recipe and strict first-match extraction
 `The answer is (\-?[0-9\.\,]+).`, with its number normalization rules.
 This is a new native-engine cohort, not a reproduction of a historical HF score.
 
-[Frozen full prompts, IDs, gold answers and recipe hash](evidence/quality-v1/gsm8k100-protocol.json)
-are hashed `632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede`.
+[Compressed frozen prompts, IDs, gold answers and recipe hash](evidence/quality-v1/gsm8k100-protocol.json.gz)
+have decompressed SHA256 `632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede`.
 The standalone text-stop table was [qualified](evidence/quality-v1/byte-stops-qualification.json)
 against all49,152 tokenizer entries and500 random token sequences using the
 existing Tokenizers0.21.4 runtime. No remote dependencies were installed.
