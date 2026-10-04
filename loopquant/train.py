@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 
+from .adapters.huginn import HuginnAdapter
 from .adapters.nanbeige import NanbeigeAdapter
 from .adapters.ouro import OuroAdapter
 from .quality import next_token_nll
@@ -26,6 +27,7 @@ class Q0Config:
 class TrainingBatch:
     token_ids: torch.Tensor
     valid: torch.Tensor
+    initial_state: torch.Tensor | None = None
 
 
 class Q0Trainer:
@@ -37,7 +39,9 @@ class Q0Trainer:
     number of shared calls is applied to the complete recurrent derivative.
     """
 
-    def __init__(self, student: OuroAdapter | NanbeigeAdapter, config: Q0Config) -> None:
+    def __init__(
+        self, student: OuroAdapter | NanbeigeAdapter | HuginnAdapter, config: Q0Config
+    ) -> None:
         if not student.quantized or any(p.requires_grad for p in student.model.parameters()):
             raise ValueError("Q0 requires attached scale modules and a frozen model")
         if config.tokens_per_update < 2 or config.learning_rate <= 0 or config.max_grad_norm <= 0:
@@ -67,13 +71,24 @@ class Q0Trainer:
         self.optimizer.zero_grad(set_to_none=True)
         totals = dict(ce=0.0, kl=0.0, trajectory=0.0)
         for batch in batches:
-            result = self.student(batch.token_ids, batch.valid, config.loops)
+            initial_state = batch.initial_state
+            if isinstance(self.student, HuginnAdapter):
+                if initial_state is None:
+                    initial_state = self.student.initialize_state(batch.token_ids)
+                result = self.student(batch.token_ids, batch.valid, config.loops, initial_state)
+            else:
+                result = self.student(batch.token_ids, batch.valid, config.loops)
             nll, count = next_token_nll(result.logits, batch.token_ids, batch.valid)
             loss = nll / targets
             totals["ce"] += float(loss.detach())
             if config.kl_weight or config.trajectory_weight:
                 with torch.no_grad():
-                    teacher = self.teacher(batch.token_ids, batch.valid, config.loops)
+                    if isinstance(self.teacher, HuginnAdapter):
+                        teacher = self.teacher(
+                            batch.token_ids, batch.valid, config.loops, initial_state
+                        )
+                    else:
+                        teacher = self.teacher(batch.token_ids, batch.valid, config.loops)
                 mask = batch.valid[:, :-1] & batch.valid[:, 1:]
                 if config.kl_weight:
                     temperature = config.temperature
