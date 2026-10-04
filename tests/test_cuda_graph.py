@@ -101,3 +101,52 @@ def test_graph_cache_limit_fallback_and_abort():
         assert engine.cache_manager.num_used_blocks == 0
     assert engine.model_runner.graphs.captures == 1
     assert engine.model_runner.graphs.fallbacks > 0
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_graph_replay_refreshes_loop_ids_for_mixed_depths(asynchronous):
+    class LoopSensitiveOuro(OuroForCausalLM):
+        def recurrent_prepared(self, hidden, batch, cache, *, compute_gate=True):
+            output, gate = super().recurrent_prepared(
+                hidden, batch, cache, compute_gate=compute_gate
+            )
+            # A stale loop vector changes both the next recurrent state and logits.
+            return output + batch.loop_ids[:, None].to(output.dtype) * 0.125, gate
+
+    torch.manual_seed(73)
+    model = LoopSensitiveOuro(tiny_ouro_config(head_dim=64)).to("cuda", torch.bfloat16)
+    results = []
+    for graphs in [False, True]:
+        engine = LLMEngine(
+            model,
+            cache_config=CacheConfig(64, 16),
+            scheduler_config=SchedulerConfig(max_num_seqs=3, max_num_batched_tokens=4),
+            execution_config=ExecutionConfig(
+                async_scheduling=asynchronous,
+                multi_stream=asynchronous,
+                static_buffers=True,
+                pad_to_power_of_two=True,
+                cuda_graphs=graphs,
+            ),
+            attention_backend="triton",
+        )
+        rounds = []
+        for reuse in range(2):
+            for i, depth in enumerate([1, 4, 2]):
+                engine.add_request(
+                    str(i),
+                    [2 + i, 7 + reuse],
+                    SamplingParams(max_tokens=4, min_loops=depth, max_loops=depth, ignore_eos=True),
+                )
+            outputs = {}
+            while engine.has_unfinished_requests():
+                for output in engine.step():
+                    if output.finished:
+                        outputs[output.request_id] = (output.token_ids, output.exit_depths)
+            assert engine.cache_manager.num_used_blocks == 0
+            rounds.append(outputs)
+        if graphs:
+            assert engine.model_runner.graphs.replays > engine.model_runner.graphs.captures
+        results.append(rounds)
+    assert results[0] == results[1]

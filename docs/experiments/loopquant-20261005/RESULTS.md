@@ -223,3 +223,22 @@ DYN or absolute-loop static selection, and the installed rowwise CUTLASS GEMM.
 It has no custom GEMM or installed dependency changes. Its finite GPU probe
 covers 120 configurations and three graph replays; these checks are **not run**
 until the next resource handoff. It is not yet integrated into model serving.
+
+## Mixed-depth metadata and fixed-depth workload checks
+
+Prepared batches now carry an explicit device `loop_ids` vector through ordinary
+staging, padded workspaces, asynchronous routing, packed-prefill expansion and
+CUDA Graph inputs. Padded rows use -1; graph inputs are refreshed on every replay.
+The workspace memory estimate includes the new 8-byte-per-row vector.
+[Full CPU regression](full-cpu-loop-metadata-attempt1.log) completed with
+**466 passed, 29 skipped, 114 GPU cases deselected**. Added GPU graph checks
+make model output depend on the loop vector to detect stale replay metadata;
+those two new cases have not run.
+
+A fixed-depth cohort now rejects mismatched prefill/decode depths before any
+request is admitted. The engine's prefill uses the model configuration, so
+setting only request `min_loops=max_loops` is insufficient for R1–R3 curves.
+The registered model recurrence must also match R. Previous R4 receipts are
+unaffected. [49 targeted CPU checks](loopquant-fixed-depth-cpu-attempt1.log)
+pass with 29 GPU cases deselected, including a real R2 cohort and rejection of
+R4-prefill/R2-decode mislabeled as fixed R2.

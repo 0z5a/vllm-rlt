@@ -349,6 +349,20 @@ def test_engine_cohort_refill_drain_and_fixed_work():
     )
 
 
+def test_fixed_depth_cohort_rejects_full_depth_prefill_with_short_decode():
+    from loopquant.bench import run_cohort
+    from tests.helpers import tiny_ouro_config
+    from vllm_rlt import LLM
+    from vllm_rlt.models.ouro import OuroForCausalLM
+
+    wrong = LLM(OuroForCausalLM(tiny_ouro_config())).engine
+    with pytest.raises(ValueError, match="matching prefill and decode"):
+        run_cohort(wrong, [[5, 7]], concurrency=1, output_tokens=2, loops=2, records=[])
+    correct = LLM(OuroForCausalLM(tiny_ouro_config(total_ut_steps=2))).engine
+    result = run_cohort(correct, [[5, 7]], concurrency=1, output_tokens=2, loops=2, records=[])
+    assert result.loop_histogram == {2: 2}
+
+
 def test_export_preserves_encoded_model_without_fp_weight_duplicates(tmp_path):
     from loopquant.adapters.ouro import OuroAdapter
     from loopquant.export import export_ouro, load_exported_ouro

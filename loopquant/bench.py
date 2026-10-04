@@ -68,6 +68,8 @@ def run_cohort(
         raise ValueError("expected prompts, positive workload sizes, and an empty records list")
     if engine.has_unfinished_requests() or engine.cache_manager.num_used_blocks:
         raise ValueError("engine must be fully drained with empty KV at cohort start")
+    if engine.model_runner.model.config.total_ut_steps != loops:
+        raise ValueError("fixed-depth cohorts require matching prefill and decode loop counts")
     params = SamplingParams(
         max_tokens=output_tokens, temperature=0, min_loops=loops, max_loops=loops, ignore_eos=True
     )
@@ -114,6 +116,8 @@ def run_cohort(
     failures = len(records) - len(successful)
     tokens = sum(record.output_tokens for record in successful)
     histogram = Counter(depth for record in records for depth in record.exit_depths)
+    if histogram and set(histogram) != {loops}:
+        raise RuntimeError("observed exit depths differ from the registered fixed-depth workload")
     ttfts = [
         (record.first_token_s - record.entered_s) * 1000
         for record in records

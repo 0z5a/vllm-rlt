@@ -70,8 +70,10 @@ class PrefillMetadataBank:
                 device=self.cache.device,
             )
             self.offset_storage = torch.empty_like(self.block_storage)
+            self.loop_storage = torch.empty_like(self.block_storage)
         self.blocks = self.block_storage[:, :n]
         self.offsets = self.offset_storage[:, :n]
+        self.loops = self.loop_storage[:, :n]
         for depth in range(self.cache.storage_depths):
             expand_prefill[(triton_cdiv(n, 256),)](
                 self.position_ids,
@@ -79,6 +81,8 @@ class PrefillMetadataBank:
                 self.tables[depth],
                 self.blocks[depth],
                 self.offsets[depth],
+                self.loops[depth],
+                depth,
                 n,
                 self.width,
                 self.cache.block_size,
@@ -96,6 +100,7 @@ class PrefillMetadataBank:
             rows,
             self.allocations,
             self.position_ids,
+            self.loops[depth],
             self.blocks[depth],
             self.offsets[depth],
             self.tables[depth],
