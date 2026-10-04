@@ -15,6 +15,8 @@ The physical pool is still rectangular, so payload reservation savings are zero.
 | CUDA attention outputs | 46/46 bitwise equal | RTX 5090, BF16, Torch 2.12.1+cu130 |
 | CUDA logical K/V exports | 64/64 exact | Full-depth prompt and heterogeneous decode exits |
 | Skipped-depth poison | 18/18 retained | Physical written flags remain false |
+| Official Ouro-1.4B token/exit parity | 2/2 requests, 16 tokens | B2/P8/D8, natural gate; full pinned weights |
+| Standalone checkpoint reader | 3/3 dtypes exact | FP32/FP16/BF16 parameter bits against safetensors |
 | CUDA tiny-model token/exit parity | 6/6 batch cases | B1/4/16/32/64/128, C=2B, up to 256 requests |
 
 The CUDA tests use a two-layer randomly initialized model. They validate the real
@@ -27,7 +29,7 @@ artifact directory and will accompany the completed model measurements.
 
 | Checkpoint / workload | Baseline tokens/s | Alias tokens/s | Speedup | Status |
 |---|---:|---:|---:|---|
-| Ouro-1.4B, natural gate, multi-B/C | — | — | — | Input qualification in progress |
+| Ouro-1.4B, natural gate, multi-B/C | — | — | — | Smoke passed; main-point qualification in progress |
 | Ouro-2.6B and Thinking checkpoints | — | — | — | Pending |
 | Nanbeige4.2-3B full-depth control | — | — | — | Pending |
 | Huginn-0125 full-depth control | — | — | — | Pending model-adapter integration |
@@ -44,6 +46,8 @@ python -m pytest tests/loopkv tests/test_kv_cache.py tests/test_prepared_kv.py t
 CUDA_VISIBLE_DEVICES=0 python -m pytest tests/loopkv/test_alias_runtime.py --run-gpu -m gpu -q
 ```
 
-The optional capture entry is diagnostic and includes trace-collection overhead.
-It must not supply the final throughput table. Formal pairs need frozen inputs,
+The default capture entry is diagnostic and includes trace-collection overhead.
+Only `--measure` disables step tracing and warms up a complete workload before
+timing all submissions through full drain. It measures finite-batch engine E2E;
+HTTP serving and long-running latency measurements are separate. Formal pairs need frozen inputs,
 independent initialization, matched policy/backend/work and recorded GPU UUIDs.

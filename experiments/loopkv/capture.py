@@ -1,6 +1,7 @@
-"""Capture an official checkpoint's baseline through the existing engine.
+"""Run an official checkpoint through the existing engine.
 
-Detailed tracing is diagnostic; it is excluded from performance claims.
+The default detailed trace is diagnostic. --measure runs one complete warmup
+and omits per-step tracing. This measures a finite engine batch, not HTTP serving.
 Prompt files contain a JSON list of token-ID lists, with a recorded SHA256.
 """
 
@@ -29,6 +30,34 @@ def dump(path: Path, value) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n")
 
 
+def drive(engine, prompts, params, *, trace):
+    completed, steps = {}, []
+    torch.cuda.synchronize()
+    start = time.perf_counter()
+    for index, prompt in enumerate(prompts):
+        engine.add_request(str(index), prompt, params)
+    while engine.has_unfinished_requests():
+        for output in engine.step():
+            if output.finished:
+                completed[output.request_id] = output
+        if trace:
+            batch = engine.last_schedule
+            if batch is not None:
+                steps.append(
+                    {
+                        "stage": batch.stage.value,
+                        "rows": batch.num_tokens,
+                        "submitted_rows": engine.model_runner.last_submitted_size,
+                        "requests": [i.request.request_id for i in batch.items],
+                        "resident_requests": len(engine.cache_manager._allocations),
+                    }
+                )
+    engine.model_runner.synchronize()
+    torch.cuda.synchronize()
+    elapsed = time.perf_counter() - start
+    return {rid: asdict(output) for rid, output in completed.items()}, steps, elapsed
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", type=Path, required=True)
@@ -44,7 +73,12 @@ def main():
     parser.add_argument("--checkpoint-reader", choices=("native", "torch"), default="native")
     parser.add_argument("--async-scheduling", action="store_true")
     parser.add_argument("--graphs", action="store_true")
+    parser.add_argument("--measure", action="store_true")
+    parser.add_argument("--profile-range", action="store_true")
     args = parser.parse_args()
+    scope = (
+        "finite_batch_engine_e2e" if args.measure else "diagnostic_engine_capture_not_performance"
+    )
     manifest = json.loads((args.model / "verified-manifest.json").read_text())
     prompts = json.loads(args.prompts.read_text())
     if args.requests is not None:
@@ -97,7 +131,10 @@ def main():
                 "ignore_eos": True,
             },
             "request_count": len(prompts),
-            "scope": "diagnostic_engine_capture_not_performance",
+            "scope": scope,
+            "warmup_rounds": int(args.measure),
+            "profile_range": args.profile_range,
+            "measurement_boundary": "all submissions through full drain, after warmup",
             "gpu": subprocess.check_output(
                 [
                     "nvidia-smi",
@@ -143,30 +180,17 @@ def main():
     params = SamplingParams(
         max_tokens=args.max_tokens, exit_threshold=args.threshold, seed=17, ignore_eos=True
     )
-    for index, prompt in enumerate(prompts):
-        engine.add_request(str(index), prompt, params)
+    if args.measure:
+        drive(engine, prompts, params, trace=False)
+        if engine.cache_manager.num_free_blocks != args.num_blocks:
+            raise RuntimeError("warmup did not return all KV blocks")
     torch.cuda.synchronize()
     torch.cuda.reset_peak_memory_stats()
-    completed, steps = {}, []
-    start = time.perf_counter()
-    while engine.has_unfinished_requests():
-        for output in engine.step():
-            if output.finished:
-                completed[output.request_id] = asdict(output)
-        batch = engine.last_schedule
-        if batch is not None:
-            steps.append(
-                {
-                    "stage": batch.stage.value,
-                    "rows": batch.num_tokens,
-                    "submitted_rows": engine.model_runner.last_submitted_size,
-                    "requests": [i.request.request_id for i in batch.items],
-                    "resident_requests": len(engine.cache_manager._allocations),
-                }
-            )
-    engine.model_runner.synchronize()
-    torch.cuda.synchronize()
-    elapsed = time.perf_counter() - start
+    if args.profile_range:
+        torch.cuda.cudart().cudaProfilerStart()
+    completed, steps, elapsed = drive(engine, prompts, params, trace=not args.measure)
+    if args.profile_range:
+        torch.cuda.cudart().cudaProfilerStop()
     # The first output comes from prefill; its exit depth is not a decode KV position.
     exits = [r for output in completed.values() for r in output["exit_depths"][1:]]
     output_count = sum(len(o["token_ids"]) for o in completed.values())
@@ -174,8 +198,9 @@ def main():
         account(shape, len(o["prompt_token_ids"]), o["exit_depths"][1:]) for o in completed.values()
     ]
     summary = {
-        "scope": "diagnostic_engine_capture_not_performance",
+        "scope": scope,
         "seconds": elapsed,
+        "tokens_per_second": output_count / elapsed,
         "completed_requests": len(completed),
         "output_tokens": output_count,
         "decode_exit_histogram": dict(Counter(exits)),
@@ -183,7 +208,9 @@ def main():
         "executed_decode_loops": sum(exits),
         "recurrent_batch_histogram": dict(
             Counter(s["rows"] for s in steps if s["stage"] == Stage.RECURRENT.value)
-        ),
+        )
+        if steps
+        else None,
         "promotion_payload_bytes_from_trace": sum(
             r["avoidable_promotion_payload_bytes"] for r in ledgers
         ),
