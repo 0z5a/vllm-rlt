@@ -1,41 +1,36 @@
-"""Dense, differentiable Ouro path with explicit loop IDs and BF16 state boundaries."""
+"""Differentiable fixed-loop Nanbeige with its original residual and norm order."""
 
+import math
 from typing import Literal
 
 import torch
 from torch.nn import functional as F
 
 from vllm_rlt.layers import apply_rotary_pos_emb
-from vllm_rlt.models.ouro import OuroForCausalLM
+from vllm_rlt.models.nanbeige import NanbeigeForCausalLM
 
 from .base import LoopOutput, QuantizedProjections
 
 
-class OuroAdapter(QuantizedProjections):
-    """Training/diagnostics adapter; native serving owns its separate paged cache.
-
-    Each loop has independent causal K/V in full-sequence evaluation. This path
-    intentionally avoids the inference cache's no-grad writes during QAT.
-    """
-
+class NanbeigeAdapter(QuantizedProjections):
     def __init__(
         self,
-        model: OuroForCausalLM,
+        model: NanbeigeForCausalLM,
         *,
         attention_backend: Literal["eager", "sdpa"] = "eager",
     ) -> None:
         super().__init__(attention_backend)
         self.model = model
 
-    def reference(self) -> "OuroAdapter":
-        return OuroAdapter(self.model, attention_backend=self.attention_backend)
+    def reference(self) -> "NanbeigeAdapter":
+        return NanbeigeAdapter(self.model, attention_backend=self.attention_backend)
 
     def forward(self, tokens: torch.Tensor, valid: torch.Tensor, loops: int) -> LoopOutput:
-        if loops < 1 or loops > self.model.config.total_ut_steps:
+        config = self.model.config
+        if not 1 <= loops <= config.total_ut_steps:
             raise ValueError("loop count outside the registered model range")
         if tokens.shape != valid.shape or not valid.any(dim=1).all():
             raise ValueError("each sequence must have valid tokens and an aligned mask")
-        config = self.model.config
         hidden = self.model.model.embed_tokens(tokens)
         batch, length = tokens.shape
         positions = torch.arange(length, device=tokens.device).repeat(batch)
@@ -65,19 +60,15 @@ class OuroAdapter(QuantizedProjections):
                         q, k, v, attn_mask=mask, enable_gqa=True
                     )
                 else:
-                    # Follow the pinned official eager path and its BF16 boundaries.
                     groups = config.num_attention_heads // config.num_key_value_heads
-                    k = k.repeat_interleave(groups, dim=1)
-                    v = v.repeat_interleave(groups, dim=1)
-                    scores = (q @ k.transpose(-2, -1)) * config.head_dim**-0.5
+                    k, v = k.repeat_interleave(groups, 1), v.repeat_interleave(groups, 1)
+                    scores = (q @ k.transpose(-2, -1)) / math.sqrt(config.head_dim)
                     scores = scores.masked_fill(~mask, torch.finfo(q.dtype).min)
-                    probabilities = scores.softmax(dim=-1, dtype=torch.float32).to(q.dtype)
-                    attention = probabilities @ v
+                    attention = scores.softmax(-1, dtype=torch.float32).to(q.dtype) @ v
                 attention = attention.transpose(1, 2).reshape(batch, length, -1)
-                projected = self._linear(
+                hidden = hidden + self._linear(
                     prefix + ".self_attn.o_proj", attn.o_proj, attention, loop, valid
                 )
-                hidden = hidden + layer.input_layernorm_2(projected)
                 normalized = layer.post_attention_layernorm(hidden)
                 gate = self._linear(
                     prefix + ".mlp.gate_proj", layer.mlp.gate_proj, normalized, loop, valid
@@ -85,10 +76,12 @@ class OuroAdapter(QuantizedProjections):
                 up = self._linear(
                     prefix + ".mlp.up_proj", layer.mlp.up_proj, normalized, loop, valid
                 )
-                down = self._linear(
+                hidden = hidden + self._linear(
                     prefix + ".mlp.down_proj", layer.mlp.down_proj, F.silu(gate) * up, loop, valid
                 )
-                hidden = hidden + layer.post_attention_layernorm_2(down)
-            hidden = self.model.model.norm(hidden)
+            if not config.skip_loop_final_norm:
+                hidden = self.model.model.norm(hidden)
             states.append(hidden)
-        return LoopOutput(self.model.lm_head(hidden), states)
+        # With skip_loop_final_norm, the official model still normalizes readout once.
+        readout = self.model.model.norm(hidden) if config.skip_loop_final_norm else hidden
+        return LoopOutput(self.model.lm_head(readout).float(), states)

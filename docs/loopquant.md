@@ -12,6 +12,8 @@ This draft implements the first numerical and measurement building blocks:
   absolute loop-stage selection for reordered rows.
 - An Ouro adapter with explicit loop boundaries, differentiable full recurrence,
   masked activation statistics, and an independent functional reference.
+- A fixed-loop Nanbeige adapter with its two-norm residual order and optional
+  final-readout norm; both adapters share projection statistics and Q0 updates.
 - Native FP8 scalar-scale GEMM through `torch._scaled_mm`. Padding and conversion
   remain in the operation. This initial unfused implementation is a correctness
   backend; it is not the optimized dynamic deployment baseline.
@@ -43,6 +45,12 @@ and statistical rejection of failed or unequal-work trials. The checkpoint
 reader was compared exactly with safetensors for FP32, FP16, and BF16. Tiny Ouro
 R1/2/3/4 outputs match the independent oracle, and the scale gradient propagates
 through all four recurrent steps.
+
+Subsequent targeted checks pass 47 CPU tests. The Nanbeige adapter matches the
+unmodified pinned official class bitwise in eight tiny-weight cases: FP32/BF16,
+one/two loops, and both loop-final-norm settings. These do not replace complete
+checkpoint qualification. Native fixed-loop/masked outputs and two Q0 updates
+also pass; the Q0 teacher preserves the student's architecture and attention.
 
 On one RTX 5090 (SM120), PyTorch 2.12.1+cu130 and CUDA 13.0, the native FP8
 64×32 projection passed at 1/17/32/64/128 input rows. The maximum absolute

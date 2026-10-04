@@ -131,3 +131,18 @@ The original failures remain visible and no threshold has been relaxed.
 The unmodified official HF class is running a separate full-weight CPU
 comparison using the existing Transformers 4.54.1 environment and independently
 verified weights. Its full result remains pending.
+
+## Nanbeige adapter qualification
+
+The [original-class comparison](nanbeige-official-tiny-attempt1.json) uses
+unmodified source from Nanbeige4.2-3B revision
+`b82e54bd609793562a75cbf9337970a93369eab5` with tiny random weights. All eight
+FP32/BF16 × R1/R2 × loop-final-norm settings have bitwise equal valid-token
+logits. This verifies the adapter's residual and normalization placement on
+these inputs; the official full checkpoint remains untested.
+
+[47 targeted CPU tests](loopquant-nanbeige-cpu-attempt1.log) pass, with one GPU
+case deselected. They include native Nanbeige fixed-loop output/mask checks and
+two scale updates through both recurrent steps, using the same architecture
+and attention for the BF16 teacher. The first shared Q0 implementation and
+Ouro checks remain covered after extracting common projection bookkeeping.

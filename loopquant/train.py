@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 
+from .adapters.nanbeige import NanbeigeAdapter
 from .adapters.ouro import OuroAdapter
 from .quality import next_token_nll
 
@@ -36,7 +37,7 @@ class Q0Trainer:
     number of shared calls is applied to the complete recurrent derivative.
     """
 
-    def __init__(self, student: OuroAdapter, config: Q0Config) -> None:
+    def __init__(self, student: OuroAdapter | NanbeigeAdapter, config: Q0Config) -> None:
         if not student.quantized or any(p.requires_grad for p in student.model.parameters()):
             raise ValueError("Q0 requires attached scale modules and a frozen model")
         if config.tokens_per_update < 2 or config.learning_rate <= 0 or config.max_grad_norm <= 0:
@@ -44,7 +45,7 @@ class Q0Trainer:
         if min(config.kl_weight, config.trajectory_weight) < 0 or config.temperature <= 0:
             raise ValueError("invalid loss coefficients or temperature")
         self.student = student
-        self.teacher = OuroAdapter(student.model, attention_backend=student.attention_backend)
+        self.teacher = student.reference()
         self.config = config
         self.parameters = dict(student.quantized.named_parameters())
         self.optimizer = torch.optim.AdamW(

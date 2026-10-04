@@ -1,0 +1,63 @@
+{
+  "status": "pass",
+  "scope": "tiny random weights, not the complete official checkpoint",
+  "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "records": [
+    {
+      "dtype": "torch.float32",
+      "loops": 1,
+      "skip_loop_final_norm": false,
+      "max_abs": 0.0,
+      "exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "loops": 1,
+      "skip_loop_final_norm": true,
+      "max_abs": 0.0,
+      "exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "loops": 2,
+      "skip_loop_final_norm": false,
+      "max_abs": 0.0,
+      "exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "loops": 2,
+      "skip_loop_final_norm": true,
+      "max_abs": 0.0,
+      "exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "loops": 1,
+      "skip_loop_final_norm": false,
+      "max_abs": 0.0,
+      "exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "loops": 1,
+      "skip_loop_final_norm": true,
+      "max_abs": 0.0,
+      "exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "loops": 2,
+      "skip_loop_final_norm": false,
+      "max_abs": 0.0,
+      "exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "loops": 2,
+      "skip_loop_final_norm": true,
+      "max_abs": 0.0,
+      "exact": true
+    }
+  ]
+}
