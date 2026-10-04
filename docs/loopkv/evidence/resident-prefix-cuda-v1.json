@@ -1,0 +1,568 @@
+{
+  "source_sha": "a82d4021acdc47726ec931621b7ddd9b47382ff8",
+  "raw_sha256": "3dacab2850a7dfec5320924354a20072cc678399e0ded57e7842dba0705f7e29",
+  "cuda_visible_device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+  "prompt_lengths": [
+    33,
+    34
+  ],
+  "result": {
+    "scope": "tiny_cuda_routing_lifetime_not_official_or_performance",
+    "torch": "2.12.1+cu130",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "lifetime": [
+      {
+        "use_uva": false,
+        "allocation_reset_ordered": true,
+        "bank_reader_retired": true
+      },
+      {
+        "use_uva": true,
+        "allocation_reset_ordered": true,
+        "bank_reader_retired": true
+      }
+    ],
+    "cases": [
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "alias_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "alias_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      }
+    ]
+  }
+}
