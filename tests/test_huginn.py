@@ -171,7 +171,8 @@ def test_unsupported_execution_rejected_before_cache_allocation(model, cache, ex
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("max_graphs", [1, 16])
-def test_huginn_graph_replay_matches_eager_with_reuse_and_fallback(max_graphs):
+@pytest.mark.parametrize("stage_aware", [False, True])
+def test_huginn_graph_replay_matches_eager_with_reuse_and_fallback(max_graphs, stage_aware):
     torch.manual_seed(42)
     model = (
         HuginnForCausalLM(
@@ -189,7 +190,7 @@ def test_huginn_graph_replay_matches_eager_with_reuse_and_fallback(max_graphs):
         engine = LLMEngine(
             model,
             attention_backend="triton",
-            cache_config=CacheConfig(num_blocks=256, block_size=4),
+            cache_config=CacheConfig(num_blocks=256, block_size=4, stage_aware=stage_aware),
             scheduler_config=SchedulerConfig(
                 max_num_seqs=4,
                 max_num_batched_tokens=4,

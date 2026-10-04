@@ -28,26 +28,30 @@ class _DeviceCache:
 
     def _write_prepared(self, layer, batch, k, v):
         cache = self.cache
-        cache.key_cache[batch.write_blocks, layer, batch.write_offsets] = k
-        cache.value_cache[batch.write_blocks, layer, batch.write_offsets] = v
+        keys, values = cache.layer_cache(layer)
+        blocks = cache.layer_blocks(layer, batch.write_blocks)
+        keys[blocks, batch.write_offsets] = k
+        values[blocks, batch.write_offsets] = v
 
     def _attend_prepared(self, layer, batch, q):
         cache = self.cache
+        keys, values = cache.layer_cache(layer)
+        tables = cache.layer_blocks(layer, batch.block_tables)
         if batch.cu_seqlens_q is not None:
             return cache.attention.prefill(
                 q,
-                cache.key_cache[:, layer],
-                cache.value_cache[:, layer],
-                batch.block_tables,
+                keys,
+                values,
+                tables,
                 batch.context_lengths,
                 batch.cu_seqlens_q,
                 batch.max_seqlen_q,
             )
         return cache.attention(
             q,
-            cache.key_cache[:, layer],
-            cache.value_cache[:, layer],
-            batch.block_tables,
+            keys,
+            values,
+            tables,
             batch.context_lengths,
         )
 

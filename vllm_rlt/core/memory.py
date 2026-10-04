@@ -1,10 +1,13 @@
 """Startup KV budget: explicit overrides or CUDA peak profiling plus headroom."""
 
 import math
+from dataclasses import replace
 
 import torch
 
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
+from vllm_rlt.core.stage_kv_cache import StageKVCacheManager
+from vllm_rlt.models.huginn import HuginnForCausalLM
 from vllm_rlt.worker.buffers import execution_buffer_bytes
 
 
@@ -15,6 +18,33 @@ def budget_blocks(available_bytes, bytes_per_block):
             "no memory remains for KV blocks; reduce execution limits or memory reserve"
         )
     return blocks
+
+
+def make_cache_manager(model, cache, num_blocks: int, backend: str) -> KVCacheManager:
+    parameter, config = next(model.parameters()), model.config
+    arguments = dict(
+        num_layers=config.num_hidden_layers,
+        num_kv_heads=config.num_key_value_heads,
+        head_dim=config.head_dim,
+        max_loops=config.total_ut_steps,
+        num_blocks=num_blocks,
+        layout=cache.layout,
+        block_size=cache.block_size,
+        device=parameter.device,
+        dtype=parameter.dtype,
+        backend=backend,
+        enable_prefix_caching=cache.enable_prefix_caching,
+        incremental_allocation=cache.incremental_allocation,
+        watermark_ratio=cache.watermark_ratio,
+        recurrent_layers=model.recurrent_kv_layers
+        if isinstance(model, HuginnForCausalLM)
+        else None,
+    )
+    if cache.stage_aware:
+        if not isinstance(model, HuginnForCausalLM):
+            raise ValueError("stage-aware KV requires Huginn's explicit layer groups")
+        return StageKVCacheManager(**arguments, groups=model.kv_groups)
+    return KVCacheManager(**arguments)
 
 
 @torch.inference_mode()
@@ -29,13 +59,24 @@ def plan_cache(model, cache, scheduler, execution, backend):
         * config.head_dim
         * parameter.element_size()
     )
+    unit_blocks, unit_bytes = 1, per_block
+    if cache.stage_aware:
+        if not isinstance(model, HuginnForCausalLM):
+            raise ValueError("stage-aware KV requires Huginn's explicit layer groups")
+        unit_blocks = config.total_ut_steps
+        planes = sum(group.planes for group in model.kv_groups)
+        unit_bytes = per_block // config.num_hidden_layers * planes
+        per_block = unit_bytes / unit_blocks
+    unit_info = {"bytes_per_block": per_block}
+    if cache.stage_aware:
+        unit_info.update(bytes_per_page_bundle=unit_bytes, blocks_per_bundle=unit_blocks)
     if cache.num_blocks is not None:
-        return cache.num_blocks, {"source": "blocks", "bytes_per_block": per_block}
+        return cache.num_blocks // unit_blocks * unit_blocks, {"source": "blocks", **unit_info}
     if cache.kv_cache_memory_bytes is not None:
-        blocks = budget_blocks(cache.kv_cache_memory_bytes, per_block)
-        return blocks, {"source": "bytes", "bytes_per_block": per_block}
+        blocks = budget_blocks(cache.kv_cache_memory_bytes, unit_bytes) * unit_blocks
+        return blocks, {"source": "bytes", **unit_info}
     if device.type != "cuda":
-        return 256, {"source": "cpu_default", "bytes_per_block": per_block}
+        return 256 // unit_blocks * unit_blocks, {"source": "cpu_default", **unit_info}
     torch.cuda.synchronize(device)
     # Return unused allocator segments before measuring driver-free memory.
     # In particular, a previous engine may have left its KV pool cached here.
@@ -55,18 +96,17 @@ def plan_cache(model, cache, scheduler, execution, backend):
         min(config.max_position_embeddings, count - start)
         for start in range(0, count, config.max_position_embeddings)
     ]
-    probe = KVCacheManager(
-        num_layers=config.num_hidden_layers,
-        num_kv_heads=config.num_key_value_heads,
-        head_dim=config.head_dim,
-        max_loops=config.total_ut_steps,
-        num_blocks=sum(math.ceil(length / cache.block_size) for length in lengths)
-        * config.total_ut_steps,
-        block_size=cache.block_size,
-        device=device,
-        dtype=parameter.dtype,
-        backend=backend,
-        recurrent_layers=getattr(model, "recurrent_kv_layers", None),
+    probe = make_cache_manager(
+        model,
+        replace(
+            cache,
+            layout="last_exited",
+            enable_prefix_caching=False,
+            incremental_allocation=False,
+            watermark_ratio=0.0,
+        ),
+        sum(math.ceil(length / cache.block_size) for length in lengths) * config.total_ut_steps,
+        backend,
     )
     ids, positions = [], []
     for index, length in enumerate(lengths):
@@ -125,10 +165,10 @@ def plan_cache(model, cache, scheduler, execution, backend):
         * (config.total_ut_steps if cache.layout == "last_exited" else 1)
         * scheduler.max_num_seqs
     )
-    blocks = min(budget_blocks(budget, per_block), useful_blocks)
+    blocks = min(budget_blocks(budget, unit_bytes) * unit_blocks, useful_blocks)
     return blocks, dict(
         source="cuda_profile",
-        bytes_per_block=per_block,
+        **unit_info,
         profile_peak_bytes=peak,
         concurrent_peak_bytes=concurrent_peak,
         max_useful_blocks=useful_blocks,

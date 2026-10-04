@@ -4,8 +4,7 @@ from dataclasses import replace
 import torch
 
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
-from vllm_rlt.core.kv_cache_manager import KVCacheManager
-from vllm_rlt.core.memory import plan_cache
+from vllm_rlt.core.memory import make_cache_manager, plan_cache
 from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS
@@ -93,22 +92,7 @@ class LLMEngine:
         num_blocks, self.memory_plan = plan_cache(
             model, cache_config, scheduler_config, self.execution_config, attention_backend
         )
-        self.cache_manager = KVCacheManager(
-            num_layers=config.num_hidden_layers,
-            num_kv_heads=config.num_key_value_heads,
-            head_dim=config.head_dim,
-            max_loops=config.total_ut_steps,
-            num_blocks=num_blocks,
-            layout=cache_config.layout,
-            block_size=cache_config.block_size,
-            device=parameter.device,
-            dtype=parameter.dtype,
-            backend=attention_backend,
-            enable_prefix_caching=cache_config.enable_prefix_caching,
-            incremental_allocation=cache_config.incremental_allocation,
-            watermark_ratio=cache_config.watermark_ratio,
-            recurrent_layers=getattr(model, "recurrent_kv_layers", None),
-        )
+        self.cache_manager = make_cache_manager(model, cache_config, num_blocks, attention_backend)
         if self.execution_config.prefill_uva and (
             parameter.device.type != "cuda"
             or cache_config.layout != "last_exited"

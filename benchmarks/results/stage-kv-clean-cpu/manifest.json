@@ -1,0 +1,21 @@
+{
+  "baseline": "Unmodified parent46145be03fc053da147f32c45f2a23893313cb70; all137 blobs verified",
+  "design": "12 sequential processes: parent/stage/stage/parent per seed31/32/33; one warmup + one measurement per case",
+  "interval": "t interval on three cohort log ratios, df2; only three cohorts, shared host",
+  "workload": "Identical to stage-kv-cpu, checked against all saved tokens/depths/scores",
+  "raw_sha256": {
+    "seed-31-order-0.jsonl": "4e8fd9832cc50ed184346ce14dc61013f3c8007c18ad1d1d12d14ee737b01afa",
+    "seed-31-order-1.jsonl": "b63fe79a7c8fc83d688578a04473513faf4f098537e58632f9de93da6af5acc9",
+    "seed-31-order-2.jsonl": "11fc6148a05cb2b31c7f5b216019af58d84ceeb8078abc56dc8c2f439f9b0d47",
+    "seed-31-order-3.jsonl": "fcafcea3af036573eaa75a94c2a804f2514c2b5f4a1838b2d5e51d9fa17a4008",
+    "seed-32-order-0.jsonl": "0f1a65d48f47bd19a767c5d1548b46dae87935b2561bc1b487be6080d317a467",
+    "seed-32-order-1.jsonl": "7564691c983bbae53cd2bd87ff41afd348637a0f1960f0d6514b5e3c0132d9e7",
+    "seed-32-order-2.jsonl": "c3b0fe85c26852db8e06c4e7a6154cf120c16260d2b0ad393e001a0494f08301",
+    "seed-32-order-3.jsonl": "7dac9cfb3f5c052f7e5e23c83cf52e7332bd87c6ec46bd19145fc29ad3db6ebe",
+    "seed-33-order-0.jsonl": "e08a2daaa0f6269f2e7fab9004dad32c56350c7cb93d90e6fdaa2d42258deef3",
+    "seed-33-order-1.jsonl": "7280b2d39740bc1af974a83a1d15ab2d95a76fb9d6619bddcae4f3d19f2d8672",
+    "seed-33-order-2.jsonl": "64f8c2bc8aa0d1904b8f29069c397bdb0b48aca4ef74aba6fcab67604dce893e",
+    "seed-33-order-3.jsonl": "83a45b1e438486a912d032b8c2bc17080e0d0bb136adfb9427ca53d5a7f13bbd",
+    "summary.json": "bdc2ac4af87502f5a65394ac02204fe0761a94ff3860e882f0747d60b20bfc23"
+  }
+}

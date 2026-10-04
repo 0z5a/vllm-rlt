@@ -169,7 +169,7 @@ class KVCacheManager:
         return self.num_blocks - self.num_free_blocks
 
     @property
-    def bytes_per_block(self) -> int:
+    def bytes_per_block(self) -> int | float:
         return (
             2
             * self.num_layers
@@ -178,6 +178,39 @@ class KVCacheManager:
             * self.head_dim
             * self.key_cache.element_size()
         )
+
+    def layer_cache(self, layer: int) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.key_cache[:, layer], self.value_cache[:, layer]
+
+    def layer_blocks(self, layer: int, blocks: torch.Tensor) -> torch.Tensor:
+        return blocks
+
+    def storage_pages(
+        self, blocks: list[int]
+    ) -> tuple[tuple[torch.Tensor, torch.Tensor, list[int]], ...]:
+        """Physical pools and page order for bounded host swap copies."""
+        return ((self.key_cache, self.value_cache, blocks),)
+
+    def snapshot_pages(self, blocks: list[int]) -> tuple[tuple[torch.Tensor, torch.Tensor], ...]:
+        snapshots = []
+        for keys, values, pages in self.storage_pages(blocks):
+            host_keys = torch.empty((len(pages), *keys.shape[1:]), dtype=self.dtype)
+            host_values = torch.empty_like(host_keys)
+            for row, page in enumerate(pages):
+                host_keys[row].copy_(keys[page])
+                host_values[row].copy_(values[page])
+            snapshots.append((host_keys, host_values))
+        return tuple(snapshots)
+
+    def restore_pages(
+        self, blocks: list[int], snapshots: tuple[tuple[torch.Tensor, torch.Tensor], ...]
+    ) -> None:
+        for (keys, values, pages), (host_keys, host_values) in zip(
+            self.storage_pages(blocks), snapshots, strict=True
+        ):
+            for row, page in enumerate(pages):
+                keys[page].copy_(host_keys[row])
+                values[page].copy_(host_values[row])
 
     def required_blocks(self, max_tokens: int) -> int:
         if not isinstance(max_tokens, Integral) or isinstance(max_tokens, bool) or max_tokens <= 0:
@@ -627,8 +660,10 @@ class KVCacheManager:
         self._validate_tensor(v, len(batch.position_ids), "v")
         if not batch.rows:
             return
-        self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k[: len(batch.rows)]
-        self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v[: len(batch.rows)]
+        keys, values = self.layer_cache(layer)
+        blocks = self.layer_blocks(layer, batch.write_blocks)
+        keys[blocks, batch.write_offsets] = k[: len(batch.rows)]
+        values[blocks, batch.write_offsets] = v[: len(batch.rows)]
         for allocation, depth, position in batch.rows:
             allocation.written[self._plane(depth)][layer].add(position)
 
@@ -666,21 +701,23 @@ class KVCacheManager:
             return torch.empty_like(q)
         for allocation, depth, position in batch.rows:
             self._require_prefix(allocation, layer, depth, position + 1)
+        keys, values = self.layer_cache(layer)
+        tables = self.layer_blocks(layer, batch.block_tables)
         if batch.cu_seqlens_q is not None:
             return self.attention.prefill(
                 q,
-                self.key_cache[:, layer],
-                self.value_cache[:, layer],
-                batch.block_tables,
+                keys,
+                values,
+                tables,
                 batch.context_lengths,
                 batch.cu_seqlens_q,
                 batch.max_seqlen_q,
             )
         return self.attention(
             q,
-            self.key_cache[:, layer],
-            self.value_cache[:, layer],
-            batch.block_tables,
+            keys,
+            values,
+            tables,
             batch.context_lengths,
         )
 
@@ -711,12 +748,9 @@ class KVCacheManager:
                 self.value_cache[destination, :, offset].copy_(self.value_cache[source, :, offset])
             else:
                 for layer in self.recurrent_layers:
-                    self.key_cache[destination, layer, offset].copy_(
-                        self.key_cache[source, layer, offset]
-                    )
-                    self.value_cache[destination, layer, offset].copy_(
-                        self.value_cache[source, layer, offset]
-                    )
+                    keys, values = self.layer_cache(layer)
+                    keys[destination, offset].copy_(keys[source, offset])
+                    values[destination, offset].copy_(values[source, offset])
         for depth in range(exit_depth + 1, self.max_loops):
             for layer in self.recurrent_layers:
                 allocation.written[self._plane(depth)][layer].add(position)
@@ -742,4 +776,6 @@ class KVCacheManager:
         )
         blocks = table[positions // self.block_size]
         offsets = positions % self.block_size
-        return self.key_cache[blocks, layer, offsets], self.value_cache[blocks, layer, offsets]
+        keys, values = self.layer_cache(layer)
+        blocks = self.layer_blocks(layer, blocks)
+        return keys[blocks, offsets], values[blocks, offsets]

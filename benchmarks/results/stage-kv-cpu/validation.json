@@ -1,0 +1,49 @@
+{
+  "parent": "46145be03fc053da147f32c45f2a23893313cb70",
+  "cpu_passed": 280,
+  "skipped_official_assets": 3,
+  "gpu_deselected": 66,
+  "new_stage_cases": 15,
+  "testsuite": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "3",
+    "tests": "283",
+    "time": "15.286",
+    "timestamp": "2026-10-05T05:40:28.852901+08:00",
+    "hostname": "192.168.10.10"
+  },
+  "test_xml_sha256": "22a62b33cd630d06e93a1abdf45bdde0d4d40fe432a6398a42da812738b10a78",
+  "source_sha256": {
+    "benchmarks/bench_stage_kv.py": "f348e15877d351bdcb3fc2c641568241ad4116d8872f662d032baf98839de676",
+    "benchmarks/bench_stage_kv_clean.py": "71331973ce0fc7e88835137f624efb2d5712565e40c06028e965a77ad098f80d",
+    "tests/test_huginn.py": "ef5ef45cb093a75fa3430d026e34ff5d14a034e3752f6b2735c86b4c734da313",
+    "tests/test_pd.py": "eed24f705a4f3b5ffc6b2e447a921b602e29eb1c2e489602214f8f4a131ceac7",
+    "tests/test_stage_kv_cache.py": "3fbdaeae155d5e9fbbd3470df37e6ebcbbddcf7544de6f7b7ab8c8630b41122b",
+    "vllm_rlt/config.py": "9005a2ddd2a7db4be060683643600dfede6775829659ce9c05d4af6357b5bec9",
+    "vllm_rlt/core/kv_cache_manager.py": "cbf6a6678517dd8bf01e0a6d6f78ca0c2eb1cfa1ca8e03798e0e3d4b5ebfcdf8",
+    "vllm_rlt/core/kv_group.py": "f522ee0fc36dd3d14de92c9897be42f635c2840f7f25191fc6157d55b7d99e22",
+    "vllm_rlt/core/memory.py": "f86b38980963800c567035d221dbdb943d5ba242201dab111c26e890decd8e61",
+    "vllm_rlt/core/stage_kv_cache.py": "4593eee4afca76c46eb10c7d78165adbf5168b3b38fb3bdd0d81b74b5fe52437",
+    "vllm_rlt/engine/llm_engine.py": "a38f11e3b5ed3ad660d47e1eb3bcbba6303cd6c7f94594204f2f5f1c9c5e9292",
+    "vllm_rlt/engine/preemption.py": "3ace18dc776693d04b4aa1e94d60b82780e64a4209ac092f3bed6fcf10723992",
+    "vllm_rlt/models/huginn.py": "6bbcffdcd28520e05b5f3cd7ff1106c41c251107257fe9a3a3ae0d799b5793ea",
+    "vllm_rlt/worker/cuda_graph.py": "22914dd76963d457965250db69126797c4f425d838fd99d6516b2431e3214d95"
+  },
+  "ablation_observations": 180,
+  "clean_observations": 60,
+  "clean_processes": 12,
+  "gpu_status": "NOT_RUN",
+  "full_rl_reward_status": "NOT_RUN",
+  "failed_receipts_retained": [
+    "w02-stage-first.xml",
+    "w02-stage-corrected.xml",
+    "w02-release.xml"
+  ],
+  "parent_tree_audit": {
+    "head": "46145be03fc053da147f32c45f2a23893313cb70",
+    "files": 137,
+    "all_exact": true
+  }
+}

@@ -11,6 +11,7 @@ an environment to receiving the first generated response. The
 | [Scheduler walkthrough](scheduler_walkthrough.md) | Responsibilities, admission cases, control flow, and refactoring checklist |
 | [Sampling walkthrough](sampling_walkthrough.md) | Sampling algorithm, RNG lifecycle across preemption and termination, and known limits |
 | [KV layout examples](kv_layout_computation.md) | SHARED and LAST_EXITED semantics and worked attention examples |
+| [Huginn stage-aware KV](stage_kv_results.md) | Opt-in physical stage allocation, CPU correctness, measured storage and generation comparisons |
 | [Runtime configuration](cdb_runtime.md) | Exit policies, KV layouts, execution options, and CUDA Graphs |
 | [Huginn CUDA Graph recipe](recipes/huginn-cuda-graphs.md) | Native Huginn checkpoint loading, supported execution options, correctness checks, and paired A800 measurements |
 | [Asynchronous scheduling](https://github.com/hsliuustc0106/vllm-rlt/pull/30) | CPU/GPU pipelining and single-stream or multi-stream execution |
