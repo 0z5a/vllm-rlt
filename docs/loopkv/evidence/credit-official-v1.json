@@ -1,0 +1,2099 @@
+{
+  "source_sha": "cf70584d60913e1664439fb1b4acf603e2dff105",
+  "scope": "diagnostic_engine_capture_not_performance",
+  "all_arms_and_controller_natural_exit_0": true,
+  "runs": {
+    "native": {
+      "summary": {
+        "scope": "diagnostic_engine_capture_not_performance",
+        "seconds": 29.05333487689495,
+        "tokens_per_second": 563.9283775656884,
+        "completed_requests": 128,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12377,
+          "3": 3879
+        },
+        "cached_decode_positions": 16256,
+        "executed_decode_loops": 36391,
+        "recurrent_batch_histogram": {
+          "1": 16,
+          "2": 13,
+          "3": 2,
+          "4": 6,
+          "5": 7,
+          "6": 3,
+          "7": 8,
+          "8": 4,
+          "9": 4,
+          "10": 1,
+          "11": 4,
+          "12": 6,
+          "13": 7,
+          "14": 2,
+          "15": 3,
+          "16": 5,
+          "17": 4,
+          "18": 3,
+          "19": 2,
+          "20": 2,
+          "21": 6,
+          "22": 2,
+          "23": 6,
+          "24": 7,
+          "25": 3,
+          "26": 6,
+          "27": 4,
+          "28": 5,
+          "29": 12,
+          "30": 10,
+          "31": 47,
+          "32": 1016
+        },
+        "promotion_payload_bytes_from_trace": 5629476864,
+        "kv_arena_reserved_bytes": 6442450944,
+        "runtime_peak_allocated_bytes": 9352460288,
+        "runtime_peak_reserved_bytes": 9554624512,
+        "free_blocks_after_drain": 2048,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null
+      },
+      "resident_max": 32,
+      "manifest": {
+        "checkpoint": {
+          "repo": "ByteDance/Ouro-1.4B",
+          "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+          "download_endpoint": "https://hf-mirror.com",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 1472,
+              "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 466391,
+              "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 2869336434,
+              "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 825,
+              "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 3522644,
+              "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 4211,
+              "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 800656,
+              "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+            }
+          ]
+        },
+        "checkpoint_reader": "torch",
+        "git_sha": "cf70584d60913e1664439fb1b4acf603e2dff105",
+        "tracked_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "harness_sha256": "e96bb4addcc8f182bcc315e80c1d581d1c604a9291c7e919ef0c341fa6f00451",
+        "prompts_sha256": "4431561d4bae1a611ef0b7a249ddedebc2b50bf2bd9641e3356ad478e32720a0",
+        "python": "/root/miniconda3/bin/python",
+        "pid": 10534,
+        "packages": {
+          "torch": "2.12.1+cu130",
+          "triton": "3.7.1"
+        },
+        "modules": {
+          "vllm_rlt.engine.llm_engine": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/engine/llm_engine.py",
+            "sha256": "ce5150931533b68ce2f74e93fdb63fde8e8725e0edb482ba1c545b29530ed7e7"
+          },
+          "vllm_rlt.core.alias_kv_cache": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/core/alias_kv_cache.py",
+            "sha256": "0fde319a3fb4aa57e3b7942ec0bd486a528ff32201a897ebeb1a01325652e4a4"
+          },
+          "vllm_rlt.core.kv_cache_manager": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/core/kv_cache_manager.py",
+            "sha256": "e6f0a85fd1b5401bfa3361e0225e5a9e571b9683b6054e77f07649959d86202b"
+          },
+          "vllm_rlt.kernels.triton_attention": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/kernels/triton_attention.py",
+            "sha256": "4670b284aac54efda88ab4e667d5e70a3e03a2a9ab0dd8da5473fe74ce04036f"
+          },
+          "vllm_rlt.models.ouro": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/models/ouro.py",
+            "sha256": "89d9af962e39e940f81f1193016c09090090dbff3f157068b18514b96eb1e0bd"
+          },
+          "experiments.loopkv.checkpoint": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/experiments/loopkv/checkpoint.py",
+            "sha256": "418f465d633c200f89c1ddd2873f584c73b8f568319e875ab989007b4e5146c0"
+          }
+        },
+        "environment": {
+          "CUDA_VISIBLE_DEVICES": "0",
+          "OMP_NUM_THREADS": "4",
+          "MKL_NUM_THREADS": null,
+          "TRITON_CACHE_DIR": null,
+          "CUDA_CACHE_PATH": null,
+          "PYTHONPATH": null
+        },
+        "cache": {
+          "num_blocks": 2048,
+          "block_size": 16,
+          "layout": "last_exited",
+          "gpu_memory_utilization": 0.9,
+          "kv_cache_memory_bytes": null,
+          "memory_reserve_bytes": 268435456,
+          "enable_prefix_caching": false,
+          "incremental_allocation": false,
+          "watermark_ratio": 0.0,
+          "alias_last_exited": false,
+          "compact_last_exited": false,
+          "reclaim_skipped_credits": false
+        },
+        "scheduler": {
+          "max_num_seqs": 64,
+          "max_num_batched_tokens": 128,
+          "mode": "refill",
+          "min_coda_batch_size": 1,
+          "admission_scan_limit": 64,
+          "max_admission_bypasses": 8,
+          "prefill_chunk_size": 128,
+          "max_prefill_batches_before_decode": 1,
+          "policy": "fcfs",
+          "enable_preemption": false
+        },
+        "execution": {
+          "async_scheduling": false,
+          "multi_stream": true,
+          "static_buffers": false,
+          "pad_to_power_of_two": false,
+          "cuda_graphs": false,
+          "cuda_graph_max_batch_size": 128,
+          "cuda_graph_max_graphs": 16,
+          "cuda_graph_memory_reserve_bytes": 1073741824,
+          "prefill_uva": false
+        },
+        "policy": "ouro",
+        "sampling": {
+          "max_tokens": 128,
+          "exit_threshold": 0.5,
+          "seed": 17,
+          "ignore_eos": true
+        },
+        "request_count": 128,
+        "scope": "diagnostic_engine_capture_not_performance",
+        "warmup_rounds": 0,
+        "profile_range": false,
+        "measurement_boundary": "all submissions through full drain, after warmup",
+        "gpu": "index, uuid, name, memory.total [MiB], driver_version\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n"
+      },
+      "receipt": {
+        "command": [
+          "/root/miniconda3/bin/python",
+          "-m",
+          "experiments.loopkv.capture",
+          "--model",
+          "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/models/ouro-1.4b",
+          "--prompts",
+          "experiments/loopkv/configs/prompts-p128.json",
+          "--out",
+          "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/credit-official-v1/native",
+          "--batch",
+          "64",
+          "--requests",
+          "128",
+          "--max-tokens",
+          "128",
+          "--num-blocks",
+          "2048",
+          "--threshold",
+          "0.5",
+          "--policy",
+          "ouro",
+          "--checkpoint-reader",
+          "torch"
+        ],
+        "start_unix": 1791147580.9241707,
+        "end_unix": 1791147613.9979393,
+        "returncode": 0
+      },
+      "raw_sha256": {
+        "manifest.json": "4dd7827587bdb3304f8bdf2b737d224a3fc31b8f6345a260f693dd2305033733",
+        "steps.jsonl": "2d0c0ac0ce0dddeb2bf94e40d2b331183dfbe1c6c9bc18a9d457fd026d39b724",
+        "requests.jsonl": "c3719dcc8301823bccf0d3bf4fd969ae0343706fec46707dacafc4a95855f545",
+        "run_summary.json": "e81c8fa85ca5f92adec667ca35cd3bdd583212b47b210b6aa5678bc02ac7be91"
+      }
+    },
+    "staging": {
+      "summary": {
+        "scope": "diagnostic_engine_capture_not_performance",
+        "seconds": 29.903696808964014,
+        "tokens_per_second": 547.892125333771,
+        "completed_requests": 128,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12377,
+          "3": 3879
+        },
+        "cached_decode_positions": 16256,
+        "executed_decode_loops": 36391,
+        "recurrent_batch_histogram": {
+          "1": 16,
+          "2": 13,
+          "3": 2,
+          "4": 6,
+          "5": 7,
+          "6": 3,
+          "7": 8,
+          "8": 4,
+          "9": 4,
+          "10": 1,
+          "11": 4,
+          "12": 6,
+          "13": 7,
+          "14": 2,
+          "15": 3,
+          "16": 5,
+          "17": 4,
+          "18": 3,
+          "19": 2,
+          "20": 2,
+          "21": 6,
+          "22": 2,
+          "23": 6,
+          "24": 7,
+          "25": 3,
+          "26": 6,
+          "27": 4,
+          "28": 5,
+          "29": 12,
+          "30": 10,
+          "31": 47,
+          "32": 1016
+        },
+        "promotion_payload_bytes_from_trace": 5629476864,
+        "kv_arena_reserved_bytes": 6442450944,
+        "runtime_peak_allocated_bytes": 9352754176,
+        "runtime_peak_reserved_bytes": 9554624512,
+        "free_blocks_after_drain": 2048,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null,
+        "compact": {
+          "peak_live_records": 24368,
+          "record_bytes": 196608,
+          "peak_unique_payload_bytes": 4790943744,
+          "peak_persistent_metadata_bytes": 294272,
+          "live_records_after_drain": 0,
+          "admission": "full_worst_future_credits",
+          "payload_fragmentation_bytes": 0
+        }
+      },
+      "resident_max": 32,
+      "manifest": {
+        "checkpoint": {
+          "repo": "ByteDance/Ouro-1.4B",
+          "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+          "download_endpoint": "https://hf-mirror.com",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 1472,
+              "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 466391,
+              "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 2869336434,
+              "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 825,
+              "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 3522644,
+              "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 4211,
+              "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 800656,
+              "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+            }
+          ]
+        },
+        "checkpoint_reader": "torch",
+        "git_sha": "cf70584d60913e1664439fb1b4acf603e2dff105",
+        "tracked_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "harness_sha256": "e96bb4addcc8f182bcc315e80c1d581d1c604a9291c7e919ef0c341fa6f00451",
+        "prompts_sha256": "4431561d4bae1a611ef0b7a249ddedebc2b50bf2bd9641e3356ad478e32720a0",
+        "python": "/root/miniconda3/bin/python",
+        "pid": 10569,
+        "packages": {
+          "torch": "2.12.1+cu130",
+          "triton": "3.7.1"
+        },
+        "modules": {
+          "vllm_rlt.engine.llm_engine": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/engine/llm_engine.py",
+            "sha256": "ce5150931533b68ce2f74e93fdb63fde8e8725e0edb482ba1c545b29530ed7e7"
+          },
+          "vllm_rlt.core.alias_kv_cache": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/core/alias_kv_cache.py",
+            "sha256": "0fde319a3fb4aa57e3b7942ec0bd486a528ff32201a897ebeb1a01325652e4a4"
+          },
+          "vllm_rlt.core.kv_cache_manager": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/core/kv_cache_manager.py",
+            "sha256": "e6f0a85fd1b5401bfa3361e0225e5a9e571b9683b6054e77f07649959d86202b"
+          },
+          "vllm_rlt.kernels.triton_attention": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/kernels/triton_attention.py",
+            "sha256": "4670b284aac54efda88ab4e667d5e70a3e03a2a9ab0dd8da5473fe74ce04036f"
+          },
+          "vllm_rlt.models.ouro": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/models/ouro.py",
+            "sha256": "89d9af962e39e940f81f1193016c09090090dbff3f157068b18514b96eb1e0bd"
+          },
+          "experiments.loopkv.checkpoint": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/experiments/loopkv/checkpoint.py",
+            "sha256": "418f465d633c200f89c1ddd2873f584c73b8f568319e875ab989007b4e5146c0"
+          }
+        },
+        "environment": {
+          "CUDA_VISIBLE_DEVICES": "0",
+          "OMP_NUM_THREADS": "4",
+          "MKL_NUM_THREADS": null,
+          "TRITON_CACHE_DIR": null,
+          "CUDA_CACHE_PATH": null,
+          "PYTHONPATH": null
+        },
+        "cache": {
+          "num_blocks": 2048,
+          "block_size": 16,
+          "layout": "last_exited",
+          "gpu_memory_utilization": 0.9,
+          "kv_cache_memory_bytes": null,
+          "memory_reserve_bytes": 268435456,
+          "enable_prefix_caching": false,
+          "incremental_allocation": false,
+          "watermark_ratio": 0.0,
+          "alias_last_exited": false,
+          "compact_last_exited": true,
+          "reclaim_skipped_credits": false
+        },
+        "scheduler": {
+          "max_num_seqs": 64,
+          "max_num_batched_tokens": 128,
+          "mode": "refill",
+          "min_coda_batch_size": 1,
+          "admission_scan_limit": 64,
+          "max_admission_bypasses": 8,
+          "prefill_chunk_size": 128,
+          "max_prefill_batches_before_decode": 1,
+          "policy": "fcfs",
+          "enable_preemption": false
+        },
+        "execution": {
+          "async_scheduling": false,
+          "multi_stream": true,
+          "static_buffers": false,
+          "pad_to_power_of_two": false,
+          "cuda_graphs": false,
+          "cuda_graph_max_batch_size": 128,
+          "cuda_graph_max_graphs": 16,
+          "cuda_graph_memory_reserve_bytes": 1073741824,
+          "prefill_uva": false
+        },
+        "policy": "ouro",
+        "sampling": {
+          "max_tokens": 128,
+          "exit_threshold": 0.5,
+          "seed": 17,
+          "ignore_eos": true
+        },
+        "request_count": 128,
+        "scope": "diagnostic_engine_capture_not_performance",
+        "warmup_rounds": 0,
+        "profile_range": false,
+        "measurement_boundary": "all submissions through full drain, after warmup",
+        "gpu": "index, uuid, name, memory.total [MiB], driver_version\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n"
+      },
+      "receipt": {
+        "command": [
+          "/root/miniconda3/bin/python",
+          "-m",
+          "experiments.loopkv.capture",
+          "--model",
+          "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/models/ouro-1.4b",
+          "--prompts",
+          "experiments/loopkv/configs/prompts-p128.json",
+          "--out",
+          "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/credit-official-v1/staging",
+          "--batch",
+          "64",
+          "--requests",
+          "128",
+          "--max-tokens",
+          "128",
+          "--num-blocks",
+          "2048",
+          "--threshold",
+          "0.5",
+          "--policy",
+          "ouro",
+          "--checkpoint-reader",
+          "torch",
+          "--compact"
+        ],
+        "start_unix": 1791147613.9985034,
+        "end_unix": 1791147647.7271483,
+        "returncode": 0
+      },
+      "raw_sha256": {
+        "manifest.json": "c9ac0461646e5868ba47fa5367149c3d4ef0dda32bb1cc52997a3925437b29d2",
+        "steps.jsonl": "2d0c0ac0ce0dddeb2bf94e40d2b331183dfbe1c6c9bc18a9d457fd026d39b724",
+        "requests.jsonl": "c3719dcc8301823bccf0d3bf4fd969ae0343706fec46707dacafc4a95855f545",
+        "run_summary.json": "6836c4f3495418274db325c72839d0926846b3173308d9ada8860fdafc92fc61"
+      }
+    },
+    "credits": {
+      "summary": {
+        "scope": "diagnostic_engine_capture_not_performance",
+        "seconds": 28.89818449690938,
+        "tokens_per_second": 566.9560315026796,
+        "completed_requests": 128,
+        "output_tokens": 16384,
+        "decode_exit_histogram": {
+          "2": 12316,
+          "3": 3940
+        },
+        "cached_decode_positions": 16256,
+        "executed_decode_loops": 36452,
+        "recurrent_batch_histogram": {
+          "1": 9,
+          "2": 12,
+          "3": 2,
+          "4": 15,
+          "5": 3,
+          "6": 1,
+          "7": 9,
+          "8": 5,
+          "9": 3,
+          "10": 7,
+          "11": 8,
+          "12": 3,
+          "13": 11,
+          "14": 2,
+          "15": 7,
+          "16": 6,
+          "17": 12,
+          "18": 7,
+          "19": 29,
+          "20": 19,
+          "21": 5,
+          "22": 13,
+          "23": 29,
+          "24": 5,
+          "25": 10,
+          "26": 21,
+          "27": 33,
+          "28": 8,
+          "29": 7,
+          "30": 9,
+          "31": 2,
+          "32": 38,
+          "33": 95,
+          "34": 199,
+          "35": 194,
+          "36": 210,
+          "37": 112,
+          "38": 30
+        },
+        "promotion_payload_bytes_from_trace": 5617483776,
+        "kv_arena_reserved_bytes": 6442450944,
+        "runtime_peak_allocated_bytes": 9352809472,
+        "runtime_peak_reserved_bytes": 9554624512,
+        "free_blocks_after_drain": 2048,
+        "geometry": {
+          "layers": 24,
+          "kv_heads": 16,
+          "head_dim": 128,
+          "loops": 4,
+          "element_bytes": 2,
+          "page_tokens": 16
+        },
+        "finalization_exposed_ms": null,
+        "compact": {
+          "peak_live_records": 28094,
+          "record_bytes": 196608,
+          "peak_unique_payload_bytes": 5523505152,
+          "peak_persistent_metadata_bytes": 324872,
+          "live_records_after_drain": 0,
+          "admission": "reclaimed_past_skips_full_worst_future",
+          "payload_fragmentation_bytes": 0
+        }
+      },
+      "resident_max": 38,
+      "manifest": {
+        "checkpoint": {
+          "repo": "ByteDance/Ouro-1.4B",
+          "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+          "download_endpoint": "https://hf-mirror.com",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 1472,
+              "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 466391,
+              "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 2869336434,
+              "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 825,
+              "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 3522644,
+              "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 4211,
+              "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 800656,
+              "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+            }
+          ]
+        },
+        "checkpoint_reader": "torch",
+        "git_sha": "cf70584d60913e1664439fb1b4acf603e2dff105",
+        "tracked_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "harness_sha256": "e96bb4addcc8f182bcc315e80c1d581d1c604a9291c7e919ef0c341fa6f00451",
+        "prompts_sha256": "4431561d4bae1a611ef0b7a249ddedebc2b50bf2bd9641e3356ad478e32720a0",
+        "python": "/root/miniconda3/bin/python",
+        "pid": 10617,
+        "packages": {
+          "torch": "2.12.1+cu130",
+          "triton": "3.7.1"
+        },
+        "modules": {
+          "vllm_rlt.engine.llm_engine": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/engine/llm_engine.py",
+            "sha256": "ce5150931533b68ce2f74e93fdb63fde8e8725e0edb482ba1c545b29530ed7e7"
+          },
+          "vllm_rlt.core.alias_kv_cache": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/core/alias_kv_cache.py",
+            "sha256": "0fde319a3fb4aa57e3b7942ec0bd486a528ff32201a897ebeb1a01325652e4a4"
+          },
+          "vllm_rlt.core.kv_cache_manager": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/core/kv_cache_manager.py",
+            "sha256": "e6f0a85fd1b5401bfa3361e0225e5a9e571b9683b6054e77f07649959d86202b"
+          },
+          "vllm_rlt.kernels.triton_attention": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/kernels/triton_attention.py",
+            "sha256": "4670b284aac54efda88ab4e667d5e70a3e03a2a9ab0dd8da5473fe74ce04036f"
+          },
+          "vllm_rlt.models.ouro": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/vllm_rlt/models/ouro.py",
+            "sha256": "89d9af962e39e940f81f1193016c09090090dbff3f157068b18514b96eb1e0bd"
+          },
+          "experiments.loopkv.checkpoint": {
+            "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/credits-v1/experiments/loopkv/checkpoint.py",
+            "sha256": "418f465d633c200f89c1ddd2873f584c73b8f568319e875ab989007b4e5146c0"
+          }
+        },
+        "environment": {
+          "CUDA_VISIBLE_DEVICES": "0",
+          "OMP_NUM_THREADS": "4",
+          "MKL_NUM_THREADS": null,
+          "TRITON_CACHE_DIR": null,
+          "CUDA_CACHE_PATH": null,
+          "PYTHONPATH": null
+        },
+        "cache": {
+          "num_blocks": 2048,
+          "block_size": 16,
+          "layout": "last_exited",
+          "gpu_memory_utilization": 0.9,
+          "kv_cache_memory_bytes": null,
+          "memory_reserve_bytes": 268435456,
+          "enable_prefix_caching": false,
+          "incremental_allocation": false,
+          "watermark_ratio": 0.0,
+          "alias_last_exited": false,
+          "compact_last_exited": true,
+          "reclaim_skipped_credits": true
+        },
+        "scheduler": {
+          "max_num_seqs": 64,
+          "max_num_batched_tokens": 128,
+          "mode": "refill",
+          "min_coda_batch_size": 1,
+          "admission_scan_limit": 64,
+          "max_admission_bypasses": 8,
+          "prefill_chunk_size": 128,
+          "max_prefill_batches_before_decode": 1,
+          "policy": "fcfs",
+          "enable_preemption": false
+        },
+        "execution": {
+          "async_scheduling": false,
+          "multi_stream": true,
+          "static_buffers": false,
+          "pad_to_power_of_two": false,
+          "cuda_graphs": false,
+          "cuda_graph_max_batch_size": 128,
+          "cuda_graph_max_graphs": 16,
+          "cuda_graph_memory_reserve_bytes": 1073741824,
+          "prefill_uva": false
+        },
+        "policy": "ouro",
+        "sampling": {
+          "max_tokens": 128,
+          "exit_threshold": 0.5,
+          "seed": 17,
+          "ignore_eos": true
+        },
+        "request_count": 128,
+        "scope": "diagnostic_engine_capture_not_performance",
+        "warmup_rounds": 0,
+        "profile_range": false,
+        "measurement_boundary": "all submissions through full drain, after warmup",
+        "gpu": "index, uuid, name, memory.total [MiB], driver_version\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, NVIDIA GeForce RTX 5090, 32607 MiB, 580.105.08\n"
+      },
+      "receipt": {
+        "command": [
+          "/root/miniconda3/bin/python",
+          "-m",
+          "experiments.loopkv.capture",
+          "--model",
+          "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/models/ouro-1.4b",
+          "--prompts",
+          "experiments/loopkv/configs/prompts-p128.json",
+          "--out",
+          "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/credit-official-v1/credits",
+          "--batch",
+          "64",
+          "--requests",
+          "128",
+          "--max-tokens",
+          "128",
+          "--num-blocks",
+          "2048",
+          "--threshold",
+          "0.5",
+          "--policy",
+          "ouro",
+          "--checkpoint-reader",
+          "torch",
+          "--compact",
+          "--reclaim-skipped-credits"
+        ],
+        "start_unix": 1791147647.7277648,
+        "end_unix": 1791147680.3828394,
+        "returncode": 0
+      },
+      "raw_sha256": {
+        "manifest.json": "125ace1eab776e55f30e8316b5a358a2783ce4cdbf177ef6bcc6c8e8bd16fdb3",
+        "steps.jsonl": "c27438ee9be94692fa6e832b7a3c82803ec766cb6476ad0044e41d4a106c8cd4",
+        "requests.jsonl": "a09a2146b09de50a31e6b390580e11ccd3c31dd111d39ad81ff119aa1ebd0ff4",
+        "run_summary.json": "628fb5db6235e99cc675d1dc0ddebf83258914dcf9271974a0de9fb145979f75"
+      }
+    }
+  },
+  "comparisons": {
+    "staging": {
+      "requests": 128,
+      "tokens_exact": 128,
+      "exits_exact": 128,
+      "request_objects_exact": 128,
+      "exit_mismatches": []
+    },
+    "credits": {
+      "requests": 128,
+      "tokens_exact": 128,
+      "exits_exact": 0,
+      "request_objects_exact": 0,
+      "exit_mismatches": [
+        {
+          "request_id": "0",
+          "positions": [
+            43,
+            66,
+            73,
+            92,
+            99,
+            121
+          ]
+        },
+        {
+          "request_id": "4",
+          "positions": [
+            69,
+            95
+          ]
+        },
+        {
+          "request_id": "8",
+          "positions": [
+            43,
+            56,
+            73,
+            99
+          ]
+        },
+        {
+          "request_id": "2",
+          "positions": [
+            49,
+            52,
+            68,
+            76
+          ]
+        },
+        {
+          "request_id": "12",
+          "positions": [
+            43,
+            56,
+            73,
+            85,
+            99,
+            121
+          ]
+        },
+        {
+          "request_id": "10",
+          "positions": [
+            52,
+            76,
+            103
+          ]
+        },
+        {
+          "request_id": "6",
+          "positions": [
+            63,
+            122
+          ]
+        },
+        {
+          "request_id": "16",
+          "positions": [
+            66,
+            95,
+            99
+          ]
+        },
+        {
+          "request_id": "20",
+          "positions": [
+            43,
+            85,
+            95
+          ]
+        },
+        {
+          "request_id": "14",
+          "positions": [
+            41,
+            49,
+            52,
+            63,
+            68,
+            76
+          ]
+        },
+        {
+          "request_id": "24",
+          "positions": [
+            43,
+            56,
+            92,
+            95,
+            118
+          ]
+        },
+        {
+          "request_id": "18",
+          "positions": [
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "28",
+          "positions": [
+            43,
+            56,
+            95,
+            99,
+            111,
+            118
+          ]
+        },
+        {
+          "request_id": "22",
+          "positions": [
+            49,
+            63,
+            68,
+            76,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "26",
+          "positions": [
+            52,
+            122
+          ]
+        },
+        {
+          "request_id": "1",
+          "positions": [
+            88
+          ]
+        },
+        {
+          "request_id": "3",
+          "positions": [
+            26,
+            30,
+            61,
+            86,
+            108,
+            111,
+            124,
+            125
+          ]
+        },
+        {
+          "request_id": "30",
+          "positions": [
+            63,
+            122
+          ]
+        },
+        {
+          "request_id": "7",
+          "positions": [
+            36,
+            46,
+            55,
+            70
+          ]
+        },
+        {
+          "request_id": "5",
+          "positions": [
+            48,
+            73,
+            88
+          ]
+        },
+        {
+          "request_id": "11",
+          "positions": [
+            30,
+            61,
+            124
+          ]
+        },
+        {
+          "request_id": "9",
+          "positions": [
+            27,
+            28,
+            36,
+            48,
+            68,
+            73,
+            88
+          ]
+        },
+        {
+          "request_id": "13",
+          "positions": [
+            28,
+            48,
+            88
+          ]
+        },
+        {
+          "request_id": "15",
+          "positions": [
+            30,
+            36,
+            61,
+            71,
+            105,
+            111
+          ]
+        },
+        {
+          "request_id": "19",
+          "positions": [
+            36,
+            46,
+            86,
+            95,
+            111
+          ]
+        },
+        {
+          "request_id": "17",
+          "positions": [
+            22,
+            27,
+            28,
+            120
+          ]
+        },
+        {
+          "request_id": "23",
+          "positions": [
+            20,
+            26,
+            36,
+            86,
+            96,
+            111,
+            120
+          ]
+        },
+        {
+          "request_id": "21",
+          "positions": [
+            22,
+            28
+          ]
+        },
+        {
+          "request_id": "27",
+          "positions": [
+            20,
+            36,
+            46,
+            61,
+            86,
+            111
+          ]
+        },
+        {
+          "request_id": "25",
+          "positions": [
+            22,
+            28,
+            40,
+            48
+          ]
+        },
+        {
+          "request_id": "31",
+          "positions": [
+            20,
+            30,
+            46,
+            111
+          ]
+        },
+        {
+          "request_id": "29",
+          "positions": [
+            15,
+            22,
+            28,
+            40,
+            48
+          ]
+        },
+        {
+          "request_id": "32",
+          "positions": [
+            1,
+            43,
+            92,
+            95
+          ]
+        },
+        {
+          "request_id": "36",
+          "positions": [
+            17,
+            27,
+            43,
+            95,
+            122
+          ]
+        },
+        {
+          "request_id": "34",
+          "positions": [
+            52,
+            63,
+            68,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "40",
+          "positions": [
+            43,
+            73,
+            95,
+            99,
+            122
+          ]
+        },
+        {
+          "request_id": "38",
+          "positions": [
+            52,
+            63,
+            68,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "44",
+          "positions": [
+            43,
+            73,
+            95,
+            111
+          ]
+        },
+        {
+          "request_id": "42",
+          "positions": [
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "48",
+          "positions": [
+            43,
+            92,
+            95,
+            99
+          ]
+        },
+        {
+          "request_id": "46",
+          "positions": [
+            22,
+            49,
+            52,
+            63,
+            68,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "35",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            30,
+            36,
+            40,
+            61,
+            86,
+            96,
+            100
+          ]
+        },
+        {
+          "request_id": "33",
+          "positions": [
+            7,
+            15,
+            22,
+            28,
+            88
+          ]
+        },
+        {
+          "request_id": "52",
+          "positions": [
+            69,
+            85,
+            95,
+            99
+          ]
+        },
+        {
+          "request_id": "50",
+          "positions": [
+            6,
+            49,
+            52,
+            68,
+            122
+          ]
+        },
+        {
+          "request_id": "39",
+          "positions": [
+            5,
+            6,
+            11,
+            26,
+            29,
+            86,
+            100
+          ]
+        },
+        {
+          "request_id": "37",
+          "positions": [
+            7,
+            15,
+            22,
+            27,
+            28,
+            48,
+            88
+          ]
+        },
+        {
+          "request_id": "56",
+          "positions": [
+            1,
+            5,
+            6,
+            27,
+            43,
+            95,
+            99,
+            122
+          ]
+        },
+        {
+          "request_id": "54",
+          "positions": [
+            49,
+            68,
+            103
+          ]
+        },
+        {
+          "request_id": "43",
+          "positions": [
+            5,
+            6,
+            10,
+            20,
+            36,
+            46,
+            58,
+            86,
+            95,
+            108,
+            111
+          ]
+        },
+        {
+          "request_id": "41",
+          "positions": [
+            7,
+            15,
+            22,
+            48
+          ]
+        },
+        {
+          "request_id": "60",
+          "positions": [
+            1,
+            95,
+            99,
+            118,
+            125
+          ]
+        },
+        {
+          "request_id": "58",
+          "positions": [
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "45",
+          "positions": [
+            7,
+            22
+          ]
+        },
+        {
+          "request_id": "47",
+          "positions": [
+            5,
+            6,
+            10,
+            21,
+            26,
+            30,
+            45,
+            61,
+            86,
+            100,
+            111
+          ]
+        },
+        {
+          "request_id": "62",
+          "positions": [
+            68,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "51",
+          "positions": [
+            2,
+            5,
+            8,
+            10,
+            11,
+            26,
+            30,
+            35,
+            61,
+            86,
+            95
+          ]
+        },
+        {
+          "request_id": "49",
+          "positions": [
+            15,
+            22,
+            28,
+            48,
+            88
+          ]
+        },
+        {
+          "request_id": "55",
+          "positions": [
+            5,
+            8,
+            26,
+            46,
+            61,
+            86,
+            111
+          ]
+        },
+        {
+          "request_id": "53",
+          "positions": [
+            7,
+            15,
+            22,
+            28,
+            48
+          ]
+        },
+        {
+          "request_id": "57",
+          "positions": [
+            7,
+            15,
+            22,
+            48
+          ]
+        },
+        {
+          "request_id": "59",
+          "positions": [
+            2,
+            5,
+            11,
+            21,
+            26,
+            30,
+            36,
+            55,
+            86,
+            95,
+            111,
+            121
+          ]
+        },
+        {
+          "request_id": "61",
+          "positions": [
+            2,
+            15,
+            22
+          ]
+        },
+        {
+          "request_id": "63",
+          "positions": [
+            2,
+            5,
+            10,
+            11,
+            30,
+            46,
+            61,
+            86,
+            111,
+            121
+          ]
+        },
+        {
+          "request_id": "64",
+          "positions": [
+            1,
+            43,
+            95,
+            99,
+            122
+          ]
+        },
+        {
+          "request_id": "68",
+          "positions": [
+            17,
+            27,
+            43,
+            92,
+            118,
+            121
+          ]
+        },
+        {
+          "request_id": "66",
+          "positions": [
+            52,
+            63,
+            68,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "70",
+          "positions": [
+            52,
+            63,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "72",
+          "positions": [
+            17,
+            27,
+            43,
+            85,
+            95,
+            99,
+            121,
+            122
+          ]
+        },
+        {
+          "request_id": "65",
+          "positions": [
+            2,
+            15,
+            21,
+            22,
+            28,
+            48
+          ]
+        },
+        {
+          "request_id": "76",
+          "positions": [
+            17,
+            27,
+            43,
+            66,
+            95
+          ]
+        },
+        {
+          "request_id": "74",
+          "positions": [
+            103
+          ]
+        },
+        {
+          "request_id": "67",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            30,
+            36,
+            40,
+            55,
+            86,
+            95,
+            125
+          ]
+        },
+        {
+          "request_id": "80",
+          "positions": [
+            17,
+            95,
+            99,
+            125
+          ]
+        },
+        {
+          "request_id": "78",
+          "positions": [
+            49,
+            52,
+            122
+          ]
+        },
+        {
+          "request_id": "69",
+          "positions": [
+            7,
+            15,
+            22,
+            28,
+            87
+          ]
+        },
+        {
+          "request_id": "84",
+          "positions": [
+            17,
+            43,
+            56,
+            69,
+            92,
+            95,
+            99,
+            121,
+            125
+          ]
+        },
+        {
+          "request_id": "82",
+          "positions": [
+            22,
+            68,
+            103
+          ]
+        },
+        {
+          "request_id": "71",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            30,
+            36,
+            40,
+            55,
+            70,
+            86,
+            95,
+            105,
+            111
+          ]
+        },
+        {
+          "request_id": "88",
+          "positions": [
+            43,
+            95
+          ]
+        },
+        {
+          "request_id": "75",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            36,
+            86,
+            88,
+            111,
+            113
+          ]
+        },
+        {
+          "request_id": "86",
+          "positions": [
+            33,
+            52,
+            68,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "73",
+          "positions": [
+            7,
+            15,
+            22,
+            28,
+            48
+          ]
+        },
+        {
+          "request_id": "79",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            26,
+            36,
+            86,
+            96,
+            100,
+            111,
+            125
+          ]
+        },
+        {
+          "request_id": "77",
+          "positions": [
+            7,
+            15,
+            22,
+            27,
+            28
+          ]
+        },
+        {
+          "request_id": "90",
+          "positions": [
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "92",
+          "positions": [
+            6,
+            95,
+            122,
+            125
+          ]
+        },
+        {
+          "request_id": "83",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            36,
+            46,
+            55,
+            86,
+            111
+          ]
+        },
+        {
+          "request_id": "81",
+          "positions": [
+            7,
+            15,
+            16,
+            22,
+            28,
+            48
+          ]
+        },
+        {
+          "request_id": "85",
+          "positions": [
+            7,
+            15,
+            22,
+            28,
+            48,
+            88
+          ]
+        },
+        {
+          "request_id": "87",
+          "positions": [
+            5,
+            6,
+            10,
+            20,
+            26,
+            46,
+            61,
+            108,
+            111
+          ]
+        },
+        {
+          "request_id": "94",
+          "positions": [
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "89",
+          "positions": [
+            15,
+            22,
+            28,
+            31,
+            36,
+            48
+          ]
+        },
+        {
+          "request_id": "91",
+          "positions": [
+            6,
+            8,
+            10,
+            26,
+            30,
+            36,
+            86,
+            95,
+            96,
+            111
+          ]
+        },
+        {
+          "request_id": "93",
+          "positions": [
+            15,
+            22,
+            31,
+            48
+          ]
+        },
+        {
+          "request_id": "95",
+          "positions": [
+            5,
+            6,
+            10,
+            11,
+            26,
+            45,
+            61,
+            76,
+            108
+          ]
+        },
+        {
+          "request_id": "96",
+          "positions": [
+            27,
+            69,
+            95,
+            99
+          ]
+        },
+        {
+          "request_id": "98",
+          "positions": [
+            49,
+            122
+          ]
+        },
+        {
+          "request_id": "100",
+          "positions": [
+            17,
+            27,
+            43,
+            92,
+            95,
+            99
+          ]
+        },
+        {
+          "request_id": "104",
+          "positions": [
+            17,
+            27,
+            43,
+            95
+          ]
+        },
+        {
+          "request_id": "102",
+          "positions": [
+            52,
+            63,
+            68,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "97",
+          "positions": [
+            15,
+            22,
+            28,
+            48
+          ]
+        },
+        {
+          "request_id": "108",
+          "positions": [
+            17,
+            27,
+            43,
+            95,
+            121
+          ]
+        },
+        {
+          "request_id": "106",
+          "positions": [
+            52,
+            63,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "99",
+          "positions": [
+            5,
+            6,
+            8,
+            10,
+            11,
+            36,
+            46,
+            86,
+            96,
+            108
+          ]
+        },
+        {
+          "request_id": "112",
+          "positions": [
+            17,
+            27,
+            43,
+            69,
+            95,
+            99,
+            118
+          ]
+        },
+        {
+          "request_id": "110",
+          "positions": [
+            49,
+            52,
+            63,
+            68,
+            95,
+            103,
+            122
+          ]
+        },
+        {
+          "request_id": "101",
+          "positions": [
+            7,
+            15,
+            22,
+            28,
+            87,
+            120
+          ]
+        },
+        {
+          "request_id": "103",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            30,
+            36,
+            40,
+            55,
+            86,
+            105
+          ]
+        },
+        {
+          "request_id": "116",
+          "positions": [
+            17,
+            66,
+            73,
+            95
+          ]
+        },
+        {
+          "request_id": "114",
+          "positions": [
+            122
+          ]
+        },
+        {
+          "request_id": "105",
+          "positions": [
+            7,
+            15,
+            22,
+            28
+          ]
+        },
+        {
+          "request_id": "120",
+          "positions": [
+            43,
+            95
+          ]
+        },
+        {
+          "request_id": "107",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            30,
+            36,
+            40,
+            55,
+            71,
+            86,
+            95,
+            111
+          ]
+        },
+        {
+          "request_id": "118",
+          "positions": [
+            49,
+            122
+          ]
+        },
+        {
+          "request_id": "109",
+          "positions": [
+            7,
+            15,
+            22,
+            28
+          ]
+        },
+        {
+          "request_id": "111",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            30,
+            36,
+            46,
+            86,
+            125
+          ]
+        },
+        {
+          "request_id": "122",
+          "positions": [
+            49,
+            68
+          ]
+        },
+        {
+          "request_id": "124",
+          "positions": [
+            43,
+            95
+          ]
+        },
+        {
+          "request_id": "113",
+          "positions": [
+            7,
+            15,
+            22,
+            27,
+            28,
+            48
+          ]
+        },
+        {
+          "request_id": "115",
+          "positions": [
+            5,
+            6,
+            11,
+            20,
+            26,
+            30,
+            36,
+            55,
+            61,
+            86,
+            111
+          ]
+        },
+        {
+          "request_id": "117",
+          "positions": [
+            7,
+            15,
+            22,
+            28,
+            81
+          ]
+        },
+        {
+          "request_id": "119",
+          "positions": [
+            5,
+            6,
+            11,
+            21,
+            26,
+            30,
+            36,
+            40,
+            55,
+            86,
+            111
+          ]
+        },
+        {
+          "request_id": "126",
+          "positions": [
+            52
+          ]
+        },
+        {
+          "request_id": "121",
+          "positions": [
+            7,
+            15,
+            22,
+            28,
+            88,
+            97
+          ]
+        },
+        {
+          "request_id": "123",
+          "positions": [
+            5,
+            6,
+            10,
+            26,
+            30,
+            46,
+            55,
+            86,
+            95
+          ]
+        },
+        {
+          "request_id": "125",
+          "positions": [
+            15,
+            22,
+            28,
+            31,
+            88
+          ]
+        },
+        {
+          "request_id": "127",
+          "positions": [
+            5,
+            8,
+            11,
+            26,
+            46,
+            71,
+            86,
+            108,
+            111
+          ]
+        }
+      ]
+    }
+  }
+}
