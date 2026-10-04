@@ -1,6 +1,6 @@
 # Resident routing for rectangular aliases
 
-Status: CPU scheduling/lifetime tests pass; CUDA qualification is queued.
+Status: CPU and finite tiny-model CUDA scheduling/lifetime tests pass; official-weight qualification is pending.
 This branch enables rectangular aliases with the existing resident asynchronous
 runner for delayed or frozen-trace policies. Compact async, static workspaces,
 Graph, transfer, prefix reuse and preemption remain unsupported. Huginn retains
@@ -26,17 +26,20 @@ retirement waits for the final reader before freeing the allocation and slot.
 | Capture workload counters | 3 CPU tests passed; sync/async mixed-depth accounting and call-weighted percentiles |
 | Frozen mixed-depth trace with held coda delivery | Exact output/exit objects versus native synchronous |
 | Cancel and reuse same request ID across three rounds | All three requests complete; all block credits return |
-| CUDA UVA/H2D banks and native Graph control | Queued in `experiments.loopkv.async_gate` |
-| CUDA delayed allocation reset and final bank reader | Queued with explicit cross-stream delays |
+| CUDA UVA/H2D banks and native Graph control | 48 tiny-model arms pass at B1–128/C2B, two request rounds |
+| CUDA delayed allocation reset and final bank reader | Both H2D and mapped-host modes pass with explicit cross-stream delays |
 | Official Native-D/Native-A/candidate-A quality and E2E | Pending |
 
 | Fixed-policy throughput comparison | Native-A tokens/s | Alias-A tokens/s | Speedup |
 |---|---:|---:|---:|
 | Official checkpoint E2E | — | — | Not measured |
 
-CPU scheduling tests cannot establish CUDA event ordering. The forthcoming
-CUDA gate covers both mapped-host and H2D descriptors, B1–128/C2B, mixed-depth
-traces, cancellation/reuse, and the native Graph control before official runs.
+The CUDA gate naturally exited0 on RTX5090/Torch2.12.1+cu130 at source
+`28fd63584f68b0574b1a4d6e51ce4b312cf87eda`. It covers both mapped-host and H2D descriptors, B1–128/C2B, mixed-depth
+traces, cancellation/reuse, and a native Graph control. All output/exit objects match native synchronous
+execution, and all block credits and state slots return after each round.
+[All48 cases, source and raw hash](evidence/async-cuda-v1.json). These tiny-model
+correctness results do not establish official-model quality or performance.
 
 Future timed captures collect the same CPU submission counters in both arms:
 recurrent batch histograms, rows per depth, prefill tokens and observed residency.
