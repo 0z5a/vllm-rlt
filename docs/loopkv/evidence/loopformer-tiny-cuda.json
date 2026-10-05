@@ -1,0 +1,711 @@
+{
+  "scope": "tiny_LoopFormer_not_official_or_performance",
+  "torch": "2.12.1+cu130",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "dense_FP32_oracle": true,
+  "atol": 3e-06,
+  "rtol": 3e-05,
+  "cases": [
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "sync",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "sync",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "sync",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "sync",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "async",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "async",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "async",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "async",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "graph",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 1,
+        "replays": 160,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "graph",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 1,
+        "replays": 160,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "graph",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 1,
+        "replays": 160,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 1,
+      "concurrency": 2,
+      "mode": "graph",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 1,
+        "replays": 160,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "sync",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "sync",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "sync",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "sync",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "async",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "async",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "async",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "async",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "graph",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 4,
+        "replays": 168,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "graph",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 4,
+        "replays": 168,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "graph",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 4,
+        "replays": 168,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 4,
+      "concurrency": 8,
+      "mode": "graph",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 4,
+        "replays": 168,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "sync",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "sync",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "sync",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "sync",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "async",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "async",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "async",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "async",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "graph",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 9,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "graph",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 9,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "graph",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 9,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 16,
+      "concurrency": 32,
+      "mode": "graph",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 9,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "sync",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "sync",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "sync",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "sync",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "async",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "async",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "async",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "async",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "graph",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 9,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "graph",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 9,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "graph",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 9,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 32,
+      "concurrency": 64,
+      "mode": "graph",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 9,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "sync",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "sync",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "sync",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "sync",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "async",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "async",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "async",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "async",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "graph",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 7,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "graph",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 7,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "graph",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 7,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 64,
+      "concurrency": 128,
+      "mode": "graph",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 7,
+        "replays": 172,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "sync",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "sync",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "sync",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "sync",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "async",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "async",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "async",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "async",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": null
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "graph",
+      "storage": "native",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 11,
+        "replays": 174,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "graph",
+      "storage": "alias",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 11,
+        "replays": 174,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "graph",
+      "storage": "compact",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 11,
+        "replays": 174,
+        "fallbacks": 0
+      }
+    },
+    {
+      "batch": 128,
+      "concurrency": 256,
+      "mode": "graph",
+      "storage": "credits",
+      "two_lifetimes_exact": true,
+      "graphs": {
+        "captures": 11,
+        "replays": 174,
+        "fallbacks": 0
+      }
+    }
+  ],
+  "completion": {
+    "status": "complete",
+    "scope": "tiny_LoopFormer_72_CUDA_cases_not_official_or_performance",
+    "source_sha": "4176b1bfc0a6ca0478cc4d459245f819d38e5e7a",
+    "controller_pid": 25878,
+    "qualification_pid": 25881,
+    "child_pid": 25884,
+    "all_returncodes": [
+      0,
+      0,
+      0
+    ],
+    "ssh_actual_returncode": 0,
+    "dense_FP32_oracle": true,
+    "two_lifetimes_all_72_exact": true,
+    "archive_sha256": "484fbd376ba5fc977e4d502352f534e61313ab899c083875ef549a6c96de6c07",
+    "file_manifest_sha256": "87df77798ed159ded7c3dba0ba28507aa170f25fa768493e2c404811721aedd1",
+    "offbox_verified_files": 8,
+    "own_processes_absent": [
+      25878,
+      25881,
+      25884
+    ],
+    "gpu0_compute_empty": true,
+    "original_locks_take_release": {
+      "gpu0-perf.lock": 12895501670,
+      "heavy-io.lock": 12895501666
+    }
+  }
+}

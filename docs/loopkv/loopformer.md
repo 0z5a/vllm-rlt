@@ -24,7 +24,9 @@ full-weight verification or official inference.
 | Affected CPU suite | 228 passed, 27 GPU tests deselected, 36 subtests passed |
 | Actual pinned author GPT forward, tiny copied FP32 parameters | Three lengths pass; max absolute logit error 9.54e-7 |
 | Actual pinned author GPT forward, tiny copied BF16 parameters | Three lengths pass at atol 0.03 / rtol 0.02; max absolute error 0.0625; greedy tokens exact |
-| CUDA and official-weight inference | Pending |
+| CUDA FP32 state/logits/all-KV oracle | Pass at the same 3e-6 / 3e-5 tolerances |
+| Tiny BF16 CUDA sync/async/Graph, four storage modes, B1–128/C2B | All 72 arms pass across two request-ID lifetimes |
+| Official-weight inference | Pending |
 
 The author comparison uses the original full dense forward against the independent
 functional oracle. The paged implementation is separately checked against that
@@ -33,7 +35,17 @@ bitwise equality. Reproduce the author comparison with
 `python -m experiments.loopkv.loopformer_author_gate --author-source <pinned_file> --out <json>`;
 the harness checks the source SHA256 before importing it. The CUDA gate is
 `python -m experiments.loopkv.loopformer_gate --out <json>` and includes an FP32
-oracle followed by 72 BF16 resident/cache arms. It has not yet run.
+oracle followed by 72 BF16 resident/cache arms.
+
+Frozen source `4176b1bfc0a6ca0478cc4d459245f819d38e5e7a` passed that CUDA gate
+on RTX5090 #0 with torch 2.12.1+cu130: 11,760 completed requests, 70,560 output
+tokens, 164 Graph captures, 4,072 replays and zero fallbacks. Every storage variant
+exactly matches native within its execution mode and returns its entire cache
+reservation. The controller and children exited naturally with code 0; all eight
+evidence files were verified off the node. Archive SHA256:
+`484fbd376ba5fc977e4d502352f534e61313ab899c083875ef549a6c96de6c07`.
+[Raw CUDA cases and completion receipt](evidence/loopformer-tiny-cuda.json).
+The shared-node tiny run does not establish official-model quality or speed.
 
 This checkpoint provides no exit gate. The admitted path requires all eight
 steps, threshold 1, LAST_EXITED storage and torch/Triton attention. Prefix reuse,
