@@ -33,3 +33,6 @@ captured admission, batch and coda-delivery decisions.
 
 Preemption, prefix sharing, transfer, speculative rollback, FlashAttention and
 synchronous static-buffer/Graph combinations remain outside this cache contract.
+
+
+[Executed CUDA and official complete-schedule validation](compact-resident-cuda.md) now passes. Naturally scheduled HTTP Graph differences remain disclosed separately; no compact speed result is claimed.

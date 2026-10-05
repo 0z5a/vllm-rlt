@@ -1,0 +1,2114 @@
+{
+  "archive_sha256": "c5c77ea7e64e0dd7e7e4afc25d45ab4e15a14a27bc34a80525b6a368663fddb2",
+  "auditor_sha256": "46e44264334c3a9b983a25548232171ffb69913dde909f33fb7ab8897913dcf6",
+  "routing": {
+    "scope": "tiny_cuda_routing_lifetime_not_official_or_performance",
+    "torch": "2.12.1+cu130",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "lifetime": [
+      {
+        "use_uva": false,
+        "compact": true,
+        "allocation_reset_ordered": true,
+        "bank_reader_retired": true,
+        "cancel_waits_for_record_reader": true
+      },
+      {
+        "use_uva": true,
+        "compact": true,
+        "allocation_reset_ordered": true,
+        "bank_reader_retired": true,
+        "cancel_waits_for_record_reader": true
+      }
+    ],
+    "cases": [
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": false,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 1,
+        "requests_per_round": 2,
+        "use_uva": true,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 1,
+          "replays": 44,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": false,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 4,
+        "requests_per_round": 8,
+        "use_uva": true,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 52,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": false,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 16,
+        "requests_per_round": 32,
+        "use_uva": true,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 4,
+          "replays": 64,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": false,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 32,
+        "requests_per_round": 64,
+        "use_uva": true,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 5,
+          "replays": 70,
+          "fallbacks": 0
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": false,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 64,
+        "requests_per_round": 128,
+        "use_uva": true,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 90,
+          "fallbacks": 66
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": false,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "sync",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "native_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "compact_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "credits_async",
+        "exact_two_rounds": true
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "native_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "compact_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      },
+      {
+        "batch": 128,
+        "requests_per_round": 256,
+        "use_uva": true,
+        "mode": "credits_graph",
+        "exact_two_rounds": true,
+        "graphs": {
+          "captures": 16,
+          "replays": 95,
+          "fallbacks": 62
+        }
+      }
+    ]
+  },
+  "replays": [
+    {
+      "scope": "trace-tiny.json",
+      "batch": 1,
+      "mode": "capture",
+      "requests": 2,
+      "tokens": 12,
+      "exact_request_objects": true,
+      "captures": 1,
+      "replays": 30,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 30
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 10,
+          "2": 10,
+          "3": 10
+        },
+        "submitted_recurrent_rows": 30,
+        "recurrent_calls": 30,
+        "effective_batch_mean": 1.0,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 1,
+          "p90": 1
+        },
+        "submitted_prefill_tokens": 67,
+        "observed_peak_residents_after_step": 1
+      },
+      "free_blocks": 64
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 1,
+      "mode": "self-replay",
+      "requests": 2,
+      "tokens": 12,
+      "exact_request_objects": true,
+      "captures": 1,
+      "replays": 30,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 30
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 10,
+          "2": 10,
+          "3": 10
+        },
+        "submitted_recurrent_rows": 30,
+        "recurrent_calls": 30,
+        "effective_batch_mean": 1.0,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 1,
+          "p90": 1
+        },
+        "submitted_prefill_tokens": 67,
+        "observed_peak_residents_after_step": 1
+      },
+      "free_blocks": 64
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 1,
+      "mode": "compact-replay",
+      "requests": 2,
+      "tokens": 12,
+      "exact_request_objects": true,
+      "captures": 1,
+      "replays": 30,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 30
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 10,
+          "2": 10,
+          "3": 10
+        },
+        "submitted_recurrent_rows": 30,
+        "recurrent_calls": 30,
+        "effective_batch_mean": 1.0,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 1,
+          "p90": 1
+        },
+        "submitted_prefill_tokens": 67,
+        "observed_peak_residents_after_step": 1
+      },
+      "free_blocks": 64
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 4,
+      "mode": "capture",
+      "requests": 8,
+      "tokens": 48,
+      "exact_request_objects": true,
+      "captures": 3,
+      "replays": 31,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 1,
+          "3": 1,
+          "4": 29
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 40,
+          "2": 40,
+          "3": 40
+        },
+        "submitted_recurrent_rows": 120,
+        "recurrent_calls": 31,
+        "effective_batch_mean": 3.870967741935484,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 4,
+          "p50": 4,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 268,
+        "observed_peak_residents_after_step": 4
+      },
+      "free_blocks": 256
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 4,
+      "mode": "self-replay",
+      "requests": 8,
+      "tokens": 48,
+      "exact_request_objects": true,
+      "captures": 3,
+      "replays": 31,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 1,
+          "3": 1,
+          "4": 29
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 40,
+          "2": 40,
+          "3": 40
+        },
+        "submitted_recurrent_rows": 120,
+        "recurrent_calls": 31,
+        "effective_batch_mean": 3.870967741935484,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 4,
+          "p50": 4,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 268,
+        "observed_peak_residents_after_step": 4
+      },
+      "free_blocks": 256
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 4,
+      "mode": "compact-replay",
+      "requests": 8,
+      "tokens": 48,
+      "exact_request_objects": true,
+      "captures": 3,
+      "replays": 31,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 1,
+          "3": 1,
+          "4": 29
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 40,
+          "2": 40,
+          "3": 40
+        },
+        "submitted_recurrent_rows": 120,
+        "recurrent_calls": 31,
+        "effective_batch_mean": 3.870967741935484,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 4,
+          "p50": 4,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 268,
+        "observed_peak_residents_after_step": 4
+      },
+      "free_blocks": 256
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 16,
+      "mode": "capture",
+      "requests": 32,
+      "tokens": 192,
+      "exact_request_objects": true,
+      "captures": 11,
+      "replays": 35,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 1,
+          "3": 1,
+          "4": 1,
+          "6": 1,
+          "7": 1,
+          "9": 1,
+          "10": 1,
+          "12": 1,
+          "13": 1,
+          "15": 1,
+          "16": 25
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 160,
+          "2": 160,
+          "3": 160
+        },
+        "submitted_recurrent_rows": 480,
+        "recurrent_calls": 35,
+        "effective_batch_mean": 13.714285714285714,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 16,
+          "p90": 16
+        },
+        "submitted_prefill_tokens": 1072,
+        "observed_peak_residents_after_step": 16
+      },
+      "free_blocks": 1024
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 16,
+      "mode": "self-replay",
+      "requests": 32,
+      "tokens": 192,
+      "exact_request_objects": true,
+      "captures": 11,
+      "replays": 35,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 1,
+          "3": 1,
+          "4": 1,
+          "6": 1,
+          "7": 1,
+          "9": 1,
+          "10": 1,
+          "12": 1,
+          "13": 1,
+          "15": 1,
+          "16": 25
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 160,
+          "2": 160,
+          "3": 160
+        },
+        "submitted_recurrent_rows": 480,
+        "recurrent_calls": 35,
+        "effective_batch_mean": 13.714285714285714,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 16,
+          "p90": 16
+        },
+        "submitted_prefill_tokens": 1072,
+        "observed_peak_residents_after_step": 16
+      },
+      "free_blocks": 1024
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 16,
+      "mode": "compact-replay",
+      "requests": 32,
+      "tokens": 192,
+      "exact_request_objects": true,
+      "captures": 11,
+      "replays": 35,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 1,
+          "3": 1,
+          "4": 1,
+          "6": 1,
+          "7": 1,
+          "9": 1,
+          "10": 1,
+          "12": 1,
+          "13": 1,
+          "15": 1,
+          "16": 25
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 160,
+          "2": 160,
+          "3": 160
+        },
+        "submitted_recurrent_rows": 480,
+        "recurrent_calls": 35,
+        "effective_batch_mean": 13.714285714285714,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 16,
+          "p90": 16
+        },
+        "submitted_prefill_tokens": 1072,
+        "observed_peak_residents_after_step": 16
+      },
+      "free_blocks": 1024
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 32,
+      "mode": "capture",
+      "requests": 64,
+      "tokens": 384,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 35,
+      "fallbacks": 5,
+      "work": {
+        "recurrent_batch_histogram": {
+          "2": 1,
+          "3": 1,
+          "5": 1,
+          "6": 1,
+          "8": 1,
+          "9": 1,
+          "11": 1,
+          "12": 1,
+          "14": 1,
+          "15": 1,
+          "17": 1,
+          "18": 1,
+          "20": 1,
+          "21": 1,
+          "23": 1,
+          "24": 1,
+          "26": 1,
+          "27": 1,
+          "29": 1,
+          "30": 1,
+          "32": 20
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 320,
+          "2": 320,
+          "3": 320
+        },
+        "submitted_recurrent_rows": 960,
+        "recurrent_calls": 40,
+        "effective_batch_mean": 24.0,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 30,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 2144,
+        "observed_peak_residents_after_step": 32
+      },
+      "free_blocks": 2048
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 32,
+      "mode": "self-replay",
+      "requests": 64,
+      "tokens": 384,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 35,
+      "fallbacks": 5,
+      "work": {
+        "recurrent_batch_histogram": {
+          "2": 1,
+          "3": 1,
+          "5": 1,
+          "6": 1,
+          "8": 1,
+          "9": 1,
+          "11": 1,
+          "12": 1,
+          "14": 1,
+          "15": 1,
+          "17": 1,
+          "18": 1,
+          "20": 1,
+          "21": 1,
+          "23": 1,
+          "24": 1,
+          "26": 1,
+          "27": 1,
+          "29": 1,
+          "30": 1,
+          "32": 20
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 320,
+          "2": 320,
+          "3": 320
+        },
+        "submitted_recurrent_rows": 960,
+        "recurrent_calls": 40,
+        "effective_batch_mean": 24.0,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 30,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 2144,
+        "observed_peak_residents_after_step": 32
+      },
+      "free_blocks": 2048
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 32,
+      "mode": "compact-replay",
+      "requests": 64,
+      "tokens": 384,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 35,
+      "fallbacks": 5,
+      "work": {
+        "recurrent_batch_histogram": {
+          "2": 1,
+          "3": 1,
+          "5": 1,
+          "6": 1,
+          "8": 1,
+          "9": 1,
+          "11": 1,
+          "12": 1,
+          "14": 1,
+          "15": 1,
+          "17": 1,
+          "18": 1,
+          "20": 1,
+          "21": 1,
+          "23": 1,
+          "24": 1,
+          "26": 1,
+          "27": 1,
+          "29": 1,
+          "30": 1,
+          "32": 20
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 320,
+          "2": 320,
+          "3": 320
+        },
+        "submitted_recurrent_rows": 960,
+        "recurrent_calls": 40,
+        "effective_batch_mean": 24.0,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 30,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 2144,
+        "observed_peak_residents_after_step": 32
+      },
+      "free_blocks": 2048
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 64,
+      "mode": "capture",
+      "requests": 128,
+      "tokens": 768,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 17,
+      "fallbacks": 33,
+      "work": {
+        "recurrent_batch_histogram": {
+          "3": 1,
+          "4": 1,
+          "6": 1,
+          "7": 1,
+          "9": 1,
+          "10": 1,
+          "12": 1,
+          "13": 1,
+          "15": 1,
+          "16": 1,
+          "18": 1,
+          "19": 1,
+          "21": 1,
+          "22": 1,
+          "24": 1,
+          "25": 1,
+          "27": 1,
+          "28": 1,
+          "30": 1,
+          "31": 1,
+          "33": 1,
+          "34": 1,
+          "36": 1,
+          "37": 1,
+          "39": 1,
+          "41": 1,
+          "42": 1,
+          "44": 1,
+          "45": 2,
+          "48": 2,
+          "50": 2,
+          "51": 1,
+          "58": 1,
+          "59": 2,
+          "61": 1,
+          "62": 1,
+          "63": 2,
+          "64": 8
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 640,
+          "2": 640,
+          "3": 640
+        },
+        "submitted_recurrent_rows": 1920,
+        "recurrent_calls": 50,
+        "effective_batch_mean": 38.4,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 9,
+          "p50": 39,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 4288,
+        "observed_peak_residents_after_step": 64
+      },
+      "free_blocks": 4096
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 64,
+      "mode": "self-replay",
+      "requests": 128,
+      "tokens": 768,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 17,
+      "fallbacks": 33,
+      "work": {
+        "recurrent_batch_histogram": {
+          "3": 1,
+          "4": 1,
+          "6": 1,
+          "7": 1,
+          "9": 1,
+          "10": 1,
+          "12": 1,
+          "13": 1,
+          "15": 1,
+          "16": 1,
+          "18": 1,
+          "19": 1,
+          "21": 1,
+          "22": 1,
+          "24": 1,
+          "25": 1,
+          "27": 1,
+          "28": 1,
+          "30": 1,
+          "31": 1,
+          "33": 1,
+          "34": 1,
+          "36": 1,
+          "37": 1,
+          "39": 1,
+          "41": 1,
+          "42": 1,
+          "44": 1,
+          "45": 2,
+          "48": 2,
+          "50": 2,
+          "51": 1,
+          "58": 1,
+          "59": 2,
+          "61": 1,
+          "62": 1,
+          "63": 2,
+          "64": 8
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 640,
+          "2": 640,
+          "3": 640
+        },
+        "submitted_recurrent_rows": 1920,
+        "recurrent_calls": 50,
+        "effective_batch_mean": 38.4,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 9,
+          "p50": 39,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 4288,
+        "observed_peak_residents_after_step": 64
+      },
+      "free_blocks": 4096
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 64,
+      "mode": "compact-replay",
+      "requests": 128,
+      "tokens": 768,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 17,
+      "fallbacks": 33,
+      "work": {
+        "recurrent_batch_histogram": {
+          "3": 1,
+          "4": 1,
+          "6": 1,
+          "7": 1,
+          "9": 1,
+          "10": 1,
+          "12": 1,
+          "13": 1,
+          "15": 1,
+          "16": 1,
+          "18": 1,
+          "19": 1,
+          "21": 1,
+          "22": 1,
+          "24": 1,
+          "25": 1,
+          "27": 1,
+          "28": 1,
+          "30": 1,
+          "31": 1,
+          "33": 1,
+          "34": 1,
+          "36": 1,
+          "37": 1,
+          "39": 1,
+          "41": 1,
+          "42": 1,
+          "44": 1,
+          "45": 2,
+          "48": 2,
+          "50": 2,
+          "51": 1,
+          "58": 1,
+          "59": 2,
+          "61": 1,
+          "62": 1,
+          "63": 2,
+          "64": 8
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 640,
+          "2": 640,
+          "3": 640
+        },
+        "submitted_recurrent_rows": 1920,
+        "recurrent_calls": 50,
+        "effective_batch_mean": 38.4,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 9,
+          "p50": 39,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 4288,
+        "observed_peak_residents_after_step": 64
+      },
+      "free_blocks": 4096
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 128,
+      "mode": "capture",
+      "requests": 256,
+      "tokens": 1536,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 35,
+      "fallbacks": 46,
+      "work": {
+        "recurrent_batch_histogram": {
+          "3": 1,
+          "6": 1,
+          "9": 2,
+          "12": 1,
+          "15": 2,
+          "18": 1,
+          "19": 1,
+          "21": 1,
+          "23": 1,
+          "24": 1,
+          "27": 2,
+          "30": 1,
+          "31": 1,
+          "33": 1,
+          "34": 1,
+          "36": 1,
+          "37": 1,
+          "39": 1,
+          "40": 1,
+          "42": 1,
+          "43": 1,
+          "45": 3,
+          "46": 15,
+          "47": 1,
+          "51": 1,
+          "55": 1,
+          "57": 6,
+          "58": 2,
+          "59": 3,
+          "60": 1,
+          "61": 2,
+          "62": 3,
+          "63": 6,
+          "64": 4,
+          "65": 1,
+          "66": 1,
+          "68": 1,
+          "69": 1,
+          "70": 1,
+          "72": 1,
+          "73": 1,
+          "74": 1,
+          "75": 1
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1280,
+          "2": 1280,
+          "3": 1280
+        },
+        "submitted_recurrent_rows": 3840,
+        "recurrent_calls": 81,
+        "effective_batch_mean": 47.407407407407405,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 19,
+          "p50": 46,
+          "p90": 65
+        },
+        "submitted_prefill_tokens": 8576,
+        "observed_peak_residents_after_step": 128
+      },
+      "free_blocks": 8192
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 128,
+      "mode": "self-replay",
+      "requests": 256,
+      "tokens": 1536,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 35,
+      "fallbacks": 46,
+      "work": {
+        "recurrent_batch_histogram": {
+          "3": 1,
+          "6": 1,
+          "9": 2,
+          "12": 1,
+          "15": 2,
+          "18": 1,
+          "19": 1,
+          "21": 1,
+          "23": 1,
+          "24": 1,
+          "27": 2,
+          "30": 1,
+          "31": 1,
+          "33": 1,
+          "34": 1,
+          "36": 1,
+          "37": 1,
+          "39": 1,
+          "40": 1,
+          "42": 1,
+          "43": 1,
+          "45": 3,
+          "46": 15,
+          "47": 1,
+          "51": 1,
+          "55": 1,
+          "57": 6,
+          "58": 2,
+          "59": 3,
+          "60": 1,
+          "61": 2,
+          "62": 3,
+          "63": 6,
+          "64": 4,
+          "65": 1,
+          "66": 1,
+          "68": 1,
+          "69": 1,
+          "70": 1,
+          "72": 1,
+          "73": 1,
+          "74": 1,
+          "75": 1
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1280,
+          "2": 1280,
+          "3": 1280
+        },
+        "submitted_recurrent_rows": 3840,
+        "recurrent_calls": 81,
+        "effective_batch_mean": 47.407407407407405,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 19,
+          "p50": 46,
+          "p90": 65
+        },
+        "submitted_prefill_tokens": 8576,
+        "observed_peak_residents_after_step": 128
+      },
+      "free_blocks": 8192
+    },
+    {
+      "scope": "trace-tiny.json",
+      "batch": 128,
+      "mode": "compact-replay",
+      "requests": 256,
+      "tokens": 1536,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 35,
+      "fallbacks": 46,
+      "work": {
+        "recurrent_batch_histogram": {
+          "3": 1,
+          "6": 1,
+          "9": 2,
+          "12": 1,
+          "15": 2,
+          "18": 1,
+          "19": 1,
+          "21": 1,
+          "23": 1,
+          "24": 1,
+          "27": 2,
+          "30": 1,
+          "31": 1,
+          "33": 1,
+          "34": 1,
+          "36": 1,
+          "37": 1,
+          "39": 1,
+          "40": 1,
+          "42": 1,
+          "43": 1,
+          "45": 3,
+          "46": 15,
+          "47": 1,
+          "51": 1,
+          "55": 1,
+          "57": 6,
+          "58": 2,
+          "59": 3,
+          "60": 1,
+          "61": 2,
+          "62": 3,
+          "63": 6,
+          "64": 4,
+          "65": 1,
+          "66": 1,
+          "68": 1,
+          "69": 1,
+          "70": 1,
+          "72": 1,
+          "73": 1,
+          "74": 1,
+          "75": 1
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1280,
+          "2": 1280,
+          "3": 1280
+        },
+        "submitted_recurrent_rows": 3840,
+        "recurrent_calls": 81,
+        "effective_batch_mean": 47.407407407407405,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 19,
+          "p50": 46,
+          "p90": 65
+        },
+        "submitted_prefill_tokens": 8576,
+        "observed_peak_residents_after_step": 128
+      },
+      "free_blocks": 8192
+    },
+    {
+      "scope": "trace-official.json",
+      "batch": 16,
+      "mode": "capture",
+      "requests": 32,
+      "tokens": 4096,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 1391,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 23,
+          "2": 28,
+          "3": 49,
+          "4": 37,
+          "5": 59,
+          "6": 95,
+          "7": 132,
+          "8": 97,
+          "9": 113,
+          "10": 144,
+          "11": 151,
+          "12": 158,
+          "13": 131,
+          "14": 106,
+          "15": 54,
+          "16": 14
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 4064,
+          "2": 4064,
+          "3": 4064,
+          "4": 982
+        },
+        "submitted_recurrent_rows": 13174,
+        "recurrent_calls": 1391,
+        "effective_batch_mean": 9.470884255930985,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 5,
+          "p50": 10,
+          "p90": 14
+        },
+        "submitted_prefill_tokens": 4096,
+        "observed_peak_residents_after_step": 16
+      },
+      "free_blocks": 1024
+    },
+    {
+      "scope": "trace-official.json",
+      "batch": 16,
+      "mode": "self-replay",
+      "requests": 32,
+      "tokens": 4096,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 1391,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 23,
+          "2": 28,
+          "3": 49,
+          "4": 37,
+          "5": 59,
+          "6": 95,
+          "7": 132,
+          "8": 97,
+          "9": 113,
+          "10": 144,
+          "11": 151,
+          "12": 158,
+          "13": 131,
+          "14": 106,
+          "15": 54,
+          "16": 14
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 4064,
+          "2": 4064,
+          "3": 4064,
+          "4": 982
+        },
+        "submitted_recurrent_rows": 13174,
+        "recurrent_calls": 1391,
+        "effective_batch_mean": 9.470884255930985,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 5,
+          "p50": 10,
+          "p90": 14
+        },
+        "submitted_prefill_tokens": 4096,
+        "observed_peak_residents_after_step": 16
+      },
+      "free_blocks": 1024
+    },
+    {
+      "scope": "trace-official.json",
+      "batch": 16,
+      "mode": "compact-replay",
+      "requests": 32,
+      "tokens": 4096,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 1391,
+      "fallbacks": 0,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 23,
+          "2": 28,
+          "3": 49,
+          "4": 37,
+          "5": 59,
+          "6": 95,
+          "7": 132,
+          "8": 97,
+          "9": 113,
+          "10": 144,
+          "11": 151,
+          "12": 158,
+          "13": 131,
+          "14": 106,
+          "15": 54,
+          "16": 14
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 4064,
+          "2": 4064,
+          "3": 4064,
+          "4": 982
+        },
+        "submitted_recurrent_rows": 13174,
+        "recurrent_calls": 1391,
+        "effective_batch_mean": 9.470884255930985,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 5,
+          "p50": 10,
+          "p90": 14
+        },
+        "submitted_prefill_tokens": 4096,
+        "observed_peak_residents_after_step": 16
+      },
+      "free_blocks": 1024
+    },
+    {
+      "scope": "trace-official.json",
+      "batch": 32,
+      "mode": "capture",
+      "requests": 64,
+      "tokens": 8192,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 383,
+      "fallbacks": 784,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 5,
+          "2": 15,
+          "3": 22,
+          "4": 18,
+          "5": 21,
+          "6": 38,
+          "7": 34,
+          "8": 52,
+          "9": 40,
+          "10": 41,
+          "11": 25,
+          "12": 19,
+          "13": 32,
+          "14": 15,
+          "15": 4,
+          "16": 2,
+          "17": 10,
+          "18": 18,
+          "19": 13,
+          "20": 21,
+          "21": 25,
+          "22": 28,
+          "23": 26,
+          "24": 7,
+          "25": 4,
+          "26": 11,
+          "27": 8,
+          "28": 9,
+          "29": 11,
+          "30": 17,
+          "31": 17,
+          "32": 559
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 8128,
+          "2": 8128,
+          "3": 8128,
+          "4": 1933
+        },
+        "submitted_recurrent_rows": 26317,
+        "recurrent_calls": 1167,
+        "effective_batch_mean": 22.550985432733505,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 30,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 8192,
+        "observed_peak_residents_after_step": 32
+      },
+      "free_blocks": 2048
+    },
+    {
+      "scope": "trace-official.json",
+      "batch": 32,
+      "mode": "self-replay",
+      "requests": 64,
+      "tokens": 8192,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 383,
+      "fallbacks": 784,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 5,
+          "2": 15,
+          "3": 22,
+          "4": 18,
+          "5": 21,
+          "6": 38,
+          "7": 34,
+          "8": 52,
+          "9": 40,
+          "10": 41,
+          "11": 25,
+          "12": 19,
+          "13": 32,
+          "14": 15,
+          "15": 4,
+          "16": 2,
+          "17": 10,
+          "18": 18,
+          "19": 13,
+          "20": 21,
+          "21": 25,
+          "22": 28,
+          "23": 26,
+          "24": 7,
+          "25": 4,
+          "26": 11,
+          "27": 8,
+          "28": 9,
+          "29": 11,
+          "30": 17,
+          "31": 17,
+          "32": 559
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 8128,
+          "2": 8128,
+          "3": 8128,
+          "4": 1933
+        },
+        "submitted_recurrent_rows": 26317,
+        "recurrent_calls": 1167,
+        "effective_batch_mean": 22.550985432733505,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 30,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 8192,
+        "observed_peak_residents_after_step": 32
+      },
+      "free_blocks": 2048
+    },
+    {
+      "scope": "trace-official.json",
+      "batch": 32,
+      "mode": "compact-replay",
+      "requests": 64,
+      "tokens": 8192,
+      "exact_request_objects": true,
+      "captures": 16,
+      "replays": 383,
+      "fallbacks": 784,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 5,
+          "2": 15,
+          "3": 22,
+          "4": 18,
+          "5": 21,
+          "6": 38,
+          "7": 34,
+          "8": 52,
+          "9": 40,
+          "10": 41,
+          "11": 25,
+          "12": 19,
+          "13": 32,
+          "14": 15,
+          "15": 4,
+          "16": 2,
+          "17": 10,
+          "18": 18,
+          "19": 13,
+          "20": 21,
+          "21": 25,
+          "22": 28,
+          "23": 26,
+          "24": 7,
+          "25": 4,
+          "26": 11,
+          "27": 8,
+          "28": 9,
+          "29": 11,
+          "30": 17,
+          "31": 17,
+          "32": 559
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 8128,
+          "2": 8128,
+          "3": 8128,
+          "4": 1933
+        },
+        "submitted_recurrent_rows": 26317,
+        "recurrent_calls": 1167,
+        "effective_batch_mean": 22.550985432733505,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 30,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 8192,
+        "observed_peak_residents_after_step": 32
+      },
+      "free_blocks": 2048
+    }
+  ],
+  "scope": "shared_node_correctness_only_not_performance",
+  "raw_files_sha256": {
+    "DONE.json": "b927cbb9b08c2e53edd74a650cb1611a0f6d60081cc12b657064aabdc2d231b0",
+    "plan.json": "585974d2379d5fc0471733a283eecbee82bdd2d5e1b13fdfa71ae4c851b7c4f7",
+    "routing-tiny.json": "80a5c3b3242eb237a12660fc2f3cccc71819afc132995f620f1fe4c87683528e",
+    "routing-tiny.log": "67c1679b176ac05bc59bd8af6d0b42298f184d862b9078278779a6b4656bcb10",
+    "routing-tiny.receipt.json": "16ba5376517f6bd7a82ababef7c7e2b7f4882e4235d56b52f7bf5f10b094c05f",
+    "trace-official.json/DONE.json": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb",
+    "trace-official.json/b16/capture-requests.json": "7da01e526be102141898280161965a51f1a83cf49e2c5f3963668755ab8f9ac4",
+    "trace-official.json/b16/capture.json": "1cd413cabe4efa632a4f630552c405be366060c10137321e5638620e47742660",
+    "trace-official.json/b16/compact-replay-requests.json": "7da01e526be102141898280161965a51f1a83cf49e2c5f3963668755ab8f9ac4",
+    "trace-official.json/b16/compact-replay.json": "3d758186270e122b5bbab1abe85958d1d3b1ac8f880f4a15765ce1b31588cac1",
+    "trace-official.json/b16/self-replay-requests.json": "7da01e526be102141898280161965a51f1a83cf49e2c5f3963668755ab8f9ac4",
+    "trace-official.json/b16/self-replay.json": "13f7e37c9376afb8e3ebd0ed5005d0114d832edbf0f558a5a3e7a8f38c53772e",
+    "trace-official.json/b16/trace.json": "60aab4dd30957e257373371cfc1fb9e775449eb968efefdaab9b84bf8e1d2a3d",
+    "trace-official.json/b32/capture-requests.json": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+    "trace-official.json/b32/capture.json": "5dee26aad0fa823171e30956b56aab1ae6acb0f7a9c2af86c44754bc6e92be6c",
+    "trace-official.json/b32/compact-replay-requests.json": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+    "trace-official.json/b32/compact-replay.json": "b176f95e1140d5e2123da3053c0a7203c82d21a88b635f7e23cc8344b5b0573a",
+    "trace-official.json/b32/self-replay-requests.json": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+    "trace-official.json/b32/self-replay.json": "3193ebfbe1ba2c43790cbc5a00759de32297203998f1a54ed5aedca9b9f47c24",
+    "trace-official.json/b32/trace.json": "590f09e44b9111826866a4d070fda4b8ef7459532366d31bcb10f9abfba79aba",
+    "trace-official.json/plan.json": "4247509a5f3ac04f02dfe7b12f93f30ab705444c7ce649e1160d41f13fb66bb2",
+    "trace-official.log": "bfb849511f8141417729d344088856cf088c5129159df34ddda407ea4febf33e",
+    "trace-official.receipt.json": "32c2f1ce82325f27ebc00cfd752d0284798d341b97033b6355bff4f1aa4d3ad3",
+    "trace-tiny.json/DONE.json": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb",
+    "trace-tiny.json/b1/capture-requests.json": "73d652effe2e40fd3d07c3e247302e4d7afde6ec224d1c00d67d2afc482aebfa",
+    "trace-tiny.json/b1/capture.json": "595b5fb2822e6eb981e0deab5d95061c4ae9e9463efe97ac3be7df269b15967c",
+    "trace-tiny.json/b1/compact-replay-requests.json": "73d652effe2e40fd3d07c3e247302e4d7afde6ec224d1c00d67d2afc482aebfa",
+    "trace-tiny.json/b1/compact-replay.json": "a07eb95f4d41dd08db74f30b57d65399fbd2b2308f409b9cf08686a8279a68fe",
+    "trace-tiny.json/b1/self-replay-requests.json": "73d652effe2e40fd3d07c3e247302e4d7afde6ec224d1c00d67d2afc482aebfa",
+    "trace-tiny.json/b1/self-replay.json": "6b292c184e50e9abe8665ee33cb4ea9f2b45146b6533186446d163d5ff5c0158",
+    "trace-tiny.json/b1/trace.json": "df3b7e2048a51684e238ed8de6092fa92d11a1dabfb9151806443a63dbf70722",
+    "trace-tiny.json/b128/capture-requests.json": "0411982a0a86dca9612d00a98d092e99fb315dcc73dcbfaea8628ab0538dea51",
+    "trace-tiny.json/b128/capture.json": "4c72934ac21eba537b1afd090519af5edaf4afae177e1dceed115b30e93efc40",
+    "trace-tiny.json/b128/compact-replay-requests.json": "0411982a0a86dca9612d00a98d092e99fb315dcc73dcbfaea8628ab0538dea51",
+    "trace-tiny.json/b128/compact-replay.json": "8a911cbac3791b3786e37e2ce5f3a59f67ce12adee8f58946b646b596c464338",
+    "trace-tiny.json/b128/self-replay-requests.json": "0411982a0a86dca9612d00a98d092e99fb315dcc73dcbfaea8628ab0538dea51",
+    "trace-tiny.json/b128/self-replay.json": "c9803721a453840dd3d0362399cbf0922564e17070a39b939c57e81003929d83",
+    "trace-tiny.json/b128/trace.json": "1e78ee80c23ea87daf91870ac2e556291d34a3e6a5de89ab48b7af347093c5ea",
+    "trace-tiny.json/b16/capture-requests.json": "10331ee5bc8e2540d38a9d76c4e9abe85f7cf6fec47d36759502d1d326fe4a9c",
+    "trace-tiny.json/b16/capture.json": "c7d6d025dc35229d0fd2552d2cd02323076df76180dcaf62cf6d4ff82082a102",
+    "trace-tiny.json/b16/compact-replay-requests.json": "10331ee5bc8e2540d38a9d76c4e9abe85f7cf6fec47d36759502d1d326fe4a9c",
+    "trace-tiny.json/b16/compact-replay.json": "301883ba3e247c92b7ed7ddd1e754613a61b9973f487a07741785b2090fb4087",
+    "trace-tiny.json/b16/self-replay-requests.json": "10331ee5bc8e2540d38a9d76c4e9abe85f7cf6fec47d36759502d1d326fe4a9c",
+    "trace-tiny.json/b16/self-replay.json": "0a16b863dac3819f23a6fa5e42ff1a586708214dc188fe86824ec475e6366651",
+    "trace-tiny.json/b16/trace.json": "0145bc5f0981b6750853057fc874628ba49d310107b7ad6152e4cf37fb1c2b8a",
+    "trace-tiny.json/b32/capture-requests.json": "e0d673b4a222965ed439dc1db0a9569d90b42da7f67153052c8d261224825a78",
+    "trace-tiny.json/b32/capture.json": "156dd4bcf42bed03a0c177934a7a90ddf10b57304796d6efc53d1ae71c5831dc",
+    "trace-tiny.json/b32/compact-replay-requests.json": "e0d673b4a222965ed439dc1db0a9569d90b42da7f67153052c8d261224825a78",
+    "trace-tiny.json/b32/compact-replay.json": "03288510782a9a9ba3051991135f7d08e1fad2203c5ec2993140af7e1a6c32db",
+    "trace-tiny.json/b32/self-replay-requests.json": "e0d673b4a222965ed439dc1db0a9569d90b42da7f67153052c8d261224825a78",
+    "trace-tiny.json/b32/self-replay.json": "098ea29ddda48ca1e23c2f877149c3c2968f5423a30f4e4eac105a5552f91b43",
+    "trace-tiny.json/b32/trace.json": "af64fd6d03dae452ddb49886ee9eb51aba802a6ccb3b0740a159157756947383",
+    "trace-tiny.json/b4/capture-requests.json": "714a62c78487f3a161588384690b37bac3b63216a5cff2f4130794dd67c1e2c6",
+    "trace-tiny.json/b4/capture.json": "8fe11fc81130d52415b8f7059b77bba3508bda0b3b31b59a3d54a0afb3ac7776",
+    "trace-tiny.json/b4/compact-replay-requests.json": "714a62c78487f3a161588384690b37bac3b63216a5cff2f4130794dd67c1e2c6",
+    "trace-tiny.json/b4/compact-replay.json": "757958c26e70c01a83c1cab4c3beff141535ae2dd9ea4bc4fbbcfbd25fe95dbf",
+    "trace-tiny.json/b4/self-replay-requests.json": "714a62c78487f3a161588384690b37bac3b63216a5cff2f4130794dd67c1e2c6",
+    "trace-tiny.json/b4/self-replay.json": "48d076119e13ba17e969196965d9d29a24244f3134b301bed598cf6b6351f099",
+    "trace-tiny.json/b4/trace.json": "2e57358fbdcf38c10f879e1bb440b3d84606d964f3d6330615474e43d846c0db",
+    "trace-tiny.json/b64/capture-requests.json": "ee310ca30764bd2d25fb38113192909e6eb5628ba84c72fc5326bbb6ab92e804",
+    "trace-tiny.json/b64/capture.json": "12f43b23e4c5ceac675b53843d87286b814a53c26bd9f23bc64129d49366bce7",
+    "trace-tiny.json/b64/compact-replay-requests.json": "ee310ca30764bd2d25fb38113192909e6eb5628ba84c72fc5326bbb6ab92e804",
+    "trace-tiny.json/b64/compact-replay.json": "08792ec6cc2972ab2d8237d950903320f565bef0ddde2b0113bb5535d112d4f5",
+    "trace-tiny.json/b64/self-replay-requests.json": "ee310ca30764bd2d25fb38113192909e6eb5628ba84c72fc5326bbb6ab92e804",
+    "trace-tiny.json/b64/self-replay.json": "361231669a0b18c88f1a09053a012135ab04955c5a8bedfd42e8e2dfc917d610",
+    "trace-tiny.json/b64/trace.json": "b1786009e5b3946a25ae011ac13f2f2513157f3f2e53aa011ca3f2be28bbe1b9",
+    "trace-tiny.json/plan.json": "bc8e4b672db54452b31c64789b363d18c9ae1ce4ed0df1297a9c0240470972ac",
+    "trace-tiny.log": "1b56903990bc6ed8a8634ecfa3944c7e70c7712b7b1fba7f329efbb47417f9b8",
+    "trace-tiny.receipt.json": "ffb4ccfcd88c2d331a0e851c3b32d197ea32a07115b788ba8a26df7d6351b89a"
+  }
+}
