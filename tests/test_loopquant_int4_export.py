@@ -8,7 +8,7 @@ from loopquant.quantizers import int4_pack, int4_unpack
 from tests.loopquant_int4_checks import int4_reference_model
 
 
-@pytest.mark.parametrize("family", ["ouro", "nanbeige", "hrm_text", "loopformer"])
+@pytest.mark.parametrize("family", ["ouro", "nanbeige", "hrm_text", "loopformer", "parcae"])
 def test_portable_int4_artifact_preserves_protected_weights_and_core_codes(tmp_path, family):
     torch.manual_seed(43)
     model = int4_reference_model(family).bfloat16()
@@ -17,7 +17,9 @@ def test_portable_int4_artifact_preserves_protected_weights_and_core_codes(tmp_p
     manifest = json.loads((folder / "manifest.json").read_text())
     tensors = torch.load(folder / "tensors.pt", weights_only=True)
     assert manifest["packed_weight_matrices"] == len(core_projections(model))
-    expected_count = {"ouro": 14, "nanbeige": 14, "hrm_text": 16, "loopformer": 8}[family]
+    expected_count = {"ouro": 14, "nanbeige": 14, "hrm_text": 16, "loopformer": 8, "parcae": 12}[
+        family
+    ]
     assert len(tensors["codes"]) == expected_count
     if family == "loopformer":
         assert all("adaLN_modulation" not in name for name in tensors["codes"])
@@ -26,6 +28,14 @@ def test_portable_int4_artifact_preserves_protected_weights_and_core_codes(tmp_p
     if family == "hrm_text":
         assert sum(name.startswith("model.L_module.") for name in tensors["codes"]) == 8
         assert "model.z_L_init" in tensors["protected"]
+    if family == "parcae":
+        assert manifest["protected_aliases"] == {"lm_head.weight": "transformer.wte.weight"}
+        assert "lm_head.weight" not in tensors["protected"]
+        assert tensors["protected"]["freqs_cis"].dtype == torch.float32
+        assert "transformer.adapter.B" in tensors["protected"]
+        assert "transformer.C.weight" in tensors["protected"]
+        assert "value_embeds.1.weight" in tensors["protected"]
+        assert all("ve_gate" not in name for name in tensors["codes"])
     assert manifest["group_scale_dtype"] == "bfloat16"
     assert manifest["native_quality"] == "not_run"
     for name, codes in tensors["codes"].items():
@@ -48,10 +58,12 @@ def test_portable_int4_artifact_preserves_protected_weights_and_core_codes(tmp_p
     assert all(
         torch.equal(supplied["codes"][name], codes) for name, codes in tensors["codes"].items()
     )
+    (folder / "tensors.pt").unlink()
+    (tmp_path / "supplied/tensors.pt").unlink()
 
 
 @pytest.mark.gpu
-@pytest.mark.parametrize("family", ["ouro", "nanbeige", "hrm_text", "loopformer"])
+@pytest.mark.parametrize("family", ["ouro", "nanbeige", "hrm_text", "loopformer", "parcae"])
 @pytest.mark.parametrize("graphs", [False, True])
 @pytest.mark.parametrize("compact", [False, True])
 def test_int4_artifact_reloads_and_runs_mixed_depth_native_engine(

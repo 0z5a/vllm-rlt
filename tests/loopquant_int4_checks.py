@@ -15,6 +15,23 @@ def int4_reference_model(family: str) -> Int4Model:
     from vllm_rlt.models.loopformer import LoopFormerConfig, LoopFormerForCausalLM
     from vllm_rlt.models.nanbeige import NanbeigeForCausalLM
     from vllm_rlt.models.ouro import OuroForCausalLM
+    from vllm_rlt.models.parcae import ParcaeConfig, ParcaeForCausalLM
+
+    if family == "parcae":
+        return ParcaeForCausalLM(
+            ParcaeConfig(
+                n_embd=64,
+                intermediate_size=128,
+                num_attention_heads=2,
+                num_key_value_heads=2,
+                n_layers_in_prelude=1,
+                n_layers_in_recurrent_block=2,
+                n_layers_in_coda=1,
+                mean_recurrence=3,
+                block_size=64,
+                vocab_size=512,
+            )
+        )
 
     if family == "ouro":
         return OuroForCausalLM(tiny_ouro_config(hidden_size=64, head_dim=32, intermediate_size=128))
@@ -97,9 +114,13 @@ def check_int4_native_model(
     first, second = native.state_dict(), restored.state_dict()
     assert first.keys() == second.keys()
     assert all(torch.equal(first[name], second[name]) for name in first)
+    if family == "parcae":
+        assert native.lm_head.weight is native.transformer.wte.weight
+        assert native.freqs_cis.dtype == torch.float32
     del restored, first, second
     tensors = torch.load(export_folder / "tensors.pt", map_location="cuda", weights_only=True)
     protected_names = set(tensors["protected"])
+    protected_names.discard("freqs_cis")
     for name, codes in tensors["codes"].items():
         layer = reference.get_submodule(name)
         layer.weight.data.copy_(
@@ -123,8 +144,8 @@ def check_int4_native_model(
         native,
         execution_config=ExecutionConfig(
             cuda_graphs=graphs,
-            async_scheduling=True,
-            multi_stream=True,
+            async_scheduling=family != "parcae",
+            multi_stream=family != "parcae",
             static_buffers=True,
             pad_to_power_of_two=True,
         ),
@@ -132,15 +153,18 @@ def check_int4_native_model(
     )
     depths = (
         [config.total_ut_steps] * 3
-        if family in ("loopformer", "hrm_text")
+        if family in ("loopformer", "hrm_text", "parcae")
         else [1, config.total_ut_steps, 2]
     )
     params = [
         SamplingParams(max_tokens=4, min_loops=n, max_loops=n, ignore_eos=True) for n in depths
     ]
+    prompts = [[257, 7], [3, 511, 2], [300]] if family == "parcae" else [[5, 7], [3, 9, 2], [8]]
     for _ in range(2):
-        before = expected.generate([[5, 7], [3, 9, 2], [8]], params)
-        after = actual.generate([[5, 7], [3, 9, 2], [8]], params)
+        torch.manual_seed(31)
+        before = expected.generate(prompts, params)
+        torch.manual_seed(31)
+        after = actual.generate(prompts, params)
         assert [(row.token_ids, row.exit_depths) for row in before] == [
             (row.token_ids, row.exit_depths) for row in after
         ]
