@@ -66,3 +66,5 @@ their elapsed seconds are not used as performance evidence.
 [corrected parity](evidence/quality-v1/compact-after-parity.json) preserve both
 outcomes. Multiple prompt lengths, more benchmarks, delayed policy and the other
 registered checkpoints remain outstanding.
+
+The [completed delayed-policy cohort](delayed-quality.md) adds resident/Graph results: the four non-Graph paths are request-exact at63/100; native Graph scores63/100 and alias Graph62/100, with15 token-sequence differences. This result does not establish quality equivalence.

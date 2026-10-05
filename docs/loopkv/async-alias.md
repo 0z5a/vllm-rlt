@@ -1,9 +1,10 @@
 # Resident routing for rectangular aliases
 
 Status: CPU and finite tiny-model CUDA scheduling/lifetime tests pass; official-weight qualification is pending.
-This branch enables rectangular aliases with the existing resident asynchronous
+The parent change enables rectangular aliases with the existing resident asynchronous
 runner for delayed or frozen-trace policies. Compact async, static workspaces,
-Graph, transfer, prefix reuse and preemption remain unsupported. Huginn retains
+transfer, prefix reuse and preemption remain unsupported. The Graph extension is
+documented in [alias-graphs.md](alias-graphs.md). Huginn retains
 its existing synchronous-only restriction.
 
 Routing banks now own per-row tables for every loop depth and snapshot query
@@ -47,3 +48,5 @@ They add no device reads. The reported residency is sampled after each engine
 step. Batch percentiles weight core calls and use the nearest-rank definition.
 Submitted rows include work discarded before output delivery; exit-depth sums
 describe emitted outputs and are reported separately.
+
+Official Ouro1.4B delayed-policy B1–128/C2B diagnostic: all native/alias async request objects match synchronous native across 490 requests per path. Graph paths retain exit-depth differences. [Full scope, counters and provenance](delayed-official.md). No timing or quality claim.

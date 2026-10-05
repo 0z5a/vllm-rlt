@@ -1,0 +1,32 @@
+# Fixed logical schedule diagnostics
+
+The capture hook records natural async admission, exact batch row order and
+request/position/depth, prefill spans, recurrent bucket size and coda-delivery
+order. Replay forces those decisions through the same engine and runner. Only
+the engine exit decision uses the captured trace; the runner and Graph retain
+the real gate computation. Cache allocations remain local to each implementation.
+This scope currently excludes preemption and prefix reuse.
+
+Native self-replay must reproduce complete token/exit objects before an alias
+comparison is accepted. All replay work counters must equal the captured run,
+including batch histograms, per-depth loop rows, prefill tokens and peak residents.
+The driver retains raw request objects, logical events and actual Graph counters.
+It does not report diagnostic elapsed times as performance or serving latency.
+
+The serialized numerical oracle is separate: it collects each stage before
+policy update and compares hidden states and gate/sample results between native
+and alias Graphs. It stops comparison if their logical schedules diverge. This
+changes overlap and is not a Native-A performance baseline.
+
+| Validation | Result |
+|---|---|
+| Serialized oracle CPU policy and deliberate gate-divergence control | 4 passed |
+| Logical replay CPU native/alias, reversed readback readiness, natural/full4/forced1 depth | 12 passed |
+| CUDA logical replay B1–128/C2B | All18 arms exact;189 captures/549 replays/252 fallbacks |
+| Official Ouro1.4B B16/B32 C2B P128/D128 logical replay | All6 arms exact; same admissions/batches/depth work/Graph counts |
+| Official serialized Graph numerical oracle | 5,493 matched stages; hidden/gate/sample all bitwise equal |
+| Fixed-work E2E speedup | Not measured |
+
+Both official diagnostics use the delayed threshold0.5/min2/max4 policy. They qualify the parent alias reader before the resident-prefix change. The full-schedule replay preserves async stage submissions while fixing host scheduling and coda delivery; the serialized oracle changes overlap and is diagnostic only.
+
+All five CUDA/quality child processes and the controller naturally exited0. The first controller attempt failed before model construction because its relative output path was resolved under a child checkout; that failure remains archived. Absolute paths fixed only the invocation. [Frozen sources, per-arm counters and raw hashes](evidence/resident-schedule-cuda-v2.json).
