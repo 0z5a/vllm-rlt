@@ -93,3 +93,25 @@ The final continuation-quality snapshot `a513200` passes [658 CPU tests and36 su
 | LoopFormer | — | 4 | Pass | Not measured |
 
 The controller and child exited naturally0; all67 archived file sizes/hashes passed independent offbox verification. All64 temporary tensor payloads were removed after their cases passed; manifests and results remain. [Summary](native-families-v1/summary.json), [completion/cleanup](native-families-v1/complete.json). The later continuation scoring/differentiable adapter changes remain covered by658 CPU tests; this frozen GPU run does not add full-model quality evidence.
+
+## LoopFormer FP8 deployment preparation
+
+The FP8 path converts only the four shared core projections per block and
+preserves BF16 time/delta embeddings, AdaLN conditioning, RMSNorm, residual gates,
+GELU, learned positions and the per-row clock. Four explicit producers support
+DYN/SH1/ST2/per-loop scales through the prepared row loop IDs. This path does
+not fuse RMSNorm with AdaLN; no normalization-fusion benefit is claimed.
+Encoded export/reload keeps one packed matrix per projection and the original
+embedding-based tied readout.
+
+Frozen source `9cdc7977f5f848d88cb4ca12def6af72342b8418` passes
+[658 CPU tests and36 subtests](loopformer-fp8-v1/full-cpu-loopformer-fp8-attempt1.log),
+with29 skipped and233 GPU tests deselected. This establishes CPU regression and
+collection only. [Sixteen GPU cases](loopformer-fp8-v1/gpu-packet-manifest.json)
+are prepared but **not uploaded or run**: four policies × Graph off/on ×
+native/compact KV, with asynchronous scheduling, fixed R8 generated sequences,
+request-ID reuse, stable packed pointers, encoded reload and KV drain. Six
+native likelihood targets are also compared against the decoded FP8 reference
+at unchanged0.02 absolute/relative budgets. [Probe](loopformer-fp8-v1/probe.py),
+[finite controller](loopformer-fp8-v1/run.py). Full-model quality and E2E remain
+pending; the existing INT4 GPU result does not qualify this FP8 implementation.
