@@ -6,6 +6,7 @@ import torch
 
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.models.huginn import HuginnForCausalLM
+from vllm_rlt.models.parcae import ParcaeForCausalLM
 from vllm_rlt.worker.buffers import execution_buffer_bytes
 
 
@@ -68,7 +69,7 @@ def plan_cache(model, cache, scheduler, execution, backend):
         dtype=parameter.dtype,
         backend=backend,
         recurrent_layers=model.recurrent_kv_layers
-        if isinstance(model, HuginnForCausalLM)
+        if isinstance(model, (HuginnForCausalLM, ParcaeForCausalLM))
         else None,
     )
     ids, positions = [], []
@@ -78,7 +79,7 @@ def plan_cache(model, cache, scheduler, execution, backend):
         ids.extend([rid] * length)
         positions.extend(range(length))
     tokens = torch.zeros(count, dtype=torch.long, device=device)
-    if isinstance(model, HuginnForCausalLM):
+    if isinstance(model, (HuginnForCausalLM, ParcaeForCausalLM)):
         boundary = probe._prepare_batch(ids, [0] * count, positions)
         hidden = model.prelude_prepared(tokens, boundary, probe)
     else:
@@ -87,7 +88,7 @@ def plan_cache(model, cache, scheduler, execution, backend):
         hidden, _ = model.recurrent(hidden, ids, [depth] * count, positions, probe)
     logits = (
         model.coda_prepared(hidden, boundary, probe)
-        if isinstance(model, HuginnForCausalLM)
+        if isinstance(model, (HuginnForCausalLM, ParcaeForCausalLM))
         else model.coda(hidden)
     )
     torch.cuda.synchronize(device)
