@@ -13,7 +13,7 @@ have not run; the earlier two 128-token gradient audits remain a separate result
 | Ouro-1.4B | — | — | — | — | — | G0 incomplete |
 | Ouro-2.6B | — | — | — | — | — | Official CPU exact; GPU/E2E pending |
 | Huginn-3.5B | — | — | — | — | — | Full official CPU96/96 exact; cached GPU pending |
-| Nanbeige4.2-3B | — | — | — | — | — | Full checkpoint verified; official CPU comparison running |
+| Nanbeige4.2-3B | — | — | — | — | — | Official CPU64/64 exact; full native GPU pending |
 
 ## Native FP8 correctness
 
@@ -503,3 +503,9 @@ The five full Ouro1.4B [native dev quality arms](DEV_QUALITY.md) completed
 ## Complete official Huginn CPU comparison
 
 [All96 comparisons](official-huginn-cpu-attempt1.json) passed against the unmodified pinned official full checkpoint: 32 fixed inputs × R8/16/32, CPU BF16 SDPA. Every one of1,792 recurrent states and96 logit tensors is bitwise exact, with an explicit identical seeded initial state. [Verified summary](official-huginn-cpu-summary.json) records source202987db, runner/model hashes and input coverage. Cached GPU semantics, quantized quality and serving performance remain pending; this is not a full G0–G3 pass. The adapter and its reproducible runner are reviewed in the separately based [Huginn draft](https://github.com/0z5a/vllm-rlt/pull/10).
+
+## Complete official Nanbeige CPU comparison
+
+[All 64 comparisons](official-nanbeige-cpu-attempt1.json) pass against the pinned complete BF16 eager checkpoint: 32 fixed inputs × R1/R2. All 96 recurrent states and 64 logit tensors are bitwise exact. The [verified summary](official-nanbeige-cpu-summary.json) fixes the source, runner, model revision and 1,756 input tokens; the reproducible runner uses the official fast tokenizer JSON. Controller and child exited naturally with code 0. This establishes original-class CPU adapter parity; full native GPU semantics, quantized quality and formal serving measurements remain pending.
+
+After all local readers exited and the shared future-read hold was released, both local duplicate weight shards were rehashed against the verified node copy and removed: **8,339,624,720 bytes**. [Cleanup receipt](official-nanbeige-cpu-cleanup.json) retains the exact two filenames and hashes. Configs, tokenizer, author code, raw results and node weights remain available.
