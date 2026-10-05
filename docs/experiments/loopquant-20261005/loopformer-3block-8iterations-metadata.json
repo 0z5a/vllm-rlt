@@ -1,0 +1,70 @@
+{
+  "model": "armenjeddi/LoopFormer-3block-8iterations",
+  "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "files": [
+    {
+      "name": ".gitattributes",
+      "size": 1519,
+      "blob_id": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+      "lfs": null
+    },
+    {
+      "name": "config.json",
+      "size": 296,
+      "blob_id": "75d5c715c069826fc5c93a3e59796770e5151f49",
+      "lfs": null
+    },
+    {
+      "name": "generation_config.json",
+      "size": 69,
+      "blob_id": "33b71a9c3ddf78cfa1c6721826775ae02d06d64d",
+      "lfs": null
+    },
+    {
+      "name": "merges.txt",
+      "size": 456318,
+      "blob_id": "226b0752cac7789c48f0cb3ec53eda48b7be36cc",
+      "lfs": null
+    },
+    {
+      "name": "model.safetensors",
+      "size": 556342528,
+      "blob_id": "cbc64fe208d932f8ba9c21e6b6ac4ae300e27768",
+      "lfs": {
+        "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185",
+        "size": 556342528,
+        "pointerSize": 134
+      }
+    },
+    {
+      "name": "modeling_loopformer.py",
+      "size": 12026,
+      "blob_id": "71bed4429d16858f6621740bd607aaa299ea1599",
+      "lfs": null
+    },
+    {
+      "name": "special_tokens_map.json",
+      "size": 131,
+      "blob_id": "7433646544cc332d7eb43c85199b5ce98e2cc0ed",
+      "lfs": null
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 3557680,
+      "blob_id": "d469fce8cf3cdfde529baad7b2528afa4205aabf",
+      "lfs": null
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 507,
+      "blob_id": "612b81f81d6fe1a73d5438c26def0c1ef074d73a",
+      "lfs": null
+    },
+    {
+      "name": "vocab.json",
+      "size": 798156,
+      "blob_id": "84ef7fb594b5c0979e48bdeddb60a0adef33df0b",
+      "lfs": null
+    }
+  ]
+}

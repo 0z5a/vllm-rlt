@@ -2,6 +2,8 @@
 
 This is an in-progress numerical qualification. No model has completed G0–G3.
 There are no measured E2E speedups yet; missing values are not zero speedup.
+The [coverage queue](MODEL_COVERAGE.md) lists immutable model versions and the
+remaining original-model, adapter, and serving work for each family.
 
 The [Q0 schedule and pool](Q0_SCHEDULE.md) are registered. Its 8192-token updates
 have not run; the earlier two 128-token gradient audits remain a separate result.
@@ -64,8 +66,8 @@ fixed-tolerance failures (maximum logit error 0.00420481).
 
 ## CPU checks
 
-[Latest full regression](full-cpu-q0-deployment-attempt1.log): **487 passed, 29 skipped, 164 GPU
-cases deselected**; [JUnit](full-cpu-q0-deployment-attempt1.xml). Earlier full collection stalled
+[Latest full regression](full-cpu-gptq-trace-attempt1.log): **490 passed, 29 skipped, 164 GPU
+cases deselected**; [JUnit](full-cpu-gptq-trace-attempt1.xml). Earlier full collection stalled
 inside an existing macOS dependency load; both processes subsequently completed
 naturally. The final run includes serving, GSM8K collection, and the latest
 quantization changes. Skipped optional/dependency/GPU paths are not claimed as
@@ -358,3 +360,19 @@ The [LoopQ reproduction audit](EXTERNAL_BASELINE.md) records `not_reproduced`: n
 ## Fused-producer scale training
 
 An explicit pre-optimizer binding can share activation log-scales across Q/K/V or gate/up consumers. This keeps the learned scale policy representable by a single fused input producer; it does not silently tie already-divergent scales. The [47 targeted CPU checks](shared-scale-training-cpu-attempt1.log) pass, including equality of the shared gradient to the sum of independent consumer gradients through all four loops, unchanged frozen-weight gradients and rejection of mismatched initial scales. The original168-group full-model gradient audit remains an independent, unbound diagnostic; this new spatial policy has not yet run full-model QAT.
+
+## Native GPTQ row-budget collection
+
+The native hook collector now accumulates first-loop, all-loop, and matched-row
+Hessians. The matched policy selects one loop per request/token position using
+a fixed seeded hash, so complete fixed-depth execution has exactly the same
+row budget as first-loop calibration. QKV and gate/up reuse their common input
+Gram matrices; each physical weight remains independently packed once.
+
+The full CPU regression includes reordered mixed-depth rows, poisoned padding,
+per-loop counts/energy, incomplete-budget rejection, and unchanged native
+generation/KV drain. An initial test used an incorrect cache allocation method;
+its [failure](gptq-native-row-budget-cpu-attempt1.log) and the corrected
+[targeted checks](gptq-native-row-budget-cpu-attempt2.log) are retained.
+Full-checkpoint Hessian collection, GPTQ packing and native W4A16 quality remain
+unrun. No speedup is inferred from these tests.

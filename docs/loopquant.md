@@ -38,7 +38,7 @@ training adapter does not use the inference cache's no-gradient writes.
 
 ## Validation recorded on 2026-10-05
 
-The latest completed full CPU regression passed 487 tests, skipped 29, and
+The latest completed full CPU regression passed 490 tests, skipped 29, and
 deselected 164 GPU cases, including the Q0 deployment and data checks. Earlier dependency-loading stalls resolved naturally without
 terminating either process. Ruff lint and formatting checks pass; the
 `pre-commit` wrapper itself is absent and was not installed.
