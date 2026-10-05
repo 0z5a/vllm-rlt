@@ -58,3 +58,27 @@ The [frozen CPU regression](full-cpu-huginn-quality-attempt1.log) passed
 [manifest](huginn-quality-cpu-manifest.json) identifies source, snapshot, and raw
 evidence. GPU random-state restoration, full-weight native likelihood, and
 quantized Huginn performance have not yet been evaluated.
+
+
+## Native INT4 preparation
+
+The new Huginn artifact contains one packed matrix for each of the four physical
+projections in each recurrent block. Prelude/coda, injection, all norms and Q/K
+bias remain BF16. The persistent RoPE buffer remains FP32; the embedding is
+serialized once and the head alias is restored on load. The reused Torch
+native INT4 backend is the implementation already qualified on Ouro/Nanbeige.
+Its Huginn integration has not yet run on GPU.
+
+[Five new portable-export CPU checks](huginn-int4-v1/huginn-int4-cpu-attempt1.log)
+cover RTN, three supplied-matrix GPTQ artifact labels, protected tensors, and
+rejection of rounded RoPE. The supplied-matrix checks validate serialization;
+they do not run GPTQ calibration. Successful temporary test payloads are removed.
+The [full frozen suite](huginn-int4-v1/full-cpu-huginn-int4-attempt1.log) completed
+489 passed,29 skipped,118 GPU cases deselected. Source and archive hashes are in
+the [CPU manifest](huginn-int4-v1/cpu-source-manifest.json).
+
+The [future GPU packet](huginn-int4-v1/manifest.json) has two tiny Graph-off/on
+cases: exact encoded reload, tied-head storage, FP32 RoPE, seeded native
+likelihood with restored RNG, repeated engine requests and zero KV after drain.
+It is local only, not admitted or uploaded. Full-weight Huginn quantization,
+locked quality and all performance speedups remain unmeasured.
