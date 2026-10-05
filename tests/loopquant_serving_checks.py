@@ -9,7 +9,7 @@ from loopquant.fused_fp8 import RowwiseFP8Linear
 from loopquant.quantizers import ScaleLayout, fp8_encode
 from loopquant.serving import quantize_ouro_native
 from tests.helpers import tiny_ouro_config
-from vllm_rlt import LLM, CacheConfig, ExecutionConfig, SamplingParams, SchedulerConfig
+from vllm_rlt import LLM, CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.models.ouro import OuroForCausalLM
 
 
@@ -80,6 +80,7 @@ def check_fused_native_model(policy: str, graphs: bool, fuse_norm: bool) -> dict
         cache_config=CacheConfig(64, 16),
         scheduler_config=SchedulerConfig(max_num_seqs=3, max_num_batched_tokens=8),
         attention_backend="triton",
+        exit_config=ExitConfig(mode="ouro_delayed"),
     )
     expected = LLM(reference, **common)
     actual = LLM(
