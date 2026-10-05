@@ -29,8 +29,10 @@ different random draw assignments and must be reported separately.
 The source contract is pinned to
 [sandyresearch/parcae](https://github.com/sandyresearch/parcae/tree/69284c13746e849104f738d6d1a347b1f457df76).
 The checkpoint is `SandyResearch/parcae-370m@439284464ee4999bd1f762da7d044613a4828efe`.
-The constructor audit is not a checkpoint-header audit: official weights have not
-yet been downloaded, fully verified or executed. The native loader uses
+The complete 1,553,099,635-byte official checkpoint is now locally verified as
+`603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2`
+and executed in the CPU diagnostic below. This does not establish CUDA E2E
+qualification. The native loader uses
 `torch.load(weights_only=True)`, strict tensor matching and tied-head verification.
 It recognizes the author's `_class_name` configuration without requiring an
 invented `model_type` in the published file.
@@ -62,7 +64,7 @@ comparison program writes all six cases and returns 1 for these failures.
 Matching greedy tokens on these tiny inputs does not establish numerical or
 quality equivalence. A separate diagnostic replaces only the author's attention
 call with the native CPU paged arithmetic. All six native logit comparisons then
-become bitwise exact, including BF16 P3/P7; 60 substituted attention calls are
+have zero maximum logit error, including BF16 P3/P7; 60 substituted attention calls are
 recorded. This isolates the observed native discrepancy to the attention path
 for these fixtures. It does not qualify the unchanged author backend or CUDA.
 The independent dense path still exceeds the unchanged budget at FP32 P7 and
@@ -80,5 +82,52 @@ arithmetic isolation. Neither command changes the pinned author checkout.
 
 Only synchronous full-depth LAST_EXITED with torch/Triton is admitted. Async,
 prefix reuse, preemption, speculation and prefill UVA are not qualified. Tiny
-CUDA, official checkpoints, broader context/concurrency, task quality and formal
-performance remain pending.
+CUDA, official-checkpoint GPU E2E, broader context/concurrency, task quality and
+formal performance remain pending.
+
+
+## Released checkpoint CPU diagnostic
+
+The optional `--model` and `--prompts` arguments load the complete pinned
+checkpoint and fixed tokenizer-produced IDs. The author model is constructed on
+meta and strictly assigned the same tensors, preserving tied weights and FP32
+RoPE. Both paths reset the same RNG and verify the initial recurrent state
+exactly. Existing tiny measurements, including the 60-call attention diagnostic,
+reproduce unchanged after this harness extension.
+
+| Dtype | P | Native vs author max logit error | Dense vs author max logit error | Native / dense budget | Native greedy IDs | Speedup |
+|---|---:|---:|---:|---|---|---|
+| float32 | 1 | 0 | 0 | True / True | Exact | Not measured |
+| float32 | 7 | 3.242493e-05 | 4.196167e-05 | False / False | Exact | Not measured |
+| float32 | 33 | 5.054474e-05 | 5.626678e-05 | False / False | Exact | Not measured |
+| bfloat16 | 1 | 0 | 0 | True / True | Exact | Not measured |
+| bfloat16 | 7 | 0.4375 | 2 | False / False | Different | Not measured |
+| bfloat16 | 33 | 0.75 | 3.5 | False / False | Different | Not measured |
+
+FP32 keeps `atol=3e-6, rtol=3e-5`; BF16 keeps `atol=.03, rtol=.02`.
+P1 passes both paths. **P7/P33 fail the original budgets in both dtypes.**
+BF16 first differs at position 3: author token 1761 versus native token 403.
+At P7 both top-two margins are 0.0625; at P33 they are 0.0625 and 0 respectively.
+These are teacher-forced argmax comparisons, not free-running task accuracy.
+
+The separate attention diagnostic substitutes only the author's attention call
+with the native CPU paged arithmetic. Across 240 observed substitutions, all six
+native comparisons then have zero maximum logit error and matching argmax IDs.
+This isolates the observed native discrepancy to the attention path on these
+fixtures; it does not qualify the unchanged author backend. The independent dense
+oracle still fails at P7/P33, so that diagnostic also retains return code 1.
+No budget was widened.
+
+```bash
+python -m experiments.loopkv.parcae_author_gate \
+  --author-repo /path/to/pinned-parcae \
+  --official-config /path/to/pinned/config.json \
+  --model /path/to/verified-parcae-370m \
+  --prompts /path/to/parcae-prompts-p128-v1.json \
+  --out official-author.json
+# Repeat with --shared-attention-diagnostic and a separate output path.
+```
+
+Both commands naturally return one after recording all six cases.
+[Official-weight raw reports, first argmax margins and source hash](evidence/parcae-official-cpu.json).
+Author-equivalence, official CUDA E2E, broader quality and speed remain open.

@@ -25,6 +25,8 @@ def main():
     parser.add_argument("--official-config", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--shared-attention-diagnostic", action="store_true")
+    parser.add_argument("--model", type=Path)
+    parser.add_argument("--prompts", type=Path)
     args = parser.parse_args()
     revision = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=args.author_repo, text=True
@@ -64,6 +66,21 @@ def main():
         vocab_size=1024,
     )
     native = ParcaeForCausalLM(config).eval()
+    checkpoint = None
+    if args.model:
+        checkpoint = json.loads((args.model / "verified-manifest.json").read_text())
+        assert checkpoint["revision"] == "439284464ee4999bd1f762da7d044613a4828efe"
+        with (args.model / "pytorch_model.bin").open("rb") as stream:
+            assert hashlib.file_digest(stream, "sha256").hexdigest() == (
+                "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2"
+            )
+        assert (args.model / "config.json").read_bytes() == args.official_config.read_bytes()
+        assert args.prompts is not None
+        assert hashlib.sha256(args.prompts.read_bytes()).hexdigest() == (
+            "93f264a32e0ab553298b001b78dcafd2424e90c89279f4dfcb97187b6ef1d6fe"
+        )
+        native = ParcaeForCausalLM.from_pretrained(args.model, dtype=torch.float32)
+        config = native.config
     values = json.loads(args.official_config.read_text())
     values.pop("_class_name")
     values.pop("rope_settings")  # The pinned author's default is the same 50,000 base.
@@ -75,8 +92,9 @@ def main():
         recurrent_embedding_dimension=config.n_embd,
         recurrent_intermediation_embedding_dimension=config.intermediate_size,
     )
-    original = ModelingParcae(AuthorConfig(**values)).eval()
-    original.load_state_dict(native.state_dict(), strict=True)
+    with torch.device("meta"):
+        original = ModelingParcae(AuthorConfig(**values)).eval()
+    original.load_state_dict(native.state_dict(), strict=True, assign=True)
     assert original.emb_scale == original.config.init.logit_scale == 1
     rows = []
     for dtype, atol, rtol in [(torch.float32, 3e-6, 3e-5), (torch.bfloat16, 0.03, 0.02)]:
@@ -84,8 +102,12 @@ def main():
         original.to(dtype)
         # Both paths use BF16 weights with the originally computed FP32 RoPE table.
         original.freqs_cis = native.freqs_cis.clone()
-        for count in (1, 3, 7):
-            tokens = (torch.arange(count) * 263 + 257) % config.vocab_size
+        for count in (1, 7, 33) if args.model else (1, 3, 7):
+            tokens = (
+                torch.tensor(json.loads(args.prompts.read_text())[0][:count])
+                if args.model
+                else (torch.arange(count) * 263 + 257) % config.vocab_size
+            )
             torch.manual_seed(109)
             with (
                 patch.object(flash_attn, "flash_attn_func", shared_attention)
@@ -98,11 +120,11 @@ def main():
             _, dense, _ = dense_parcae_reference(native, tokens, initial)
             cache = KVCacheManager(
                 config.num_hidden_layers,
-                4,
-                8,
-                128,
+                config.num_key_value_heads,
+                config.head_dim,
+                max(128, config.mean_recurrence * ((count + 1) // 2)),
                 2,
-                max_loops=3,
+                max_loops=config.mean_recurrence,
                 dtype=dtype,
                 recurrent_layers=native.recurrent_kv_layers,
             )
@@ -118,6 +140,8 @@ def main():
             native_errors = (logits - expected).abs()
             dense_errors = (dense - expected).abs()
             allowed = atol + rtol * expected.abs()
+            different = (logits.argmax(-1) != expected.argmax(-1)).nonzero().flatten()
+            first = int(different[0]) if len(different) else None
             rows.append(
                 {
                     "dtype": str(dtype),
@@ -129,6 +153,21 @@ def main():
                     "native_close": bool(torch.all(native_errors <= allowed)),
                     "dense_close": bool(torch.all(dense_errors <= allowed)),
                     "greedy_exact": torch.equal(logits.argmax(-1), expected.argmax(-1)),
+                    "first_greedy_difference": (
+                        {
+                            "position": first,
+                            "author_token": int(expected[first].argmax()),
+                            "native_token": int(logits[first].argmax()),
+                            "author_top2_margin": float(
+                                expected[first].float().topk(2).values.diff().abs().item()
+                            ),
+                            "native_top2_margin": float(
+                                logits[first].float().topk(2).values.diff().abs().item()
+                            ),
+                        }
+                        if first is not None
+                        else None
+                    ),
                 }
             )
             cache.free("a")
@@ -139,8 +178,13 @@ def main():
                 "diagnostic author attention substituted with native CPU paged arithmetic; "
                 "not unchanged author qualification"
                 if args.shared_attention_diagnostic
-                else "tiny author forward, copied weights and FP32 RoPE; not official checkpoint"
+                else (
+                    "official CPU teacher-forced comparison; no CUDA, task quality or speed"
+                    if args.model
+                    else "tiny copied weights with FP32 RoPE; not official checkpoint"
+                )
             ),
+            "checkpoint": checkpoint,
             "substituted_attention_calls": attention_calls,
             "source_revision": revision,
             "generation_source_sha256": hashlib.sha256(

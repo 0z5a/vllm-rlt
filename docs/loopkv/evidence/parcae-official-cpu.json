@@ -1,0 +1,212 @@
+{
+  "scope": "official CPU teacher-forced numerical diagnostic; unchanged author gate fails at P7/P33; no CUDA, quality or speed claim",
+  "gate_sha256": "fef57a58aefa8910da8b3dc6db5d5d8de458c6494f2f57d7fab6432fbd3b48e8",
+  "author_actual_returncode": 1,
+  "attention_diagnostic_actual_returncode": 1,
+  "author": {
+    "scope": "official CPU teacher-forced comparison; no CUDA, task quality or speed",
+    "checkpoint": {
+      "repo": "SandyResearch/parcae-370m",
+      "revision": "439284464ee4999bd1f762da7d044613a4828efe",
+      "files": [
+        {
+          "path": "config.json",
+          "bytes": 1745,
+          "sha256": "0ed6862c495bfb670fc72eba955c555c472a5dcdf33bed6852608135ead6666e"
+        },
+        {
+          "path": "pytorch_model.bin",
+          "bytes": 1553099635,
+          "sha256": "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2"
+        }
+      ],
+      "source": "pinned Hub metadata with verified bounded HTTP ranges"
+    },
+    "substituted_attention_calls": 0,
+    "source_revision": "69284c13746e849104f738d6d1a347b1f457df76",
+    "generation_source_sha256": "14363edd0b425f6d264517ae6d8f941a394313899425e97aaff596efddb2b382",
+    "cases": [
+      {
+        "dtype": "torch.float32",
+        "tokens": 1,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 0.0,
+        "native_close": true,
+        "dense_close": true,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.float32",
+        "tokens": 7,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 3.24249267578125e-05,
+        "dense_max_abs_logit_error": 4.1961669921875e-05,
+        "native_close": false,
+        "dense_close": false,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.float32",
+        "tokens": 33,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 5.054473876953125e-05,
+        "dense_max_abs_logit_error": 5.626678466796875e-05,
+        "native_close": false,
+        "dense_close": false,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 1,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 0.0,
+        "native_close": true,
+        "dense_close": true,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 7,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.4375,
+        "dense_max_abs_logit_error": 2.0,
+        "native_close": false,
+        "dense_close": false,
+        "greedy_exact": false,
+        "first_greedy_difference": {
+          "position": 3,
+          "author_token": 1761,
+          "native_token": 403,
+          "author_top2_margin": 0.0625,
+          "native_top2_margin": 0.0625
+        }
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 33,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.75,
+        "dense_max_abs_logit_error": 3.5,
+        "native_close": false,
+        "dense_close": false,
+        "greedy_exact": false,
+        "first_greedy_difference": {
+          "position": 3,
+          "author_token": 1761,
+          "native_token": 403,
+          "author_top2_margin": 0.0625,
+          "native_top2_margin": 0.0
+        }
+      }
+    ]
+  },
+  "shared_attention_diagnostic": {
+    "scope": "diagnostic author attention substituted with native CPU paged arithmetic; not unchanged author qualification",
+    "checkpoint": {
+      "repo": "SandyResearch/parcae-370m",
+      "revision": "439284464ee4999bd1f762da7d044613a4828efe",
+      "files": [
+        {
+          "path": "config.json",
+          "bytes": 1745,
+          "sha256": "0ed6862c495bfb670fc72eba955c555c472a5dcdf33bed6852608135ead6666e"
+        },
+        {
+          "path": "pytorch_model.bin",
+          "bytes": 1553099635,
+          "sha256": "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2"
+        }
+      ],
+      "source": "pinned Hub metadata with verified bounded HTTP ranges"
+    },
+    "substituted_attention_calls": 240,
+    "source_revision": "69284c13746e849104f738d6d1a347b1f457df76",
+    "generation_source_sha256": "14363edd0b425f6d264517ae6d8f941a394313899425e97aaff596efddb2b382",
+    "cases": [
+      {
+        "dtype": "torch.float32",
+        "tokens": 1,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 0.0,
+        "native_close": true,
+        "dense_close": true,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.float32",
+        "tokens": 7,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 4.57763671875e-05,
+        "native_close": true,
+        "dense_close": false,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.float32",
+        "tokens": 33,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 5.221366882324219e-05,
+        "native_close": true,
+        "dense_close": false,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 1,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 0.0,
+        "native_close": true,
+        "dense_close": true,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 7,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 2.3125,
+        "native_close": true,
+        "dense_close": false,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 33,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 3.625,
+        "native_close": true,
+        "dense_close": false,
+        "greedy_exact": true,
+        "first_greedy_difference": null
+      }
+    ]
+  }
+}
