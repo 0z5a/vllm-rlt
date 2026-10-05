@@ -1,6 +1,6 @@
 # Batched prefill metadata
 
-The opt-in eager path prepares one metadata set for all recurrent prefill depths. With 32 prompt rows and eight depths, native/alias constructs 6,784 metadata bytes instead of 11,264, and compact constructs 7,936 instead of 13,312. Both call the staging helper twice instead of sixteen times. These are CPU construction counts; CUDA traffic, peak allocation and E2E speed have not been measured for this change.
+The opt-in eager path prepares one metadata set for all recurrent prefill depths. With 32 prompt rows and eight depths, native/alias constructs 6,784 metadata bytes instead of 11,264, and compact constructs 7,936 instead of 13,312. Both call the staging helper twice instead of sixteen times. The same construction counts were observed on CPU and NVIDIA H20. These are metadata source bytes, not measured H2D/HBM traffic; E2E speed remains unmeasured. The H20 diagnostic shows a small increase in peak allocated memory.
 
 Frozen implementation: `aa60941d6238072e05a9a571615f1e2726907670`. Results and artifact hashes: [batched-prefill-metadata.json](evidence/batched-prefill-metadata.json).
 
@@ -26,11 +26,13 @@ Six seeded tiny checkpoints ran through the existing `experiments.loopkv.screen`
 | Parcae | 32 | 848 | 3,392 | Exact |
 | Total | 192 | 5,088 | 20,352 | Exact |
 
+The same six seeded checkpoints also passed **192 CUDA arms, 5,088 requests and 20,352 output tokens** on NVIDIA H20 (SM90), using Python 3.12.3, Torch 2.12.1+cu130 and Triton 3.7.1. The isolated environment inherits the installed packages; no packages were installed or upgraded. The generation and metadata children and controller all naturally returned zero. The offbox archive contains 705 files, all independently verified by SHA256; the independent generation audit also reconciles every request and raw work counter. [H20 evidence](evidence/batched-prefill-h20.json) records the plans, checkpoint hashes, allocation diagnostics and receipts.
+
 Official BF16 LoopFormer/Parcae CPU runs at P8/D16/R8, B=1/4/16/32 and C=2B completed all **64 arms, 1,696 requests and 27,136 output tokens**. Both children returned zero. Independent audits found every complete request object and every work histogram exact against the first native arm and the previous official CPU golden runs. All cache blocks and compact records drained. [Raw official comparison](evidence/batched-prefill-official-cpu.json) includes plan/checkpoint hashes and child receipts. This is CPU correctness evidence, not CUDA, unchanged-author, quality or E2E speed qualification.
 
 ## Metadata and speed comparison
 
-The actual prefill entrypoint was instrumented with FP32 tiny Ouro, four requests × eight prompt tokens, R=1/4/8 and native/alias/compact storage. All 18 hidden-state and used-KV hash comparisons pass, and all cache allocations drain.
+The actual prefill entrypoint was instrumented with FP32 tiny Ouro, four requests × eight prompt tokens, R=1/4/8 and native/alias/compact storage. All 18 hidden-state and used-KV hash comparisons pass on CPU, and all 18 pass again on H20; all cache allocations drain. These are exact comparisons within each device, not a cross-device equality claim.
 
 | R | Storage | Stage calls, off → on | Constructed metadata bytes, off → on | Byte reduction |
 |---:|---|---:|---:|---:|
@@ -49,6 +51,18 @@ The initial instrumentation assertion failed because it included CPU reference-r
 |---|---|---|---|
 | CUDA engine E2E throughput | Pending | Pending | Not established |
 | HTTP E2E throughput / latency | Pending | Pending | Not established |
-| CUDA peak allocated / reserved bytes | Pending | Pending | Not established |
+| H20 peak allocated bytes, tiny B32 | See below | See below | Slight increase |
+| H20 peak reserved bytes, tiny B32 | 36 or 54 MiB by family | Unchanged | 0% |
 
-A 5,993,146-byte H20 qualification packet is prepared locally and registered behind the shared-node queue. It contains these six seeded architecture screens plus the 18-case prefill audit; it has not been uploaded or executed. Environment qualification and whole-window handback remain prerequisites. Performance follow-up requires matched official weights and scheduling, repeated balanced baseline/candidate runs, realized batch sizes, profiler traffic and peak-allocation measurements before considering default enablement.
+| Tiny family, B32/C64 | Native peak allocated, off → on (bytes) | Native delta | Compact peak allocated, off → on (bytes) | Compact delta |
+|---|---:|---:|---:|---:|
+| ouro | 35,811,840 → 35,817,984 | +6,144 | 35,895,808 → 35,906,560 | +10,752 |
+| nanbeige | 35,808,768 → 35,810,816 | +2,048 | 35,892,736 → 35,896,320 | +3,584 |
+| huginn | 42,257,920 → 42,262,016 | +4,096 | 42,343,936 → 42,351,104 | +7,168 |
+| hrm | 39,976,448 → 39,979,520 | +3,072 | 40,060,416 → 40,065,024 | +4,608 |
+| loopformer | 36,049,408 → 36,063,744 | +14,336 | 36,139,008 → 36,164,096 | +25,088 |
+| parcae | 47,341,056 → 47,349,760 | +8,704 | 47,425,024 → 47,438,848 | +13,824 |
+
+These allocation samples come from one ordered, traced correctness run per arm, with peak statistics reset after engine construction. They are allocation diagnostics rather than repeated performance trials or whole-process VRAM measurements. At B32, alias has the same allocation delta as native, and credits has the same delta as compact. Reserved bytes remain unchanged within each pair. Keeping all depths live explains the tradeoff: constructed metadata bytes fall while peak allocated bytes rise by 2,048–25,088 bytes in these tiny fixtures.
+
+The H20 packet has completed, its raw archive is verified offbox, its six temporary weight payloads have been removed, and the shared GPU/IO window has been returned. The prepared environment and evidence remain. Performance follow-up requires matched official weights and scheduling, repeated balanced baseline/candidate runs, realized batch sizes, profiler traffic and peak-allocation measurements before considering default enablement.

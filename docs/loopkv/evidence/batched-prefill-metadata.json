@@ -1,6 +1,6 @@
 {
   "source_revision": "aa60941d6238072e05a9a571615f1e2726907670",
-  "scope": "CPU metadata construction and seeded tiny model full-generation correctness; no measured GPU speed or memory claim",
+  "scope": "CPU and H20 metadata construction and seeded tiny full-generation correctness; H20 allocation diagnostics; no measured speed claim",
   "unit_tests": {
     "passed": 601,
     "skipped": 29,
@@ -10083,6 +10083,21 @@
       "path": "harness/prepare_batched_prefill_tiny_v1.py",
       "bytes": 4918,
       "sha256": "a5723583294626e662a8dc9b87bf45e5f056d73f69ac651423d4115d0ac7ef64"
+    },
+    {
+      "path": "evidence/h20-prefill-results-v1.tar.gz",
+      "bytes": 5973228,
+      "sha256": "951fc0ca6f2c22c6aa2d00dbd2ea960a06ac301130da0232fd171761c720d56a"
+    },
+    {
+      "path": "evidence/h20-prefill-results-v1-audit.json",
+      "bytes": 470270,
+      "sha256": "bd68f238431a87c87cb363a21e3397fde5ccdbc7853940188a3ef737ec2b43a2"
+    },
+    {
+      "path": "evidence/h20-prefill-metadata-v1-audit.json",
+      "bytes": 234,
+      "sha256": "eb3dab907177070c17d4292bac59e98bea3f83bfb72ad618e1f898adfca18f9c"
     }
   ],
   "traffic_counter_failure": {
@@ -10090,6 +10105,7 @@
     "reason": "Initial counter included CPU reference-read staging; alias R1 saw66 stages instead of2. Numerical hash comparison passed. Corrected phase counter separates preparation from reference reads; v3 exactly reproduces v2."
   },
   "official_weight_ablation_status": "complete: 64 arms, 1696 requests, 27136 output tokens; all objects and work exact against prior golden runs",
-  "h20_status": "local prepared and registered; not uploaded or executed",
-  "official_weight_ablation_report": "batched-prefill-official-cpu.json"
+  "h20_status": "complete: 192 tiny BF16 CUDA generation arms plus 18 FP32 prefill cases; all objects/work/hidden/used-KV comparisons exact; seven children and controller natural zero exits",
+  "official_weight_ablation_report": "batched-prefill-official-cpu.json",
+  "h20_report": "batched-prefill-h20.json"
 }
