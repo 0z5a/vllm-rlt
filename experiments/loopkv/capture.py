@@ -166,6 +166,7 @@ def main():
         "vllm_rlt.models.nanbeige",
         "vllm_rlt.models.huginn",
         "vllm_rlt.models.hrm_text",
+        "vllm_rlt.models.loopformer",
         "experiments.loopkv.checkpoint",
         "experiments.loopkv.text_stops",
     ):

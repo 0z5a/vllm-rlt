@@ -1,0 +1,55 @@
+{
+  "source_sha256": "a4fdd1330a88a859f5f726a15fdce5b6c37d523fd7f04b9c9765d6c58133e665",
+  "source_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "scope": "author GPT vs independent functional oracle on copied tiny weights",
+  "cases": [
+    {
+      "dtype": "torch.float32",
+      "tokens": 1,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "max_abs_logit_error": 0.0,
+      "tokens_exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "tokens": 3,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "max_abs_logit_error": 9.5367431640625e-07,
+      "tokens_exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "tokens": 7,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "max_abs_logit_error": 9.5367431640625e-07,
+      "tokens_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "tokens": 1,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "max_abs_logit_error": 0.0,
+      "tokens_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "tokens": 3,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "max_abs_logit_error": 0.0625,
+      "tokens_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "tokens": 7,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "max_abs_logit_error": 0.0625,
+      "tokens_exact": true
+    }
+  ]
+}

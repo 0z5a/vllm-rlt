@@ -14,6 +14,8 @@ from vllm_rlt.models import (
     HrmTextForCausalLM,
     HuginnConfig,
     HuginnForCausalLM,
+    LoopFormerConfig,
+    LoopFormerForCausalLM,
     NanbeigeConfig,
     NanbeigeForCausalLM,
     OuroConfig,
@@ -23,11 +25,19 @@ from vllm_rlt.models import (
 
 def load_model(
     folder: Path, device: torch.device, dtype: torch.dtype
-) -> OuroForCausalLM | NanbeigeForCausalLM | HuginnForCausalLM | HrmTextForCausalLM:
+) -> (
+    OuroForCausalLM
+    | NanbeigeForCausalLM
+    | HuginnForCausalLM
+    | HrmTextForCausalLM
+    | LoopFormerForCausalLM
+):
     """Construct a native recurrent model without optional Hub dependencies."""
     config = json.loads((folder / "config.json").read_text())
     with torch.device("meta"):
-        if config["model_type"] == "hrm_text":
+        if config["model_type"] == "loopformer":
+            model = LoopFormerForCausalLM(LoopFormerConfig.from_dict(config))
+        elif config["model_type"] == "hrm_text":
             model = HrmTextForCausalLM(HrmTextConfig.from_dict(config))
         elif config["model_type"] == "ouro":
             model = OuroForCausalLM(OuroConfig.from_dict(config))
@@ -36,13 +46,13 @@ def load_model(
         elif config["model_type"] == "huginn_raven":
             model = HuginnForCausalLM(HuginnConfig.from_dict(config))
         else:
-            raise ValueError("the standalone reader supports Ouro, Nanbeige, Huginn and HRM-Text")
+            raise ValueError(f"unsupported standalone model: {config['model_type']}")
     load_weights(model, folder, device, dtype)
     if isinstance(model, HuginnForCausalLM):
         if not torch.equal(model.lm_head.weight, model.transformer.wte.weight):
             raise ValueError("tied checkpoint embeddings differ")
         model.lm_head.weight = model.transformer.wte.weight
-    else:
+    elif not isinstance(model, LoopFormerForCausalLM):
         model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device=device)
     return model.eval()
 
