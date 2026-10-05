@@ -29,7 +29,7 @@ the whole alias stack and does not isolate the prefix increment.
 | Resident async/Graph | Rectangular and compact metadata ownership; all84 compact routing and24 replay arms exact | Natural Graph equivalence and broader contexts |
 | Admission credits | Sudden full-depth completion; fixed6GiB residency32→38 | Same-budget goodput, work/quality attribution and broader stress |
 | HTTP load | 24 real TCP arms /1,392 requests /72,384 tokens complete | Frozen SLO/open-loop curves and full formal cohorts |
-| HRM prefix-LM | Native adapter,131 official tensor shapes,214 affected CPU checks,72 tiny CUDA arms | Official high-concurrency inference and quality |
+| HRM prefix-LM | Native adapter,214 affected CPU checks,72 tiny CUDA arms;32 official sync arms exact through B512/C1024 (actual resident117) | Official async/Graph, quality and formal service performance |
 
 The HTTP experiment reports zero non-Graph candidate token/exit differences.
 Natural Graph totals are7 token /116 exit-different requests for alias and3 token
@@ -44,7 +44,7 @@ Natural Graph totals are7 token /116 exit-different requests for alias and3 toke
 | Ouro-2.6B-Thinking | Release pinned; execution pending |
 | Nanbeige4.2-3B | Tiny CUDA qualified; official shared assets prepared, full execution pending |
 | Huginn-0125 | Tiny CUDA qualified; official asset readers and full execution pending |
-| HRM-Text-1B | All four assets verified; CPU and tiny CUDA/Graph qualified; official execution pending |
+| HRM-Text-1B | 32 official synchronous arms /8,104 requests /1,037,312 tokens exact; B512/C1024 caps at117 residents; broader matrix pending |
 | LoopFormer / Parcae | Public pinned config/source/card audit only; adapters and weights pending |
 
 [Model evidence](models.md), [Ouro-2.6B](ouro-2.6b.md), [HRM contract](hrm-text.md),
