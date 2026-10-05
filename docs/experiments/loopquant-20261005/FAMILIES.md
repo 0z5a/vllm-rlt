@@ -30,7 +30,7 @@ engine error after admission.
 The initial integration had missing compact loop labels and failed tests.
 Its process26568 remains idle in its pre-fix HTTP wait; it has not been signalled,
 terminated or counted as a passing run. The complete passing suite ran from a
-separate immutable source snapshot. Native GPU INT4 reload/Graph/compact checks
+separate immutable source snapshot. The final feature snapshot18cd202b passes [644 CPU tests and36 subtests](native-families-full-cpu-attempt4.log), with29 skipped and217 CUDA cases deselected. Native GPU INT4 reload/Graph/compact checks
 for these new families are queued. Full checkpoints, quality gates and paired
 high-concurrency/multiple-batch E2E remain required.
 
