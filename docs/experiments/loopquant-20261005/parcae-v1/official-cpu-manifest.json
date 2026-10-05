@@ -1,0 +1,19 @@
+{
+  "source_commit": "b617669b1d1ef96dfe319e7fbfaa42c89722b39b",
+  "cases": 96,
+  "loops": [
+    1,
+    4,
+    8
+  ],
+  "requests": 32,
+  "input_tokens": 1732,
+  "min_tokens": 5,
+  "max_tokens": 98,
+  "scope": "full official BF16 CPU dense-adapter/author comparison; no native cache, quantized quality or performance",
+  "files": {
+    "requests.json": "b36e6d475071f13eb9622ef09b6e3886cb3628fae981037fa8019a08ee8ab936",
+    "run.py": "00e93c24b64fd88ec047ea71b29f540959b34df331cc67e4a980ad3b6e8a7185",
+    "source.tar": "4a6834cc9e79f548467f943a6da21cb01bf74887d3f5451a9f1e7b3a5776ce22"
+  }
+}

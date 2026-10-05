@@ -1,0 +1,19 @@
+{
+  "status": "verified",
+  "revision": "439284464ee4999bd1f762da7d044613a4828efe",
+  "folder": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/parcae-370m-cpu",
+  "files": [
+    {
+      "file": "config.json",
+      "sha256": "0ed6862c495bfb670fc72eba955c555c472a5dcdf33bed6852608135ead6666e",
+      "bytes": 1745
+    },
+    {
+      "file": "pytorch_model.bin",
+      "sha256": "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2",
+      "bytes": 1553099635
+    }
+  ],
+  "timestamp": 1791182566.014142,
+  "read_only_reuse": true
+}
