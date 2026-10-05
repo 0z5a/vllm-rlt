@@ -376,3 +376,31 @@ its [failure](gptq-native-row-budget-cpu-attempt1.log) and the corrected
 [targeted checks](gptq-native-row-budget-cpu-attempt2.log) are retained.
 Full-checkpoint Hessian collection, GPTQ packing and native W4A16 quality remain
 unrun. No speedup is inferred from these tests.
+
+## Native deployment qualification
+
+The independently archived [short-window receipt](native-deployment-v1-receipt.json)
+has two natural child exits 0 and controller/SSH exit 0. Frozen source
+`72b8634e0d4029fc8106335c2c7861e40eb6c193`, RTX5090/SM120, Torch2.12.1+cu130,
+CUDA13.0. No package changes were made.
+
+| Qualification | Cases | Result | Comparison |
+|---|---:|---|---|
+| Native FP8 export/reload | 16 | Pass | DYN/SH1/ST2/LOOP × Graph on/off × fused norm on/off; encoded state bytes unchanged |
+| Mixed-depth native serving after reload | 16 × 6 requests | Pass | Same generated tokens/depths as decoded reference; repeated IDs, full KV drain and stable single packed weight |
+| Native INT4 W4A16 | 20 | Pass | M=1/17/32/64/128 across four K/N shapes; unchanged atol=rtol=0.02 vs the same BF16-decoded codes/scales |
+
+Each Graph case captured three buckets and replayed 24 times. Every tiny core
+had 14 physical packed matrices (98,304 weight bytes total). All 16 exported
+test payloads were removed after successful reload and execution; their
+manifests and raw evidence remain. [FP8 records](native-fp8-export-attempt1.json).
+
+The INT4 shapes include K/N=128/32, 2048/2048, 2048/5632 and 5280/32. The last
+shape explicitly pads K to 5376. The maximum absolute difference is 0.03125,
+with every element satisfying the combined absolute/relative criterion. The
+backend uses Torch's installed `_convert_weight_to_int4pack` and
+`_weight_int4pack_mm`; group scales round to BF16 as recorded in the ABI.
+[INT4 records](native-int4-attempt1.json).
+
+These are numerical and lifecycle checks. Full-checkpoint exported quality,
+GPTQ/QAT outcomes and E2E throughput remain unmeasured.

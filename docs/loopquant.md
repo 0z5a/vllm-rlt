@@ -21,8 +21,8 @@ This draft implements the first numerical and measurement building blocks:
   pools, optimizer/RNG/data-position resumption, and native encoded export.
 - Fused FP8 producers for static, staged, and dynamic row scales, with native
   mixed-depth serving, explicit GPU loop IDs, and one packed weight per projection.
-- Native INT4 W4A16 packing for PyTorch's installed tensor-core backend; GPU
-  qualification remains pending. No optional package is installed.
+- Native INT4 W4A16 packing for PyTorch's installed tensor-core backend; 20
+  native shape checks pass on SM120. No optional package is installed.
 - Native-engine cohorts measure admission through final drain, fixed output work,
   TTFT/TPOT, loop depths, graph counters, and post-drain KV usage.
 - Native activation traces use actual prepared request/position/loop metadata,
@@ -89,9 +89,10 @@ See the [raw evidence and comparison table](experiments/loopquant-20261005/RESUL
 | Nanbeige4.2-3B | — | — | — | Full verified checkpoint; official CPU queued |
 
 The fused FP8 primitives pass 120 cases and three CUDA Graph cases on SM120;
-12 tiny native serving combinations also pass. These qualify the tested
-operations, not complete model quality or high-concurrency speed. Official-model
-GPTQ/QAT, GPU native-export qualification, and final serving results remain pending.
+12 tiny native serving combinations and 16 native export/reload combinations
+also pass. These qualify the tested operations, not complete model quality or
+high-concurrency speed. Official-model GPTQ/QAT, full-checkpoint export quality
+and final serving results remain pending.
 
 ## Reproduction interfaces
 

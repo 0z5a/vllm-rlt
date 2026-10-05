@@ -1,0 +1,86 @@
+{
+  "native-fp8-export-attempt1.json": {
+    "bytes": 29999,
+    "sha256": "44f127a812c5e10f067f75ffffcfdb3e29add0d56f5fdb3708a561db0a2d9f05"
+  },
+  "native-fp8-export-attempt1.log": {
+    "bytes": 21176,
+    "sha256": "48034d5470617a246631135dafc0733c006f4369d314d5213491f3ab39a3b799"
+  },
+  "native-int4-attempt1.json": {
+    "bytes": 3537,
+    "sha256": "79c351bce18b3a692a92eef3a328bd69aa02a4add49ed97c78d41e63572fc1b4"
+  },
+  "native-int4-attempt1.log": {
+    "bytes": 2244,
+    "sha256": "8d624c7e0af99f95472acb4fe24230e37e87c726f9135a70b2da363c3034b7b3"
+  },
+  "native-deployment-v1-receipt.json": {
+    "bytes": 255,
+    "sha256": "4e04ffc84d2480bcecab32b995826f7f99faba07cdc43f989d3366e6960f16c8"
+  },
+  "export-check-DYN-False-False/manifest.json": {
+    "bytes": 1242,
+    "sha256": "e6f7be4119928395bd109eefccf507da0cf4c30d58184cf44ead279fcf12d49f"
+  },
+  "export-check-DYN-False-True/manifest.json": {
+    "bytes": 1241,
+    "sha256": "1eb1a3d389547f5fb0c559da4fd9a1125fc87bffc48a891eef6d971ad05b918b"
+  },
+  "export-check-DYN-True-False/manifest.json": {
+    "bytes": 1242,
+    "sha256": "e6f7be4119928395bd109eefccf507da0cf4c30d58184cf44ead279fcf12d49f"
+  },
+  "export-check-DYN-True-True/manifest.json": {
+    "bytes": 1241,
+    "sha256": "1eb1a3d389547f5fb0c559da4fd9a1125fc87bffc48a891eef6d971ad05b918b"
+  },
+  "export-check-LOOP-False-False/manifest.json": {
+    "bytes": 1272,
+    "sha256": "1ba4b70b8232bb3806f026e611799153f4a7f3d35fbaefb0626ce5bfc7021868"
+  },
+  "export-check-LOOP-False-True/manifest.json": {
+    "bytes": 1271,
+    "sha256": "934f2faa84b6ea27591a3483acdbcdaf85fe72044d77b835ce497ad76f273473"
+  },
+  "export-check-LOOP-True-False/manifest.json": {
+    "bytes": 1272,
+    "sha256": "1ba4b70b8232bb3806f026e611799153f4a7f3d35fbaefb0626ce5bfc7021868"
+  },
+  "export-check-LOOP-True-True/manifest.json": {
+    "bytes": 1271,
+    "sha256": "934f2faa84b6ea27591a3483acdbcdaf85fe72044d77b835ce497ad76f273473"
+  },
+  "export-check-SH1-False-False/manifest.json": {
+    "bytes": 1241,
+    "sha256": "806ad18edd2b636c65c950c5e98d9063840d8a99538a6969f3b1aa20dfc88d6b"
+  },
+  "export-check-SH1-False-True/manifest.json": {
+    "bytes": 1240,
+    "sha256": "85f6af98d802a5a3bb61174f451efc1ba781526839fb588264d90ba03156fb66"
+  },
+  "export-check-SH1-True-False/manifest.json": {
+    "bytes": 1241,
+    "sha256": "806ad18edd2b636c65c950c5e98d9063840d8a99538a6969f3b1aa20dfc88d6b"
+  },
+  "export-check-SH1-True-True/manifest.json": {
+    "bytes": 1240,
+    "sha256": "85f6af98d802a5a3bb61174f451efc1ba781526839fb588264d90ba03156fb66"
+  },
+  "export-check-ST2-False-False/manifest.json": {
+    "bytes": 1254,
+    "sha256": "a095d11394c1aff8ed4660b266dcba37452f85232f48c9e3be2f39d2fcdd5860"
+  },
+  "export-check-ST2-False-True/manifest.json": {
+    "bytes": 1253,
+    "sha256": "73ee60f4ed00c0b426e6724e0921e1287c51638793d370bdd8a8bc18dc8800bd"
+  },
+  "export-check-ST2-True-False/manifest.json": {
+    "bytes": 1254,
+    "sha256": "a095d11394c1aff8ed4660b266dcba37452f85232f48c9e3be2f39d2fcdd5860"
+  },
+  "export-check-ST2-True-True/manifest.json": {
+    "bytes": 1253,
+    "sha256": "73ee60f4ed00c0b426e6724e0921e1287c51638793d370bdd8a8bc18dc8800bd"
+  }
+}
