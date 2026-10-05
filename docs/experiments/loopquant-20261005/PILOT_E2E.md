@@ -36,6 +36,17 @@ peak allocated memory from22.81/22.88GiB (BF16 B128/B512) to21.71/21.80GiB
 (FP8); the same20GiB cache reservation dominates these totals. No inference
 about quality follows from completion or memory reduction.
 
+| Batch token cap | BF16 peak allocated (GiB) | SH1 peak allocated (GiB) | Saved (GiB) | Reduction |
+|---:|---:|---:|---:|---:|
+| 128 | 22.8064 | 21.7102 | 1.0962 | 4.8064% |
+| 512 | 22.8788 | 21.8025 | 1.0763 | 4.7044% |
+
+These are PyTorch peak allocated bytes converted using 2³⁰ bytes/GiB, not total
+process memory from `nvidia-smi`. BF16 and SH1 retain the same BF16 KV budget.
+The calculation uses the raw `cuda_peak_allocated_bytes` fields:24,488,176,640
+versus23,311,188,480 at B128 and24,565,919,232 versus23,410,234,880 at B512.
+The table does not extrapolate INT4, other models or a quantized KV cache.
+
 DYN uses per-row dynamic input scales. SH1 and ST2 use fixed scalar/stage
 scales from the128-window calibration, shared across prefill/decode via their
 maximum; ST2 has the fixed boundary2. This compares deployable policies with
