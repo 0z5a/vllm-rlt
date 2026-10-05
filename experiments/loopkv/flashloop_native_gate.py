@@ -114,7 +114,8 @@ def main():
             print(rows[-1], flush=True)
     report = {
         "scope": (
-            "tiny adapted FlashLoop dense control; no packed codec, official model or speed qualification"
+            "tiny adapted FlashLoop dense control; no packed codec, "
+            "official model or speed qualification"
         ),
         "source_pin": "aeaadee10d75b7aa8c4a42a809f15c75d6d3bdc6",
         "cases": rows,
