@@ -20,7 +20,10 @@ from vllm_rlt.models.parcae import ParcaeForCausalLM
             torch.bfloat16,
             marks=pytest.mark.xfail(
                 strict=True,
-                reason="Retained BF16 manual-equation reduction discrepancy; author SDPA checked separately",
+                reason=(
+                    "Retained BF16 manual-equation reduction discrepancy; "
+                    "author SDPA checked separately"
+                ),
             ),
         ),
     ],
