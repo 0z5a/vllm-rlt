@@ -12,8 +12,8 @@ have not run; the earlier two 128-token gradient audits remain a separate result
 |---|---:|---:|---:|---:|---:|---|
 | Ouro-1.4B | — | — | — | — | — | G0 incomplete |
 | Ouro-2.6B | — | — | — | — | — | Official CPU exact; GPU/E2E pending |
-| Huginn-3.5B | — | — | — | — | — | Full official CPU comparison running |
-| Nanbeige4.2-3B | — | — | — | — | — | Full checkpoint verified; official CPU comparison queued |
+| Huginn-3.5B | — | — | — | — | — | Full official CPU96/96 exact; cached GPU pending |
+| Nanbeige4.2-3B | — | — | — | — | — | Full checkpoint verified; official CPU comparison running |
 
 ## Native FP8 correctness
 
@@ -343,7 +343,7 @@ bytes; remote inputs still needed for experiments remain retained.
 
 The corrected [original 12-case repeat](fp8-serving-probe-attempt2.json) passes DYN/SH1/ST2 × Graph on/off × fused RMSNorm on/off. Each case runs the same three mixed-depth requests twice, checking token/depth parity against decoded FP8 reference arithmetic, request-ID reuse, complete KV drain and unchanged packed-weight pointers. Graph cases each capture 3 shapes and replay 24 times. There is one packed matrix per physical projection (14 in this tiny model). The child, controller and SSH all naturally exit 0; [completion receipt](fp8-serving-repeat-v2-complete.json). This establishes tiny-model serving correctness, not full-model quality or E2E throughput. The earlier constructor failure is retained.
 
-The immutable-environment checkpoint reader now preserves tied parameter identity across shards and persistent buffer dtypes, as required by Huginn. [47 targeted CPU checks](checkpoint-alias-cpu-attempt1.log) pass, including rejection of inconsistent tied values. Nanbeige's full 12-file download is verified; its full original-class CPU comparison is queued behind Huginn to avoid simultaneous large model loads.
+The immutable-environment checkpoint reader now preserves tied parameter identity across shards and persistent buffer dtypes, as required by Huginn. [47 targeted CPU checks](checkpoint-alias-cpu-attempt1.log) pass, including rejection of inconsistent tied values. Nanbeige's full 12-file download is verified; its full original-class CPU comparison started after Huginn naturally exited, avoiding simultaneous large model loads.
 
 ## Native deployment and quality plumbing
 
@@ -499,3 +499,7 @@ The five full Ouro1.4B [native dev quality arms](DEV_QUALITY.md) completed
 | SH1 | 11.640786 | 1.007071 | +0.707% | 1.008543 |
 | ST2 | 11.650949 | 1.007950 | +0.795% | 1.009565 |
 | LOOP | 11.652965 | 1.008125 | +0.812% | 1.009776 |
+
+## Complete official Huginn CPU comparison
+
+[All96 comparisons](official-huginn-cpu-attempt1.json) passed against the unmodified pinned official full checkpoint: 32 fixed inputs × R8/16/32, CPU BF16 SDPA. Every one of1,792 recurrent states and96 logit tensors is bitwise exact, with an explicit identical seeded initial state. [Verified summary](official-huginn-cpu-summary.json) records source202987db, runner/model hashes and input coverage. Cached GPU semantics, quantized quality and serving performance remain pending; this is not a full G0–G3 pass. The adapter and its reproducible runner are reviewed in the separately based [Huginn draft](https://github.com/0z5a/vllm-rlt/pull/10).
