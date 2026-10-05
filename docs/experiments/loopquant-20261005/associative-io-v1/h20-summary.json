@@ -1,0 +1,15 @@
+{
+  "status": "pass",
+  "device": "NVIDIA H20",
+  "cases": 72,
+  "graph_replays": 3,
+  "source_commit": "8db31484dbbd8ca2e62974460f1cbb092181a1fa",
+  "packet_manifest_sha256": "b5b996d1e9ecd8e1eb0d1a85254dad2fb91320867e7b5d9568dacfd5c29daeee",
+  "archive_sha256": "68aa7744027ca37d5eb94cd3f6c849db8fd6d3a096fb14a31fb95ab59fc60547",
+  "verified_files": 5,
+  "controller_returncode": 0,
+  "child_returncode": 0,
+  "scope": "H20 FP8 represented-value correctness only; no model quality or speed result",
+  "packed_equal_cases": 72,
+  "max_abs": 0.5
+}
