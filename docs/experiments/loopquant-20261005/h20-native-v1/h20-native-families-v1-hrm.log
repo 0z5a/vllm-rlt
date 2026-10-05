@@ -1,0 +1,16 @@
+{"event": "case_pass", "family": "hrm", "index": 0, "policy": "DYN", "graphs": false, "option": false}
+{"event": "case_pass", "family": "hrm", "index": 1, "policy": "DYN", "graphs": false, "option": true}
+{"event": "case_pass", "family": "hrm", "index": 2, "policy": "DYN", "graphs": true, "option": false}
+{"event": "case_pass", "family": "hrm", "index": 3, "policy": "DYN", "graphs": true, "option": true}
+{"event": "case_pass", "family": "hrm", "index": 4, "policy": "SH1", "graphs": false, "option": false}
+{"event": "case_pass", "family": "hrm", "index": 5, "policy": "SH1", "graphs": false, "option": true}
+{"event": "case_pass", "family": "hrm", "index": 6, "policy": "SH1", "graphs": true, "option": false}
+{"event": "case_pass", "family": "hrm", "index": 7, "policy": "SH1", "graphs": true, "option": true}
+{"event": "case_pass", "family": "hrm", "index": 8, "policy": "ST2", "graphs": false, "option": false}
+{"event": "case_pass", "family": "hrm", "index": 9, "policy": "ST2", "graphs": false, "option": true}
+{"event": "case_pass", "family": "hrm", "index": 10, "policy": "ST2", "graphs": true, "option": false}
+{"event": "case_pass", "family": "hrm", "index": 11, "policy": "ST2", "graphs": true, "option": true}
+{"event": "case_pass", "family": "hrm", "index": 12, "policy": "LOOP", "graphs": false, "option": false}
+{"event": "case_pass", "family": "hrm", "index": 13, "policy": "LOOP", "graphs": false, "option": true}
+{"event": "case_pass", "family": "hrm", "index": 14, "policy": "LOOP", "graphs": true, "option": false}
+{"event": "case_pass", "family": "hrm", "index": 15, "policy": "LOOP", "graphs": true, "option": true}

@@ -66,3 +66,32 @@ no throughput or full-model quality result.
 Formal timing will keep non-profiled paired runs separate from profiling and
 will account for conversion, scale metadata, packing and all participating
 streams. The original quality and E2E gates remain in force.
+
+
+## H20 family deployment checks
+
+The next finite packet ran four sequential children under the same original
+GPU0/IO locks. Its [manifest](h20-native-v1/manifest.json) freezes the three
+source revisions; numerical budgets are unchanged.
+
+| Family | Native FP8 cases | Process result | Full-checkpoint E2E speedup |
+|---|---|---|---|
+| HRM | 16 pass | Natural exit 0 | Not measured |
+| LoopFormer | 16 pass | Natural exit 0 | Not measured |
+| Huginn | First case failed; 15 unrun | Natural exit 1 | Not measured |
+| Parcae | First case failed; 15 unrun | Natural exit 1 | Not measured |
+
+The two additional Graph row-depth controls were also unrun. The complete
+controller exited 1 after waiting for all four children. The two failures
+exposed boundary-prefill metadata that used a padded workspace length while
+the model's prelude returned only live rows. They are shape errors, not
+relaxed numerical comparisons. A separate repair sets core metadata from the
+actual hidden row count; repair verification is not counted in this attempt.
+
+[Summary](h20-native-v1/h20-native-families-v1-summary.json),
+[Huginn failure](h20-native-v1/h20-native-families-v1-huginn.log),
+[Parcae failure](h20-native-v1/h20-native-families-v1-parcae.log) and
+[completion receipt](h20-native-v1/h20-native-families-v1-complete.json) preserve
+the mixed outcome. All 46 archived files were independently hash-verified
+offbox. Temporary tensor payloads were cleaned after preserving the archive.
+Both locks released naturally; the finite window was explicitly handed back.
