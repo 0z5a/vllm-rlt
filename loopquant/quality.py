@@ -29,6 +29,30 @@ class DocumentNLL:
     candidate_nll: float
 
 
+@dataclass(frozen=True)
+class QuestionCorrectness:
+    question_id: str
+    baseline: bool
+    candidate: bool
+
+
+def accuracy_interval(
+    questions: list[QuestionCorrectness], *, seed: int = 20261005, resamples: int = 10000
+) -> tuple[float, float]:
+    """Return BF16-minus-candidate accuracy drop and its paired one-sided95% upper bound."""
+    if len(questions) < 2 or len({row.question_id for row in questions}) != len(questions):
+        raise ValueError("aggregate each original question once; need two distinct questions")
+    if resamples < 1000:
+        raise ValueError("at least1000 paired bootstrap resamples are required")
+    differences = [int(row.baseline) - int(row.candidate) for row in questions]
+    rng = random.Random(seed)
+    samples = sorted(
+        sum(rng.choices(differences, k=len(differences))) / len(differences)
+        for _ in range(resamples)
+    )
+    return sum(differences) / len(differences), samples[math.ceil(0.95 * resamples) - 1]
+
+
 def ppl_interval(
     documents: list[DocumentNLL], *, seed: int = 20261005, resamples: int = 10000
 ) -> tuple[float, float]:

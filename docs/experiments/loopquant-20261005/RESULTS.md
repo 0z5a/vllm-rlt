@@ -279,3 +279,23 @@ NVFP4 CPU checks cover all256 packed bytes (including signed zero), nearest-even
 midpoints, tail padding, fixed scale reuse and independent swizzle coordinates.
 [Three checks pass](nvfp4-format-cpu-attempt1.log). Native installed NVFP4 ABI
 and the new FP8 model/graph checks remain unrun.
+
+## Arrival traces and paired task metrics
+
+A native engine trace now supports closed refill cohorts and immutable open
+arrival times, varying prompt/output lengths and per-request decode depth.
+Arrival latency includes submission delay while the engine is busy; queue
+samples include offered but not yet submitted requests. Mixed-depth records
+keep the model-configured prefill depth for the first output separately from
+later decode depths. Fixed-depth cohorts still require both to match.
+The full CPU regression passes476 tests (29 skipped,128 GPU deselected), with
+[raw log](full-cpu-arrivals-attempt1.log). The subsequent explicit stream-drain
+and finite-SLO checks pass the [50-test subset](arrival-quality-cpu-attempt2.log).
+
+Latency reports include p50/p95 TTFT, TPOT and observable single-token ITL;
+batched deliveries retain counts rather than inventing token timestamps.
+Goodput keeps failed requests in its denominator and can use a preregistered
+steady window. Scheduler shape histograms report host effective/submitted
+rows; they are not kernel-profiler measurements. Question-paired bootstrap
+accuracy drops complement document-paired PPL intervals. These are tested
+measurement facilities; GPU open-arrival and HTTP results remain pending.
