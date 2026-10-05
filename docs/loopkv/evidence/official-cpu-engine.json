@@ -1,1340 +1,9 @@
 {
-  "scope": "official_CPU_finite_engine_storage_control_not_author_GPU_quality_or_performance",
-  "audit": {
-    "scope": "complete_fixed_depth_official_screen_not_performance_or_task_quality",
-    "source_sha": "9a94ef5823d620c909d9f9c00112b171b6a9363f",
-    "plan_sha256": "bb2e344f18d21d0ffa3f292d1731dca511e51e241110fa1d4d6ca956195fdb6b",
-    "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
-    "checkpoint": {
-      "repo": "armenjeddi/LoopFormer-3block-8iterations",
-      "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
-      "files": [
-        {
-          "path": "config.json",
-          "bytes": 296,
-          "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
-        },
-        {
-          "path": "generation_config.json",
-          "bytes": 69,
-          "sha256": "52e8c2bef1d50a9aa99ce1da2a586ec40f524c1eded9c9ece289f3146b909ded"
-        },
-        {
-          "path": "merges.txt",
-          "bytes": 456318,
-          "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
-        },
-        {
-          "path": "model.safetensors",
-          "bytes": 556342528,
-          "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185"
-        },
-        {
-          "path": "special_tokens_map.json",
-          "bytes": 131,
-          "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
-        },
-        {
-          "path": "tokenizer.json",
-          "bytes": 3557680,
-          "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
-        },
-        {
-          "path": "tokenizer_config.json",
-          "bytes": 507,
-          "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
-        },
-        {
-          "path": "vocab.json",
-          "bytes": 798156,
-          "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
-        }
-      ],
-      "source": "pinned Hub metadata with verified bounded HTTP ranges"
-    },
-    "arms": 16,
-    "requests": 424,
-    "output_tokens": 6784,
-    "all_exact_request_objects": true,
-    "token_different_requests": 0,
-    "exit_different_requests": 0,
-    "raw_work_traces_reconciled": true,
-    "results": [
-      {
-        "case": {
-          "name": "b1-c2-p8-d16",
-          "batch": 1,
-          "requests": 2,
-          "outputs": 16,
-          "blocks": 16,
-          "worst_future_resident_limit": 1
-        },
-        "arm": {
-          "name": "native",
-          "execution": "sync",
-          "alias": false,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 6.270251707872376,
-        "output_tokens": 32,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 16,
-        "recurrent_batch_histogram": {
-          "1": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 30,
-          "2": 30,
-          "3": 30,
-          "4": 30,
-          "5": 30,
-          "6": 30,
-          "7": 30,
-          "8": 30
-        },
-        "submitted_recurrent_rows": 240,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 1.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 1,
-          "p50": 1,
-          "p90": 1
-        },
-        "submitted_prefill_tokens": 16,
-        "observed_peak_residents_after_step": 1
-      },
-      {
-        "case": {
-          "name": "b1-c2-p8-d16",
-          "batch": 1,
-          "requests": 2,
-          "outputs": 16,
-          "blocks": 16,
-          "worst_future_resident_limit": 1
-        },
-        "arm": {
-          "name": "alias",
-          "execution": "sync",
-          "alias": true,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 6.459077457897365,
-        "output_tokens": 32,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 16,
-        "recurrent_batch_histogram": {
-          "1": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 30,
-          "2": 30,
-          "3": 30,
-          "4": 30,
-          "5": 30,
-          "6": 30,
-          "7": 30,
-          "8": 30
-        },
-        "submitted_recurrent_rows": 240,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 1.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 1,
-          "p50": 1,
-          "p90": 1
-        },
-        "submitted_prefill_tokens": 16,
-        "observed_peak_residents_after_step": 1
-      },
-      {
-        "case": {
-          "name": "b1-c2-p8-d16",
-          "batch": 1,
-          "requests": 2,
-          "outputs": 16,
-          "blocks": 16,
-          "worst_future_resident_limit": 1
-        },
-        "arm": {
-          "name": "compact",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 5.8226925421040505,
-        "output_tokens": 32,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 16,
-        "recurrent_batch_histogram": {
-          "1": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 30,
-          "2": 30,
-          "3": 30,
-          "4": 30,
-          "5": 30,
-          "6": 30,
-          "7": 30,
-          "8": 30
-        },
-        "submitted_recurrent_rows": 240,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 1.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 1,
-          "p50": 1,
-          "p90": 1
-        },
-        "submitted_prefill_tokens": 16,
-        "observed_peak_residents_after_step": 1,
-        "compact": {
-          "peak_live_records": 184,
-          "peak_metadata_bytes": 1852,
-          "live_records_after_drain": 0,
-          "reserved_records_after_drain": 0
-        }
-      },
-      {
-        "case": {
-          "name": "b1-c2-p8-d16",
-          "batch": 1,
-          "requests": 2,
-          "outputs": 16,
-          "blocks": 16,
-          "worst_future_resident_limit": 1
-        },
-        "arm": {
-          "name": "credits",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": true,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 5.776649750070646,
-        "output_tokens": 32,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 16,
-        "recurrent_batch_histogram": {
-          "1": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 30,
-          "2": 30,
-          "3": 30,
-          "4": 30,
-          "5": 30,
-          "6": 30,
-          "7": 30,
-          "8": 30
-        },
-        "submitted_recurrent_rows": 240,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 1.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 1,
-          "p50": 1,
-          "p90": 1
-        },
-        "submitted_prefill_tokens": 16,
-        "observed_peak_residents_after_step": 1,
-        "compact": {
-          "peak_live_records": 184,
-          "peak_metadata_bytes": 1852,
-          "live_records_after_drain": 0,
-          "reserved_records_after_drain": 0
-        }
-      },
-      {
-        "case": {
-          "name": "b4-c8-p8-d16",
-          "batch": 4,
-          "requests": 8,
-          "outputs": 16,
-          "blocks": 64,
-          "worst_future_resident_limit": 4
-        },
-        "arm": {
-          "name": "native",
-          "execution": "sync",
-          "alias": false,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 14.244163583032787,
-        "output_tokens": 128,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 64,
-        "recurrent_batch_histogram": {
-          "4": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 120,
-          "2": 120,
-          "3": 120,
-          "4": 120,
-          "5": 120,
-          "6": 120,
-          "7": 120,
-          "8": 120
-        },
-        "submitted_recurrent_rows": 960,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 4.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 4,
-          "p50": 4,
-          "p90": 4
-        },
-        "submitted_prefill_tokens": 64,
-        "observed_peak_residents_after_step": 4
-      },
-      {
-        "case": {
-          "name": "b4-c8-p8-d16",
-          "batch": 4,
-          "requests": 8,
-          "outputs": 16,
-          "blocks": 64,
-          "worst_future_resident_limit": 4
-        },
-        "arm": {
-          "name": "alias",
-          "execution": "sync",
-          "alias": true,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 15.881679458077997,
-        "output_tokens": 128,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 64,
-        "recurrent_batch_histogram": {
-          "4": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 120,
-          "2": 120,
-          "3": 120,
-          "4": 120,
-          "5": 120,
-          "6": 120,
-          "7": 120,
-          "8": 120
-        },
-        "submitted_recurrent_rows": 960,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 4.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 4,
-          "p50": 4,
-          "p90": 4
-        },
-        "submitted_prefill_tokens": 64,
-        "observed_peak_residents_after_step": 4
-      },
-      {
-        "case": {
-          "name": "b4-c8-p8-d16",
-          "batch": 4,
-          "requests": 8,
-          "outputs": 16,
-          "blocks": 64,
-          "worst_future_resident_limit": 4
-        },
-        "arm": {
-          "name": "compact",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 19.253023749915883,
-        "output_tokens": 128,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 64,
-        "recurrent_batch_histogram": {
-          "4": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 120,
-          "2": 120,
-          "3": 120,
-          "4": 120,
-          "5": 120,
-          "6": 120,
-          "7": 120,
-          "8": 120
-        },
-        "submitted_recurrent_rows": 960,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 4.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 4,
-          "p50": 4,
-          "p90": 4
-        },
-        "submitted_prefill_tokens": 64,
-        "observed_peak_residents_after_step": 4,
-        "compact": {
-          "peak_live_records": 736,
-          "peak_metadata_bytes": 7408,
-          "live_records_after_drain": 0,
-          "reserved_records_after_drain": 0
-        }
-      },
-      {
-        "case": {
-          "name": "b4-c8-p8-d16",
-          "batch": 4,
-          "requests": 8,
-          "outputs": 16,
-          "blocks": 64,
-          "worst_future_resident_limit": 4
-        },
-        "arm": {
-          "name": "credits",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": true,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 15.796176333911717,
-        "output_tokens": 128,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 64,
-        "recurrent_batch_histogram": {
-          "4": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 120,
-          "2": 120,
-          "3": 120,
-          "4": 120,
-          "5": 120,
-          "6": 120,
-          "7": 120,
-          "8": 120
-        },
-        "submitted_recurrent_rows": 960,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 4.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 4,
-          "p50": 4,
-          "p90": 4
-        },
-        "submitted_prefill_tokens": 64,
-        "observed_peak_residents_after_step": 4,
-        "compact": {
-          "peak_live_records": 736,
-          "peak_metadata_bytes": 7408,
-          "live_records_after_drain": 0,
-          "reserved_records_after_drain": 0
-        }
-      },
-      {
-        "case": {
-          "name": "b16-c32-p8-d16",
-          "batch": 16,
-          "requests": 32,
-          "outputs": 16,
-          "blocks": 256,
-          "worst_future_resident_limit": 16
-        },
-        "arm": {
-          "name": "native",
-          "execution": "sync",
-          "alias": false,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 50.056715375045314,
-        "output_tokens": 512,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 256,
-        "recurrent_batch_histogram": {
-          "16": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 480,
-          "2": 480,
-          "3": 480,
-          "4": 480,
-          "5": 480,
-          "6": 480,
-          "7": 480,
-          "8": 480
-        },
-        "submitted_recurrent_rows": 3840,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 16.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 16,
-          "p50": 16,
-          "p90": 16
-        },
-        "submitted_prefill_tokens": 256,
-        "observed_peak_residents_after_step": 16
-      },
-      {
-        "case": {
-          "name": "b16-c32-p8-d16",
-          "batch": 16,
-          "requests": 32,
-          "outputs": 16,
-          "blocks": 256,
-          "worst_future_resident_limit": 16
-        },
-        "arm": {
-          "name": "alias",
-          "execution": "sync",
-          "alias": true,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 49.20271083316766,
-        "output_tokens": 512,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 256,
-        "recurrent_batch_histogram": {
-          "16": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 480,
-          "2": 480,
-          "3": 480,
-          "4": 480,
-          "5": 480,
-          "6": 480,
-          "7": 480,
-          "8": 480
-        },
-        "submitted_recurrent_rows": 3840,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 16.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 16,
-          "p50": 16,
-          "p90": 16
-        },
-        "submitted_prefill_tokens": 256,
-        "observed_peak_residents_after_step": 16
-      },
-      {
-        "case": {
-          "name": "b16-c32-p8-d16",
-          "batch": 16,
-          "requests": 32,
-          "outputs": 16,
-          "blocks": 256,
-          "worst_future_resident_limit": 16
-        },
-        "arm": {
-          "name": "compact",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 49.03085199999623,
-        "output_tokens": 512,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 256,
-        "recurrent_batch_histogram": {
-          "16": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 480,
-          "2": 480,
-          "3": 480,
-          "4": 480,
-          "5": 480,
-          "6": 480,
-          "7": 480,
-          "8": 480
-        },
-        "submitted_recurrent_rows": 3840,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 16.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 16,
-          "p50": 16,
-          "p90": 16
-        },
-        "submitted_prefill_tokens": 256,
-        "observed_peak_residents_after_step": 16,
-        "compact": {
-          "peak_live_records": 2944,
-          "peak_metadata_bytes": 29632,
-          "live_records_after_drain": 0,
-          "reserved_records_after_drain": 0
-        }
-      },
-      {
-        "case": {
-          "name": "b16-c32-p8-d16",
-          "batch": 16,
-          "requests": 32,
-          "outputs": 16,
-          "blocks": 256,
-          "worst_future_resident_limit": 16
-        },
-        "arm": {
-          "name": "credits",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": true,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 51.18781462498009,
-        "output_tokens": 512,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 256,
-        "recurrent_batch_histogram": {
-          "16": 240
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 480,
-          "2": 480,
-          "3": 480,
-          "4": 480,
-          "5": 480,
-          "6": 480,
-          "7": 480,
-          "8": 480
-        },
-        "submitted_recurrent_rows": 3840,
-        "recurrent_calls": 240,
-        "effective_batch_mean": 16.0,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 16,
-          "p50": 16,
-          "p90": 16
-        },
-        "submitted_prefill_tokens": 256,
-        "observed_peak_residents_after_step": 16,
-        "compact": {
-          "peak_live_records": 2944,
-          "peak_metadata_bytes": 29632,
-          "live_records_after_drain": 0,
-          "reserved_records_after_drain": 0
-        }
-      },
-      {
-        "case": {
-          "name": "b32-c64-p8-d16",
-          "batch": 32,
-          "requests": 64,
-          "outputs": 16,
-          "blocks": 512,
-          "worst_future_resident_limit": 32
-        },
-        "arm": {
-          "name": "native",
-          "execution": "sync",
-          "alias": false,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 100.66338287503459,
-        "output_tokens": 1024,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 512,
-        "recurrent_batch_histogram": {
-          "16": 2,
-          "32": 239
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 960,
-          "2": 960,
-          "3": 960,
-          "4": 960,
-          "5": 960,
-          "6": 960,
-          "7": 960,
-          "8": 960
-        },
-        "submitted_recurrent_rows": 7680,
-        "recurrent_calls": 241,
-        "effective_batch_mean": 31.86721991701245,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 32,
-          "p50": 32,
-          "p90": 32
-        },
-        "submitted_prefill_tokens": 512,
-        "observed_peak_residents_after_step": 32
-      },
-      {
-        "case": {
-          "name": "b32-c64-p8-d16",
-          "batch": 32,
-          "requests": 64,
-          "outputs": 16,
-          "blocks": 512,
-          "worst_future_resident_limit": 32
-        },
-        "arm": {
-          "name": "alias",
-          "execution": "sync",
-          "alias": true,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 103.9173186251428,
-        "output_tokens": 1024,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 512,
-        "recurrent_batch_histogram": {
-          "16": 2,
-          "32": 239
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 960,
-          "2": 960,
-          "3": 960,
-          "4": 960,
-          "5": 960,
-          "6": 960,
-          "7": 960,
-          "8": 960
-        },
-        "submitted_recurrent_rows": 7680,
-        "recurrent_calls": 241,
-        "effective_batch_mean": 31.86721991701245,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 32,
-          "p50": 32,
-          "p90": 32
-        },
-        "submitted_prefill_tokens": 512,
-        "observed_peak_residents_after_step": 32
-      },
-      {
-        "case": {
-          "name": "b32-c64-p8-d16",
-          "batch": 32,
-          "requests": 64,
-          "outputs": 16,
-          "blocks": 512,
-          "worst_future_resident_limit": 32
-        },
-        "arm": {
-          "name": "compact",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 104.00980587489903,
-        "output_tokens": 1024,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 512,
-        "recurrent_batch_histogram": {
-          "16": 2,
-          "32": 239
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 960,
-          "2": 960,
-          "3": 960,
-          "4": 960,
-          "5": 960,
-          "6": 960,
-          "7": 960,
-          "8": 960
-        },
-        "submitted_recurrent_rows": 7680,
-        "recurrent_calls": 241,
-        "effective_batch_mean": 31.86721991701245,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 32,
-          "p50": 32,
-          "p90": 32
-        },
-        "submitted_prefill_tokens": 512,
-        "observed_peak_residents_after_step": 32,
-        "compact": {
-          "peak_live_records": 5872,
-          "peak_metadata_bytes": 59264,
-          "live_records_after_drain": 0,
-          "reserved_records_after_drain": 0
-        }
-      },
-      {
-        "case": {
-          "name": "b32-c64-p8-d16",
-          "batch": 32,
-          "requests": 64,
-          "outputs": 16,
-          "blocks": 512,
-          "worst_future_resident_limit": 32
-        },
-        "arm": {
-          "name": "credits",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": true,
-          "async": false,
-          "graphs": false
-        },
-        "state_seed": 83,
-        "seconds_not_performance": 110.6255132497754,
-        "output_tokens": 1024,
-        "token_different_requests": 0,
-        "exit_different_requests": 0,
-        "exact_request_objects": true,
-        "peak_allocated_bytes": null,
-        "peak_reserved_bytes": null,
-        "free_blocks_after_drain": 512,
-        "recurrent_batch_histogram": {
-          "16": 2,
-          "32": 239
-        },
-        "submitted_recurrent_depth_rows": {
-          "1": 960,
-          "2": 960,
-          "3": 960,
-          "4": 960,
-          "5": 960,
-          "6": 960,
-          "7": 960,
-          "8": 960
-        },
-        "submitted_recurrent_rows": 7680,
-        "recurrent_calls": 241,
-        "effective_batch_mean": 31.86721991701245,
-        "effective_batch_nearest_rank_quantiles": {
-          "p10": 32,
-          "p50": 32,
-          "p90": 32
-        },
-        "submitted_prefill_tokens": 512,
-        "observed_peak_residents_after_step": 32,
-        "compact": {
-          "peak_live_records": 5872,
-          "peak_metadata_bytes": 59264,
-          "live_records_after_drain": 0,
-          "reserved_records_after_drain": 0
-        }
-      }
-    ]
+  "scope": "official_BF16_CPU_storage_engine_correctness_not_GPU_author_quality_or_performance",
+  "platform": {
+    "system": "Darwin",
+    "machine": "arm64"
   },
-  "metadata": {
-    "plan": {
-      "source_sha": "9a94ef5823d620c909d9f9c00112b171b6a9363f",
-      "model": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu",
-      "prompts": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/loopformer-cpu-engine-p8-v1-prompts.json",
-      "policy": "ouro",
-      "min_loops": 8,
-      "max_loops": 8,
-      "threshold": 1.0,
-      "arms": [
-        {
-          "name": "native",
-          "execution": "sync",
-          "alias": false,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        {
-          "name": "alias",
-          "execution": "sync",
-          "alias": true,
-          "compact": false,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        {
-          "name": "compact",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": false,
-          "async": false,
-          "graphs": false
-        },
-        {
-          "name": "credits",
-          "execution": "sync",
-          "alias": false,
-          "compact": true,
-          "reclaim": true,
-          "async": false,
-          "graphs": false
-        }
-      ],
-      "cases": [
-        {
-          "name": "b1-c2-p8-d16",
-          "batch": 1,
-          "requests": 2,
-          "outputs": 16,
-          "blocks": 16,
-          "worst_future_resident_limit": 1
-        },
-        {
-          "name": "b4-c8-p8-d16",
-          "batch": 4,
-          "requests": 8,
-          "outputs": 16,
-          "blocks": 64,
-          "worst_future_resident_limit": 4
-        },
-        {
-          "name": "b16-c32-p8-d16",
-          "batch": 16,
-          "requests": 32,
-          "outputs": 16,
-          "blocks": 256,
-          "worst_future_resident_limit": 16
-        },
-        {
-          "name": "b32-c64-p8-d16",
-          "batch": 32,
-          "requests": 64,
-          "outputs": 16,
-          "blocks": 512,
-          "worst_future_resident_limit": 32
-        }
-      ],
-      "scope": "official_BF16_CPU_engine_storage_diagnostic_P8D16_R8_not_author_qualification_or_GPU_or_quality_or_performance",
-      "payload_arena_ceiling_bytes": 419430400,
-      "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
-      "device": "cpu",
-      "attention_backend": "torch",
-      "cpu_threads": 2,
-      "state_seed": 83
-    },
-    "plan_sha256": "bb2e344f18d21d0ffa3f292d1731dca511e51e241110fa1d4d6ca956195fdb6b",
-    "checkpoint": {
-      "repo": "armenjeddi/LoopFormer-3block-8iterations",
-      "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
-      "files": [
-        {
-          "path": "config.json",
-          "bytes": 296,
-          "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
-        },
-        {
-          "path": "generation_config.json",
-          "bytes": 69,
-          "sha256": "52e8c2bef1d50a9aa99ce1da2a586ec40f524c1eded9c9ece289f3146b909ded"
-        },
-        {
-          "path": "merges.txt",
-          "bytes": 456318,
-          "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
-        },
-        {
-          "path": "model.safetensors",
-          "bytes": 556342528,
-          "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185"
-        },
-        {
-          "path": "special_tokens_map.json",
-          "bytes": 131,
-          "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
-        },
-        {
-          "path": "tokenizer.json",
-          "bytes": 3557680,
-          "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
-        },
-        {
-          "path": "tokenizer_config.json",
-          "bytes": 507,
-          "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
-        },
-        {
-          "path": "vocab.json",
-          "bytes": 798156,
-          "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
-        }
-      ],
-      "source": "pinned Hub metadata with verified bounded HTTP ranges"
-    },
-    "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
-    "driver_sha256": "fc6ef52894208a176cd768eb0ab46fec7fc4f99e736b3b23fea003e376526155",
-    "pid": 78844,
-    "torch": "2.13.0",
-    "device": "cpu",
-    "attention_backend": "torch",
-    "gpu": null,
-    "quality_stops_sha256": null,
-    "scope": "official_weight_diagnostic_not_performance_or_quality"
-  },
-  "all_storage_work_exact": true,
-  "files": [
-    {
-      "path": "DONE.json",
-      "bytes": 55,
-      "sha256": "e0e5317fc304b8fa793fd15913b8f2854a6d09762373cd080c2efc46c52ab798"
-    },
-    {
-      "path": "MODEL_LOADED.json",
-      "bytes": 49,
-      "sha256": "f53f8e5264160ff02ea1b9052d47eac8dcced9592e50146ad82c6302744e9152"
-    },
-    {
-      "path": "b1-c2-p8-d16-alias/requests.json",
-      "bytes": 1218,
-      "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
-    },
-    {
-      "path": "b1-c2-p8-d16-alias/steps.json",
-      "bytes": 41427,
-      "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
-    },
-    {
-      "path": "b1-c2-p8-d16-alias/summary.json",
-      "bytes": 1065,
-      "sha256": "d39ea22f74f9f87040206a311c38b8e6ed17d6076b06b93a8fc3b352316cdd23"
-    },
-    {
-      "path": "b1-c2-p8-d16-compact/requests.json",
-      "bytes": 1218,
-      "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
-    },
-    {
-      "path": "b1-c2-p8-d16-compact/steps.json",
-      "bytes": 41427,
-      "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
-    },
-    {
-      "path": "b1-c2-p8-d16-compact/summary.json",
-      "bytes": 1224,
-      "sha256": "9da8cf742447ea8fd6e1e11a06f3336496ec4ad46e5e2f76954147201619cc1e"
-    },
-    {
-      "path": "b1-c2-p8-d16-credits/requests.json",
-      "bytes": 1218,
-      "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
-    },
-    {
-      "path": "b1-c2-p8-d16-credits/steps.json",
-      "bytes": 41427,
-      "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
-    },
-    {
-      "path": "b1-c2-p8-d16-credits/summary.json",
-      "bytes": 1222,
-      "sha256": "75399558d44b5b3e3fa06d25f72c3e29e561a722bf0def7a223339406579c786"
-    },
-    {
-      "path": "b1-c2-p8-d16-native/requests.json",
-      "bytes": 1218,
-      "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
-    },
-    {
-      "path": "b1-c2-p8-d16-native/steps.json",
-      "bytes": 41427,
-      "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
-    },
-    {
-      "path": "b1-c2-p8-d16-native/summary.json",
-      "bytes": 1067,
-      "sha256": "7590d8b8faee61f8b2d29e2398fd141dc74381829cbad0e42c06f02381babe66"
-    },
-    {
-      "path": "b16-c32-p8-d16-alias/requests.json",
-      "bytes": 19471,
-      "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
-    },
-    {
-      "path": "b16-c32-p8-d16-alias/steps.json",
-      "bytes": 95845,
-      "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
-    },
-    {
-      "path": "b16-c32-p8-d16-alias/summary.json",
-      "bytes": 1089,
-      "sha256": "0bb49b0fdbe52962feb1a05cf06242eda51842326d4e7d19db730138b1c1aa9f"
-    },
-    {
-      "path": "b16-c32-p8-d16-compact/requests.json",
-      "bytes": 19471,
-      "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
-    },
-    {
-      "path": "b16-c32-p8-d16-compact/steps.json",
-      "bytes": 95845,
-      "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
-    },
-    {
-      "path": "b16-c32-p8-d16-compact/summary.json",
-      "bytes": 1249,
-      "sha256": "01c697bb8ffdcd0f079e6f13f88dedc234704d50d3485ccf69015c60538ae92a"
-    },
-    {
-      "path": "b16-c32-p8-d16-credits/requests.json",
-      "bytes": 19471,
-      "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
-    },
-    {
-      "path": "b16-c32-p8-d16-credits/steps.json",
-      "bytes": 95845,
-      "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
-    },
-    {
-      "path": "b16-c32-p8-d16-credits/summary.json",
-      "bytes": 1248,
-      "sha256": "1f30218eaca84d0294b2cb82b02f8277533a3d5bac1529f9e3794f57bb0e90bb"
-    },
-    {
-      "path": "b16-c32-p8-d16-native/requests.json",
-      "bytes": 19471,
-      "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
-    },
-    {
-      "path": "b16-c32-p8-d16-native/steps.json",
-      "bytes": 95845,
-      "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
-    },
-    {
-      "path": "b16-c32-p8-d16-native/summary.json",
-      "bytes": 1092,
-      "sha256": "bc14c8c7731066460ed4e14ae169322b8e87250f71b3dcfcdaab32aa4c8e6378"
-    },
-    {
-      "path": "b32-c64-p8-d16-alias/requests.json",
-      "bytes": 38959,
-      "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
-    },
-    {
-      "path": "b32-c64-p8-d16-alias/steps.json",
-      "bytes": 162379,
-      "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
-    },
-    {
-      "path": "b32-c64-p8-d16-alias/summary.json",
-      "bytes": 1116,
-      "sha256": "852fabc6f5a1219fd72859bb85c2dee690a6793e4021e95749f9e7e2117ba4b6"
-    },
-    {
-      "path": "b32-c64-p8-d16-compact/requests.json",
-      "bytes": 38959,
-      "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
-    },
-    {
-      "path": "b32-c64-p8-d16-compact/steps.json",
-      "bytes": 162379,
-      "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
-    },
-    {
-      "path": "b32-c64-p8-d16-compact/summary.json",
-      "bytes": 1277,
-      "sha256": "341c7107de99792df56fc1c08357c321da97ffaf40f7614d8ff213d9526b5f93"
-    },
-    {
-      "path": "b32-c64-p8-d16-credits/requests.json",
-      "bytes": 38959,
-      "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
-    },
-    {
-      "path": "b32-c64-p8-d16-credits/steps.json",
-      "bytes": 162379,
-      "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
-    },
-    {
-      "path": "b32-c64-p8-d16-credits/summary.json",
-      "bytes": 1275,
-      "sha256": "74b0a6297f8c931c61cc8a26556e689abc5be99b18af2ffa6ab59127ff8cf931"
-    },
-    {
-      "path": "b32-c64-p8-d16-native/requests.json",
-      "bytes": 38959,
-      "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
-    },
-    {
-      "path": "b32-c64-p8-d16-native/steps.json",
-      "bytes": 162379,
-      "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
-    },
-    {
-      "path": "b32-c64-p8-d16-native/summary.json",
-      "bytes": 1119,
-      "sha256": "fe82f7842b2b1887171feeeb62cad12252ec8946987cabd80675cc01e4c0fb14"
-    },
-    {
-      "path": "b4-c8-p8-d16-alias/requests.json",
-      "bytes": 4859,
-      "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
-    },
-    {
-      "path": "b4-c8-p8-d16-alias/steps.json",
-      "bytes": 51463,
-      "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
-    },
-    {
-      "path": "b4-c8-p8-d16-alias/summary.json",
-      "bytes": 1075,
-      "sha256": "7fbb0b9aa05ec1aa954871c9a787cb793af131689a6c3be0ccde6cd2ee4262c9"
-    },
-    {
-      "path": "b4-c8-p8-d16-compact/requests.json",
-      "bytes": 4859,
-      "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
-    },
-    {
-      "path": "b4-c8-p8-d16-compact/steps.json",
-      "bytes": 51463,
-      "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
-    },
-    {
-      "path": "b4-c8-p8-d16-compact/summary.json",
-      "bytes": 1233,
-      "sha256": "09a5682087ef4f430c69488c71d31d0ff391d4f700a03e9f2eff018bb7fe8115"
-    },
-    {
-      "path": "b4-c8-p8-d16-credits/requests.json",
-      "bytes": 4859,
-      "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
-    },
-    {
-      "path": "b4-c8-p8-d16-credits/steps.json",
-      "bytes": 51463,
-      "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
-    },
-    {
-      "path": "b4-c8-p8-d16-credits/summary.json",
-      "bytes": 1232,
-      "sha256": "45faa0c39cea41fb6529f6a0d7f9b1dfde95ec6975d82eb49c6faa4c48b49832"
-    },
-    {
-      "path": "b4-c8-p8-d16-native/requests.json",
-      "bytes": 4859,
-      "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
-    },
-    {
-      "path": "b4-c8-p8-d16-native/steps.json",
-      "bytes": 51463,
-      "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
-    },
-    {
-      "path": "b4-c8-p8-d16-native/summary.json",
-      "bytes": 1077,
-      "sha256": "9a90e14d8264518d3178e4eb903ca44e95c2ccf7c2af8e35fd1324965367ce6c"
-    },
-    {
-      "path": "plan.json",
-      "bytes": 4294,
-      "sha256": "0232687159f4f3564d5370041a37332713fa71dfafb2fbd069e35f5b7752eb05"
-    }
-  ],
   "receipt": {
     "controller_pid": 78839,
     "children": [
@@ -1378,7 +47,2726 @@
       }
     ]
   },
+  "parcae_retry": {
+    "controller_pid": 82380,
+    "pid": 82387,
+    "command": [
+      "/Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/bin/python",
+      "-m",
+      "experiments.loopkv.screen",
+      "--plan",
+      "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/parcae-cpu-engine-v2-plan.json",
+      "--out",
+      "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/parcae-cpu-engine-v2",
+      "--load-lock",
+      "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/cpu-model-load.lock"
+    ],
+    "start_unix": 1791184668.517514,
+    "plan_sha256": "f2fa1868a619b125fef486c2b6bcdb7ba677fc35380b2e6fa73def5e218505de",
+    "returncode": 0,
+    "end_unix": 1791185224.6247349
+  },
   "failed_parcae_v1_log": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/source/experiments/loopkv/screen.py\", line 179, in <module>\n    main()\n  File \"/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/source/experiments/loopkv/screen.py\", line 106, in main\n    completed, steps, elapsed = drive(\n                                ^^^^^^\n  File \"/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/source/experiments/loopkv/capture.py\", line 53, in drive\n    engine.add_request(str(index), prompt, params)\n  File \"/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/source/vllm_rlt/engine/llm_engine.py\", line 252, in add_request\n    raise ValueError(\nValueError: request requires 16 KV blocks but cache has 4; increase num_blocks or reduce prompt/max_tokens\n",
+  "models": {
+    "loopformer": {
+      "audit": {
+        "scope": "complete_fixed_depth_official_screen_not_performance_or_task_quality",
+        "source_sha": "9a94ef5823d620c909d9f9c00112b171b6a9363f",
+        "plan_sha256": "bb2e344f18d21d0ffa3f292d1731dca511e51e241110fa1d4d6ca956195fdb6b",
+        "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
+        "checkpoint": {
+          "repo": "armenjeddi/LoopFormer-3block-8iterations",
+          "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 296,
+              "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
+            },
+            {
+              "path": "generation_config.json",
+              "bytes": 69,
+              "sha256": "52e8c2bef1d50a9aa99ce1da2a586ec40f524c1eded9c9ece289f3146b909ded"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 456318,
+              "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 556342528,
+              "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 131,
+              "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 3557680,
+              "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 507,
+              "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 798156,
+              "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
+            }
+          ],
+          "source": "pinned Hub metadata with verified bounded HTTP ranges"
+        },
+        "arms": 16,
+        "requests": 424,
+        "output_tokens": 6784,
+        "all_exact_request_objects": true,
+        "token_different_requests": 0,
+        "exit_different_requests": 0,
+        "raw_work_traces_reconciled": true,
+        "results": [
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 6.270251707872376,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 6.459077457897365,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 5.8226925421040505,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 5.776649750070646,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 14.244163583032787,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 15.881679458077997,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 19.253023749915883,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 15.796176333911717,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 50.056715375045314,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 49.20271083316766,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 49.03085199999623,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 51.18781462498009,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 100.66338287503459,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 103.9173186251428,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 104.00980587489903,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 110.6255132497754,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "plan": {
+          "source_sha": "9a94ef5823d620c909d9f9c00112b171b6a9363f",
+          "model": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu",
+          "prompts": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/loopformer-cpu-engine-p8-v1-prompts.json",
+          "policy": "ouro",
+          "min_loops": 8,
+          "max_loops": 8,
+          "threshold": 1.0,
+          "arms": [
+            {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            }
+          ],
+          "cases": [
+            {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            }
+          ],
+          "scope": "official_BF16_CPU_engine_storage_diagnostic_P8D16_R8_not_author_qualification_or_GPU_or_quality_or_performance",
+          "payload_arena_ceiling_bytes": 419430400,
+          "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
+          "device": "cpu",
+          "attention_backend": "torch",
+          "cpu_threads": 2,
+          "state_seed": 83
+        },
+        "plan_sha256": "bb2e344f18d21d0ffa3f292d1731dca511e51e241110fa1d4d6ca956195fdb6b",
+        "checkpoint": {
+          "repo": "armenjeddi/LoopFormer-3block-8iterations",
+          "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 296,
+              "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
+            },
+            {
+              "path": "generation_config.json",
+              "bytes": 69,
+              "sha256": "52e8c2bef1d50a9aa99ce1da2a586ec40f524c1eded9c9ece289f3146b909ded"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 456318,
+              "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 556342528,
+              "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 131,
+              "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 3557680,
+              "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 507,
+              "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 798156,
+              "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
+            }
+          ],
+          "source": "pinned Hub metadata with verified bounded HTTP ranges"
+        },
+        "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
+        "driver_sha256": "fc6ef52894208a176cd768eb0ab46fec7fc4f99e736b3b23fea003e376526155",
+        "pid": 78844,
+        "torch": "2.13.0",
+        "device": "cpu",
+        "attention_backend": "torch",
+        "gpu": null,
+        "quality_stops_sha256": null,
+        "scope": "official_weight_diagnostic_not_performance_or_quality"
+      },
+      "files": [
+        {
+          "path": "DONE.json",
+          "bytes": 55,
+          "sha256": "e0e5317fc304b8fa793fd15913b8f2854a6d09762373cd080c2efc46c52ab798"
+        },
+        {
+          "path": "MODEL_LOADED.json",
+          "bytes": 49,
+          "sha256": "f53f8e5264160ff02ea1b9052d47eac8dcced9592e50146ad82c6302744e9152"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/summary.json",
+          "bytes": 1065,
+          "sha256": "d39ea22f74f9f87040206a311c38b8e6ed17d6076b06b93a8fc3b352316cdd23"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/summary.json",
+          "bytes": 1224,
+          "sha256": "9da8cf742447ea8fd6e1e11a06f3336496ec4ad46e5e2f76954147201619cc1e"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/summary.json",
+          "bytes": 1222,
+          "sha256": "75399558d44b5b3e3fa06d25f72c3e29e561a722bf0def7a223339406579c786"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/summary.json",
+          "bytes": 1067,
+          "sha256": "7590d8b8faee61f8b2d29e2398fd141dc74381829cbad0e42c06f02381babe66"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/summary.json",
+          "bytes": 1089,
+          "sha256": "0bb49b0fdbe52962feb1a05cf06242eda51842326d4e7d19db730138b1c1aa9f"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/summary.json",
+          "bytes": 1249,
+          "sha256": "01c697bb8ffdcd0f079e6f13f88dedc234704d50d3485ccf69015c60538ae92a"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/summary.json",
+          "bytes": 1248,
+          "sha256": "1f30218eaca84d0294b2cb82b02f8277533a3d5bac1529f9e3794f57bb0e90bb"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/summary.json",
+          "bytes": 1092,
+          "sha256": "bc14c8c7731066460ed4e14ae169322b8e87250f71b3dcfcdaab32aa4c8e6378"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/summary.json",
+          "bytes": 1116,
+          "sha256": "852fabc6f5a1219fd72859bb85c2dee690a6793e4021e95749f9e7e2117ba4b6"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/summary.json",
+          "bytes": 1277,
+          "sha256": "341c7107de99792df56fc1c08357c321da97ffaf40f7614d8ff213d9526b5f93"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/summary.json",
+          "bytes": 1275,
+          "sha256": "74b0a6297f8c931c61cc8a26556e689abc5be99b18af2ffa6ab59127ff8cf931"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/summary.json",
+          "bytes": 1119,
+          "sha256": "fe82f7842b2b1887171feeeb62cad12252ec8946987cabd80675cc01e4c0fb14"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/summary.json",
+          "bytes": 1075,
+          "sha256": "7fbb0b9aa05ec1aa954871c9a787cb793af131689a6c3be0ccde6cd2ee4262c9"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/summary.json",
+          "bytes": 1233,
+          "sha256": "09a5682087ef4f430c69488c71d31d0ff391d4f700a03e9f2eff018bb7fe8115"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/summary.json",
+          "bytes": 1232,
+          "sha256": "45faa0c39cea41fb6529f6a0d7f9b1dfde95ec6975d82eb49c6faa4c48b49832"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/summary.json",
+          "bytes": 1077,
+          "sha256": "9a90e14d8264518d3178e4eb903ca44e95c2ccf7c2af8e35fd1324965367ce6c"
+        },
+        {
+          "path": "plan.json",
+          "bytes": 4294,
+          "sha256": "0232687159f4f3564d5370041a37332713fa71dfafb2fbd069e35f5b7752eb05"
+        }
+      ],
+      "all_storage_work_exact": true,
+      "prompts": [
+        [
+          18438,
+          391,
+          703,
+          257,
+          17050,
+          4962,
+          257,
+          1790
+        ],
+        [
+          32,
+          5888,
+          4406,
+          262,
+          1271,
+          286,
+          3835,
+          22546
+        ],
+        [
+          32,
+          2267,
+          1074,
+          5260,
+          257,
+          6737,
+          7830,
+          739
+        ],
+        [
+          29453,
+          428,
+          1848,
+          286,
+          257,
+          40168,
+          10013,
+          257
+        ]
+      ]
+    },
+    "parcae": {
+      "audit": {
+        "scope": "complete_fixed_depth_official_screen_not_performance_or_task_quality",
+        "source_sha": "3c1dbdbaf26f51fffcbf0ee86c050de643fb6325",
+        "plan_sha256": "f2fa1868a619b125fef486c2b6bcdb7ba677fc35380b2e6fa73def5e218505de",
+        "prompts_sha256": "d66e8bbafbe339ae0ef028b3723535d1418612f7f2b038b02c096f33f1d8724f",
+        "checkpoint": {
+          "repo": "SandyResearch/parcae-370m",
+          "revision": "439284464ee4999bd1f762da7d044613a4828efe",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 1745,
+              "sha256": "0ed6862c495bfb670fc72eba955c555c472a5dcdf33bed6852608135ead6666e"
+            },
+            {
+              "path": "pytorch_model.bin",
+              "bytes": 1553099635,
+              "sha256": "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2"
+            }
+          ],
+          "source": "pinned Hub metadata with verified bounded HTTP ranges"
+        },
+        "arms": 16,
+        "requests": 424,
+        "output_tokens": 6784,
+        "all_exact_request_objects": true,
+        "token_different_requests": 0,
+        "exit_different_requests": 0,
+        "raw_work_traces_reconciled": true,
+        "results": [
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 3.5242641249205917,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 3.811748042004183,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 3.1224484578706324,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 3.2903956659138203,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 9.408515708055347,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 8.381558082997799,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 9.48622666602023,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 11.260283499956131,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 44.42903966689482,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 40.61821391596459,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 51.63887983397581,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 46.695386042119935,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 83.00048008398153,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 92.2552337499801,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 65.37935933284461,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 54.8406677080784,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "plan": {
+          "source_sha": "3c1dbdbaf26f51fffcbf0ee86c050de643fb6325",
+          "model": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/parcae-370m-cpu",
+          "prompts": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/parcae-cpu-engine-p8-v1-prompts.json",
+          "policy": "ouro",
+          "min_loops": 8,
+          "max_loops": 8,
+          "threshold": 1.0,
+          "arms": [
+            {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false
+            },
+            {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false
+            }
+          ],
+          "cases": [
+            {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            }
+          ],
+          "scope": "official_BF16_CPU_engine_storage_diagnostic_P8D16_R8_not_author_qualification_or_GPU_or_quality_or_performance",
+          "payload_arena_ceiling_bytes": 419430400,
+          "prompts_sha256": "d66e8bbafbe339ae0ef028b3723535d1418612f7f2b038b02c096f33f1d8724f",
+          "state_seed": 83,
+          "device": "cpu",
+          "attention_backend": "torch",
+          "cpu_threads": 2
+        },
+        "plan_sha256": "f2fa1868a619b125fef486c2b6bcdb7ba677fc35380b2e6fa73def5e218505de",
+        "checkpoint": {
+          "repo": "SandyResearch/parcae-370m",
+          "revision": "439284464ee4999bd1f762da7d044613a4828efe",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 1745,
+              "sha256": "0ed6862c495bfb670fc72eba955c555c472a5dcdf33bed6852608135ead6666e"
+            },
+            {
+              "path": "pytorch_model.bin",
+              "bytes": 1553099635,
+              "sha256": "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2"
+            }
+          ],
+          "source": "pinned Hub metadata with verified bounded HTTP ranges"
+        },
+        "prompts_sha256": "d66e8bbafbe339ae0ef028b3723535d1418612f7f2b038b02c096f33f1d8724f",
+        "driver_sha256": "6340b1f493a9b079e50042454adffae65092f699abb2eaf1ef84fa645ae93095",
+        "pid": 82387,
+        "torch": "2.13.0",
+        "device": "cpu",
+        "attention_backend": "torch",
+        "gpu": null,
+        "quality_stops_sha256": null,
+        "scope": "official_weight_diagnostic_not_performance_or_quality"
+      },
+      "files": [
+        {
+          "path": "DONE.json",
+          "bytes": 55,
+          "sha256": "c782bd9e44a542ab4c89b7df87c42ba48336ae48a0355991494d673631c7cc09"
+        },
+        {
+          "path": "MODEL_LOADED.json",
+          "bytes": 48,
+          "sha256": "6e9e0d0c693046f2638dca417e5b8038fed965dc15f5ffce91f5008ed0ddb207"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/summary.json",
+          "bytes": 1065,
+          "sha256": "84674a777ad3847cceaad35253578718f668262376ee8503e7dc35a8d879c182"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/summary.json",
+          "bytes": 1224,
+          "sha256": "be4ffb3232fc4c0e92b3495315a0b6459299ac5496b85841d46039005149753a"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/summary.json",
+          "bytes": 1223,
+          "sha256": "155c216e23f2dfe34954f2bcc59101aad5a1ed13da9713835121da60b0cdaebc"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/summary.json",
+          "bytes": 1068,
+          "sha256": "38d8996d82c5524018dad6572f6afe95375032864802764a4d2d2dcfb7c05b65"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/summary.json",
+          "bytes": 1089,
+          "sha256": "e076eeaeb5f6b321da350fc4df003497fc2a3b96564600b87fc6383ce1171138"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/summary.json",
+          "bytes": 1249,
+          "sha256": "caf491f448c3d643d07a10ccc40ffb8398c003d0d44f9537d2604022d5ce3b4c"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/summary.json",
+          "bytes": 1249,
+          "sha256": "6962c4a642ced3843228ad416af14eb366fca1312284f1a46b3e0805df7f98a7"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/summary.json",
+          "bytes": 1091,
+          "sha256": "14b7c053ac49feafe16720899cc313e12a4f571deeb773a6ed93c34987649deb"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/summary.json",
+          "bytes": 1115,
+          "sha256": "6e046e0c8bc6f5a694fcd9453b0e98d8c400d08f43c0d2f36779bac53e779703"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/summary.json",
+          "bytes": 1276,
+          "sha256": "4afe98a83c89508227aa9e7fa0fdb95cdc5baaad31f27801f22133c6b27246cc"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/summary.json",
+          "bytes": 1274,
+          "sha256": "e3da4c0f5591c6663c63c78a5de7e642a821b3e644951a3666ede1b156548b53"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/summary.json",
+          "bytes": 1118,
+          "sha256": "02bf4c67d9c176094375d9410d5a557887bd2d9b74e2e4e84dc1a4231938b5ea"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/summary.json",
+          "bytes": 1074,
+          "sha256": "93e74185d1fcad6d20bf510f5172eb5baec9b083ecb8d2861b00fb3694f2eff0"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/summary.json",
+          "bytes": 1231,
+          "sha256": "cf483d708536c04b03aa6db9e5e551bb0958b42b92437cc2734a1114cc78df65"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/summary.json",
+          "bytes": 1232,
+          "sha256": "35f2de6594593fa19055c5e507ce64230decffb2092db3998c83eeb8f3d47314"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/summary.json",
+          "bytes": 1076,
+          "sha256": "a3b33aec5818a73c0c732eeefe69098350cb32dedb9548f4bdd814ba4d0a97f8"
+        },
+        {
+          "path": "plan.json",
+          "bytes": 3286,
+          "sha256": "848c57514a85e931f63298b1533d66db20cb26c201886862e0a4b0048cdc4241"
+        }
+      ],
+      "all_storage_work_exact": true,
+      "prompts": [
+        [
+          30153,
+          637,
+          260,
+          24599,
+          6230,
+          260,
+          1693,
+          1405
+        ],
+        [
+          35,
+          5585,
+          4264,
+          264,
+          1117,
+          284,
+          2857,
+          19799
+        ],
+        [
+          35,
+          1075,
+          1819,
+          3657,
+          260,
+          4848,
+          11555,
+          699
+        ],
+        [
+          27101,
+          445,
+          2017,
+          284,
+          260,
+          32065,
+          9315,
+          260
+        ]
+      ]
+    }
+  },
   "parcae_cache_constructor": {
     "scope": "unchanged_author_cache_constructor_on_existing_CPU_runtime_no_model_or_GPU",
     "author_source_sha": "69284c13746e849104f738d6d1a347b1f457df76",
@@ -1573,5 +2961,23 @@
         }
       ]
     }
+  },
+  "prompt_hash_rejection": {
+    "source_sha": "156889fa7c1c1106eefd718ea815f67887dd1f10",
+    "command": [
+      "/Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/bin/python",
+      "-m",
+      "experiments.loopkv.screen",
+      "--plan",
+      "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/prompt-mismatch-rejection-v1-plan.json",
+      "--out",
+      "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/prompt-mismatch-rejection-v1",
+      "--load-lock",
+      "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/cpu-model-load.lock"
+    ],
+    "returncode": 1,
+    "stderr": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/source/experiments/loopkv/screen.py\", line 182, in <module>\n    main()\n  File \"/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/source/experiments/loopkv/screen.py\", line 41, in main\n    assert prompt_sha == plan[\"prompts_sha256\"]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+    "no_model_loaded": true,
+    "plan_sha256": "fe6bcd4b5dd3ee5c397dc6f1030aa07f3b47309d2acc4a2d2e9a2bc9cfeb7761"
   }
 }
