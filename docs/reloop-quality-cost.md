@@ -100,7 +100,7 @@ at most one candidate. A separate fixed128-output, P512 C32/C64 protocol uses
 two fresh starts, reversed arm order, five warmups and five measurements for
 true D4 off, matched D3 off and D3 guided. Each trial submits and completes C
 requests; it does not use the plan's default4C refill trace. Only the first
-full-D4 C32 calibration is currently running; the complete cost gate is pending.
+full-D4 C32 calibration has started; the complete cost gate is pending.
 
 Independent505-question mathematics and148-task HumanEval+ confirmation,
 family M2, is prepared with148 verified canonical code references. Final
