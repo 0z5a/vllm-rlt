@@ -25,7 +25,7 @@ SLO, goodput is unavailable.
 |---|---|
 | CPU TCP streaming, native/compact, open/closed loop | Four cases match direct-engine tokens and exits across two request lifetimes |
 | Goodput and chunk timestamp accounting | Known request-level SLO and full-drain denominator pass |
-| Official GPU HTTP workload | Not run |
+| Official GPU HTTP workload | 24 arms / 1,392 requests / 72,384 tokens completed; natural Graph differences retained |
 | 120-second / 2,000-request formal cohort | Not run |
 
 The reported quantiles are descriptive nearest-rank values. The minimum-duration
@@ -36,3 +36,6 @@ plans, quiet resources and request/run-level uncertainty analysis.
 | HTTP comparison | Native tokens/s | Candidate tokens/s | Speedup |
 |---|---:|---:|---:|
 | Official checkpoint | — | — | Not measured |
+
+
+[Executed official diagnostic and per-point divergences](http-diagnostic.md) includes complete raw hashes and shared-node measurement limits.

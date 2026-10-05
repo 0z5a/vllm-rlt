@@ -1,0 +1,2849 @@
+{
+  "archive_sha256": "c5c77ea7e64e0dd7e7e4afc25d45ab4e15a14a27bc34a80525b6a368663fddb2",
+  "auditor_sha256": "46e44264334c3a9b983a25548232171ffb69913dde909f33fb7ab8897913dcf6",
+  "http": [
+    {
+      "complete_requests": 8,
+      "output_tokens": 416,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 0.3080815188586712,
+          "0.9": 3.3927283734083176,
+          "0.99": 3.3927283734083176
+        },
+        "request": {
+          "0.5": 3.263153024017811,
+          "0.9": 7.753328964114189,
+          "0.99": 7.753328964114189
+        },
+        "token_itl": {
+          "0.5": 0.042786963284015656,
+          "0.9": 0.056731510907411575,
+          "0.99": 0.11248457804322243
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.11248457804322243,
+          "0.9": 0.23166941106319427,
+          "0.99": 0.23166941106319427
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0010142326354980469,
+          "0.9": 0.0014662928879261017,
+          "0.99": 0.0014662928879261017
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "native-async",
+        "execution": "async",
+        "alias": false,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b4-c8-variable",
+        "batch": 4,
+        "blocks": 352,
+        "concurrency": 8,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b4-v1.json",
+        "workload_sha256": "657c0a179ff37f7bcc5d7aafcf4212bdf2c92254ddd870bfb01da33e57ba4c8f",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 7.7553871013224125,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 201,
+          "2": 6,
+          "3": 92,
+          "4": 227
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 408,
+          "2": 408,
+          "3": 408,
+          "4": 173
+        },
+        "submitted_recurrent_rows": 1397,
+        "recurrent_calls": 526,
+        "effective_batch_mean": 2.655893536121673,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 3,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 960,
+        "observed_peak_residents_after_step": 4
+      },
+      "tokens_s": 53.64013356974349,
+      "peak_client_concurrency": 8,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 4061524992,
+      "peak_reserved_bytes": 4282384384,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 38 %, 5413 MiB, 2910 MHz, 13801 MHz, 45, 121.96 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 30 %, 4755 MiB, 2902 MHz, 13801 MHz, 49, 164.35 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 61 %, 5413 MiB, 2910 MHz, 13801 MHz, 45, 123.96 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 20 %, 4755 MiB, 2902 MHz, 13801 MHz, 49, 165.41 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 8,
+      "output_tokens": 416,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 0.28600000962615013,
+          "0.9": 3.3990843519568443,
+          "0.99": 3.3990843519568443
+        },
+        "request": {
+          "0.5": 3.2639804407954216,
+          "0.9": 7.780003469437361,
+          "0.99": 7.780003469437361
+        },
+        "token_itl": {
+          "0.5": 0.043254271149635315,
+          "0.9": 0.05741666257381439,
+          "0.99": 0.11700765788555145
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.11700765788555145,
+          "0.9": 0.23311257362365723,
+          "0.99": 0.23311257362365723
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0008554458618164062,
+          "0.9": 0.0012850873172283173,
+          "0.99": 0.0012850873172283173
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "alias-async",
+        "execution": "async",
+        "alias": true,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b4-c8-variable",
+        "batch": 4,
+        "blocks": 352,
+        "concurrency": 8,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b4-v1.json",
+        "workload_sha256": "657c0a179ff37f7bcc5d7aafcf4212bdf2c92254ddd870bfb01da33e57ba4c8f",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 7.781811583787203,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 201,
+          "2": 6,
+          "3": 92,
+          "4": 227
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 408,
+          "2": 408,
+          "3": 408,
+          "4": 173
+        },
+        "submitted_recurrent_rows": 1397,
+        "recurrent_calls": 526,
+        "effective_batch_mean": 2.655893536121673,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 3,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 960,
+        "observed_peak_residents_after_step": 4
+      },
+      "tokens_s": 53.45798925107665,
+      "peak_client_concurrency": 8,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 4162214912,
+      "peak_reserved_bytes": 4391436288,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 65 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 111.20 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 32 %, 4859 MiB, 2902 MHz, 13801 MHz, 49, 165.91 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 70 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 112.12 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 35 %, 4859 MiB, 2902 MHz, 13801 MHz, 49, 167.30 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 8,
+      "output_tokens": 416,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 0.313468836247921,
+          "0.9": 3.444733001291752,
+          "0.99": 3.444733001291752
+        },
+        "request": {
+          "0.5": 3.3103058859705925,
+          "0.9": 7.860163416713476,
+          "0.99": 7.860163416713476
+        },
+        "token_itl": {
+          "0.5": 0.043976567685604095,
+          "0.9": 0.058305151760578156,
+          "0.99": 0.11590699106454849
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.11590699106454849,
+          "0.9": 0.23811054229736328,
+          "0.99": 0.23811054229736328
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0008889436721801758,
+          "0.9": 0.0013137422502040863,
+          "0.99": 0.0013137422502040863
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "compact-async",
+        "execution": "async",
+        "alias": false,
+        "compact": true,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b4-c8-variable",
+        "batch": 4,
+        "blocks": 352,
+        "concurrency": 8,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b4-v1.json",
+        "workload_sha256": "657c0a179ff37f7bcc5d7aafcf4212bdf2c92254ddd870bfb01da33e57ba4c8f",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 7.8618962205946445,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 201,
+          "2": 6,
+          "3": 92,
+          "4": 227
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 408,
+          "2": 408,
+          "3": 408,
+          "4": 173
+        },
+        "submitted_recurrent_rows": 1397,
+        "recurrent_calls": 526,
+        "effective_batch_mean": 2.655893536121673,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 3,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 960,
+        "observed_peak_residents_after_step": 4
+      },
+      "tokens_s": 52.913443312857076,
+      "peak_client_concurrency": 8,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 4187138048,
+      "peak_reserved_bytes": 4414504960,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 70 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 110.61 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 15 %, 4881 MiB, 2902 MHz, 13801 MHz, 49, 161.31 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 72 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 125.61 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 26 %, 4881 MiB, 2902 MHz, 13801 MHz, 49, 165.95 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 8,
+      "output_tokens": 416,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 0.29174723476171494,
+          "0.9": 2.0585991367697716,
+          "0.99": 2.0585991367697716
+        },
+        "request": {
+          "0.5": 1.902007345110178,
+          "0.9": 3.7927814424037933,
+          "0.99": 3.7927814424037933
+        },
+        "token_itl": {
+          "0.5": 0.022617410868406296,
+          "0.9": 0.028835143893957138,
+          "0.99": 0.08872170746326447
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.08722277358174324,
+          "0.9": 0.20107396692037582,
+          "0.99": 0.20107396692037582
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0007913745939731598,
+          "0.9": 0.0012179277837276459,
+          "0.99": 0.0012179277837276459
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "native-graph",
+        "execution": "graph",
+        "alias": false,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b4-c8-variable",
+        "batch": 4,
+        "blocks": 352,
+        "concurrency": 8,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b4-v1.json",
+        "workload_sha256": "657c0a179ff37f7bcc5d7aafcf4212bdf2c92254ddd870bfb01da33e57ba4c8f",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 3.7945990078151226,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 234,
+          "2": 107,
+          "3": 190,
+          "4": 96
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 408,
+          "2": 408,
+          "3": 408,
+          "4": 178
+        },
+        "submitted_recurrent_rows": 1402,
+        "recurrent_calls": 627,
+        "effective_batch_mean": 2.2360446570972887,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 2,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 960,
+        "observed_peak_residents_after_step": 4
+      },
+      "tokens_s": 109.6295021274269,
+      "peak_client_concurrency": 8,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 4307157504,
+      "peak_reserved_bytes": 4521459712,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 41 %, 5413 MiB, 2910 MHz, 13801 MHz, 45, 124.40 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 96 %, 5003 MiB, 2880 MHz, 13801 MHz, 52, 264.40 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 71 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 114.54 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 7 %, 5003 MiB, 2887 MHz, 13801 MHz, 52, 267.28 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 627,
+        "fallbacks": 0
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 8,
+      "output_tokens": 416,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 0.31371913105249405,
+          "0.9": 2.084643680602312,
+          "0.99": 2.084643680602312
+        },
+        "request": {
+          "0.5": 2.016249429434538,
+          "0.9": 3.8708414174616337,
+          "0.99": 3.8708414174616337
+        },
+        "token_itl": {
+          "0.5": 0.02305435761809349,
+          "0.9": 0.03136902675032616,
+          "0.99": 0.16090141236782074
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.16090141236782074,
+          "0.9": 0.21706270053982735,
+          "0.99": 0.21706270053982735
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0007897950708866119,
+          "0.9": 0.0012190043926239014,
+          "0.99": 0.0012190043926239014
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "alias-graph",
+        "execution": "graph",
+        "alias": true,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b4-c8-variable",
+        "batch": 4,
+        "blocks": 352,
+        "concurrency": 8,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b4-v1.json",
+        "workload_sha256": "657c0a179ff37f7bcc5d7aafcf4212bdf2c92254ddd870bfb01da33e57ba4c8f",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 3.8723078593611717,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 236,
+          "2": 108,
+          "3": 172,
+          "4": 109
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 408,
+          "2": 408,
+          "3": 408,
+          "4": 180
+        },
+        "submitted_recurrent_rows": 1404,
+        "recurrent_calls": 625,
+        "effective_batch_mean": 2.2464,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 2,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 960,
+        "observed_peak_residents_after_step": 4
+      },
+      "tokens_s": 107.42947490456737,
+      "peak_client_concurrency": 8,
+      "token_different_requests": 0,
+      "exit_different_requests": 4,
+      "peak_allocated_bytes": 4408506880,
+      "peak_reserved_bytes": 4630511616,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 72 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 111.39 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 5107 MiB, 2887 MHz, 13801 MHz, 52, 262.86 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 73 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 111.63 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 99 %, 5107 MiB, 2880 MHz, 13801 MHz, 53, 262.13 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 625,
+        "fallbacks": 0
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 8,
+      "output_tokens": 416,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 0.2684505395591259,
+          "0.9": 2.0857524760067463,
+          "0.99": 2.0857524760067463
+        },
+        "request": {
+          "0.5": 1.9320748932659626,
+          "0.9": 3.8758956491947174,
+          "0.99": 3.8758956491947174
+        },
+        "token_itl": {
+          "0.5": 0.023461785167455673,
+          "0.9": 0.029759548604488373,
+          "0.99": 0.0885063074529171
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.08807548880577087,
+          "0.9": 0.21075991168618202,
+          "0.99": 0.21075991168618202
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0003652125597000122,
+          "0.9": 0.0005522407591342926,
+          "0.99": 0.0005522407591342926
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "compact-graph",
+        "execution": "graph",
+        "alias": false,
+        "compact": true,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b4-c8-variable",
+        "batch": 4,
+        "blocks": 352,
+        "concurrency": 8,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b4-v1.json",
+        "workload_sha256": "657c0a179ff37f7bcc5d7aafcf4212bdf2c92254ddd870bfb01da33e57ba4c8f",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 3.8769693076610565,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 234,
+          "2": 107,
+          "3": 190,
+          "4": 96
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 408,
+          "2": 408,
+          "3": 408,
+          "4": 178
+        },
+        "submitted_recurrent_rows": 1402,
+        "recurrent_calls": 627,
+        "effective_batch_mean": 2.2360446570972887,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 2,
+          "p90": 4
+        },
+        "submitted_prefill_tokens": 960,
+        "observed_peak_residents_after_step": 4
+      },
+      "tokens_s": 107.30030778886133,
+      "peak_client_concurrency": 8,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 4422121472,
+      "peak_reserved_bytes": 4651483136,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 64 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 110.61 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 61 %, 5125 MiB, 2880 MHz, 13801 MHz, 55, 272.95 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 73 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 111.98 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 33 %, 5127 MiB, 2880 MHz, 13801 MHz, 52, 268.75 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 627,
+        "fallbacks": 0
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 32,
+      "output_tokens": 1664,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 1.1566114723682404,
+          "0.9": 4.998260471969843,
+          "0.99": 5.297982629388571
+        },
+        "request": {
+          "0.5": 5.1679283156991005,
+          "0.9": 8.211613606661558,
+          "0.99": 9.983017310500145
+        },
+        "token_itl": {
+          "0.5": 0.04693954810500145,
+          "0.9": 0.11714737489819527,
+          "0.99": 0.24322354048490524
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.23850862309336662,
+          "0.9": 0.30110593885183334,
+          "0.99": 0.30650729313492775
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.002855319529771805,
+          "0.9": 0.00458984449505806,
+          "0.99": 0.004879739135503769
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "native-async",
+        "execution": "async",
+        "alias": false,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b16-c32-variable",
+        "batch": 16,
+        "blocks": 1408,
+        "concurrency": 32,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b16-v1.json",
+        "workload_sha256": "e2fc0cb2c08a8ce344dde054ae3c67b340ab4875713068c771a595b1f68b359c",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 9.98846933990717,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 29,
+          "2": 60,
+          "3": 42,
+          "4": 23,
+          "5": 9,
+          "6": 41,
+          "8": 2,
+          "9": 3,
+          "10": 7,
+          "11": 8,
+          "12": 39,
+          "13": 25,
+          "14": 5,
+          "15": 16,
+          "16": 226
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1632,
+          "2": 1632,
+          "3": 1632,
+          "4": 682
+        },
+        "submitted_recurrent_rows": 5578,
+        "recurrent_calls": 535,
+        "effective_batch_mean": 10.426168224299065,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 2,
+          "p50": 13,
+          "p90": 16
+        },
+        "submitted_prefill_tokens": 3840,
+        "observed_peak_residents_after_step": 16
+      },
+      "tokens_s": 166.59209167832964,
+      "peak_client_concurrency": 32,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 7786902528,
+      "peak_reserved_bytes": 8006926336,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 54 %, 5413 MiB, 2910 MHz, 13801 MHz, 45, 122.55 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 5 %, 8327 MiB, 2902 MHz, 13801 MHz, 51, 159.63 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 71 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 112.46 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 25 %, 8327 MiB, 2902 MHz, 13801 MHz, 50, 161.86 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 32,
+      "output_tokens": 1664,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 1.124549563974142,
+          "0.9": 5.05139521881938,
+          "0.99": 5.354672163724899
+        },
+        "request": {
+          "0.5": 5.219849720597267,
+          "0.9": 8.305480364710093,
+          "0.99": 10.080800447613
+        },
+        "token_itl": {
+          "0.5": 0.04866969957947731,
+          "0.9": 0.11760638281702995,
+          "0.99": 0.24487325176596642
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.24301306903362274,
+          "0.9": 0.3032570965588093,
+          "0.99": 0.3061758503317833
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0023322850465774536,
+          "0.9": 0.00413324311375618,
+          "0.99": 0.004417818039655685
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "alias-async",
+        "execution": "async",
+        "alias": true,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b16-c32-variable",
+        "batch": 16,
+        "blocks": 1408,
+        "concurrency": 32,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b16-v1.json",
+        "workload_sha256": "e2fc0cb2c08a8ce344dde054ae3c67b340ab4875713068c771a595b1f68b359c",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 10.08578259497881,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 29,
+          "2": 60,
+          "3": 42,
+          "4": 23,
+          "5": 9,
+          "6": 41,
+          "8": 2,
+          "9": 3,
+          "10": 7,
+          "11": 8,
+          "12": 39,
+          "13": 25,
+          "14": 5,
+          "15": 16,
+          "16": 226
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1632,
+          "2": 1632,
+          "3": 1632,
+          "4": 682
+        },
+        "submitted_recurrent_rows": 5578,
+        "recurrent_calls": 535,
+        "effective_batch_mean": 10.426168224299065,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 2,
+          "p50": 13,
+          "p90": 16
+        },
+        "submitted_prefill_tokens": 3840,
+        "observed_peak_residents_after_step": 16
+      },
+      "tokens_s": 164.98471827346543,
+      "peak_client_concurrency": 32,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 7887660032,
+      "peak_reserved_bytes": 8115978240,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 72 %, 5413 MiB, 2917 MHz, 13801 MHz, 44, 111.11 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 26 %, 8431 MiB, 2902 MHz, 13801 MHz, 51, 162.35 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 60 %, 5413 MiB, 2910 MHz, 13801 MHz, 45, 124.15 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 20 %, 8431 MiB, 2902 MHz, 13801 MHz, 50, 154.62 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 32,
+      "output_tokens": 1664,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 1.1434960290789604,
+          "0.9": 5.206837899982929,
+          "0.99": 5.525585126131773
+        },
+        "request": {
+          "0.5": 5.3897731602191925,
+          "0.9": 8.570607051253319,
+          "0.99": 10.351789455860853
+        },
+        "token_itl": {
+          "0.5": 0.055985528975725174,
+          "0.9": 0.12059150636196136,
+          "0.99": 0.2583674043416977
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.2535804882645607,
+          "0.9": 0.30923741683363914,
+          "0.99": 0.3220178857445717
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.002380233258008957,
+          "0.9": 0.004130247980356216,
+          "0.99": 0.004391290247440338
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "compact-async",
+        "execution": "async",
+        "alias": false,
+        "compact": true,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b16-c32-variable",
+        "batch": 16,
+        "blocks": 1408,
+        "concurrency": 32,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b16-v1.json",
+        "workload_sha256": "e2fc0cb2c08a8ce344dde054ae3c67b340ab4875713068c771a595b1f68b359c",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 10.356777932494879,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 29,
+          "2": 60,
+          "3": 42,
+          "4": 23,
+          "5": 9,
+          "6": 41,
+          "8": 2,
+          "9": 3,
+          "10": 7,
+          "11": 8,
+          "12": 39,
+          "13": 25,
+          "14": 5,
+          "15": 16,
+          "16": 226
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1632,
+          "2": 1632,
+          "3": 1632,
+          "4": 682
+        },
+        "submitted_recurrent_rows": 5578,
+        "recurrent_calls": 535,
+        "effective_batch_mean": 10.426168224299065,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 2,
+          "p50": 13,
+          "p90": 16
+        },
+        "submitted_prefill_tokens": 3840,
+        "observed_peak_residents_after_step": 16
+      },
+      "tokens_s": 160.6677299490145,
+      "peak_client_concurrency": 32,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 7911859200,
+      "peak_reserved_bytes": 8139046912,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 72 %, 5415 MiB, 2917 MHz, 13801 MHz, 44, 116.96 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 38 %, 8453 MiB, 2902 MHz, 13801 MHz, 50, 163.62 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 73 %, 5415 MiB, 2917 MHz, 13801 MHz, 44, 112.34 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 19 %, 8453 MiB, 2902 MHz, 13801 MHz, 50, 159.81 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 32,
+      "output_tokens": 1664,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 1.2840198650956154,
+          "0.9": 3.5323878675699234,
+          "0.99": 4.130684223026037
+        },
+        "request": {
+          "0.5": 3.428094405680895,
+          "0.9": 5.448953416198492,
+          "0.99": 6.250760346651077
+        },
+        "token_itl": {
+          "0.5": 0.026166480034589767,
+          "0.9": 0.0868564322590828,
+          "0.99": 0.09357435256242752
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.09045899286866188,
+          "0.9": 0.20478525757789612,
+          "0.99": 0.26370321586728096
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.002370242029428482,
+          "0.9": 0.004255693405866623,
+          "0.99": 0.004532970488071442
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "native-graph",
+        "execution": "graph",
+        "alias": false,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b16-c32-variable",
+        "batch": 16,
+        "blocks": 1408,
+        "concurrency": 32,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b16-v1.json",
+        "workload_sha256": "e2fc0cb2c08a8ce344dde054ae3c67b340ab4875713068c771a595b1f68b359c",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 6.255789112299681,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 104,
+          "2": 64,
+          "3": 43,
+          "4": 45,
+          "5": 43,
+          "6": 31,
+          "7": 28,
+          "8": 53,
+          "9": 59,
+          "10": 81,
+          "11": 85,
+          "12": 63,
+          "13": 42,
+          "14": 22,
+          "15": 7,
+          "16": 4
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1632,
+          "2": 1632,
+          "3": 1632,
+          "4": 721
+        },
+        "submitted_recurrent_rows": 5617,
+        "recurrent_calls": 774,
+        "effective_batch_mean": 7.257105943152455,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 8,
+          "p90": 12
+        },
+        "submitted_prefill_tokens": 3840,
+        "observed_peak_residents_after_step": 16
+      },
+      "tokens_s": 265.9936212888576,
+      "peak_client_concurrency": 32,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 8002120192,
+      "peak_reserved_bytes": 8214544384,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 72 %, 5415 MiB, 2917 MHz, 13801 MHz, 44, 111.75 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 52 %, 8561 MiB, 2887 MHz, 13801 MHz, 52, 249.28 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 67 %, 5415 MiB, 2910 MHz, 13801 MHz, 45, 124.40 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 41 %, 8589 MiB, 2880 MHz, 13801 MHz, 55, 248.87 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 774,
+        "fallbacks": 0
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 32,
+      "output_tokens": 1664,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 1.3477902114391327,
+          "0.9": 3.6431767158210278,
+          "0.99": 4.1462371200323105
+        },
+        "request": {
+          "0.5": 3.548375714570284,
+          "0.9": 5.577870525419712,
+          "0.99": 6.3952451422810555
+        },
+        "token_itl": {
+          "0.5": 0.02777864784002304,
+          "0.9": 0.09007048606872559,
+          "0.99": 0.10285424813628197
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.1019650362432003,
+          "0.9": 0.21342294663190842,
+          "0.99": 0.27877089008688927
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0006484761834144592,
+          "0.9": 0.0011162124574184418,
+          "0.99": 0.0011942721903324127
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "alias-graph",
+        "execution": "graph",
+        "alias": true,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b16-c32-variable",
+        "batch": 16,
+        "blocks": 1408,
+        "concurrency": 32,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b16-v1.json",
+        "workload_sha256": "e2fc0cb2c08a8ce344dde054ae3c67b340ab4875713068c771a595b1f68b359c",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 6.396658606827259,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 90,
+          "2": 84,
+          "3": 32,
+          "4": 45,
+          "5": 53,
+          "6": 23,
+          "7": 26,
+          "8": 38,
+          "9": 48,
+          "10": 81,
+          "11": 94,
+          "12": 64,
+          "13": 48,
+          "14": 22,
+          "15": 9,
+          "16": 5
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1632,
+          "2": 1632,
+          "3": 1632,
+          "4": 718
+        },
+        "submitted_recurrent_rows": 5614,
+        "recurrent_calls": 762,
+        "effective_batch_mean": 7.36745406824147,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 1,
+          "p50": 8,
+          "p90": 13
+        },
+        "submitted_prefill_tokens": 3840,
+        "observed_peak_residents_after_step": 16
+      },
+      "tokens_s": 260.13581500566335,
+      "peak_client_concurrency": 32,
+      "token_different_requests": 0,
+      "exit_different_requests": 5,
+      "peak_allocated_bytes": 8044698112,
+      "peak_reserved_bytes": 8264876032,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 42 %, 5415 MiB, 2910 MHz, 13801 MHz, 44, 126.63 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 67 %, 8609 MiB, 2887 MHz, 13801 MHz, 55, 245.99 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 72 %, 5415 MiB, 2917 MHz, 13801 MHz, 44, 110.75 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 66 %, 8637 MiB, 2887 MHz, 13801 MHz, 56, 248.59 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 762,
+        "fallbacks": 0
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 32,
+      "output_tokens": 1664,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 1.3302267342805862,
+          "0.9": 3.585686009377241,
+          "0.99": 4.385000750422478
+        },
+        "request": {
+          "0.5": 3.595214296132326,
+          "0.9": 5.641141816973686,
+          "0.99": 6.7480636313557625
+        },
+        "token_itl": {
+          "0.5": 0.027804579585790634,
+          "0.9": 0.08811981603503227,
+          "0.99": 0.14856215938925743
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.14853286743164062,
+          "0.9": 0.20896415039896965,
+          "0.99": 0.27474452555179596
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.002275262027978897,
+          "0.9": 0.0039850883185863495,
+          "0.99": 0.004270661622285843
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "compact-graph",
+        "execution": "graph",
+        "alias": false,
+        "compact": true,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b16-c32-variable",
+        "batch": 16,
+        "blocks": 1408,
+        "concurrency": 32,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b16-v1.json",
+        "workload_sha256": "e2fc0cb2c08a8ce344dde054ae3c67b340ab4875713068c771a595b1f68b359c",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 6.7528552040457726,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 74,
+          "2": 105,
+          "3": 66,
+          "4": 53,
+          "5": 35,
+          "6": 27,
+          "7": 36,
+          "8": 47,
+          "9": 68,
+          "10": 75,
+          "11": 92,
+          "12": 55,
+          "13": 38,
+          "14": 15,
+          "15": 8,
+          "16": 6
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 1632,
+          "2": 1632,
+          "3": 1632,
+          "4": 717
+        },
+        "submitted_recurrent_rows": 5613,
+        "recurrent_calls": 800,
+        "effective_batch_mean": 7.01625,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 2,
+          "p50": 8,
+          "p90": 12
+        },
+        "submitted_prefill_tokens": 3840,
+        "observed_peak_residents_after_step": 16
+      },
+      "tokens_s": 246.41428695273427,
+      "peak_client_concurrency": 32,
+      "token_different_requests": 0,
+      "exit_different_requests": 5,
+      "peak_allocated_bytes": 7980160000,
+      "peak_reserved_bytes": 8208252928,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 69 %, 5415 MiB, 2932 MHz, 13801 MHz, 44, 111.91 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 78 %, 8557 MiB, 2887 MHz, 13801 MHz, 53, 246.50 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 69 %, 5415 MiB, 2932 MHz, 13801 MHz, 44, 111.39 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 42 %, 8583 MiB, 2887 MHz, 13801 MHz, 53, 238.36 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 800,
+        "fallbacks": 0
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 64,
+      "output_tokens": 3328,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 2.2595427446067333,
+          "0.9": 7.405560612678528,
+          "0.99": 8.119595158845186
+        },
+        "request": {
+          "0.5": 7.9828833155334,
+          "0.9": 11.22016742452979,
+          "0.99": 13.19107111915946
+        },
+        "token_itl": {
+          "0.5": 0.06516339629888535,
+          "0.9": 0.18853826075792313,
+          "0.99": 0.300790511071682
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.3007688522338867,
+          "0.9": 0.3202478475868702,
+          "0.99": 0.32037869468331337
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.00486292690038681,
+          "0.9": 0.007526092231273651,
+          "0.99": 0.008296597748994827
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "native-async",
+        "execution": "async",
+        "alias": false,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b32-c64-variable",
+        "batch": 32,
+        "blocks": 2816,
+        "concurrency": 64,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b32-v1.json",
+        "workload_sha256": "84e1f9c6b14595347c3ac11e35bc6b9b86338e1daa32dbd8134f3755e552faa6",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 13.200020726770163,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 11,
+          "2": 8,
+          "3": 41,
+          "4": 46,
+          "5": 8,
+          "6": 28,
+          "7": 6,
+          "8": 24,
+          "9": 7,
+          "10": 3,
+          "11": 26,
+          "12": 8,
+          "14": 3,
+          "16": 3,
+          "17": 2,
+          "18": 2,
+          "19": 2,
+          "20": 8,
+          "21": 5,
+          "22": 11,
+          "23": 9,
+          "24": 15,
+          "25": 33,
+          "26": 5,
+          "27": 7,
+          "28": 9,
+          "29": 1,
+          "30": 8,
+          "31": 21,
+          "32": 200
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 3264,
+          "2": 3264,
+          "3": 3264,
+          "4": 1447
+        },
+        "submitted_recurrent_rows": 11239,
+        "recurrent_calls": 560,
+        "effective_batch_mean": 20.069642857142856,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 3,
+          "p50": 25,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 7680,
+        "observed_peak_residents_after_step": 32
+      },
+      "tokens_s": 252.12081623862036,
+      "peak_client_concurrency": 64,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 12384973824,
+      "peak_reserved_bytes": 12624855040,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 54 %, 5415 MiB, 2910 MHz, 13801 MHz, 45, 123.53 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 19 %, 12795 MiB, 2902 MHz, 13801 MHz, 51, 154.60 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 69 %, 5415 MiB, 2932 MHz, 13801 MHz, 44, 111.09 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 3 %, 12795 MiB, 2902 MHz, 13801 MHz, 50, 157.56 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 64,
+      "output_tokens": 3328,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 2.322398703545332,
+          "0.9": 7.571321897208691,
+          "0.99": 8.300570763647556
+        },
+        "request": {
+          "0.5": 8.163804896175861,
+          "0.9": 11.395707968622446,
+          "0.99": 13.329830955713987
+        },
+        "token_itl": {
+          "0.5": 0.06730803102254868,
+          "0.9": 0.19065439328551292,
+          "0.99": 0.3078324645757675
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.3074600249528885,
+          "0.9": 0.3220517784357071,
+          "0.99": 0.32227493077516556
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.005139969289302826,
+          "0.9": 0.007775291800498962,
+          "0.99": 0.008561540395021439
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "alias-async",
+        "execution": "async",
+        "alias": true,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b32-c64-variable",
+        "batch": 32,
+        "blocks": 2816,
+        "concurrency": 64,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b32-v1.json",
+        "workload_sha256": "84e1f9c6b14595347c3ac11e35bc6b9b86338e1daa32dbd8134f3755e552faa6",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 13.339057836681604,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 11,
+          "2": 8,
+          "3": 41,
+          "4": 46,
+          "5": 8,
+          "6": 28,
+          "7": 6,
+          "8": 24,
+          "9": 7,
+          "10": 3,
+          "11": 26,
+          "12": 8,
+          "14": 3,
+          "16": 3,
+          "17": 2,
+          "18": 2,
+          "19": 2,
+          "20": 8,
+          "21": 5,
+          "22": 11,
+          "23": 9,
+          "24": 15,
+          "25": 33,
+          "26": 5,
+          "27": 7,
+          "28": 9,
+          "29": 1,
+          "30": 8,
+          "31": 21,
+          "32": 200
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 3264,
+          "2": 3264,
+          "3": 3264,
+          "4": 1447
+        },
+        "submitted_recurrent_rows": 11239,
+        "recurrent_calls": 560,
+        "effective_batch_mean": 20.069642857142856,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 3,
+          "p50": 25,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 7680,
+        "observed_peak_residents_after_step": 32
+      },
+      "tokens_s": 249.49288328656922,
+      "peak_client_concurrency": 64,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 12452267008,
+      "peak_reserved_bytes": 12700352512,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 70 %, 5415 MiB, 2932 MHz, 13801 MHz, 44, 110.89 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 30 %, 12867 MiB, 2902 MHz, 13801 MHz, 50, 156.12 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 59 %, 5415 MiB, 2910 MHz, 13801 MHz, 44, 120.23 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 22 %, 12867 MiB, 2902 MHz, 13801 MHz, 50, 160.79 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 64,
+      "output_tokens": 3328,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 2.295335453003645,
+          "0.9": 7.403664793819189,
+          "0.99": 8.135980103164911
+        },
+        "request": {
+          "0.5": 7.998382970690727,
+          "0.9": 11.224536668509245,
+          "0.99": 13.134384248405695
+        },
+        "token_itl": {
+          "0.5": 0.0667390264570713,
+          "0.9": 0.18769458308815956,
+          "0.99": 0.3038107268512249
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.3028137795627117,
+          "0.9": 0.32004453241825104,
+          "0.99": 0.3201550729572773
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.004843968898057938,
+          "0.9": 0.007481485605239868,
+          "0.99": 0.00827900692820549
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "compact-async",
+        "execution": "async",
+        "alias": false,
+        "compact": true,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b32-c64-variable",
+        "batch": 32,
+        "blocks": 2816,
+        "concurrency": 64,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b32-v1.json",
+        "workload_sha256": "84e1f9c6b14595347c3ac11e35bc6b9b86338e1daa32dbd8134f3755e552faa6",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 13.143313121050596,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 11,
+          "2": 8,
+          "3": 41,
+          "4": 46,
+          "5": 8,
+          "6": 28,
+          "7": 6,
+          "8": 24,
+          "9": 7,
+          "10": 3,
+          "11": 26,
+          "12": 8,
+          "14": 3,
+          "16": 3,
+          "17": 2,
+          "18": 2,
+          "19": 2,
+          "20": 8,
+          "21": 5,
+          "22": 11,
+          "23": 9,
+          "24": 15,
+          "25": 33,
+          "26": 5,
+          "27": 7,
+          "28": 9,
+          "29": 1,
+          "30": 8,
+          "31": 21,
+          "32": 200
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 3264,
+          "2": 3264,
+          "3": 3264,
+          "4": 1447
+        },
+        "submitted_recurrent_rows": 11239,
+        "recurrent_calls": 560,
+        "effective_batch_mean": 20.069642857142856,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 3,
+          "p50": 25,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 7680,
+        "observed_peak_residents_after_step": 32
+      },
+      "tokens_s": 253.20860648673187,
+      "peak_client_concurrency": 64,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 12475497472,
+      "peak_reserved_bytes": 12723421184,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 68 %, 5415 MiB, 2917 MHz, 13801 MHz, 44, 109.93 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 4 %, 12889 MiB, 2902 MHz, 13801 MHz, 50, 158.86 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 68 %, 5415 MiB, 2932 MHz, 13801 MHz, 43, 108.93 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 7 %, 12889 MiB, 2902 MHz, 13801 MHz, 50, 159.73 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 64,
+      "output_tokens": 3328,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 4.089473381638527,
+          "0.9": 8.590144142508507,
+          "0.99": 9.07220808416605
+        },
+        "request": {
+          "0.5": 5.9223320707678795,
+          "0.9": 11.10253170132637,
+          "0.99": 11.554440323263407
+        },
+        "token_itl": {
+          "0.5": 0.02483716607093811,
+          "0.9": 0.08733111619949341,
+          "0.99": 0.15020371973514557
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.09241025149822235,
+          "0.9": 0.21819639578461647,
+          "0.99": 0.26579323038458824
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.00463470071554184,
+          "0.9": 0.0072816237807273865,
+          "0.99": 0.008048679679632187
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "native-graph",
+        "execution": "graph",
+        "alias": false,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b32-c64-variable",
+        "batch": 32,
+        "blocks": 2816,
+        "concurrency": 64,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b32-v1.json",
+        "workload_sha256": "84e1f9c6b14595347c3ac11e35bc6b9b86338e1daa32dbd8134f3755e552faa6",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 11.561546765267849,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 1,
+          "2": 27,
+          "3": 11,
+          "4": 51,
+          "5": 87,
+          "6": 113,
+          "7": 192,
+          "8": 208,
+          "9": 204,
+          "10": 187,
+          "11": 122,
+          "12": 71,
+          "13": 43,
+          "14": 19,
+          "15": 3,
+          "16": 2
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 3264,
+          "2": 3264,
+          "3": 3264,
+          "4": 1423
+        },
+        "submitted_recurrent_rows": 11215,
+        "recurrent_calls": 1341,
+        "effective_batch_mean": 8.363161819537659,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 5,
+          "p50": 8,
+          "p90": 12
+        },
+        "submitted_prefill_tokens": 7680,
+        "observed_peak_residents_after_step": 32
+      },
+      "tokens_s": 287.8507579969902,
+      "peak_client_concurrency": 64,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 12533054464,
+      "peak_reserved_bytes": 12746489856,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 60 %, 5415 MiB, 2925 MHz, 13801 MHz, 44, 122.82 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 33 %, 12909 MiB, 2887 MHz, 13801 MHz, 52, 238.08 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 46 %, 5415 MiB, 2925 MHz, 13801 MHz, 44, 117.29 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 12881 MiB, 2887 MHz, 13801 MHz, 53, 222.65 W\n",
+      "graphs": {
+        "captures": 1,
+        "replays": 1341,
+        "fallbacks": 0
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 64,
+      "output_tokens": 3328,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 2.8286189287900925,
+          "0.9": 7.747352387756109,
+          "0.99": 8.798574637621641
+        },
+        "request": {
+          "0.5": 8.650418747216463,
+          "0.9": 11.454603374004364,
+          "0.99": 12.846214730292559
+        },
+        "token_itl": {
+          "0.5": 0.0668455958366394,
+          "0.9": 0.18229348585009575,
+          "0.99": 0.29552802443504333
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.27911076694726944,
+          "0.9": 0.3579108603298664,
+          "0.99": 0.35829663649201393
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.004769943654537201,
+          "0.9": 0.007381372153759003,
+          "0.99": 0.008148830384016037
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "alias-graph",
+        "execution": "graph",
+        "alias": true,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b32-c64-variable",
+        "batch": 32,
+        "blocks": 2816,
+        "concurrency": 64,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b32-v1.json",
+        "workload_sha256": "84e1f9c6b14595347c3ac11e35bc6b9b86338e1daa32dbd8134f3755e552faa6",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 12.854981321841478,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 49,
+          "2": 52,
+          "3": 43,
+          "4": 44,
+          "5": 15,
+          "6": 21,
+          "7": 22,
+          "8": 15,
+          "9": 5,
+          "10": 15,
+          "11": 18,
+          "12": 11,
+          "13": 17,
+          "14": 11,
+          "15": 7,
+          "16": 8,
+          "17": 2,
+          "18": 2,
+          "19": 23,
+          "20": 18,
+          "21": 6,
+          "22": 30,
+          "23": 8,
+          "24": 15,
+          "25": 5,
+          "26": 19,
+          "27": 2,
+          "28": 5,
+          "29": 6,
+          "30": 6,
+          "31": 8,
+          "32": 174
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 3264,
+          "2": 3264,
+          "3": 3264,
+          "4": 1454
+        },
+        "submitted_recurrent_rows": 11246,
+        "recurrent_calls": 682,
+        "effective_batch_mean": 16.48973607038123,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 2,
+          "p50": 15,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 7680,
+        "observed_peak_residents_after_step": 32
+      },
+      "tokens_s": 258.8879685375741,
+      "peak_client_concurrency": 64,
+      "token_different_requests": 3,
+      "exit_different_requests": 44,
+      "peak_allocated_bytes": 12577192448,
+      "peak_reserved_bytes": 12815695872,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 65 %, 5415 MiB, 2917 MHz, 13801 MHz, 43, 109.71 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 12977 MiB, 2902 MHz, 13801 MHz, 52, 200.99 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 68 %, 5415 MiB, 2932 MHz, 13801 MHz, 43, 108.49 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 3 %, 12977 MiB, 2895 MHz, 13801 MHz, 51, 189.49 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 306,
+        "fallbacks": 376
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 64,
+      "output_tokens": 3328,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 2.7710617557168007,
+          "0.9": 7.230643033981323,
+          "0.99": 8.193169243633747
+        },
+        "request": {
+          "0.5": 8.05572672188282,
+          "0.9": 10.90997551754117,
+          "0.99": 12.12793467566371
+        },
+        "token_itl": {
+          "0.5": 0.06560015305876732,
+          "0.9": 0.1387464962899685,
+          "0.99": 0.3150629289448261
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.25406817719340324,
+          "0.9": 0.32427701354026794,
+          "0.99": 0.33083735033869743
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.0027829669415950775,
+          "0.9": 0.004359330981969833,
+          "0.99": 0.005145903676748276
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "compact-graph",
+        "execution": "graph",
+        "alias": false,
+        "compact": true,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b32-c64-variable",
+        "batch": 32,
+        "blocks": 2816,
+        "concurrency": 64,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b32-v1.json",
+        "workload_sha256": "84e1f9c6b14595347c3ac11e35bc6b9b86338e1daa32dbd8134f3755e552faa6",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 12.133712831884623,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 30,
+          "2": 55,
+          "3": 60,
+          "4": 24,
+          "5": 25,
+          "6": 18,
+          "7": 22,
+          "8": 8,
+          "9": 12,
+          "10": 22,
+          "11": 21,
+          "12": 17,
+          "13": 20,
+          "14": 14,
+          "15": 5,
+          "16": 3,
+          "17": 1,
+          "18": 3,
+          "19": 38,
+          "20": 14,
+          "21": 12,
+          "22": 22,
+          "23": 8,
+          "24": 25,
+          "25": 3,
+          "26": 2,
+          "27": 8,
+          "28": 3,
+          "29": 7,
+          "30": 11,
+          "31": 14,
+          "32": 158
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 3264,
+          "2": 3264,
+          "3": 3264,
+          "4": 1460
+        },
+        "submitted_recurrent_rows": 11252,
+        "recurrent_calls": 685,
+        "effective_batch_mean": 16.426277372262774,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 2,
+          "p50": 14,
+          "p90": 32
+        },
+        "submitted_prefill_tokens": 7680,
+        "observed_peak_residents_after_step": 32
+      },
+      "tokens_s": 274.2771356228884,
+      "peak_client_concurrency": 64,
+      "token_different_requests": 0,
+      "exit_different_requests": 40,
+      "peak_allocated_bytes": 12510384128,
+      "peak_reserved_bytes": 12759072768,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 59 %, 5415 MiB, 2925 MHz, 13801 MHz, 44, 120.95 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 16 %, 12923 MiB, 2902 MHz, 13801 MHz, 51, 182.98 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 64 %, 5415 MiB, 2910 MHz, 13801 MHz, 44, 121.16 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 21 %, 12923 MiB, 2895 MHz, 13801 MHz, 51, 204.45 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 327,
+        "fallbacks": 358
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 128,
+      "output_tokens": 6656,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 4.479706808924675,
+          "0.9": 11.361858487129211,
+          "0.99": 12.124050445854664
+        },
+        "request": {
+          "0.5": 12.069810338318348,
+          "0.9": 15.636129092425108,
+          "0.99": 17.508905611932278
+        },
+        "token_itl": {
+          "0.5": 0.07368902489542961,
+          "0.9": 0.2460540495812893,
+          "0.99": 0.3047833740711212
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.3046257384121418,
+          "0.9": 0.3065003901720047,
+          "0.99": 0.3070317208766937
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.008889004588127136,
+          "0.9": 0.014032173901796341,
+          "0.99": 0.01502721756696701
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "native-async",
+        "execution": "async",
+        "alias": false,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b64-c128-variable",
+        "batch": 64,
+        "blocks": 5632,
+        "concurrency": 128,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b64-v1.json",
+        "workload_sha256": "5c76303b621f3497ae1d47f33b5d5e2b98bc7482aa21fbffa9277f806e4cc8db",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 17.524751611053944,
+      "work": {
+        "recurrent_batch_histogram": {
+          "2": 9,
+          "3": 5,
+          "4": 7,
+          "5": 29,
+          "6": 18,
+          "7": 32,
+          "8": 13,
+          "9": 6,
+          "10": 9,
+          "11": 5,
+          "12": 8,
+          "13": 4,
+          "14": 4,
+          "15": 4,
+          "16": 6,
+          "17": 20,
+          "18": 10,
+          "19": 8,
+          "20": 4,
+          "21": 4,
+          "22": 4,
+          "23": 3,
+          "24": 3,
+          "26": 2,
+          "28": 5,
+          "30": 2,
+          "32": 3,
+          "33": 1,
+          "34": 2,
+          "35": 2,
+          "36": 1,
+          "37": 2,
+          "38": 6,
+          "39": 4,
+          "40": 6,
+          "41": 4,
+          "42": 5,
+          "43": 9,
+          "44": 7,
+          "45": 2,
+          "46": 9,
+          "47": 7,
+          "48": 7,
+          "49": 9,
+          "50": 14,
+          "51": 2,
+          "52": 5,
+          "53": 5,
+          "54": 5,
+          "55": 8,
+          "56": 8,
+          "57": 6,
+          "58": 3,
+          "59": 5,
+          "60": 1,
+          "61": 10,
+          "62": 12,
+          "63": 21,
+          "64": 160
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 6528,
+          "2": 6528,
+          "3": 6528,
+          "4": 2887
+        },
+        "submitted_recurrent_rows": 22471,
+        "recurrent_calls": 575,
+        "effective_batch_mean": 39.08,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 47,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 15360,
+        "observed_peak_residents_after_step": 64
+      },
+      "tokens_s": 379.8056684467727,
+      "peak_client_concurrency": 128,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 21346235392,
+      "peak_reserved_bytes": 21583888384,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 68 %, 5415 MiB, 2932 MHz, 13801 MHz, 43, 109.96 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 13 %, 21339 MiB, 2902 MHz, 13801 MHz, 50, 162.37 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 68 %, 5415 MiB, 2932 MHz, 13801 MHz, 43, 109.74 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 13 %, 21339 MiB, 2902 MHz, 13801 MHz, 50, 155.21 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 128,
+      "output_tokens": 6656,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 4.892674218863249,
+          "0.9": 11.999049380421638,
+          "0.99": 12.808686841279268
+        },
+        "request": {
+          "0.5": 12.749424237757921,
+          "0.9": 16.558086413890123,
+          "0.99": 18.519327402114868
+        },
+        "token_itl": {
+          "0.5": 0.07858576998114586,
+          "0.9": 0.2543135695159435,
+          "0.99": 0.32319990545511246
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.32308054342865944,
+          "0.9": 0.3269967809319496,
+          "0.99": 0.3283810093998909
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.008792150765657425,
+          "0.9": 0.015033971518278122,
+          "0.99": 0.016028914600610733
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "alias-async",
+        "execution": "async",
+        "alias": true,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b64-c128-variable",
+        "batch": 64,
+        "blocks": 5632,
+        "concurrency": 128,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b64-v1.json",
+        "workload_sha256": "5c76303b621f3497ae1d47f33b5d5e2b98bc7482aa21fbffa9277f806e4cc8db",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 18.53632404655218,
+      "work": {
+        "recurrent_batch_histogram": {
+          "2": 9,
+          "3": 5,
+          "4": 7,
+          "5": 29,
+          "6": 18,
+          "7": 32,
+          "8": 13,
+          "9": 6,
+          "10": 9,
+          "11": 5,
+          "12": 8,
+          "13": 4,
+          "14": 4,
+          "15": 4,
+          "16": 6,
+          "17": 20,
+          "18": 10,
+          "19": 8,
+          "20": 4,
+          "21": 4,
+          "22": 4,
+          "23": 3,
+          "24": 3,
+          "26": 2,
+          "28": 5,
+          "30": 2,
+          "32": 3,
+          "33": 1,
+          "34": 2,
+          "35": 2,
+          "36": 1,
+          "37": 2,
+          "38": 6,
+          "39": 4,
+          "40": 6,
+          "41": 4,
+          "42": 5,
+          "43": 9,
+          "44": 7,
+          "45": 2,
+          "46": 9,
+          "47": 7,
+          "48": 7,
+          "49": 9,
+          "50": 14,
+          "51": 2,
+          "52": 5,
+          "53": 5,
+          "54": 5,
+          "55": 8,
+          "56": 8,
+          "57": 6,
+          "58": 3,
+          "59": 5,
+          "60": 1,
+          "61": 10,
+          "62": 12,
+          "63": 21,
+          "64": 160
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 6528,
+          "2": 6528,
+          "3": 6528,
+          "4": 2887
+        },
+        "submitted_recurrent_rows": 22471,
+        "recurrent_calls": 575,
+        "effective_batch_mean": 39.08,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 47,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 15360,
+        "observed_peak_residents_after_step": 64
+      },
+      "tokens_s": 359.07874631907066,
+      "peak_client_concurrency": 128,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 21413708800,
+      "peak_reserved_bytes": 21659385856,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 67 %, 5415 MiB, 2917 MHz, 13801 MHz, 44, 120.77 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 21411 MiB, 2902 MHz, 13801 MHz, 51, 158.43 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 69 %, 5415 MiB, 2932 MHz, 13801 MHz, 43, 109.00 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 21411 MiB, 2902 MHz, 13801 MHz, 50, 156.42 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 128,
+      "output_tokens": 6656,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 4.929981593042612,
+          "0.9": 12.32916709780693,
+          "0.99": 13.174779400229454
+        },
+        "request": {
+          "0.5": 13.107862167060375,
+          "0.9": 16.96203051134944,
+          "0.99": 18.926492404192686
+        },
+        "token_itl": {
+          "0.5": 0.07951931655406952,
+          "0.9": 0.2634589336812496,
+          "0.99": 0.3376559503376484
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.3351070396602154,
+          "0.9": 0.3435724340379238,
+          "0.99": 0.3439485467970371
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.009624827653169632,
+          "0.9": 0.014781132340431213,
+          "0.99": 0.015818584710359573
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "compact-async",
+        "execution": "async",
+        "alias": false,
+        "compact": true,
+        "reclaim": false,
+        "async": true,
+        "graphs": false
+      },
+      "case": {
+        "name": "b64-c128-variable",
+        "batch": 64,
+        "blocks": 5632,
+        "concurrency": 128,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b64-v1.json",
+        "workload_sha256": "5c76303b621f3497ae1d47f33b5d5e2b98bc7482aa21fbffa9277f806e4cc8db",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 18.942703988403082,
+      "work": {
+        "recurrent_batch_histogram": {
+          "2": 9,
+          "3": 5,
+          "4": 7,
+          "5": 29,
+          "6": 18,
+          "7": 32,
+          "8": 13,
+          "9": 6,
+          "10": 9,
+          "11": 5,
+          "12": 8,
+          "13": 4,
+          "14": 4,
+          "15": 4,
+          "16": 6,
+          "17": 20,
+          "18": 10,
+          "19": 8,
+          "20": 4,
+          "21": 4,
+          "22": 4,
+          "23": 3,
+          "24": 3,
+          "26": 2,
+          "28": 5,
+          "30": 2,
+          "32": 3,
+          "33": 1,
+          "34": 2,
+          "35": 2,
+          "36": 1,
+          "37": 2,
+          "38": 6,
+          "39": 4,
+          "40": 6,
+          "41": 4,
+          "42": 5,
+          "43": 9,
+          "44": 7,
+          "45": 2,
+          "46": 9,
+          "47": 7,
+          "48": 7,
+          "49": 9,
+          "50": 14,
+          "51": 2,
+          "52": 5,
+          "53": 5,
+          "54": 5,
+          "55": 8,
+          "56": 8,
+          "57": 6,
+          "58": 3,
+          "59": 5,
+          "60": 1,
+          "61": 10,
+          "62": 12,
+          "63": 21,
+          "64": 160
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 6528,
+          "2": 6528,
+          "3": 6528,
+          "4": 2887
+        },
+        "submitted_recurrent_rows": 22471,
+        "recurrent_calls": 575,
+        "effective_batch_mean": 39.08,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 6,
+          "p50": 47,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 15360,
+        "observed_peak_residents_after_step": 64
+      },
+      "tokens_s": 351.37538991660705,
+      "peak_client_concurrency": 128,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 21435004928,
+      "peak_reserved_bytes": 21682454528,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 67 %, 5415 MiB, 2932 MHz, 13801 MHz, 43, 107.44 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 21433 MiB, 2902 MHz, 13801 MHz, 50, 154.51 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 69 %, 5415 MiB, 2925 MHz, 13801 MHz, 43, 108.93 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 20 %, 21433 MiB, 2902 MHz, 13801 MHz, 50, 157.78 W\n",
+      "graphs": null,
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 128,
+      "output_tokens": 6656,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 5.388638839125633,
+          "0.9": 12.226641491055489,
+          "0.99": 13.279558341950178
+        },
+        "request": {
+          "0.5": 13.221414715051651,
+          "0.9": 16.464449875056744,
+          "0.99": 17.460592683404684
+        },
+        "token_itl": {
+          "0.5": 0.07438556104898453,
+          "0.9": 0.2507948614656925,
+          "0.99": 0.3354750946164131
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.3302903063595295,
+          "0.9": 0.3425860367715359,
+          "0.99": 0.3426361568272114
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.008871957659721375,
+          "0.9": 0.014123562723398209,
+          "0.99": 0.015126708894968033
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "native-graph",
+        "execution": "graph",
+        "alias": false,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b64-c128-variable",
+        "batch": 64,
+        "blocks": 5632,
+        "concurrency": 128,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b64-v1.json",
+        "workload_sha256": "5c76303b621f3497ae1d47f33b5d5e2b98bc7482aa21fbffa9277f806e4cc8db",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 17.53808981180191,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 10,
+          "2": 18,
+          "3": 25,
+          "4": 40,
+          "5": 37,
+          "6": 33,
+          "7": 18,
+          "8": 24,
+          "9": 21,
+          "10": 20,
+          "11": 18,
+          "12": 25,
+          "13": 22,
+          "14": 18,
+          "15": 6,
+          "16": 4,
+          "17": 4,
+          "18": 2,
+          "19": 4,
+          "20": 2,
+          "21": 1,
+          "22": 2,
+          "23": 1,
+          "24": 2,
+          "25": 4,
+          "26": 1,
+          "27": 2,
+          "28": 1,
+          "29": 5,
+          "30": 4,
+          "31": 3,
+          "32": 2,
+          "33": 1,
+          "34": 2,
+          "35": 9,
+          "36": 4,
+          "37": 2,
+          "38": 4,
+          "39": 6,
+          "40": 7,
+          "41": 7,
+          "42": 8,
+          "43": 2,
+          "44": 15,
+          "45": 10,
+          "46": 13,
+          "47": 9,
+          "48": 9,
+          "49": 2,
+          "50": 4,
+          "51": 6,
+          "52": 8,
+          "53": 4,
+          "54": 2,
+          "55": 1,
+          "56": 2,
+          "57": 7,
+          "58": 5,
+          "59": 3,
+          "60": 5,
+          "61": 2,
+          "62": 10,
+          "63": 17,
+          "64": 154
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 6528,
+          "2": 6528,
+          "3": 6528,
+          "4": 2877
+        },
+        "submitted_recurrent_rows": 22461,
+        "recurrent_calls": 719,
+        "effective_batch_mean": 31.23922114047288,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 4,
+          "p50": 25,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 15360,
+        "observed_peak_residents_after_step": 64
+      },
+      "tokens_s": 379.51681576638845,
+      "peak_client_concurrency": 128,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "peak_allocated_bytes": 21494762496,
+      "peak_reserved_bytes": 21724397568,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 70 %, 5415 MiB, 2932 MHz, 13801 MHz, 43, 110.46 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 21473 MiB, 2895 MHz, 13801 MHz, 51, 217.17 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 64 %, 5415 MiB, 2910 MHz, 13801 MHz, 44, 123.47 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 21473 MiB, 2895 MHz, 13801 MHz, 51, 213.21 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 331,
+        "fallbacks": 388
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 128,
+      "output_tokens": 6656,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 5.877266753464937,
+          "0.9": 12.803956165909767,
+          "0.99": 13.971604209393263
+        },
+        "request": {
+          "0.5": 14.01671389117837,
+          "0.9": 17.237209752202034,
+          "0.99": 18.385262724012136
+        },
+        "token_itl": {
+          "0.5": 0.07882179319858551,
+          "0.9": 0.2563076503574848,
+          "0.99": 0.351337194442749
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.3350180387496948,
+          "0.9": 0.354312289506197,
+          "0.99": 0.3553556241095066
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.008784543722867966,
+          "0.9": 0.01396866887807846,
+          "0.99": 0.014965731650590897
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "alias-graph",
+        "execution": "graph",
+        "alias": true,
+        "compact": false,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b64-c128-variable",
+        "batch": 64,
+        "blocks": 5632,
+        "concurrency": 128,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b64-v1.json",
+        "workload_sha256": "5c76303b621f3497ae1d47f33b5d5e2b98bc7482aa21fbffa9277f806e4cc8db",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 18.521244995296,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 15,
+          "2": 18,
+          "3": 43,
+          "4": 41,
+          "5": 42,
+          "6": 36,
+          "7": 29,
+          "8": 11,
+          "9": 23,
+          "10": 30,
+          "11": 42,
+          "12": 29,
+          "13": 39,
+          "14": 22,
+          "15": 9,
+          "16": 7,
+          "17": 6,
+          "18": 2,
+          "19": 3,
+          "20": 3,
+          "21": 1,
+          "22": 1,
+          "23": 1,
+          "24": 2,
+          "25": 4,
+          "26": 2,
+          "27": 5,
+          "28": 2,
+          "30": 2,
+          "31": 2,
+          "32": 3,
+          "33": 7,
+          "34": 1,
+          "35": 8,
+          "36": 6,
+          "37": 6,
+          "38": 4,
+          "39": 7,
+          "40": 5,
+          "41": 18,
+          "42": 1,
+          "43": 26,
+          "44": 14,
+          "45": 3,
+          "46": 6,
+          "47": 8,
+          "48": 1,
+          "49": 5,
+          "50": 2,
+          "51": 1,
+          "52": 2,
+          "53": 1,
+          "54": 4,
+          "55": 1,
+          "56": 13,
+          "57": 8,
+          "58": 2,
+          "59": 2,
+          "60": 3,
+          "61": 4,
+          "62": 3,
+          "63": 14,
+          "64": 147
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 6528,
+          "2": 6528,
+          "3": 6528,
+          "4": 2885
+        },
+        "submitted_recurrent_rows": 22469,
+        "recurrent_calls": 808,
+        "effective_batch_mean": 27.808168316831683,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 4,
+          "p50": 14,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 15360,
+        "observed_peak_residents_after_step": 64
+      },
+      "tokens_s": 359.3710898857221,
+      "peak_client_concurrency": 128,
+      "token_different_requests": 4,
+      "exit_different_requests": 63,
+      "peak_allocated_bytes": 21538634240,
+      "peak_reserved_bytes": 21774729216,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 69 %, 5415 MiB, 2917 MHz, 13801 MHz, 44, 110.20 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 5 %, 21521 MiB, 2895 MHz, 13801 MHz, 51, 219.85 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 60 %, 5415 MiB, 2910 MHz, 13801 MHz, 44, 125.80 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 5 %, 21521 MiB, 2887 MHz, 13801 MHz, 51, 220.12 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 427,
+        "fallbacks": 381
+      },
+      "formal_minimum_met": false
+    },
+    {
+      "complete_requests": 128,
+      "output_tokens": 6656,
+      "request_goodput_s": null,
+      "token_goodput_s": null,
+      "latency_seconds": {
+        "ttft": {
+          "0.5": 5.487499952316284,
+          "0.9": 12.406078487634659,
+          "0.99": 13.320456832647324
+        },
+        "request": {
+          "0.5": 13.347831729799509,
+          "0.9": 16.692094277590513,
+          "0.99": 17.772302895784378
+        },
+        "token_itl": {
+          "0.5": 0.07924168184399605,
+          "0.9": 0.25165802612900734,
+          "0.99": 0.3367859795689583
+        },
+        "per_request_p99_itl": {
+          "0.5": 0.3264526203274727,
+          "0.9": 0.3395843952894211,
+          "0.99": 0.34244852885603905
+        },
+        "client_dispatch_lag": {
+          "0.5": 0.009827699512243271,
+          "0.9": 0.015390250831842422,
+          "0.99": 0.01645170897245407
+        }
+      },
+      "quantiles": "nearest_rank_descriptive_no_confidence_interval",
+      "latency_origin": "send",
+      "streaming": "tokens delivered in one HTTP chunk share the client receipt timestamp",
+      "arm": {
+        "name": "compact-graph",
+        "execution": "graph",
+        "alias": false,
+        "compact": true,
+        "reclaim": false,
+        "async": true,
+        "graphs": true
+      },
+      "case": {
+        "name": "b64-c128-variable",
+        "batch": 64,
+        "blocks": 5632,
+        "concurrency": 128,
+        "workload": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-workload-b64-v1.json",
+        "workload_sha256": "5c76303b621f3497ae1d47f33b5d5e2b98bc7482aa21fbffa9277f806e4cc8db",
+        "warmup_repetitions": 1,
+        "slo": null
+      },
+      "seconds": 17.837743628770113,
+      "work": {
+        "recurrent_batch_histogram": {
+          "1": 10,
+          "2": 20,
+          "3": 22,
+          "4": 40,
+          "5": 32,
+          "6": 38,
+          "7": 33,
+          "8": 13,
+          "9": 20,
+          "10": 16,
+          "11": 23,
+          "12": 27,
+          "13": 26,
+          "14": 9,
+          "15": 3,
+          "16": 7,
+          "17": 4,
+          "18": 3,
+          "20": 2,
+          "21": 4,
+          "22": 3,
+          "24": 2,
+          "25": 1,
+          "26": 3,
+          "27": 2,
+          "28": 1,
+          "29": 3,
+          "30": 4,
+          "31": 2,
+          "32": 2,
+          "33": 2,
+          "34": 5,
+          "35": 2,
+          "36": 1,
+          "37": 12,
+          "38": 1,
+          "39": 5,
+          "40": 6,
+          "41": 9,
+          "42": 8,
+          "43": 5,
+          "44": 16,
+          "45": 7,
+          "46": 14,
+          "47": 13,
+          "48": 5,
+          "49": 4,
+          "50": 5,
+          "51": 5,
+          "52": 6,
+          "53": 5,
+          "54": 2,
+          "55": 1,
+          "56": 2,
+          "57": 12,
+          "58": 2,
+          "59": 8,
+          "60": 2,
+          "62": 7,
+          "63": 19,
+          "64": 153
+        },
+        "submitted_recurrent_depth_rows": {
+          "1": 6528,
+          "2": 6528,
+          "3": 6528,
+          "4": 2892
+        },
+        "submitted_recurrent_rows": 22476,
+        "recurrent_calls": 719,
+        "effective_batch_mean": 31.260083449235047,
+        "effective_batch_nearest_rank_quantiles": {
+          "p10": 4,
+          "p50": 26,
+          "p90": 64
+        },
+        "submitted_prefill_tokens": 15360,
+        "observed_peak_residents_after_step": 64
+      },
+      "tokens_s": 373.1413646547022,
+      "peak_client_concurrency": 128,
+      "token_different_requests": 3,
+      "exit_different_requests": 56,
+      "peak_allocated_bytes": 21436339200,
+      "peak_reserved_bytes": 21684551680,
+      "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 68 %, 5415 MiB, 2917 MHz, 13801 MHz, 44, 110.11 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 21435 MiB, 2887 MHz, 13801 MHz, 51, 201.37 W\n",
+      "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 60 %, 5415 MiB, 2910 MHz, 13801 MHz, 44, 124.24 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 21435 MiB, 2887 MHz, 13801 MHz, 52, 212.08 W\n",
+      "graphs": {
+        "captures": 0,
+        "replays": 333,
+        "fallbacks": 386
+      },
+      "formal_minimum_met": false
+    }
+  ],
+  "scope": "shared_node_correctness_only_not_performance",
+  "raw_files_sha256": {
+    "http-official.json/DONE.json": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb",
+    "http-official.json/b16-c32-variable-alias-async/requests.json": "c1563e56eecdc60faa02986cd00e42b33f308c3d1c5f23e2af8ca94011e8feb9",
+    "http-official.json/b16-c32-variable-alias-async/summary.json": "a91f9114f4539c5318d57ee638213f5ddbd3429b4e3d7b5db5bdb0d626cd2993",
+    "http-official.json/b16-c32-variable-alias-async/warmup0.json": "5800bcda8daacf521c7696e4a457633856df498e3d36452b0f48f6172d9c264a",
+    "http-official.json/b16-c32-variable-alias-graph/requests.json": "507bbff717d5bec3f00f77509cb2c15daad07e90dd4f138602a2e8a79457897b",
+    "http-official.json/b16-c32-variable-alias-graph/summary.json": "b22edc2b1a25519506b94deda9e68feedafd69b100816ca8bc53f7e4e432d3bf",
+    "http-official.json/b16-c32-variable-alias-graph/warmup0.json": "990af403daee075489b92bd111e32c884ae91039ca43e3dcdf208b95657fbf5f",
+    "http-official.json/b16-c32-variable-compact-async/requests.json": "2351bec6b272cd524c5a5477c38039f351e22d2fadc2fd486d38365a99b7334f",
+    "http-official.json/b16-c32-variable-compact-async/summary.json": "8cce79f76a67f8603a72f46f81cc857f206398f9605b3e108f1c0dd828ab5a38",
+    "http-official.json/b16-c32-variable-compact-async/warmup0.json": "1b3a6fa163cbc06726c8fc78d669fdedf6e242b2d7b81e2ca489d3e61ffc61ae",
+    "http-official.json/b16-c32-variable-compact-graph/requests.json": "a19a40d2b942a119709eae5f6106526a3a70c6e0718016b77511d960869f4a60",
+    "http-official.json/b16-c32-variable-compact-graph/summary.json": "37f53b83850f2c01e3791a50e5dcc5f6389be3e666205cc43d2bdc8daa55d034",
+    "http-official.json/b16-c32-variable-compact-graph/warmup0.json": "f984e2a9155e743ead153e6a3d3dc48a79fba83517d7a12209b237d674ceea45",
+    "http-official.json/b16-c32-variable-native-async/requests.json": "3f24274df34c9e4165c0c068c9ece9144a2fda4e58923291f0194f73a789e28c",
+    "http-official.json/b16-c32-variable-native-async/summary.json": "5e753622068472c7c66309e6139205d1830e9a24991f76a2e84f41d5dca829d5",
+    "http-official.json/b16-c32-variable-native-async/warmup0.json": "fd0c06502922a6a971eae7c8155b3d9f38af55420b53421c4ff82d33cc03a6d5",
+    "http-official.json/b16-c32-variable-native-graph/requests.json": "308eba26c0930199caeba9e65999362527e0ae5d4dfb85c2e5f9420844a7e224",
+    "http-official.json/b16-c32-variable-native-graph/summary.json": "d09a9ab1b49b5030ecd91b56cd1840ff1ea92b05af579d7f6e7f7c529b863365",
+    "http-official.json/b16-c32-variable-native-graph/warmup0.json": "e110506f88b515c7e46816da8082561ad4de47f73f462e40be6f2f783ad05926",
+    "http-official.json/b32-c64-variable-alias-async/requests.json": "3d162630ad61ce3e01fd8b86e50553920a39223ca3b16114cfee3526040d1b80",
+    "http-official.json/b32-c64-variable-alias-async/summary.json": "4e69f050dd29cb9945097fb8eececdd9b57e2ed9fecca921b196618c98cf623b",
+    "http-official.json/b32-c64-variable-alias-async/warmup0.json": "fd14efe18f80021ca5482ceb901dd08311707a78521562e7b0d759a89a1853a9",
+    "http-official.json/b32-c64-variable-alias-graph/requests.json": "3d5cc7200c3e432d2bea76abcb7dca6bafae986d63b0bb13a3b10f3e7a6d55e9",
+    "http-official.json/b32-c64-variable-alias-graph/summary.json": "6665443320a901a4fb07b49161e5a13e76ba15066ff4648c7ed1fe7aa2ed2092",
+    "http-official.json/b32-c64-variable-alias-graph/warmup0.json": "a9e4b4a5da6d8470e475de85c7eda2c4b7d1435c832996bce876cb639ecce720",
+    "http-official.json/b32-c64-variable-compact-async/requests.json": "ed4a2857888d72fc39f4ecd361aea0b8287613a7389034c62a633ea25ecd68db",
+    "http-official.json/b32-c64-variable-compact-async/summary.json": "4e1cc9413d05ce7827bac28025a8a51dae8b335df5305c013591746ce476c33d",
+    "http-official.json/b32-c64-variable-compact-async/warmup0.json": "75b4b02dbe316893be36464c4758001403e4128160aa75a243be6fcfaf753345",
+    "http-official.json/b32-c64-variable-compact-graph/requests.json": "bb12ed88e45b9537f410b5e57390fa9f7bd1986a0d3c83aad008853aaf29aafd",
+    "http-official.json/b32-c64-variable-compact-graph/summary.json": "c280228514ac501733e2de13e0b16ca21f5dfa3fb0c2a0a25835f87f2f565cfb",
+    "http-official.json/b32-c64-variable-compact-graph/warmup0.json": "27596bb5c7ac58dc57eba0617e88892e66e8a5c31fa9d9ce33c970ad520c76bc",
+    "http-official.json/b32-c64-variable-native-async/requests.json": "a4efbc5b10495b30e53ecfab81b946c4e0e370f2cd80c0c98f5a8c3a5c1edbd7",
+    "http-official.json/b32-c64-variable-native-async/summary.json": "4eea5d1e3d1d329d2aff78c3b9758fef23dbb9307ed28489387251713de76514",
+    "http-official.json/b32-c64-variable-native-async/warmup0.json": "345c98ba432b9691e6aeb7c34205eaedff0999dd4afe0481fc2c104624338a64",
+    "http-official.json/b32-c64-variable-native-graph/requests.json": "197ed033acdc049f5d7fe2933d6a25e22c4a7a69aaed9269a6f9e8b98ac7246e",
+    "http-official.json/b32-c64-variable-native-graph/summary.json": "13497905a82dd92ecc10c92e8b7fee4937f88641f188f50df015746652742dbe",
+    "http-official.json/b32-c64-variable-native-graph/warmup0.json": "f2273633fff6a637289999a385372df4b28086528f4430a0f4152285b39c92e5",
+    "http-official.json/b4-c8-variable-alias-async/requests.json": "3d635ce298c47dee0738949229e9d6e64f9ae251dfb06e5b8a0863da7f3a1aa0",
+    "http-official.json/b4-c8-variable-alias-async/summary.json": "058fdd245cef5adf177240e8fee6400002bfa4caef191114c5feb99d126503cd",
+    "http-official.json/b4-c8-variable-alias-async/warmup0.json": "74e7e09c307b7a48472896b484bae807358266dafab866923e9f4984f162d2b2",
+    "http-official.json/b4-c8-variable-alias-graph/requests.json": "3ca1ca1ec1f707fb27b90a974ea2d440ed0cc70944a7a4906ff4478b27124885",
+    "http-official.json/b4-c8-variable-alias-graph/summary.json": "78011420db35b86d6c04c389f5c8b1ad0523e81d8ace545f48684df63e7f5e12",
+    "http-official.json/b4-c8-variable-alias-graph/warmup0.json": "48d7c7208c3fcc844249f16c35d9df4000d8ca67dc78cc85b9970a0203b1fd7a",
+    "http-official.json/b4-c8-variable-compact-async/requests.json": "433989bf60993c7ad708b00cdeae3109406cc181aae606a2ee83da40fad0f4af",
+    "http-official.json/b4-c8-variable-compact-async/summary.json": "cf1f981699a115072d4f5a5126b28a4218ea6c11903b058267d8a38a416a5f13",
+    "http-official.json/b4-c8-variable-compact-async/warmup0.json": "c62e98c298cc8e766dfaef38d803987d046e7a8ff29ead4ea2a2fe1256f86eda",
+    "http-official.json/b4-c8-variable-compact-graph/requests.json": "3c7091f601a90e7dd33fbc1088f8ce838d8c48114da1bd021fe186af08afcd7e",
+    "http-official.json/b4-c8-variable-compact-graph/summary.json": "d110a2de1780379d1e7b61774452fa7c10490791edd77f53ff7d078ad47a64dd",
+    "http-official.json/b4-c8-variable-compact-graph/warmup0.json": "9b6171883ed89570c72c0fbfa447d3685d61c85cff1e15207c0f706e963691a3",
+    "http-official.json/b4-c8-variable-native-async/requests.json": "7997572cb097f82ef9f666271f7fdc2bbb73a48c450e5c534c33dd9332dafe0a",
+    "http-official.json/b4-c8-variable-native-async/summary.json": "94ecff04d756f08860c3bd025b660b3a6f4788c97eafa9d65d27fe5c990f19cc",
+    "http-official.json/b4-c8-variable-native-async/warmup0.json": "624b128712423255927decb823aaf7a7d9c0990cfefbd97341fd428a7d426024",
+    "http-official.json/b4-c8-variable-native-graph/requests.json": "14c5c13ef5886d6a2a573e5e15c6389da17e0a76b0e4393ca02f151ff9c68ed1",
+    "http-official.json/b4-c8-variable-native-graph/summary.json": "777dfc7a80afd1849b21eabc001a0753b0b00b2425e03b26b67b3305b27cc111",
+    "http-official.json/b4-c8-variable-native-graph/warmup0.json": "9a4e63115a616407086520f39da97083275aa1cd9bfd99ed132b7e9ea9658c91",
+    "http-official.json/b64-c128-variable-alias-async/requests.json": "65fe464c91b6e40d981b6b58dac7ee887d806451419cf6fd30c2bbc2b74156c1",
+    "http-official.json/b64-c128-variable-alias-async/summary.json": "52176014c0fe2a94a5e85276494baacebfcf8c791894f1019c54b8259ad68281",
+    "http-official.json/b64-c128-variable-alias-async/warmup0.json": "a4cf97c50e64332eac2f886bd1d4a2a766fb05ffd1cb8ca6ebf9d5f9b96b5af4",
+    "http-official.json/b64-c128-variable-alias-graph/requests.json": "91e63cf6491d7a6fc9c48809b81958390b133de6d4ef57ff9eb21433fe4e5b2b",
+    "http-official.json/b64-c128-variable-alias-graph/summary.json": "b7b842548c8e5714edfefc5380be24c5a19345cde63ac3282a45b12e756c27be",
+    "http-official.json/b64-c128-variable-alias-graph/warmup0.json": "314c8854734cfcdf12c68101e43c490c2b1dae75d88e220d77237f96a8a1ebb8",
+    "http-official.json/b64-c128-variable-compact-async/requests.json": "b2120df126846c734173efaf7b990837d1304f1219de2c8db7b843aa0f1ace19",
+    "http-official.json/b64-c128-variable-compact-async/summary.json": "36d2a641b681e38ea686e6936f589036a14bb00b34072fdb030faf0a7ffbc503",
+    "http-official.json/b64-c128-variable-compact-async/warmup0.json": "39ac77149ee954f85b60209166531d6173885f75fff631404624190158c418e4",
+    "http-official.json/b64-c128-variable-compact-graph/requests.json": "a8737232146a74ae9a70869af5d28ca01c988419c26edd26e6588496a76c18d3",
+    "http-official.json/b64-c128-variable-compact-graph/summary.json": "cf819f13e99f27ea94c0523d9482760f07334620804a5db94eb611e70e7e69a6",
+    "http-official.json/b64-c128-variable-compact-graph/warmup0.json": "14e1540de37121f7e13e1e1ffcbd92d78265903acb5f35af964bb1eaacdf6f58",
+    "http-official.json/b64-c128-variable-native-async/requests.json": "7e94b77af453d3fea31476434edbb00ec24cb43988058d1839d20b43c95d9a58",
+    "http-official.json/b64-c128-variable-native-async/summary.json": "c617ca6db14d04bc898b7f2f1bddf5d261bfab483b0734b81add1939359905de",
+    "http-official.json/b64-c128-variable-native-async/warmup0.json": "6acc5812aa6b3e852c9ae0d1e638312a2ea436f24f9ab64eb134b3d527f8ef02",
+    "http-official.json/b64-c128-variable-native-graph/requests.json": "5fe8e4d55abd654566a074f620fba6f848a935b85256ff7f69edc25abcfd01ee",
+    "http-official.json/b64-c128-variable-native-graph/summary.json": "cca738ac767a79a1478004cbdd5d05ccaa0bef8f390eecdad51df007dcc4d1a8",
+    "http-official.json/b64-c128-variable-native-graph/warmup0.json": "549bd50b3c9b23e761d5b6318af3b19d42a1b879176f304f2fbf5e0cc08aa3ab",
+    "http-official.json/plan.json": "79e8c4b310cf7f84911eebbe141184c0b152889db28d2d8b42e497d2ac72524e",
+    "http-official.log": "b93f2ebbb07b4832a2ed5505739539840ac4b41316e3c009c502d3a5ecefc37c",
+    "http-official.receipt.json": "d05a7bbe1ede43f54f5491794f758ffb7f65aa6bc4cf2a59d9841ee99205a01d"
+  }
+}
