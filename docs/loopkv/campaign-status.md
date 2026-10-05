@@ -50,10 +50,10 @@ from formal candidate comparisons. [Calibration and frozen limits](http-pilot-pl
 | Nanbeige4.2-3B | 32 official sync arms /8,104 requests /1,037,312 tokens exact through actual B512 residency; async/Graph, quality and formal service pending |
 | Huginn-0125 | Tiny CUDA qualified; official asset readers and full execution pending |
 | HRM-Text-1B | 32 official synchronous arms /8,104 requests /1,037,312 tokens exact; B512/C1024 caps at117 residents; broader matrix pending |
-| LoopFormer | 72 tiny CUDA arms pass; complete official weights verified and CPU diagnostics retain FP32/BF16 failures. Matching attention and conditioning arithmetic makes six diagnostic states/KV/logits byte-exact; official GPU/quality/speed pending |
+| LoopFormer | 16 official CPU sync arms /424 requests /6,784 tokens match across four storage modes; 72 tiny CUDA arms pass; complete official weights verified and CPU diagnostics retain FP32/BF16 failures. Matching attention and conditioning arithmetic makes six diagnostic states/KV/logits byte-exact; official GPU/quality/speed pending |
 | Parcae | Complete official weights verified; original author CPU checks fail at P7/P33. Attention substitution gives zero native logit error in six diagnostic cases; tiny/official GPU and quality/speed pending |
 
-[Model evidence](models.md), [Ouro-2.6B](ouro-2.6b.md), [Nanbeige](nanbeige.md), [HRM contract](hrm-text.md),
+[Official CPU engine controls](official-cpu-engine.md), [Model evidence](models.md), [Ouro-2.6B](ouro-2.6b.md), [Nanbeige](nanbeige.md), [HRM contract](hrm-text.md),
 [quality](quality.md), [delayed quality](delayed-quality.md),
 [profiling](profile.md), [compact CUDA](compact-resident-cuda.md), [LoopFormer](loopformer.md), [Parcae](parcae.md).
 

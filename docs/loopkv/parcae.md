@@ -131,3 +131,6 @@ python -m experiments.loopkv.parcae_author_gate \
 Both commands naturally return one after recording all six cases.
 [Official-weight raw reports, first argmax margins and source hash](evidence/parcae-official-cpu.json).
 Author-equivalence, official CUDA E2E, broader quality and speed remain open.
+
+[Official CPU engine controls and retained cache/admission failures](official-cpu-engine.md)
+record the current generation checks and corrected pending GPU capacity.
