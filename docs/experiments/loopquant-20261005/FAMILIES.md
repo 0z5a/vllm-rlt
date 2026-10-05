@@ -146,3 +146,26 @@ with 29 skipped and 233 GPU tests deselected; the process exited naturally with
 code 0. [Focused checks](hrm-adapter-v1/hrm-adapter-cpu-attempt1.log) and
 [adapter/evidence manifest](hrm-adapter-v1/manifest.json) are retained. Full HRM
 adapter comparison, Q0 training, quantized quality and E2E remain unrun.
+
+## HRM FP8 deployment preparation
+
+The native FP8 implementation replaces four projections per H/L layer. Each
+physical packed matrix is shared across its recurrent uses; activation scales
+select the explicit outer H-cycle ID. The packed GQKV matrix includes the
+attention-gate projection; sigmoid gating itself remains in BF16 arithmetic.
+Embeddings, the initial low state and untied head retain BF16 parameters.
+RMSNorm, per-module final norms, FP32 rotary arithmetic, residual additions,
+the complete H/L recurrence and distinct KV planes remain intact. This version
+does not fuse the nonaffine RMSNorm with activation quantization.
+
+Frozen source `49734509500252cb0548d11fc78c51816666f425` passes
+[666 CPU tests and 36 subtests](hrm-fp8-v1/full-cpu-hrm-fp8-attempt1.log),
+with 29 skipped and 249 GPU cases deselected, natural exit 0. These results
+establish CPU regression and test collection only; native CUDA is **unrun**.
+[Sixteen prepared GPU cases](hrm-fp8-v1/gpu-packet-manifest.json) cover
+DYN/SH1/ST2/LOOP, Graph off/on and native/compact KV with asynchronous scheduling.
+They compare encoded reloads, protected tensors, fixed R2/L3 generated sequences,
+continuation NLL at prefix lengths 1/3, repeated request IDs, packed pointers
+and complete KV drain. ST2 and per-loop have the same two-stage partition at R2.
+[Probe](hrm-fp8-v1/probe.py), [finite controller](hrm-fp8-v1/run.py).
+Full-weight quantized quality, memory and E2E speed remain unmeasured.

@@ -1,0 +1,13 @@
+{
+  "source_commit": "49734509500252cb0548d11fc78c51816666f425",
+  "scope": "16 tiny HRM FP8 cases: DYN/SH1/ST2/LOOP x Graph off/on x native/compact KV; async scheduling, encoded reload, protected embedding/initial state/head, R2/L3 generation, continuation NLL at prefixes1/3, repeated IDs and KV drain. ST2 and LOOP have the same two-stage partition for R2.",
+  "cases": 16,
+  "full_model": false,
+  "performance": false,
+  "locks": "original GPU lock in child; finite IO; no same outer GPU lock",
+  "files": {
+    "run.py": "467d38280d9aa5539938859765b49cfe14bd4b3812d4fb4e3e2c56b236c76391",
+    "source.tar.gz": "dc2da1af9814d319abf3dfb5dab73b30a9a5dc4361eb0df787962140dcb50b2c",
+    "probe.py": "7e2aee0cb481f097581ddd74626999bba0c1a084495155fe2917e425a895a154"
+  }
+}
