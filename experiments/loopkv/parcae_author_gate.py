@@ -12,6 +12,7 @@ from unittest.mock import patch
 import torch
 
 from experiments.loopkv.capture import dump
+from experiments.loopkv.parcae_cached_diagnostic import cached_comparison
 from tests.reference.parcae import dense_parcae_reference
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.kernels.paged_attention import torch_paged_attention
@@ -25,6 +26,7 @@ def main():
     parser.add_argument("--official-config", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--shared-attention-diagnostic", action="store_true")
+    parser.add_argument("--cached-api-diagnostic", action="store_true")
     parser.add_argument("--model", type=Path)
     parser.add_argument("--prompts", type=Path)
     args = parser.parse_args()
@@ -43,10 +45,15 @@ def main():
     def shared_attention(q, k, v, causal=False, window_size=(-1, -1)):
         nonlocal attention_calls
         attention_calls += 1
-        assert causal and window_size == (-1, -1) and q.shape == k.shape == v.shape
+        assert causal and window_size == (-1, -1) and k.shape == v.shape
+        assert q.shape[0] == k.shape[0] and q.shape[2:] == k.shape[2:]
         batch, length, heads, width = q.shape
+        cached_length = k.shape[1]
+        assert 0 < length <= cached_length
         tables = torch.arange(batch, device=q.device).repeat_interleave(length)[:, None]
-        lengths = torch.arange(1, length + 1, device=q.device).repeat(batch)
+        lengths = torch.arange(
+            cached_length - length + 1, cached_length + 1, device=q.device
+        ).repeat(batch)
         return torch_paged_attention(q.reshape(-1, heads, width), k, v, tables, lengths).reshape(
             q.shape
         )
@@ -103,11 +110,22 @@ def main():
         # Both paths use BF16 weights with the originally computed FP32 RoPE table.
         original.freqs_cis = native.freqs_cis.clone()
         for count in (1, 7, 33) if args.model else (1, 3, 7):
+            token_count = count + 2 if args.cached_api_diagnostic else count
             tokens = (
-                torch.tensor(json.loads(args.prompts.read_text())[0][:count])
+                torch.tensor(json.loads(args.prompts.read_text())[0][:token_count])
                 if args.model
-                else (torch.arange(count) * 263 + 257) % config.vocab_size
+                else (torch.arange(token_count) * 263 + 257) % config.vocab_size
             )
+            if args.cached_api_diagnostic:
+                with (
+                    patch.object(flash_attn, "flash_attn_func", shared_attention)
+                    if args.shared_attention_diagnostic
+                    else nullcontext()
+                ):
+                    row = cached_comparison(native, original, tokens, count, atol, rtol)
+                rows.append(row)
+                print(json.dumps(row), flush=True)
+                continue
             torch.manual_seed(109)
             with (
                 patch.object(flash_attn, "flash_attn_func", shared_attention)
@@ -175,25 +193,37 @@ def main():
         args.out,
         {
             "scope": (
-                "diagnostic author attention substituted with native CPU paged arithmetic; "
-                "not unchanged author qualification"
-                if args.shared_attention_diagnostic
+                "CPU cached teacher forcing with writable legacy cache properties; "
+                "not unchanged author qualification, CUDA, quality or speed"
+                if args.cached_api_diagnostic
                 else (
-                    "official CPU teacher-forced comparison; no CUDA, task quality or speed"
-                    if args.model
-                    else "tiny copied weights with FP32 RoPE; not official checkpoint"
+                    "diagnostic author attention substituted with native CPU paged arithmetic; "
+                    "not unchanged author qualification"
+                    if args.shared_attention_diagnostic
+                    else (
+                        "official CPU teacher-forced comparison; no CUDA, task quality or speed"
+                        if args.model
+                        else "tiny copied weights with FP32 RoPE; not official checkpoint"
+                    )
                 )
             ),
+            "cache_api_diagnostic": args.cached_api_diagnostic,
             "checkpoint": checkpoint,
             "substituted_attention_calls": attention_calls,
             "source_revision": revision,
             "generation_source_sha256": hashlib.sha256(
                 (args.author_repo / "receval/models/parcae.py").read_bytes()
             ).hexdigest(),
+            "cache_source_sha256": hashlib.sha256(
+                (args.author_repo / "parcae_lm/utils/cache.py").read_bytes()
+            ).hexdigest(),
             "cases": rows,
         },
     )
-    raise SystemExit(int(any(not row["native_close"] or not row["dense_close"] for row in rows)))
+    failed = any(not row["native_close"] for row in rows)
+    if not args.cached_api_diagnostic:
+        failed |= any(not row["dense_close"] for row in rows)
+    raise SystemExit(int(failed))
 
 
 if __name__ == "__main__":
