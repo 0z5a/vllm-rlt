@@ -1,0 +1,153 @@
+{
+  "scope": "tiny CPU BF16 weight-interface qualification against pinned HF Ouro in unchanged FlashLoop; no CUDA, official weight or speed claim",
+  "original_rope": "same original FP32 frequencies in both paths",
+  "author_modeling_sha256": "c5c68fbb368ce2909c257ae2afc50719be8c91539333d3295e19312c4316f413",
+  "flashloop_source_pin": "aeaadee10d75b7aa8c4a42a809f15c75d6d3bdc6",
+  "bridge_sha256": "dd4c2057316587a12d7a01b64053c86fafbd483d644c6e6a297550d723edd708",
+  "cases": [
+    {
+      "mode": "dense",
+      "prompt": 1,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "bf16_cross_loop"
+        ],
+        "kivi_packed_streams": 0,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 24
+      }
+    },
+    {
+      "mode": "dense",
+      "prompt": 65,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "bf16_cross_loop"
+        ],
+        "kivi_packed_streams": 0,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 24
+      }
+    },
+    {
+      "mode": "dense",
+      "prompt": 129,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "bf16_cross_loop"
+        ],
+        "kivi_packed_streams": 0,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 24
+      }
+    },
+    {
+      "mode": "sparse-bf16",
+      "prompt": 1,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "bf16_cross_loop"
+        ],
+        "kivi_packed_streams": 0,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 24
+      }
+    },
+    {
+      "mode": "sparse-bf16",
+      "prompt": 65,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "bf16_cross_loop"
+        ],
+        "kivi_packed_streams": 0,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 24
+      }
+    },
+    {
+      "mode": "sparse-bf16",
+      "prompt": 129,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "bf16_cross_loop"
+        ],
+        "kivi_packed_streams": 0,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 24
+      }
+    },
+    {
+      "mode": "packed-int4",
+      "prompt": 1,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "kivi_outer"
+        ],
+        "kivi_packed_streams": 0,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 0
+      }
+    },
+    {
+      "mode": "packed-int4",
+      "prompt": 65,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "kivi_outer"
+        ],
+        "kivi_packed_streams": 0,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 0
+      }
+    },
+    {
+      "mode": "packed-int4",
+      "prompt": 129,
+      "decode": 2,
+      "logits_and_all_kv_bitwise_exact": true,
+      "max_logit": 0.0,
+      "physical_layout": {
+        "installed_layers": 24,
+        "reader_backends": [
+          "kivi_outer"
+        ],
+        "kivi_packed_streams": 192,
+        "row_packed_streams": 0,
+        "bf16_cross_loop_layers": 0
+      }
+    }
+  ]
+}
