@@ -1,0 +1,20 @@
+torch=2.13.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/torch/__init__.py
+setuptools=84.0.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/setuptools/__init__.py
+ouro seed=32 P=15 G=8 C=1: passed
+ouro seed=32 P=15 G=8 C=4: passed
+ouro seed=32 P=15 G=8 C=8: passed
+ouro seed=32 P=16 G=8 C=1: passed
+ouro seed=32 P=16 G=8 C=4: passed
+ouro seed=32 P=16 G=8 C=8: passed
+ouro seed=32 P=17 G=8 C=1: passed
+ouro seed=32 P=17 G=8 C=4: passed
+ouro seed=32 P=17 G=8 C=8: passed
+nanbeige seed=32 P=15 G=8 C=1: passed
+nanbeige seed=32 P=15 G=8 C=4: passed
+nanbeige seed=32 P=15 G=8 C=8: passed
+nanbeige seed=32 P=16 G=8 C=1: passed
+nanbeige seed=32 P=16 G=8 C=4: passed
+nanbeige seed=32 P=16 G=8 C=8: passed
+nanbeige seed=32 P=17 G=8 C=1: passed
+nanbeige seed=32 P=17 G=8 C=4: passed
+nanbeige seed=32 P=17 G=8 C=8: passed
