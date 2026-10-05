@@ -1,4 +1,5 @@
 import asyncio
+import builtins
 
 import pytest
 import torch
@@ -106,3 +107,21 @@ def test_http_goodput_uses_complete_request_slo_and_full_drain_denominator():
         ]
         == 0.0
     )
+
+
+def test_engine_error_propagates_after_http_connections_close(monkeypatch):
+    engine = LLMEngine(OuroForCausalLM(tiny_ouro_config()).eval())
+
+    def fail_step():
+        raise ValueError("engine failure during admitted request")
+
+    monkeypatch.setattr(engine, "step", fail_step)
+    workload = [
+        dict(request_id="failure", prompt_token_ids=[3, 7], max_tokens=2, seed=0, arrival_s=0)
+    ]
+    with pytest.raises(builtins.ExceptionGroup) as error:
+        asyncio.run(run_load(engine, workload, SamplingParams(max_tokens=2)))
+    assert len(error.value.exceptions) == 1
+    assert isinstance(error.value.exceptions[0], ValueError)
+    assert str(error.value.exceptions[0]) == "engine failure during admitted request"
+    engine.close()

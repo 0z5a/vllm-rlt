@@ -20,6 +20,7 @@ async def run_load(engine, workload, params, *, concurrency=None):
     assert workload and len({row["request_id"] for row in workload}) == len(workload)
     assert concurrency is None or concurrency > 0
     pending, channels, delivered = deque(), {}, {}
+    connections: set[asyncio.StreamWriter] = set()
     wake = asyncio.Event()
     stopping = False
     counters = WorkCounters()
@@ -61,6 +62,7 @@ async def run_load(engine, workload, params, *, concurrency=None):
                     del delivered[rid]
 
     async def handle(reader, writer):
+        connections.add(writer)
         headers = (await reader.readuntil(b"\r\n\r\n")).decode("ascii").split("\r\n")
         assert headers[0] == "POST /generate HTTP/1.1"
         fields = dict(line.split(": ", 1) for line in headers[1:] if line)
@@ -82,6 +84,7 @@ async def run_load(engine, workload, params, *, concurrency=None):
         del channels[rid]
         writer.close()
         await writer.wait_closed()
+        connections.discard(writer)
 
     bodies = []
     for row in workload:
@@ -154,9 +157,16 @@ async def run_load(engine, workload, params, *, concurrency=None):
     async with server:
         with ThreadPoolExecutor(max_workers=1, thread_name_prefix="loopkv-engine") as executor:
             start = loop.time()
-            async with asyncio.TaskGroup() as group:
-                group.create_task(owner(executor))
-                group.create_task(clients(start))
+            try:
+                async with asyncio.TaskGroup() as group:
+                    group.create_task(owner(executor))
+                    group.create_task(clients(start))
+            finally:
+                # An engine error leaves HTTP handlers waiting for token events.
+                # Close their streams before Server.__aexit__ waits for clients.
+                for writer in connections:
+                    writer.close()
+                await asyncio.gather(*(writer.wait_closed() for writer in connections))
             await loop.run_in_executor(executor, engine.model_runner.synchronize)
             seconds = loop.time() - start
     assert not channels and not pending and not delivered
