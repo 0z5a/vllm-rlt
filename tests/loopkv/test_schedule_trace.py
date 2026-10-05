@@ -23,18 +23,24 @@ def drain(engine):
 
 
 @pytest.mark.parametrize("held_capture", [False, True])
-@pytest.mark.parametrize("alias", [False, True])
+@pytest.mark.parametrize("storage", ["native", "alias", "compact", "credits"])
 @pytest.mark.parametrize("policy", [(0.5, 2, 4), (1.0, 4, 4), (0.0, 1, 1)])
 def test_replay_preserves_batches_despite_opposite_readback_readiness(
-    monkeypatch, held_capture, alias, policy
+    monkeypatch, held_capture, storage, policy
 ):
     torch.manual_seed(71)
     model = OuroForCausalLM(tiny_ouro_config()).eval()
 
-    def make(alias):
+    def make(storage):
         return LLMEngine(
             model,
-            cache_config=CacheConfig(128, 2, alias_last_exited=alias),
+            cache_config=CacheConfig(
+                128,
+                2,
+                alias_last_exited=storage == "alias",
+                compact_last_exited=storage in ("compact", "credits"),
+                reclaim_skipped_credits=storage == "credits",
+            ),
             scheduler_config=SchedulerConfig(max_num_seqs=3, max_num_batched_tokens=4),
             exit_config=ExitConfig("ouro_delayed"),
             execution_config=ExecutionConfig(async_scheduling=True),
@@ -56,18 +62,19 @@ def test_replay_preserves_batches_despite_opposite_readback_readiness(
             )
 
     monkeypatch.setattr(Submission, "ready", lambda self: not held_capture)
-    native = make(False)
+    native = make("native")
     capture = Capture(native)
     submit(native)
     expected = drain(native)
     # The replay must ignore readiness changes, including delayed EOS/coda delivery.
     monkeypatch.setattr(Submission, "ready", lambda self: held_capture)
-    candidate = make(alias)
-    replay = Replay(
-        candidate, capture.events, {rid: item["exit_depths"] for rid, item in expected.items()}
-    )
-    submit(candidate)
-    assert drain(candidate) == expected
-    replay.assert_drained()
+    candidate = make(storage)
+    for _ in range(2):
+        replay = Replay(
+            candidate, capture.events, {rid: item["exit_depths"] for rid, item in expected.items()}
+        )
+        submit(candidate)
+        assert drain(candidate) == expected
+        replay.assert_drained()
     assert candidate.model_runner.exit_config.mode == "ouro_delayed"
     assert native.cache_manager.num_free_blocks == 128

@@ -5,6 +5,42 @@ import triton.language as tl
 
 
 @triton.jit
+def compact_metadata_kernel(
+    D,
+    Slots,
+    Positions,
+    Lengths,
+    Blocks,
+    Offsets,
+    Depths,
+    MapPointers,
+    MapWidths,
+    N,
+    PAGE: tl.constexpr,
+    PUBLISH: tl.constexpr,
+):
+    row = tl.program_id(0)
+    valid = row < N
+    slot = tl.load(D + row * 6, valid, 0)
+    depth = tl.load(D + row * 6 + 1, valid, 0)
+    pos = tl.load(D + row * 6 + 2, valid, 0)
+    pointer = tl.load(D + row * 6 + 3, valid, 0)
+    width = tl.load(D + row * 6 + 4, valid, 0)
+    record = tl.load(D + row * 6 + 5, valid, 0)
+    tl.store(Slots + row, slot)
+    tl.store(Positions + row, pos)
+    tl.store(Lengths + row, tl.where(valid, pos + 1, 0))
+    tl.store(Blocks + row, record // PAGE, valid)
+    tl.store(Offsets + row, record % PAGE, valid)
+    tl.store(Depths + row, depth)
+    tl.store(MapPointers + row, pointer)
+    tl.store(MapWidths + row, width)
+    if PUBLISH:
+        address = pointer.to(tl.pointer_type(tl.int32)) + depth * width + pos
+        tl.store(address, record, valid)
+
+
+@triton.jit
 def metadata_kernel(
     D,
     Tables,

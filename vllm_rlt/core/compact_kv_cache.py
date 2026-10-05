@@ -1,4 +1,4 @@
-"""Eager record-granular KV experiment with worst-future admission credits.
+"""Record-granular KV with worst-future admission credits.
 
 The arena uses the existing [page, layer, offset, head, dim] strides. Records
 are individual offsets across all layers; unused offsets are globally reusable.
@@ -57,6 +57,10 @@ class CompactKVCacheManager(AliasKVCacheManager):
         self._maps[key] = torch.full(
             (self.max_loops + 1, max_tokens), -1, dtype=torch.int32, device=self.device
         )
+        if self.device.type == "cuda":
+            ready = torch.cuda.Event()
+            ready.record(torch.cuda.current_stream(self.device))
+            self._allocation_ready[key] = ready
         self._credits[key] = required * self.block_size
         self._reserved_records += self._credits[key]
         self.peak_metadata_bytes = max(
@@ -82,6 +86,29 @@ class CompactKVCacheManager(AliasKVCacheManager):
         self._free_records.extend(self._records.pop(key).values())
         self._reserved_records -= self._credits.pop(key)
         del self._maps[key], self._readable[key], self._exits[key]
+        self._allocation_ready.pop(key, None)
+
+    def _reserve_records(self, rows, *, for_write=True):
+        addresses = [(id(a), depth, position) for a, depth, position in rows]
+        if for_write and len(set(addresses)) != len(rows):
+            raise ValueError("duplicate compact write address")
+        records = []
+        for allocation, depth, position in rows:
+            key = id(allocation)
+            versions = self._records[key]
+            if for_write and position in self._exits[key]:
+                # Coda may fill its unwritten boundary layer after finalization.
+                if (
+                    len(self.recurrent_layers) == self.num_layers
+                    or depth != 0
+                    or (depth, position) not in versions
+                ):
+                    raise ValueError("cannot overwrite a finalized source")
+            if for_write and (depth, position) not in versions:
+                versions[depth, position] = self._free_records.pop()
+            records.append(versions.get((depth, position), -1))
+        self.peak_live_records = max(self.peak_live_records, self.live_records)
+        return records
 
     def _prepare_batches(
         self, request_ids, depth_sets, positions, *, for_write=True, packed_prefill=False
@@ -93,25 +120,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
         batches = []
         for depths in depth_sets:
             rows = tuple(self._validate_rows(request_ids, depths, positions))
-            addresses = [(id(a), depth, position) for a, depth, position in rows]
-            if for_write and len(set(addresses)) != len(rows):
-                raise ValueError("duplicate compact write address")
-            records = []
-            for allocation, depth, position in rows:
-                key = id(allocation)
-                versions = self._records[key]
-                if for_write and position in self._exits[key]:
-                    # Coda may fill an unwritten boundary layer after recurrent
-                    # finalization. Its depth-zero record already exists.
-                    if (
-                        len(self.recurrent_layers) == self.num_layers
-                        or depth != 0
-                        or (depth, position) not in versions
-                    ):
-                        raise ValueError("cannot overwrite a finalized source")
-                if for_write and (depth, position) not in versions:
-                    versions[depth, position] = self._free_records.pop()
-                records.append(versions.get((depth, position), -1))
+            records = self._reserve_records(rows, for_write=for_write)
             n = len(rows)
             wide = self._stage(
                 [self._maps[id(a)].data_ptr() for a, _, _ in rows]
@@ -153,7 +162,6 @@ class CompactKVCacheManager(AliasKVCacheManager):
                     record_map_widths=widths,
                 )
             )
-        self.peak_live_records = max(self.peak_live_records, self.live_records)
         return tuple(batches)
 
     def _finalize_metadata(self, request_id, position, exit_depth):

@@ -87,14 +87,6 @@ class LLMEngine:
                 raise ValueError("CUDA async scheduling requires Triton or FlashAttention")
         if (cache_config.alias_last_exited or cache_config.compact_last_exited) and (
             (
-                cache_config.compact_last_exited
-                and (
-                    self.execution_config.async_scheduling
-                    or self.execution_config.static_buffers
-                    or self.execution_config.cuda_graphs
-                )
-            )
-            or (
                 (self.execution_config.static_buffers or self.execution_config.cuda_graphs)
                 and not self.execution_config.async_scheduling
             )

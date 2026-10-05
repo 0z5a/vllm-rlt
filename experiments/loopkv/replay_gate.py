@@ -19,14 +19,24 @@ from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
 
 
-def run_case(model, prompts, batch, outputs, folder):
+def run_case(model, prompts, batch, outputs, folder, compact=False):
     expected, events = None, None
     rows = []
-    for mode in ("capture", "self-replay", "alias-replay"):
+    modes = (
+        ("capture", "self-replay", "compact-replay")
+        if compact
+        else ("capture", "self-replay", "alias-replay")
+    )
+    for mode in modes:
         engine = LLMEngine(
             model,
             attention_backend="triton",
-            cache_config=CacheConfig(batch * 64, 16, alias_last_exited=mode == "alias-replay"),
+            cache_config=CacheConfig(
+                batch * 64,
+                16,
+                alias_last_exited=mode == "alias-replay",
+                compact_last_exited=mode == "compact-replay",
+            ),
             scheduler_config=SchedulerConfig(max_num_seqs=batch, max_num_batched_tokens=128),
             exit_config=ExitConfig("ouro_delayed"),
             execution_config=ExecutionConfig(
@@ -90,6 +100,7 @@ def main():
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--load-lock", type=Path, required=True)
+    parser.add_argument("--compact", action="store_true")
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text())
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
@@ -140,7 +151,7 @@ def main():
     for batch in plan["batches"]:
         folder = args.out / f"b{batch}"
         folder.mkdir()
-        rows = run_case(model, prompts, batch, plan["outputs"], folder)
+        rows = run_case(model, prompts, batch, plan["outputs"], folder, args.compact)
         print(json.dumps({"batch": batch, "results": rows}), flush=True)
     dump(args.out / "DONE.json", {"returncode": 0})
 

@@ -10,14 +10,21 @@ from vllm_rlt.worker.model_runner import Submission
 
 
 @pytest.mark.parametrize("hold_coda", [False, True])
-def test_async_alias_trace_abort_and_request_reuse(monkeypatch, hold_coda):
+@pytest.mark.parametrize("storage", ["alias", "compact", "credits"])
+def test_async_alias_trace_abort_and_request_reuse(monkeypatch, hold_coda, storage):
     torch.manual_seed(13)
     model = OuroForCausalLM(tiny_ouro_config()).eval()
     trace = ExitConfig("trace", depths_by_request={"fixed": [4, 1, 3, 2, 4, 1]})
     engines = [
         LLMEngine(
             model,
-            cache_config=CacheConfig(128, 2, alias_last_exited=alias),
+            cache_config=CacheConfig(
+                128,
+                2,
+                alias_last_exited=alias and storage == "alias",
+                compact_last_exited=alias and storage in ("compact", "credits"),
+                reclaim_skipped_credits=alias and storage == "credits",
+            ),
             scheduler_config=SchedulerConfig(max_num_seqs=3, max_num_batched_tokens=4),
             exit_config=trace,
             execution_config=ExecutionConfig(async_scheduling=alias),
