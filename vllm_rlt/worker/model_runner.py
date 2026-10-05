@@ -323,6 +323,10 @@ class ModelRunner:
             hidden = self.model.prelude_prepared(tensor[: len(ids)], boundary, cache)
         else:
             hidden = self.model.prelude(tensor)
+        # Boundary-KV models keep the prelude unpadded, so core metadata must
+        # describe its actual rows rather than the token workspace capacity.
+        size = hidden.shape[0]
+        self.last_submitted_size = size
         for depth in range(self.model.config.total_ut_steps):
             # Same workspace metadata can be refilled only once previous DMA is done.
             if workspace:

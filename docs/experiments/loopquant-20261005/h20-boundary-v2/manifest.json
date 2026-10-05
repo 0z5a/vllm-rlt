@@ -1,0 +1,41 @@
+{
+  "target_device": "NVIDIA H20",
+  "compute_capability": [
+    9,
+    0
+  ],
+  "target_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "sources": {
+    "huginn": "cd80141757a5b58f241b419c9abecea2a3fde789",
+    "parcae": "bf2a5208a15fe82da9e3a0586f3b574432ba3974"
+  },
+  "families": {
+    "huginn_fp8": "huginn",
+    "parcae_fp8": "parcae",
+    "huginn_int4": "huginn",
+    "parcae_int4": "parcae"
+  },
+  "native_cases": 38,
+  "metadata_control_cases": 2,
+  "full_model": false,
+  "performance": false,
+  "resource_status": "local_only_next_window_requested_not_granted",
+  "scope": "Fix uses actual prelude row count for core metadata. Same existing helper budgets;32FP8+6INT4+2Graphcontrols;4sequentialchildren.",
+  "files": {
+    "huginn.tar.gz": "9ab854f69a873b50aa55b2f5eab5331a4aeb0a3bf1dddf2de0b3891f32efa56f",
+    "parcae.tar.gz": "e21295200f49d628f344ac0e97c10494632081a07bc2f05a2acd15d11ee4e8e0",
+    "probe.py": "24efb12cd396dab4543aeaf292a23e19363fe28bfce91ac52e8995b607c11223",
+    "run.py": "0e84a9ca64bd567e3e7f0432712f14956cb50d44bf4967f3a0fa830e3ab61a8d"
+  }
+}

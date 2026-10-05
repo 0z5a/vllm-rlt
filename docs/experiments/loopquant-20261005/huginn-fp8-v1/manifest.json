@@ -1,0 +1,13 @@
+{
+  "source_commit": "63819a08188a7ddbbf50954da57aa68b72355bf4",
+  "scope": "16 tiny Huginn FP8 policy/Graph/fused-norm cases plus2 sync/async Ouro loop-metadata regressions",
+  "cases": 18,
+  "full_model": false,
+  "performance": false,
+  "locks": "original GPU lock in child; finite original IO; no same outer GPU lock",
+  "files": {
+    "probe.py": "c0ae743a4656d45cbb1803b7a5f10cbce7685f281f2fc3eabc43630aaf043d1b",
+    "run.py": "ba3c43711da1b73b98bce66fac140bf00acd8f0812201755e45d97a9833203c9",
+    "source.tar.gz": "f1355a2729f0a8715c0eb108161eba7d91ce7e2be0814e00efd7e3d3fc3cc3c2"
+  }
+}

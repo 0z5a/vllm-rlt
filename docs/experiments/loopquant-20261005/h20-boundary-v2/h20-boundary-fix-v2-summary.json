@@ -1,0 +1,35 @@
+{
+  "packet_manifest_sha256": "30b94269a410daa2ec79fc9e340fa5c49949cade20624ab7982ddea30ef42486",
+  "archive_sha256": "4cb2af439863ff7908ede8124d33ef6cb493ceb5e13248faded2f27c5d4bcdd5",
+  "archive_size": 541913,
+  "verified_files": 37,
+  "native_passed": 23,
+  "native_failed": 2,
+  "native_unrun": 13,
+  "graph_controls_unrun": 2,
+  "all_passed": false,
+  "results": {
+    "huginn_fp8": {
+      "passed": 4,
+      "failed": 1,
+      "unrun": 11,
+      "failure": "SH1 generated sequences differ from decoded FP8 reference"
+    },
+    "parcae_fp8": {
+      "passed": 16,
+      "failed": 0,
+      "unrun": 0
+    },
+    "huginn_int4": {
+      "passed": 2,
+      "failed": 0,
+      "unrun": 0
+    },
+    "parcae_int4": {
+      "passed": 1,
+      "failed": 1,
+      "unrun": 2,
+      "failure": "compact alias storage rejects synchronous static buffers"
+    }
+  }
+}

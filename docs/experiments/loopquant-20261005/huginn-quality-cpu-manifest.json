@@ -1,0 +1,21 @@
+{
+  "source_commit": "fff5a57243558f7fccc08a040af9db8f213f5a95",
+  "archive_sha256": "9beea2e8bf92e5681fb100e737959b91bca9187a1f880f2c8ebd5c5b2bf9eff8",
+  "focused_result": {
+    "passed": 18,
+    "gpu_deselected": 3
+  },
+  "full_cpu_result": {
+    "passed": 484,
+    "skipped": 29,
+    "gpu_deselected": 116
+  },
+  "new_quality_cases": 9,
+  "gpu_quality_run": false,
+  "evidence_sha256": {
+    "huginn-quality-cpu-attempt2.log": "35b0616c6ebf2b131e5ba5f3a3ee2075f31eb3e7c070f4ac226c2fb4b1f63939",
+    "huginn-quality-cpu-attempt2.xml": "13ad1e4c55b886aaf2ddc9b27a872b91e6f79e4f9cc100a9eacbe76fe4fb1e25",
+    "full-cpu-huginn-quality-attempt1.log": "33dc7265a5b152d2054a37b250eecbaf572550a5c9bc877e04528e43b15a58a4",
+    "full-cpu-huginn-quality-attempt1.xml": "de30c3b72b2c4131f2a7c57b56e670839501772d6708c53d4a41b975f6342ae9"
+  }
+}

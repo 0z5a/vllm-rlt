@@ -19,6 +19,8 @@ def expand_prefill(
     Tables,
     Blocks,
     Offsets,
+    Loops,
+    DEPTH,
     N,
     WIDTH,
     PAGE: tl.constexpr,
@@ -30,3 +32,4 @@ def expand_prefill(
     block = tl.load(Tables + seq * WIDTH + pos // PAGE, i < N, 0)
     tl.store(Blocks + i, block, i < N)
     tl.store(Offsets + i, pos % PAGE, i < N)
+    tl.store(Loops + i, DEPTH, i < N)

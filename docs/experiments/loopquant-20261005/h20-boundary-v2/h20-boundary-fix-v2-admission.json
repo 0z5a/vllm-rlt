@@ -1,0 +1,23 @@
+{
+  "time_unix": 1791221194.0149133,
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "compute_apps": [],
+  "matching_locks": [],
+  "versions": {
+    "torch": "2.12.1+cu130",
+    "triton": "3.7.1"
+  },
+  "window_exists": false,
+  "admission_exit": 0
+}

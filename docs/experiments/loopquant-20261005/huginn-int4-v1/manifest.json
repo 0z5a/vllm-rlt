@@ -1,0 +1,13 @@
+{
+  "source_commit": "20da38ab2820b717a693b28543f9f70d44b72f3e",
+  "scope": "two tiny Huginn native INT4 cases, Graph off/on; encoded reload, tied readout, FP32 RoPE, seeded native NLL, repeated request IDs and KV drain",
+  "cases": 2,
+  "full_model": false,
+  "performance": false,
+  "locks": "original GPU lock in child; finite IO; no same outer GPU lock",
+  "files": {
+    "probe.py": "004e8957a2cb82eae1d28e6620eb048d621712acbbb51976dd88821767ccc685",
+    "run.py": "ed77fc80d26aadd50a21b14960c72574238285a849263c055bad1410086e9644",
+    "source.tar.gz": "dfc75c444f32a31ac7757682ef4611609fa281b8b42d6cedff613b8c05e667c9"
+  }
+}
