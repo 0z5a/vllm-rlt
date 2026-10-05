@@ -53,9 +53,9 @@ data. CPU tests cover R1/R3, all four cache modes and request-ID reuse.
 
 The combined targeted CPU suite passed117 tests and36 address subtests, with
 eight unavailable CUDA/official-checkpoint cases skipped. Nanbeige now passes [32 official synchronous storage arms](nanbeige.md),
-including actual B512 residency. Official Huginn CUDA E2E remains pending. HRM-Text's public1B checkpoint is
-registered for a separate PrefixLM/hierarchical-recurrence adapter; it is not
-covered by these results.
+including actual B512 residency. Official Huginn CUDA E2E remains pending.
+HRM-Text has a separate qualified PrefixLM adapter and official synchronous
+results described below.
 
 ### Tiny-model CUDA qualification
 
@@ -88,5 +88,23 @@ H2/L3 recurrence applies L,L,L,H,L,L,L,H, with16 layers per module and separate
 KV versions for all eight applications. Default inference is a fixed-depth
 negative control: it has no skipped-version promotion to remove. The prompt is
 bidirectional; replacing it with causal chunked prefill would change the model.
-Native adaptation, independent prefix/decode logits checks and official high-B/C
-engine runs remain pending. Asset verification is not model execution evidence.
+The [native PrefixLM adapter](hrm-text.md) passes independent prefix/decode logits
+checks and 72 tiny CUDA arms. Its 32 official synchronous arms complete 8,104
+requests /1,037,312 tokens exactly across four storage modes. Configured B512/C1024
+realizes at most 117 residents under the fixed payload budget. Official async/Graph,
+quality and formal speed remain pending.
+
+## LoopFormer and Parcae official CPU evidence
+
+[LoopFormer](loopformer.md) has complete verified weights and 72 passing tiny CUDA
+arms. Official-weight CPU comparisons retain FP32/BF16 numerical-budget failures,
+including a BF16 argmax difference. A four-setting arithmetic diagnostic separates
+attention from conditioning-row effects; matching both makes six native/author
+logits, all KV and all recurrent states byte-exact. The unchanged author gate still
+fails and official GPU execution remains pending.
+
+[Parcae](parcae.md) has complete verified weights and a native CPU adapter.
+Official CPU P1 passes, while P7/P33 fail the original FP32/BF16 budgets; BF16 argmax
+differences remain. Replacing only author attention with native CPU arithmetic
+gives zero native logit error in six diagnostic cases. This does not qualify the
+original backend. Tiny CUDA, official GPU E2E, quality and speed remain pending.
