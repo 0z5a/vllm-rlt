@@ -49,7 +49,7 @@ and checkpoint conversion at that same revision.
 | Affected CPU regressions | 214 passed, 27 GPU tests deselected, 36 subtests passed |
 | Tiny CUDA FP32 states, logits and all KV against independent CPU oracle | Pass at the same tolerances |
 | Tiny BF16 CUDA sync/async/Graph, four storage modes, B1–128/C2B | All 72 arms pass, including two request-ID lifetimes |
-| Official checkpoint inference | Pending |
+| Official BF16 synchronous P128/D128, B1–512 with twice-B queued requests | All 32 arms exact; realized residency caps at 117 |
 
 The dense oracle uses functional weights and a complete prefix/causal attention
 matrix independent of the scheduler, model forward and paged cache. FP32 state,
@@ -70,6 +70,42 @@ The archive SHA256 is
 This is tiny-model correctness evidence on a shared node; it does not establish
 official-model quality or speed.
 
+The official checkpoint also completed all 32 synchronous arms at P128/D128,
+full H2/L3, BF16 on RTX5090 #1. Across B1–512 and twice-B queued requests,
+8,104 requests generated 1,037,312 tokens. Alias, compact and credits match
+native's complete request objects at every point. Every exit is H2, all raw
+prefill/recurrent work counters reconcile, and every cache reservation returns.
+These are four controlled token-ID prompt fixtures using the author's
+`synth,cot` envelope; they do not measure task quality.
+
+| Configured B | Queued requests per arm | Actual peak residents | Effective recurrent B | Native peak reserved GiB | Output and exit comparison |
+|---:|---:|---:|---:|---:|---|
+| 1 | 2 | 1 | 1.00 | 2.539 | Exact in all four modes |
+| 4 | 8 | 4 | 3.98 | 3.102 | Exact in all four modes |
+| 16 | 32 | 16 | 15.54 | 5.352 | Exact in all four modes |
+| 32 | 64 | 32 | 30.16 | 8.352 | Exact in all four modes |
+| 64 | 128 | 64 | 56.94 | 14.371 | Exact in all four modes |
+| 128 | 256 | 117 | 83.04 | 24.369 | Exact in all four modes |
+| 256 | 512 | 117 | 100.73 | 24.371 | Exact in all four modes |
+| 512 | 1024 | 117 | 112.74 | 24.367 | Exact in all four modes |
+
+The 22 GiB KV budget caps the three largest cases at 117 simultaneous residents.
+B512 therefore denotes an admission setting with a 1,024-request queue, not a
+512-row realized GPU batch. Full-depth execution has no skipped depths: compact
+storage and credits do not improve residency or reduce recurrent work here.
+Allocation includes model, KV, metadata and workspace; the largest observed
+reserved total across all arms is 26,168,262,656 bytes.
+
+The frozen source is `224521d0d9cd2bf7fb3c5f37d3ab5f32bde35134`, screen plan
+`1ae4c2430b0e10723c70ac389cd54958a842342dcb168c90168de0aaf83cde5d`.
+All processes naturally returned 0. All 104 raw files, totaling 99,035,119 bytes,
+were hash-checked off the node. Archive SHA256:
+`0681b2edcbb73d1dbdf4b9e1e49c609a0de5fddfdf81230d25ebf66e145e790d`.
+[Per-arm audit, raw-file hashes and completion receipt](evidence/hrm-official-sync.json).
+The other GPU ran separate jobs during part of this screen, and model downloads
+held shared IO between some arms. Elapsed values are retained as diagnostics;
+no speed comparison is inferred from this run.
+
 | Official model E2E comparison | Native tokens/s | Candidate tokens/s | Speedup |
 |---|---:|---:|---:|
 | HRM-Text-1B | — | — | Not measured |
@@ -77,5 +113,5 @@ official-model quality or speed.
 Only torch/Triton LAST_EXITED execution is admitted. Prefix reuse, preemption,
 speculation, FlashAttention and prefill UVA are not qualified. The implementation
 supports synchronous and resident execution with tiny CUDA/Graph qualification.
-Full production text serving, task quality and high-concurrency official
-checkpoint results remain separate work.
+Official async/Graph, broader contexts, production text serving, task quality
+and independently repeated performance comparisons remain separate work.

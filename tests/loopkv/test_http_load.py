@@ -106,3 +106,22 @@ def test_http_goodput_uses_complete_request_slo_and_full_drain_denominator():
         ]
         == 0.0
     )
+
+
+def test_single_arm_defers_comparison_until_reference_exists():
+    from experiments.loopkv.http_bench import reference_differences
+
+    results = {
+        "0": {"token_ids": [1, 2], "exit_depths": [4, 2]},
+        "1": {"token_ids": [3, 4], "exit_depths": [4, 3]},
+    }
+    absent = reference_differences(results, None)
+    assert not absent["comparison_reference_available"]
+    assert absent["token_different_requests"] is absent["exit_different_requests"] is None
+    baseline = {
+        "0": {"token_ids": [1, 5], "exit_depths": [4, 2]},
+        "1": {"token_ids": [3, 4], "exit_depths": [4, 2]},
+    }
+    present = reference_differences(results, baseline)
+    assert present["comparison_reference_available"]
+    assert present["token_different_requests"] == present["exit_different_requests"] == 1
