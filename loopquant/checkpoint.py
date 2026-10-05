@@ -15,7 +15,9 @@ def load_weights(model: nn.Module, folder: Path, device: torch.device, dtype: to
     index = folder / "model.safetensors.index.json"
     weight_map = json.loads(index.read_text())["weight_map"] if index.is_file() else None
     names = sorted(set(weight_map.values())) if weight_map else ["model.safetensors"]
-    expected = dict(model.named_parameters())
+    parameters = dict(model.named_parameters(remove_duplicate=False))
+    expected = model.state_dict(keep_vars=True)
+    shared: dict[int, nn.Parameter] = {}
     loaded: set[str] = set()
     dtypes = {"BF16": torch.bfloat16, "F16": torch.float16, "F32": torch.float32}
     for name in names:
@@ -44,11 +46,20 @@ def load_weights(model: nn.Module, folder: Path, device: torch.device, dtype: to
                     view = torch.frombuffer(
                         mapping, dtype=source_dtype, count=elements, offset=8 + header_size + begin
                     ).reshape(spec["shape"])
-                    owned = view.to(device=device, dtype=dtype, copy=True)
-                    parent, field = key.rsplit(".", 1)
-                    model.get_submodule(parent).register_parameter(
-                        field, nn.Parameter(owned, requires_grad=False)
-                    )
+                    target_dtype = dtype if key in parameters else expected[key].dtype
+                    owned = view.to(device=device, dtype=target_dtype, copy=True)
+                    parent, _, field = key.rpartition(".")
+                    module = model.get_submodule(parent)
+                    if key in parameters:
+                        identity = id(parameters[key])
+                        if identity in shared:
+                            if not torch.equal(shared[identity], owned):
+                                raise ValueError(f"tied checkpoint tensors differ: {key}")
+                        else:
+                            shared[identity] = nn.Parameter(owned, requires_grad=False)
+                        module.register_parameter(field, shared[identity])
+                    else:
+                        module.register_buffer(field, owned, persistent=True)
                     del view
                     loaded.add(key)
     if loaded != expected.keys():

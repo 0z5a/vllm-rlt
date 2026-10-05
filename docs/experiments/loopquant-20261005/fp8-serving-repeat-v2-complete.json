@@ -1,0 +1,13 @@
+{
+  "status": "complete",
+  "source_commit": "4496a58d81a1a589787aeb9b8ccc9a5f2acacb40",
+  "manifest_sha256": "0110cffd3711262d12a80ed35e59fefe1db828b6a09d8702a5da41db65654672",
+  "child_returncode": 0,
+  "controller_ssh_returncode": 0,
+  "files_independently_archived": 3,
+  "child_pids": [],
+  "gpu0_compute_empty": true,
+  "original_locks_take_release": true,
+  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+  "completed_unix": 1791161934.1939569
+}

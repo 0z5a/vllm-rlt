@@ -8,7 +8,7 @@ There are no measured E2E speedups yet; missing values are not zero speedup.
 | Ouro-1.4B | — | — | — | — | — | G0 incomplete |
 | Ouro-2.6B | — | — | — | — | — | Official CPU exact; GPU/E2E pending |
 | Huginn-3.5B | — | — | — | — | — | Full official CPU comparison running |
-| Nanbeige4.2-3B | — | — | — | — | — | Tiny adapter checks only |
+| Nanbeige4.2-3B | — | — | — | — | — | Full checkpoint verified; official CPU comparison queued |
 
 ## Native FP8 correctness
 
@@ -333,3 +333,9 @@ completion, peer upload/hash completion, independent verification of all nine
 owned remote hardlinks and an empty local reader check. It frees5,336,011,242
 bytes; remote inputs still needed for experiments remain retained.
 [Cleanup](official-ouro-2.6b-cpu-cleanup.json).
+
+## Fused native FP8 engine qualification
+
+The corrected [original 12-case repeat](fp8-serving-probe-attempt2.json) passes DYN/SH1/ST2 × Graph on/off × fused RMSNorm on/off. Each case runs the same three mixed-depth requests twice, checking token/depth parity against decoded FP8 reference arithmetic, request-ID reuse, complete KV drain and unchanged packed-weight pointers. Graph cases each capture 3 shapes and replay 24 times. There is one packed matrix per physical projection (14 in this tiny model). The child, controller and SSH all naturally exit 0; [completion receipt](fp8-serving-repeat-v2-complete.json). This establishes tiny-model serving correctness, not full-model quality or E2E throughput. The earlier constructor failure is retained.
+
+The immutable-environment checkpoint reader now preserves tied parameter identity across shards and persistent buffer dtypes, as required by Huginn. [47 targeted CPU checks](checkpoint-alias-cpu-attempt1.log) pass, including rejection of inconsistent tied values. Nanbeige's full 12-file download is verified; its full original-class CPU comparison is queued behind Huginn to avoid simultaneous large model loads.
