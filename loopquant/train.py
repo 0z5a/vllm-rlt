@@ -6,10 +6,14 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 
+from .adapters.base import LoopOutput
+from .adapters.hrm_text import HrmTextAdapter
 from .adapters.loopformer import LoopFormerAdapter
 from .adapters.nanbeige import NanbeigeAdapter
 from .adapters.ouro import OuroAdapter
 from .quality import next_token_nll
+
+DenseAdapter = OuroAdapter | NanbeigeAdapter | LoopFormerAdapter | HrmTextAdapter
 
 
 @dataclass(frozen=True)
@@ -27,6 +31,17 @@ class Q0Config:
 class TrainingBatch:
     token_ids: torch.Tensor
     valid: torch.Tensor
+    prefix_lengths: torch.Tensor | None = None
+
+    @property
+    def target_mask(self) -> torch.Tensor:
+        mask = self.valid[:, :-1] & self.valid[:, 1:]
+        if self.prefix_lengths is not None:
+            if self.prefix_lengths.shape != (self.token_ids.shape[0],):
+                raise ValueError("prefix lengths must contain one boundary per row")
+            positions = torch.arange(1, self.token_ids.shape[1], device=self.token_ids.device)
+            mask = mask & (positions >= self.prefix_lengths[:, None])
+        return mask
 
 
 class Q0Trainer:
@@ -38,9 +53,7 @@ class Q0Trainer:
     number of shared calls is applied to the complete recurrent derivative.
     """
 
-    def __init__(
-        self, student: OuroAdapter | NanbeigeAdapter | LoopFormerAdapter, config: Q0Config
-    ) -> None:
+    def __init__(self, student: DenseAdapter, config: Q0Config) -> None:
         if not student.quantized or any(p.requires_grad for p in student.model.parameters()):
             raise ValueError("Q0 requires attached scale modules and a frozen model")
         if config.tokens_per_update < 2 or config.learning_rate <= 0 or config.max_grad_norm <= 0:
@@ -58,26 +71,35 @@ class Q0Trainer:
         self.cumulative_tokens = 0
         self.data_position = 0
 
+    def _forward(self, adapter: DenseAdapter, batch: TrainingBatch) -> LoopOutput:
+        if isinstance(adapter, HrmTextAdapter):
+            return adapter(
+                batch.token_ids, batch.valid, self.config.loops, prefix_lengths=batch.prefix_lengths
+            )
+        return adapter(batch.token_ids, batch.valid, self.config.loops)
+
     def step(
         self, batches: list[TrainingBatch]
     ) -> dict[str, int | float | bool | dict[str, float]]:
         config = self.config
         tokens = sum(int(batch.valid.sum()) for batch in batches)
-        targets = sum(int((batch.valid[:, :-1] & batch.valid[:, 1:]).sum()) for batch in batches)
+        masks = [batch.target_mask for batch in batches]
+        targets = sum(int(mask.sum()) for mask in masks)
         if tokens != config.tokens_per_update or targets == 0:
             raise ValueError("an update must match the registered effective token budget")
         before = {name: value.detach().clone() for name, value in self.parameters.items()}
         self.optimizer.zero_grad(set_to_none=True)
         totals = dict(ce=0.0, kl=0.0, trajectory=0.0)
-        for batch in batches:
-            result = self.student(batch.token_ids, batch.valid, config.loops)
-            nll, count = next_token_nll(result.logits, batch.token_ids, batch.valid)
+        for batch, mask in zip(batches, masks, strict=True):
+            result = self._forward(self.student, batch)
+            nll, count = next_token_nll(
+                result.logits, batch.token_ids, batch.valid, target_mask=mask
+            )
             loss = nll / targets
             totals["ce"] += float(loss.detach())
             if config.kl_weight or config.trajectory_weight:
                 with torch.no_grad():
-                    teacher = self.teacher(batch.token_ids, batch.valid, config.loops)
-                mask = batch.valid[:, :-1] & batch.valid[:, 1:]
+                    teacher = self._forward(self.teacher, batch)
                 if config.kl_weight:
                     temperature = config.temperature
                     student_logp = (result.logits[:, :-1].float() / temperature).log_softmax(-1)

@@ -105,9 +105,17 @@ def native_continuation_nll(
 
 
 def next_token_nll(
-    logits: torch.Tensor, token_ids: torch.Tensor, valid_mask: torch.Tensor
+    logits: torch.Tensor,
+    token_ids: torch.Tensor,
+    valid_mask: torch.Tensor,
+    *,
+    target_mask: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, int]:
     valid = valid_mask[:, :-1] & valid_mask[:, 1:]
+    if target_mask is not None:
+        if target_mask.shape != valid.shape or target_mask.dtype != torch.bool:
+            raise ValueError("target mask must align with next-token positions")
+        valid = valid & target_mask
     count = int(valid.sum())
     if count == 0:
         raise ValueError("no valid next-token targets")
