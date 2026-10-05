@@ -103,6 +103,25 @@ class RowwiseFP8Linear(nn.Module):
         # CUTLASS rowwise ABI requires a contiguous N-vector, even for equal values.
         self.register_buffer("weight_scales", scale.expand(1, linear.out_features).contiguous())
 
+    @classmethod
+    def from_packed(cls, weight: torch.Tensor, scales: torch.Tensor) -> "RowwiseFP8Linear":
+        if weight.ndim != 2 or weight.dtype != torch.float8_e4m3fn:
+            raise ValueError("expected a column-major E4M3 weight matrix")
+        k, n = weight.shape
+        if k % 16 or n % 16 or weight.stride() != (1, k):
+            raise ValueError("packed weight must preserve aligned K,N and column-major strides")
+        if scales.shape != (1, n) or scales.dtype != torch.float32 or not scales.is_contiguous():
+            raise ValueError("rowwise weight scales must be a contiguous FP32 N-vector")
+        if weight.device != scales.device or not bool(
+            torch.isfinite(scales).all() & (scales > 0).all()
+        ):
+            raise ValueError("weight and positive finite scales must share a device")
+        result = cls.__new__(cls)
+        nn.Module.__init__(result)
+        result.register_buffer("packed_weight", weight)
+        result.register_buffer("weight_scales", scales)
+        return result
+
     def forward(
         self, activation: FP8Workspace, rows: int, *, dtype: torch.dtype = torch.bfloat16
     ) -> torch.Tensor:

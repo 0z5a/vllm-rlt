@@ -7,6 +7,42 @@ from dataclasses import dataclass
 import torch
 from torch.nn import functional as F
 
+from vllm_rlt.core.kv_cache_manager import KVCacheManager
+from vllm_rlt.models.nanbeige import NanbeigeForCausalLM
+from vllm_rlt.models.ouro import OuroForCausalLM
+
+
+@torch.inference_mode()
+def native_window_nll(
+    model: OuroForCausalLM | NanbeigeForCausalLM,
+    tokens: torch.Tensor,
+    loops: int,
+    cache: KVCacheManager,
+) -> tuple[float, int]:
+    """Teacher-forced NLL through the actual native core, including packed weights.
+
+    The caller reuses an empty cache with the registered deployment backend.
+    Fixed loops bypass halting. This is quality evaluation, not a timed engine cohort.
+    """
+    if tokens.ndim != 1 or len(tokens) < 2 or not 1 <= loops <= model.config.total_ut_steps:
+        raise ValueError("expected a token window and a supported fixed recurrence")
+    if cache.num_used_blocks or not cache.allocate("quality", len(tokens)):
+        raise ValueError("quality evaluation requires an empty cache with enough capacity")
+    try:
+        hidden = model.prelude(tokens)
+        requests, positions = ["quality"] * len(tokens), list(range(len(tokens)))
+        for loop in range(loops):
+            hidden, _ = model.recurrent(
+                hidden, requests, [loop] * len(tokens), positions, cache, compute_gate=False
+            )
+        logits = model.coda(hidden[:-1]).float()
+        loss = F.cross_entropy(logits, tokens[1:], reduction="sum")
+        if not torch.isfinite(loss):
+            raise ValueError("nonfinite native NLL")
+        return float(loss), len(tokens) - 1
+    finally:
+        cache.free("quality")
+
 
 def next_token_nll(
     logits: torch.Tensor, token_ids: torch.Tensor, valid_mask: torch.Tensor

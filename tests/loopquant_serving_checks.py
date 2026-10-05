@@ -1,6 +1,7 @@
 """GPU model checks for shared FP8 producers and mixed-depth engine execution."""
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import torch
 from torch import nn
@@ -54,22 +55,36 @@ class ReferenceOuro(OuroForCausalLM):
         return super().recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
 
 
-def check_fused_native_model(policy: str, graphs: bool, fuse_norm: bool) -> dict:
+def check_fused_native_model(
+    policy: str, graphs: bool, fuse_norm: bool, *, export_folder: Path | None = None
+) -> dict:
     torch.manual_seed(37)
     config = tiny_ouro_config(hidden_size=64, head_dim=32, intermediate_size=128)
     reference = ReferenceOuro(config).to(device="cuda", dtype=torch.bfloat16)
     native = OuroForCausalLM(config).to(device="cuda", dtype=torch.bfloat16)
     native.load_state_dict(reference.state_dict())
     mode = "dynamic" if policy == "DYN" else "static"
-    layout = ScaleLayout(4, (2,) if policy == "ST2" else ())
+    layout = ScaleLayout(4, {"DYN": (), "SH1": (), "ST2": (2,), "LOOP": (1, 2, 3)}[policy])
     scales = {
-        name: torch.tensor([0.01, 0.02][: layout.stages], device="cuda")
+        name: torch.tensor([0.01, 0.02, 0.03, 0.04][: layout.stages], device="cuda")
         for name, module in reference.named_modules()
         if name.startswith("model.layers.") and isinstance(module, nn.Linear)
     }
     reference.quantize(scales, layout, mode)
     scratch = quantize_ouro_native(native, scales, layout, mode, max_rows=8, fuse_norm=fuse_norm)
     assert scratch.nbytes > 0
+    if export_folder is not None:
+        from loopquant.native_export import export_native_ouro, load_native_ouro
+
+        export_native_ouro(native, export_folder, model_revision="a" * 40)
+        restored = load_native_ouro(export_folder, torch.device("cuda"), max_rows=8)
+        original_state, restored_state = native.state_dict(), restored.state_dict()
+        assert original_state.keys() == restored_state.keys()
+        for name in original_state:
+            assert torch.equal(
+                original_state[name].view(torch.uint8), restored_state[name].view(torch.uint8)
+            ), name
+        native = restored
     weights = {
         name: layer.packed_weight.data_ptr()
         for name, layer in native.named_modules()
@@ -128,4 +143,5 @@ def check_fused_native_model(policy: str, graphs: bool, fuse_norm: bool) -> dict
         scratch_bytes=scratch.nbytes,
         captures=actual.engine.model_runner.graphs.captures if graphs else 0,
         replays=actual.engine.model_runner.graphs.replays if graphs else 0,
+        export_roundtrip=export_folder is not None,
     )

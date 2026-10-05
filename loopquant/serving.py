@@ -52,6 +52,7 @@ class FP8OuroLayer(nn.Module):
         mode: Literal["static", "dynamic"],
         scratch: FP8Scratch,
         fuse_norm: bool,
+        packed: dict[str, tuple[torch.Tensor, torch.Tensor]] | None = None,
     ) -> None:
         super().__init__()
         self.config, self.layer_idx = layer.self_attn.config, layer.self_attn.layer_idx
@@ -62,17 +63,20 @@ class FP8OuroLayer(nn.Module):
         self.post_attention_layernorm_2 = layer.post_attention_layernorm_2
         self.self_attn = nn.ModuleDict(
             {
-                "q_proj": RowwiseFP8Linear(layer.self_attn.q_proj),
-                "k_proj": RowwiseFP8Linear(layer.self_attn.k_proj),
-                "v_proj": RowwiseFP8Linear(layer.self_attn.v_proj),
-                "o_proj": RowwiseFP8Linear(layer.self_attn.o_proj),
+                name: RowwiseFP8Linear.from_packed(*packed[prefix + ".self_attn." + name])
+                if packed is not None
+                else RowwiseFP8Linear(module)
+                for name, module in layer.self_attn.named_children()
+                if name in ("q_proj", "k_proj", "v_proj", "o_proj")
             }
         )
         self.mlp = nn.ModuleDict(
             {
-                "gate_proj": RowwiseFP8Linear(layer.mlp.gate_proj),
-                "up_proj": RowwiseFP8Linear(layer.mlp.up_proj),
-                "down_proj": RowwiseFP8Linear(layer.mlp.down_proj),
+                name: RowwiseFP8Linear.from_packed(*packed[prefix + ".mlp." + name])
+                if packed is not None
+                else RowwiseFP8Linear(module)
+                for name, module in layer.mlp.named_children()
+                if name in ("gate_proj", "up_proj", "down_proj")
             }
         )
         groups = {
@@ -153,6 +157,7 @@ def quantize_ouro_native(
     *,
     max_rows: int,
     fuse_norm: bool = True,
+    packed: dict[str, tuple[torch.Tensor, torch.Tensor]] | None = None,
 ) -> FP8Scratch:
     """Convert once before engine creation; preserve BF16 state, KV, gate and head.
 
@@ -161,9 +166,20 @@ def quantize_ouro_native(
     """
     if layout.max_loops < model.config.total_ut_steps:
         raise ValueError("scale layout must cover the model's registered recurrence")
+    if packed is not None:
+        projections = {
+            name: module
+            for name, module in model.named_modules()
+            if name.startswith("model.layers.") and isinstance(module, nn.Linear)
+        }
+        if packed.keys() != projections.keys() or any(
+            packed[name][0].shape != (module.in_features, module.out_features)
+            for name, module in projections.items()
+        ):
+            raise ValueError("packed matrices must match every physical core projection")
     scratch = FP8Scratch(model, max_rows)
     for index, layer in enumerate(model.model.layers):
         model.model.layers[index] = FP8OuroLayer(
-            layer, f"model.layers.{index}", scales, layout, mode, scratch, fuse_norm
+            layer, f"model.layers.{index}", scales, layout, mode, scratch, fuse_norm, packed
         )
     return scratch
