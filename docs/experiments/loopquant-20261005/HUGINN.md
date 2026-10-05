@@ -82,3 +82,32 @@ cases: exact encoded reload, tied-head storage, FP32 RoPE, seeded native
 likelihood with restored RNG, repeated engine requests and zero KV after drain.
 It is local only, not admitted or uploaded. Full-weight Huginn quantization,
 locked quality and all performance speedups remain unmeasured.
+
+
+## Native FP8 preparation
+
+Huginn now has DYN/SH1/ST2/LOOP core producers, optional fused RMSNorm,
+Torch/CUTLASS rowwise GEMM, and an encoded native export. Core Q/K bias,
+adjacent-pair RoPE, sandwich norms and boundary injection remain explicit.
+Export keeps one packed core matrix and one protected embedding; native load
+restores its head alias and FP32 RoPE buffer.
+
+The producer and GEMM components are reused from shared harness source22f84cd.
+The explicit-loop metadata changes are ported from shared commitbfada6a:
+prepared rows, padded workspaces, prefill expansion, async routing and Graph
+replay carry actual loop IDs. CPU reordering/padding/ID-reuse coverage passes.
+Huginn itself still requires synchronous scheduling; the two async/sync metadata
+GPU controls use Ouro and do not claim Huginn async support.
+
+The [frozen full CPU suite](huginn-fp8-v1/full-cpu-huginn-fp8-attempt1.log)
+passed490 tests,29 skipped,136 GPU cases deselected. This confirms CPU regression
+and collection, not execution of the CUDA producers or Huginn FP8 GEMMs.
+[Source manifest](huginn-fp8-v1/cpu-source-manifest.json).
+
+The [local future GPU packet](huginn-fp8-v1/manifest.json) has18 cases:16 Huginn
+policy × Graph × fused-norm combinations and2 loop-metadata controls. Each
+Huginn case compares complete token/exit-depth sequences against decoded FP8
+arithmetic, repeats request IDs, checks exact encoded reload and tied storage,
+and requires zero KV after drain. Full-weight calibration, native GPU G0,
+locked quality and formal performance remain unrun. The packet is not admitted,
+uploaded or executed.
