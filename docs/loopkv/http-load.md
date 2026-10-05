@@ -33,6 +33,19 @@ flag is an execution check, not a confidence-interval or performance verdict.
 Formal comparisons still require independent paired runs, frozen SLO/arrival
 plans, quiet resources and request/run-level uncertainty analysis.
 
+`--case <name> --arm <name>` selects one frozen arm for an independent process.
+Its manifest records the selection, worker PID and Python executable. A candidate
+run without its native reference reports null token/exit comparison counts;
+comparison happens after both complete raw cohorts are available. Missing
+references do not become zero differences.
+
+A case may provide a separate `warmup` object with `workload`,
+`workload_sha256` and `concurrency`. Warmup drains fully and reuses the same engine,
+while the measured arrival trace and full-drain denominator remain unchanged.
+`--outer-quiet` is for a controller that already holds both GPU and heavy-IO locks;
+it excludes nested child lock acquisition. The alternative `--load-lock` retains
+the shared-node diagnostic behavior. Neither option grants resources by itself.
+
 | HTTP comparison | Native tokens/s | Candidate tokens/s | Speedup |
 |---|---:|---:|---:|
 | Official checkpoint | — | — | Not measured |

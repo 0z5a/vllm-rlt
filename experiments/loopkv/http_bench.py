@@ -7,7 +7,10 @@ import gc
 import hashlib
 import json
 import math
+import os
 import subprocess
+import sys
+from contextlib import nullcontext
 from pathlib import Path
 
 import torch
@@ -71,13 +74,46 @@ def summarize(result, slo):
     }
 
 
+def load_workload(spec):
+    path = Path(spec["workload"])
+    payload = path.read_bytes()
+    assert hashlib.sha256(payload).hexdigest() == spec["workload_sha256"]
+    return json.loads(payload)
+
+
+def reference_differences(results, baseline):
+    return {
+        "comparison_reference_available": baseline is not None,
+        "token_different_requests": sum(
+            row["token_ids"] != baseline[rid]["token_ids"] for rid, row in results.items()
+        )
+        if baseline is not None
+        else None,
+        "exit_different_requests": sum(
+            row["exit_depths"] != baseline[rid]["exit_depths"] for rid, row in results.items()
+        )
+        if baseline is not None
+        else None,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--load-lock", type=Path, required=True)
+    locks = parser.add_mutually_exclusive_group(required=True)
+    locks.add_argument("--load-lock", type=Path)
+    locks.add_argument("--outer-quiet", action="store_true")
+    parser.add_argument("--case", help="Run one frozen case in this process")
+    parser.add_argument("--arm", help="Run one arm; pair comparisons then happen off process")
     args = parser.parse_args()
+    if args.outer_quiet and os.environ.get("LOOPKV_IO_LOCK"):
+        raise ValueError("outer quiet mode must not reacquire LOOPKV_IO_LOCK in the child")
     plan = json.loads(args.plan.read_text())
+    cases = [case for case in plan["cases"] if args.case is None or case["name"] == args.case]
+    arms = [arm for arm in plan["arms"] if args.arm is None or arm["name"] == args.arm]
+    if not cases or not arms:
+        raise ValueError("case/arm selection must match the frozen plan")
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     assert sha == plan["source_sha"] and not subprocess.check_output(["git", "diff", "HEAD"])
     args.out.mkdir(exist_ok=False)
@@ -95,19 +131,24 @@ def main():
             "checkpoint": json.loads((model_path / "verified-manifest.json").read_text()),
             "torch": torch.__version__,
             "gpu": torch.cuda.get_device_name(),
+            "pid": os.getpid(),
+            "python": sys.executable,
+            "selection": {"case": args.case, "arm": args.arm},
+            "lock_scope": "outer_quiet" if args.outer_quiet else "load_lock",
             "scope": "localhost_token_ID_HTTP_not_production_text_endpoint",
         },
     )
-    with args.load_lock.open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+    with args.load_lock.open("a") if args.load_lock else nullcontext() as lock:
+        if args.load_lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
         model = load_model(model_path, torch.device("cuda"), torch.bfloat16)
         torch.cuda.synchronize()
-    for case in plan["cases"]:
-        path = Path(case["workload"])
-        assert hashlib.sha256(path.read_bytes()).hexdigest() == case["workload_sha256"]
-        workload = json.loads(path.read_text())
+    for case in cases:
+        workload = load_workload(case)
+        warmup_spec = case.get("warmup", case)
+        warmup_workload = load_workload(warmup_spec)
         baselines = {}
-        for arm in plan["arms"]:
+        for arm in arms:
             folder = args.out / (case["name"] + "-" + arm["name"])
             folder.mkdir()
             engine = LLMEngine(
@@ -136,9 +177,9 @@ def main():
                 warmup = asyncio.run(
                     run_load(
                         engine,
-                        workload,
+                        warmup_workload,
                         params,
-                        concurrency=case["concurrency"],
+                        concurrency=warmup_spec["concurrency"],
                     )
                 )
                 dump(folder / f"warmup{repetition}.json", warmup)
@@ -158,7 +199,7 @@ def main():
             results = {row["request_id"]: row for row in result["requests"]}
             if not arm["alias"] and not arm["compact"]:
                 baselines[arm["execution"]] = results
-            baseline = baselines[arm["execution"]]
+            baseline = baselines.get(arm["execution"])
             summary = summarize(result, case["slo"])
             summary.update(
                 arm=arm,
@@ -167,13 +208,7 @@ def main():
                 work=result["work"],
                 tokens_s=summary["output_tokens"] / result["seconds"],
                 peak_client_concurrency=result["peak_client_concurrency"],
-                token_different_requests=sum(
-                    row["token_ids"] != baseline[rid]["token_ids"] for rid, row in results.items()
-                ),
-                exit_different_requests=sum(
-                    row["exit_depths"] != baseline[rid]["exit_depths"]
-                    for rid, row in results.items()
-                ),
+                **reference_differences(results, baseline),
                 peak_allocated_bytes=torch.cuda.max_memory_allocated(),
                 peak_reserved_bytes=torch.cuda.max_memory_reserved(),
                 telemetry_before=before,
