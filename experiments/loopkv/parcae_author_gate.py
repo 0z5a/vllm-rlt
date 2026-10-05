@@ -10,9 +10,9 @@ from pathlib import Path
 import torch
 
 from experiments.loopkv.capture import dump
-from tests.loopkv.test_parcae import make_cache, tiny_config
 from tests.reference.parcae import dense_parcae_reference
-from vllm_rlt.models import ParcaeForCausalLM
+from vllm_rlt.core.kv_cache_manager import KVCacheManager
+from vllm_rlt.models import ParcaeConfig, ParcaeForCausalLM
 
 
 @torch.inference_mode()
@@ -33,7 +33,18 @@ def main():
 
     torch.set_num_threads(2)
     torch.manual_seed(41)
-    config = tiny_config()
+    config = ParcaeConfig(
+        n_embd=32,
+        intermediate_size=64,
+        num_attention_heads=4,
+        num_key_value_heads=4,
+        n_layers_in_prelude=2,
+        n_layers_in_recurrent_block=2,
+        n_layers_in_coda=2,
+        mean_recurrence=3,
+        block_size=64,
+        vocab_size=1024,
+    )
     native = ParcaeForCausalLM(config).eval()
     values = json.loads(args.official_config.read_text())
     values.pop("_class_name")
@@ -62,7 +73,16 @@ def main():
             torch.manual_seed(109)
             initial = original.initialize_state(original.transformer.wte(tokens[None]))[0]
             _, dense, _ = dense_parcae_reference(native, tokens, initial)
-            cache = make_cache(native, "native")
+            cache = KVCacheManager(
+                config.num_hidden_layers,
+                4,
+                8,
+                128,
+                2,
+                max_loops=3,
+                dtype=dtype,
+                recurrent_layers=native.recurrent_kv_layers,
+            )
             cache.allocate("a", count)
             boundary = cache._prepare_batch(["a"] * count, [0] * count, list(range(count)))
             torch.manual_seed(109)
