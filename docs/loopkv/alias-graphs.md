@@ -1,6 +1,6 @@
 # Rectangular alias CUDA Graph path
 
-Status: tiny-model CUDA qualification passed; official-weight qualification pending. The change builds on resident
+Status: tiny-model CUDA qualification passed; official-weight diagnostic complete with exit-depth differences. The change builds on resident
 async alias routing and enables recurrent-core graphs for that path. Compact
 graphs and synchronous alias graphs remain unsupported.
 
@@ -22,7 +22,7 @@ replays; the configuration flag alone does not count as coverage.
 |---|---|
 | Affected CPU alias/async/counter tests | 29 passed, 12 CUDA skips |
 | CUDA graph gate | 60 execution arms pass; 24 Graph arms execute 116 captures and 1,116 replays with zero fallbacks |
-| Official model/policy parity | Pending |
+| Official Ouro1.4B B1–128/C2B | All 36 arms token-exact; 143 alias Graph request exit sequences differ from native Graph at B16/B32/B64; [full diagnostic](delayed-official.md) |
 
 | Fixed-policy E2E comparison | Native Graph tokens/s | Alias Graph tokens/s | Speedup |
 |---|---:|---:|---:|

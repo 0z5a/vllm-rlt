@@ -48,3 +48,5 @@ They add no device reads. The reported residency is sampled after each engine
 step. Batch percentiles weight core calls and use the nearest-rank definition.
 Submitted rows include work discarded before output delivery; exit-depth sums
 describe emitted outputs and are reported separately.
+
+Official Ouro1.4B delayed-policy B1–128/C2B diagnostic: all native/alias async request objects match synchronous native across 490 requests per path. Graph paths retain exit-depth differences. [Full scope, counters and provenance](delayed-official.md). No timing or quality claim.
