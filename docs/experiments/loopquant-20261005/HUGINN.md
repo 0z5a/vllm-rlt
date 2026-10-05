@@ -31,5 +31,15 @@ quality or engine performance.
 |---|---:|---:|---:|---:|---:|
 | Huginn-0125 | Not measured | Not measured | Not measured | — | — |
 
-Complete-weight G0, all-loop calibration, export, locked quality, and the full
+The [full official checkpoint comparison](official-huginn-cpu-attempt1.json)
+completed all 96 CPU BF16 SDPA cases: 32 fixed inputs × R8/16/32. All 1,792
+recurrent states and 96 final logit tensors are bitwise equal to the unmodified
+pinned official class. Both paths receive the same explicit seeded initial state.
+The native module shares the loaded official parameter storage and retains the
+tied embedding/head. [Frozen runner](run_official_huginn_cpu.py),
+[manifest](official-huginn-cpu-manifest.json) and
+[verified summary](official-huginn-cpu-summary.json) preserve the scope and hashes.
+
+This completes the full-weight dense-adapter CPU comparison. Native cached GPU
+semantics, all-loop calibration, quantized export, locked quality and the full
 multiple-batch/high-concurrency E2E matrix remain to be executed.

@@ -1,0 +1,15 @@
+{
+  "source_commit": "202987db683d709b3389c523d3e23ada37ad03b8",
+  "script_sha256": "6ccd7af6a8d45d893f91bed45fc4b96dc1e4fb8f722869a4f03d272761b0d2d0",
+  "model_revision": "bb6621b65e90b6a4b9b29ef88dc83866d450470c",
+  "inputs": 32,
+  "loops": [
+    8,
+    16,
+    32
+  ],
+  "dtype": "bfloat16",
+  "initial_state": "official like-init distribution, seed17+request_index, identical explicit input for both paths",
+  "expected": "exact recurrent states and logits; all differences retained",
+  "launch_condition": "after existing Ouro2.6 CPU reader actually exits; local host has16GiB RAM"
+}
