@@ -26,3 +26,5 @@ peak CUDA allocation/reservation, actual Graph captures/replays/fallbacks and
 warmup/measurement boundaries. Input hashes and the balanced order are frozen
 in the external plan before launch. This is track-A fixed-work replay; separate
 natural-scheduling performance and serving tests remain required.
+
+Executed without changing the frozen plan. [All four paired result rows and raw evidence](resident-replay-performance.md) report a consistent regression; controller and both card processes naturally returned0.

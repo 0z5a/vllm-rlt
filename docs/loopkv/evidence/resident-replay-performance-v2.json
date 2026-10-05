@@ -1,0 +1,3807 @@
+{
+  "plan": {
+    "plan": {
+      "source_sha": "16d9aeb4c28c15094be93b32dfc8014f1f169c66",
+      "model": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/models/ouro-1.4b",
+      "order_seed": 1705,
+      "statistics_seed": 1705,
+      "bootstrap_resamples": 10000,
+      "pairs_per_card": 7,
+      "devices": [
+        "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+        "GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d"
+      ],
+      "scope": "fixed_work_replay_not_live_serving",
+      "cases": [
+        {
+          "name": "b16-c32-p128-d128",
+          "batch": 16,
+          "blocks": 1024,
+          "inputs": {
+            "requests": {
+              "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/resident-diagnostics-v2/trace-official.json/b16/capture-requests.json",
+              "sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+              "bytes": 137967
+            },
+            "summary": {
+              "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/resident-diagnostics-v2/trace-official.json/b16/capture.json",
+              "sha256": "acb0b6a08cc3ab10e72ad122a79f10b8a508de3acacea21581633dc4c049da69",
+              "bytes": 860
+            },
+            "trace": {
+              "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/resident-diagnostics-v2/trace-official.json/b16/trace.json",
+              "sha256": "fd3955b3dd8589ffdcbb1e6b3254f8fbb3c66975d4643f617119a4cdea335c6a",
+              "bytes": 3302718
+            }
+          },
+          "orders": [
+            [
+              false,
+              true
+            ],
+            [
+              false,
+              true
+            ],
+            [
+              false,
+              true
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              false,
+              true
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ]
+          ]
+        },
+        {
+          "name": "b32-c64-p128-d128",
+          "batch": 32,
+          "blocks": 2048,
+          "inputs": {
+            "requests": {
+              "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/resident-diagnostics-v2/trace-official.json/b32/capture-requests.json",
+              "sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+              "bytes": 275951
+            },
+            "summary": {
+              "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/resident-diagnostics-v2/trace-official.json/b32/capture.json",
+              "sha256": "5dee26aad0fa823171e30956b56aab1ae6acb0f7a9c2af86c44754bc6e92be6c",
+              "bytes": 1108
+            },
+            "trace": {
+              "path": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/resident-diagnostics-v2/trace-official.json/b32/trace.json",
+              "sha256": "6a6baaf7b503d4ed07bd5806de8d5ad82cf861b381b5436903979002d662cc3a",
+              "bytes": 5492034
+            }
+          },
+          "orders": [
+            [
+              true,
+              false
+            ],
+            [
+              false,
+              true
+            ],
+            [
+              false,
+              true
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              false,
+              true
+            ],
+            [
+              false,
+              true
+            ]
+          ]
+        }
+      ]
+    },
+    "plan_sha256": "84feddb08cdd6e9c2c2ff0b70327227d55dc72c858c136461cd2caebe6f20dde",
+    "controller_sha256": "706787a9bac25d815c335357bd22b6175c9cbab82a0da224d3d73758ccba86b5",
+    "controller_pid": 20306,
+    "start_unix": 1791164279.617547,
+    "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+    "quiet_locks": [
+      "gpu0-perf.lock",
+      "gpu1-perf.lock",
+      "heavy-io.lock"
+    ]
+  },
+  "scope": "complete_frozen_schedule_replay_not_live_serving",
+  "rows": [
+    {
+      "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+      "case": "b16-c32-p128-d128",
+      "pairs": 7,
+      "ratios": [
+        0.9787027242750863,
+        0.9968422082683545,
+        0.9829358075228354,
+        0.9824900155943845,
+        0.9790328259530403,
+        0.9837038029170072,
+        0.982513610665864
+      ],
+      "median_paired_speedup": 0.982513610665864,
+      "paired_bootstrap95": [
+        0.9790328259530403,
+        0.9837038029170072
+      ],
+      "native_median_tokens_s": 387.0510835266439,
+      "alias_median_tokens_s": 380.4463693388501,
+      "native_seconds": [
+        10.57104579731822,
+        10.7026520781219,
+        10.58258244022727,
+        10.608379453420639,
+        10.518107697367668,
+        10.57935095578432,
+        10.657559167593718
+      ],
+      "alias_seconds": [
+        10.801079362630844,
+        10.736555885523558,
+        10.766300667077303,
+        10.797442503273487,
+        10.743365716189146,
+        10.75461020320654,
+        10.847238197922707
+      ],
+      "arms": [
+        {
+          "phase": "measured",
+          "seconds": 10.57104579731822,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6223735296,
+          "peak_reserved_bytes": 6457131008,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 6913 MiB, 2925 MHz, 13801 MHz, 41, 214.03 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.82 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 81 %, 6913 MiB, 2910 MHz, 13801 MHz, 44, 226.66 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.44 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 0,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.801079362630844,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6333397504,
+          "peak_reserved_bytes": 6574571520,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7025 MiB, 2910 MHz, 13801 MHz, 45, 196.68 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.48 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 99 %, 7025 MiB, 2910 MHz, 13801 MHz, 48, 222.21 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 11.11 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 0,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.7026520781219,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6357953024,
+          "peak_reserved_bytes": 6591348736,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7041 MiB, 2910 MHz, 13801 MHz, 47, 200.35 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.71 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 68 %, 7041 MiB, 2910 MHz, 13801 MHz, 51, 230.41 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 9.97 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 1,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.736555885523558,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6467615232,
+          "peak_reserved_bytes": 6708789248,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7153 MiB, 2917 MHz, 13801 MHz, 48, 209.60 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.51 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 52 %, 7153 MiB, 2910 MHz, 13801 MHz, 52, 228.53 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.93 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 1,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.58258244022727,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6492170752,
+          "peak_reserved_bytes": 6725566464,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7169 MiB, 2910 MHz, 13801 MHz, 50, 216.32 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.70 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 93 %, 7169 MiB, 2895 MHz, 13801 MHz, 51, 235.32 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.24 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 2,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.766300667077303,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6601832960,
+          "peak_reserved_bytes": 6843006976,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7281 MiB, 2910 MHz, 13801 MHz, 51, 212.99 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 11.79 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 67 %, 7281 MiB, 2902 MHz, 13801 MHz, 51, 231.28 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.94 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 2,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.797442503273487,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6668941824,
+          "peak_reserved_bytes": 6910115840,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7345 MiB, 2910 MHz, 13801 MHz, 51, 200.76 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.63 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 44 %, 7345 MiB, 2902 MHz, 13801 MHz, 53, 229.60 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.42 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 3,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.608379453420639,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6693497344,
+          "peak_reserved_bytes": 6926893056,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7361 MiB, 2902 MHz, 13801 MHz, 51, 208.98 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.69 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 58 %, 7361 MiB, 2895 MHz, 13801 MHz, 52, 232.25 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.24 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 3,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.518107697367668,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6693497344,
+          "peak_reserved_bytes": 6926893056,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7361 MiB, 2902 MHz, 13801 MHz, 52, 205.97 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.36 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 68 %, 7361 MiB, 2895 MHz, 13801 MHz, 55, 233.98 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.63 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 4,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.743365716189146,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6736050688,
+          "peak_reserved_bytes": 6977224704,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7409 MiB, 2902 MHz, 13801 MHz, 53, 216.26 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.77 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 49 %, 7409 MiB, 2902 MHz, 13801 MHz, 55, 231.30 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.02 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 4,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.75461020320654,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6736050688,
+          "peak_reserved_bytes": 6977224704,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7409 MiB, 2902 MHz, 13801 MHz, 52, 223.05 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.21 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 93 %, 7409 MiB, 2895 MHz, 13801 MHz, 54, 237.71 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.20 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 5,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.57935095578432,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6693497344,
+          "peak_reserved_bytes": 6926893056,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7361 MiB, 2902 MHz, 13801 MHz, 53, 212.94 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.36 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 87 %, 7361 MiB, 2895 MHz, 13801 MHz, 54, 224.12 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.56 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 5,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.847238197922707,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6736050688,
+          "peak_reserved_bytes": 6977224704,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7409 MiB, 2902 MHz, 13801 MHz, 52, 205.52 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.77 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 79 %, 7409 MiB, 2895 MHz, 13801 MHz, 56, 236.17 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.64 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 6,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.657559167593718,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6693497344,
+          "peak_reserved_bytes": 6926893056,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 7361 MiB, 2895 MHz, 13801 MHz, 53, 213.42 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.74 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 19 %, 7361 MiB, 2902 MHz, 13801 MHz, 54, 229.15 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.54 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 6,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        }
+      ]
+    },
+    {
+      "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+      "case": "b32-c64-p128-d128",
+      "pairs": 7,
+      "ratios": [
+        0.956800808957239,
+        0.9799909470643662,
+        0.9475024462942965,
+        0.9581546482085431,
+        0.93752515022268,
+        0.9440079728471669,
+        0.9640961151207544
+      ],
+      "median_paired_speedup": 0.956800808957239,
+      "paired_bootstrap95": [
+        0.9440079728471669,
+        0.9640961151207544
+      ],
+      "native_median_tokens_s": 452.56092815501887,
+      "alias_median_tokens_s": 432.9871204706054,
+      "native_seconds": [
+        18.03242775797844,
+        18.524354841560125,
+        18.01614873856306,
+        18.12802854180336,
+        18.249219473451376,
+        18.06161440908909,
+        18.10143008455634
+      ],
+      "alias_seconds": [
+        18.846584983170033,
+        18.90257751569152,
+        19.014355909079313,
+        18.919731356203556,
+        19.465311910957098,
+        19.132904518395662,
+        18.775545094162226
+      ],
+      "arms": [
+        {
+          "phase": "measured",
+          "seconds": 18.846584983170033,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10481 MiB, 2902 MHz, 13801 MHz, 51, 203.46 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.91 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 80 %, 10481 MiB, 2902 MHz, 13801 MHz, 51, 211.97 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.48 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 0,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.03242775797844,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10433 MiB, 2917 MHz, 13801 MHz, 50, 200.93 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.17 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 42 %, 10433 MiB, 2910 MHz, 13801 MHz, 52, 210.04 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.61 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 0,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.524354841560125,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10433 MiB, 2917 MHz, 13801 MHz, 50, 202.26 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.47 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 54 %, 10433 MiB, 2910 MHz, 13801 MHz, 52, 208.63 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.15 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 1,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.90257751569152,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10481 MiB, 2910 MHz, 13801 MHz, 50, 200.47 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.64 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 36 %, 10481 MiB, 2910 MHz, 13801 MHz, 51, 206.51 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.97 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 1,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.01614873856306,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10433 MiB, 2917 MHz, 13801 MHz, 50, 198.26 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.68 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 100 %, 10433 MiB, 2910 MHz, 13801 MHz, 50, 207.19 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.15 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 2,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 19.014355909079313,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10481 MiB, 2910 MHz, 13801 MHz, 49, 197.88 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.44 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 97 %, 10481 MiB, 2910 MHz, 13801 MHz, 50, 209.56 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.27 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 2,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.919731356203556,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10481 MiB, 2910 MHz, 13801 MHz, 49, 200.01 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 172 MHz, 405 MHz, 33, 11.12 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 48 %, 10481 MiB, 2910 MHz, 13801 MHz, 51, 204.49 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.52 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 3,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.12802854180336,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10433 MiB, 2910 MHz, 13801 MHz, 49, 202.32 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.99 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 54 %, 10433 MiB, 2910 MHz, 13801 MHz, 51, 208.39 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.72 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 3,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 19.465311910957098,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10481 MiB, 2910 MHz, 13801 MHz, 49, 197.92 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.79 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 95 %, 10481 MiB, 2910 MHz, 13801 MHz, 50, 203.22 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.81 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 4,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.249219473451376,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10433 MiB, 2917 MHz, 13801 MHz, 48, 192.97 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.28 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 74 %, 10433 MiB, 2910 MHz, 13801 MHz, 51, 208.15 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.40 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 4,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.06161440908909,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10433 MiB, 2910 MHz, 13801 MHz, 49, 194.35 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.92 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 99 %, 10433 MiB, 2910 MHz, 13801 MHz, 50, 207.09 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.21 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 5,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 19.132904518395662,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10481 MiB, 2917 MHz, 13801 MHz, 49, 194.38 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 11.47 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 99 %, 10481 MiB, 2910 MHz, 13801 MHz, 50, 205.81 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.86 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 5,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.10143008455634,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10433 MiB, 2910 MHz, 13801 MHz, 49, 194.45 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.57 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 71 %, 10433 MiB, 2910 MHz, 13801 MHz, 50, 209.98 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.17 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 6,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.775545094162226,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 10481 MiB, 2917 MHz, 13801 MHz, 49, 195.99 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.42 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 44 %, 10481 MiB, 2910 MHz, 13801 MHz, 51, 207.94 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.73 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 6,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        }
+      ]
+    },
+    {
+      "device": "GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d",
+      "case": "b16-c32-p128-d128",
+      "pairs": 7,
+      "ratios": [
+        0.9778357759130076,
+        0.9862220494011846,
+        0.9796728563988784,
+        0.9895938487646234,
+        0.9787115687388395,
+        0.9892230714501163,
+        0.978793196723935
+      ],
+      "median_paired_speedup": 0.9796728563988784,
+      "paired_bootstrap95": [
+        0.9787115687388395,
+        0.9892230714501163
+      ],
+      "native_median_tokens_s": 385.93029615732024,
+      "alias_median_tokens_s": 379.5755673478876,
+      "native_seconds": [
+        10.543440334498882,
+        10.613315515220165,
+        10.576025806367397,
+        10.73183262348175,
+        10.56127667427063,
+        10.64341151341796,
+        10.620974909514189
+      ],
+      "alias_seconds": [
+        10.78242440521717,
+        10.761588145047426,
+        10.795466810464859,
+        10.844684045761824,
+        10.79100013896823,
+        10.759364414960146,
+        10.851091880351305
+      ],
+      "arms": [
+        {
+          "phase": "measured",
+          "seconds": 10.543440334498882,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6223735296,
+          "peak_reserved_bytes": 6457131008,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 41, 12.20 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 6913 MiB, 2902 MHz, 13801 MHz, 44, 222.00 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 39, 11.87 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 88 %, 6913 MiB, 2895 MHz, 13801 MHz, 48, 239.39 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 0,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.78242440521717,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6333397504,
+          "peak_reserved_bytes": 6574571520,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 37, 11.56 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 51 %, 7025 MiB, 2895 MHz, 13801 MHz, 48, 236.14 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 36, 11.50 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 79 %, 7025 MiB, 2895 MHz, 13801 MHz, 49, 228.13 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 0,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.613315515220165,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6357953024,
+          "peak_reserved_bytes": 6591348736,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 36, 11.34 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 32 %, 7041 MiB, 2902 MHz, 13801 MHz, 50, 224.09 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 35, 11.23 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 99 %, 7041 MiB, 2887 MHz, 13801 MHz, 52, 236.93 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 1,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.761588145047426,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6467615232,
+          "peak_reserved_bytes": 6708789248,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 35, 10.87 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 7153 MiB, 2887 MHz, 13801 MHz, 52, 233.08 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 34, 10.82 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 63 %, 7153 MiB, 2887 MHz, 13801 MHz, 56, 242.27 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 1,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.576025806367397,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6492170752,
+          "peak_reserved_bytes": 6725566464,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 34, 10.77 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 8 %, 7169 MiB, 2887 MHz, 13801 MHz, 54, 236.34 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 34, 11.13 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 41 %, 7169 MiB, 2887 MHz, 13801 MHz, 56, 241.78 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 2,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.795466810464859,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6601832960,
+          "peak_reserved_bytes": 6843006976,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 34, 10.58 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 43 %, 7281 MiB, 2887 MHz, 13801 MHz, 54, 228.92 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 34, 10.61 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 99 %, 7281 MiB, 2887 MHz, 13801 MHz, 55, 247.81 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 2,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.844684045761824,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6668941824,
+          "peak_reserved_bytes": 6910115840,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.10 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 7345 MiB, 2887 MHz, 13801 MHz, 54, 231.43 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.88 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 18 %, 7345 MiB, 2887 MHz, 13801 MHz, 56, 239.74 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 3,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.73183262348175,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6693497344,
+          "peak_reserved_bytes": 6926893056,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.49 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 29 %, 7361 MiB, 2887 MHz, 13801 MHz, 55, 241.72 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.69 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 31 %, 7361 MiB, 2887 MHz, 13801 MHz, 56, 241.99 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 3,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.56127667427063,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6693497344,
+          "peak_reserved_bytes": 6926893056,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.86 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 7361 MiB, 2887 MHz, 13801 MHz, 55, 226.12 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.75 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 78 %, 7361 MiB, 2887 MHz, 13801 MHz, 58, 249.31 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 4,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.79100013896823,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6736050688,
+          "peak_reserved_bytes": 6977224704,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.93 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 7409 MiB, 2887 MHz, 13801 MHz, 56, 233.54 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.61 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 46 %, 7409 MiB, 2887 MHz, 13801 MHz, 57, 244.16 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 4,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.759364414960146,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6736050688,
+          "peak_reserved_bytes": 6977224704,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.73 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 28 %, 7409 MiB, 2887 MHz, 13801 MHz, 55, 242.34 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 11.07 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 47 %, 7409 MiB, 2887 MHz, 13801 MHz, 57, 242.69 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 5,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.64341151341796,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6693497344,
+          "peak_reserved_bytes": 6926893056,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 33, 10.93 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 7361 MiB, 2887 MHz, 13801 MHz, 55, 230.58 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.94 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 87 %, 7361 MiB, 2887 MHz, 13801 MHz, 56, 251.49 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 5,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.851091880351305,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6736050688,
+          "peak_reserved_bytes": 6977224704,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 11.03 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 7409 MiB, 2887 MHz, 13801 MHz, 56, 235.94 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.64 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 9 %, 7409 MiB, 2887 MHz, 13801 MHz, 56, 239.34 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 6,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        },
+        {
+          "phase": "measured",
+          "seconds": 10.620974909514189,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 44,
+              "2": 90,
+              "3": 100,
+              "4": 35,
+              "5": 48,
+              "6": 78,
+              "7": 102,
+              "8": 124,
+              "9": 169,
+              "10": 192,
+              "11": 197,
+              "12": 145,
+              "13": 86,
+              "14": 61,
+              "15": 31,
+              "16": 19
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 4064,
+              "2": 4064,
+              "3": 4064,
+              "4": 975
+            },
+            "submitted_recurrent_rows": 13167,
+            "recurrent_calls": 1521,
+            "effective_batch_mean": 8.65680473372781,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 3,
+              "p50": 9,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 4096,
+            "observed_peak_residents_after_step": 16
+          },
+          "peak_allocated_bytes": 6693497344,
+          "peak_reserved_bytes": 6926893056,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.79 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 7361 MiB, 2887 MHz, 13801 MHz, 55, 235.94 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.76 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 7361 MiB, 2887 MHz, 13801 MHz, 56, 238.11 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 1521,
+            "fallbacks": 0
+          },
+          "pair": 6,
+          "raw_sha256": "5bef551315631276cf9650f7681a5e13f7fca43424cf6c59cdfc007f9e1cceeb",
+          "output_tokens": 4096
+        }
+      ]
+    },
+    {
+      "device": "GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d",
+      "case": "b32-c64-p128-d128",
+      "pairs": 7,
+      "ratios": [
+        0.9816464753856393,
+        0.9624530306852791,
+        0.9351966525358348,
+        0.9589407434498484,
+        0.9362556983787494,
+        0.9382464498786122,
+        0.957534202944492
+      ],
+      "median_paired_speedup": 0.957534202944492,
+      "paired_bootstrap95": [
+        0.9362556983787494,
+        0.9624530306852791
+      ],
+      "native_median_tokens_s": 453.32985757016115,
+      "alias_median_tokens_s": 435.2487178004773,
+      "native_seconds": [
+        18.29434008523822,
+        18.11473510414362,
+        18.109151996672153,
+        18.00289737433195,
+        18.063910257071257,
+        18.0707267858088,
+        17.94436763972044
+      ],
+      "alias_seconds": [
+        18.636383406817913,
+        18.82142247632146,
+        19.36400429531932,
+        18.773732889443636,
+        19.293778706341982,
+        19.26010675355792,
+        18.740184511989355
+      ],
+      "arms": [
+        {
+          "phase": "measured",
+          "seconds": 18.636383406817913,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.67 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10481 MiB, 2887 MHz, 13801 MHz, 54, 209.51 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.33 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 83 %, 10481 MiB, 2887 MHz, 13801 MHz, 54, 219.83 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 0,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.29434008523822,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.34 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10433 MiB, 2887 MHz, 13801 MHz, 53, 214.54 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.62 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 59 %, 10433 MiB, 2887 MHz, 13801 MHz, 53, 221.74 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 0,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.11473510414362,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.27 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10433 MiB, 2887 MHz, 13801 MHz, 52, 211.11 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.07 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 46 %, 10433 MiB, 2887 MHz, 13801 MHz, 54, 221.79 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 1,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.82142247632146,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.15 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10481 MiB, 2902 MHz, 13801 MHz, 51, 209.04 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.20 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 59 %, 10481 MiB, 2887 MHz, 13801 MHz, 54, 221.53 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 1,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.109151996672153,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.30 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10433 MiB, 2895 MHz, 13801 MHz, 52, 214.29 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 32, 10.36 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 23 %, 10433 MiB, 2887 MHz, 13801 MHz, 52, 218.72 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 2,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 19.36400429531932,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.26 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10481 MiB, 2887 MHz, 13801 MHz, 51, 209.60 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.12 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 19 %, 10481 MiB, 2887 MHz, 13801 MHz, 52, 212.85 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 2,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.773732889443636,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.06 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10481 MiB, 2902 MHz, 13801 MHz, 50, 211.56 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.35 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 48 %, 10481 MiB, 2902 MHz, 13801 MHz, 53, 219.69 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 3,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.00289737433195,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.19 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10433 MiB, 2902 MHz, 13801 MHz, 51, 211.00 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.31 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 100 %, 10433 MiB, 2887 MHz, 13801 MHz, 52, 218.44 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 3,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 19.293778706341982,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.13 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10481 MiB, 2902 MHz, 13801 MHz, 51, 210.73 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.19 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 40 %, 10481 MiB, 2902 MHz, 13801 MHz, 53, 214.09 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 4,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.063910257071257,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.26 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10433 MiB, 2902 MHz, 13801 MHz, 50, 201.38 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 9.94 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 70 %, 10433 MiB, 2887 MHz, 13801 MHz, 53, 218.59 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 4,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.0707267858088,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 9.94 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10433 MiB, 2902 MHz, 13801 MHz, 51, 215.31 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.02 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 42 %, 10433 MiB, 2902 MHz, 13801 MHz, 54, 220.80 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 5,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 19.26010675355792,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.26 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10481 MiB, 2902 MHz, 13801 MHz, 50, 204.12 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.32 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 89 %, 10481 MiB, 2887 MHz, 13801 MHz, 51, 220.59 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 5,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 17.94436763972044,
+          "alias": false,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9915836928,
+          "peak_reserved_bytes": 10148118528,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.59 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10433 MiB, 2902 MHz, 13801 MHz, 51, 212.28 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.50 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 100 %, 10433 MiB, 2902 MHz, 13801 MHz, 52, 217.52 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 6,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        },
+        {
+          "phase": "measured",
+          "seconds": 18.740184511989355,
+          "alias": true,
+          "exact_request_objects": true,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 5,
+              "2": 15,
+              "3": 22,
+              "4": 18,
+              "5": 21,
+              "6": 38,
+              "7": 34,
+              "8": 52,
+              "9": 40,
+              "10": 41,
+              "11": 25,
+              "12": 19,
+              "13": 32,
+              "14": 15,
+              "15": 4,
+              "16": 2,
+              "17": 10,
+              "18": 18,
+              "19": 13,
+              "20": 21,
+              "21": 25,
+              "22": 28,
+              "23": 26,
+              "24": 7,
+              "25": 4,
+              "26": 11,
+              "27": 8,
+              "28": 9,
+              "29": 11,
+              "30": 17,
+              "31": 17,
+              "32": 559
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 8128,
+              "2": 8128,
+              "3": 8128,
+              "4": 1933
+            },
+            "submitted_recurrent_rows": 26317,
+            "recurrent_calls": 1167,
+            "effective_batch_mean": 22.550985432733505,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 6,
+              "p50": 30,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 8192,
+            "observed_peak_residents_after_step": 32
+          },
+          "peak_allocated_bytes": 9958455808,
+          "peak_reserved_bytes": 10198450176,
+          "telemetry_before": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.56 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 %, 10481 MiB, 2887 MHz, 13801 MHz, 51, 212.49 W\n",
+          "telemetry_after": "uuid, utilization.gpu [%], memory.used [MiB], clocks.current.sm [MHz], clocks.current.memory [MHz], temperature.gpu, power.draw [W]\nGPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 %, 0 MiB, 180 MHz, 405 MHz, 31, 10.35 W\nGPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 76 %, 10481 MiB, 2902 MHz, 13801 MHz, 53, 217.68 W\n",
+          "graphs": {
+            "captures": 0,
+            "replays": 383,
+            "fallbacks": 784
+          },
+          "pair": 6,
+          "raw_sha256": "b2fdcbda9e1ddbf41931485dd3e86f0d5f0659b03293f8f3c34d0c7945787624",
+          "output_tokens": 8192
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "archive_sha256": "b6135c0cc45d26405a69d5a346cdea4ce4d56e5fd7616ea0368628836d0c6863",
+    "archive_bytes": 460063,
+    "handoff": {
+      "status": "complete_audited_explicit_quiet_handoff",
+      "time_unix": 1791166304.6243646,
+      "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+      "actual_controller_ssh_exit": 0,
+      "actual_gpu_child_exits": [
+        0,
+        0
+      ],
+      "known_pids_absent": [
+        20306,
+        20311,
+        20958
+      ],
+      "readers": [],
+      "compute": "",
+      "archive_sha256": "b6135c0cc45d26405a69d5a346cdea4ce4d56e5fd7616ea0368628836d0c6863",
+      "independent_local_audit_exit": 0,
+      "measured_pairs": 28,
+      "measured_requests": 2688,
+      "measured_output_tokens": 344064,
+      "source_sha": "16d9aeb4c28c15094be93b32dfc8014f1f169c66",
+      "source_for_next_qualification_deployed": true,
+      "next": "quant short e564919f; later independent GPU0 calibration and GPU1 qualification; no pilot grant",
+      "original_three_locks_released": true
+    },
+    "audit_sha256": "e696d79112a9ebb34182315b2e76d7a436b6fb0a53c698e8aa1defc91745d549",
+    "audit_exit": 0,
+    "measured_requests": 2688,
+    "measured_tokens": 344064,
+    "all_warmup_and_measured_requests_equal_external_reference": true
+  }
+}

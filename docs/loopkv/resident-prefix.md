@@ -19,12 +19,18 @@ allocation is introduced per recurrent layer.
 | CUDA B1–128/C2B, mapped-host/H2D, five execution modes | All 60 tiny-model arms match native synchronous output/exit sequences |
 | Full-prefix and mixed-tail coverage | P33/P34 crosses the 32-token attention tile; cancellation and reuse over two rounds |
 | Cross-stream allocation reset and bank retirement | Both descriptor modes pass |
-| Official weights and matched performance | Pending |
+| Official fixed-work comparison | 28 pairs on two RTX5090 cards; every warmup/measured request exact |
 
 The CUDA process naturally exited0 at source
 `a82d4021acdc47726ec931621b7ddd9b47382ff8` on RTX5090/Torch2.12.1+cu130.
 [All cases, Graph fallback counters and independently verified raw hash](evidence/resident-prefix-cuda-v1.json).
 
-| Fixed-policy E2E comparison | Parent alias tokens/s | Prefix-aware alias tokens/s | Speedup |
-|---|---:|---:|---:|
-| Official checkpoint | — | — | Not measured |
+| GPU | B / C | Native Graph tokens/s | Alias + prefix Graph tokens/s | Paired speedup [95% CI] | Throughput change |
+|---|---:|---:|---:|---:|---:|
+| 5090 #0 | 16 / 32 | 387.05 | 380.45 | 0.9825× [0.9790, 0.9837] | -1.75% |
+| 5090 #0 | 32 / 64 | 452.56 | 432.99 | 0.9568× [0.9440, 0.9641] | -4.32% |
+| 5090 #1 | 16 / 32 | 385.93 | 379.58 | 0.9797× [0.9787, 0.9892] | -2.03% |
+| 5090 #1 | 32 / 64 | 453.33 | 435.25 | 0.9575× [0.9363, 0.9625] | -4.25% |
+
+[Complete method, source, independent audit and limits](resident-replay-performance.md).
+This is the whole stack versus native Graph, not an incremental parent-alias comparison.

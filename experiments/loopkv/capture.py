@@ -6,6 +6,7 @@ Prompt files contain a JSON list of token-ID lists, with a recorded SHA256.
 """
 
 import argparse
+import fcntl
 import hashlib
 import importlib
 import json
@@ -28,7 +29,13 @@ from vllm_rlt.models import AutoModelForCausalLM
 
 
 def dump(path: Path, value) -> None:
-    path.write_text(json.dumps(value, indent=2) + "\n")
+    serialized = json.dumps(value, indent=2) + "\n"
+    if lock_path := os.environ.get("LOOPKV_IO_LOCK"):
+        with open(lock_path, "a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            path.write_text(serialized)
+    else:
+        path.write_text(serialized)
 
 
 def drive(engine, prompts, params, *, trace, stop_spec=None, counters=None):
