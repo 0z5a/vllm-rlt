@@ -18,6 +18,18 @@ from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, S
 from vllm_rlt.engine.llm_engine import LLMEngine
 
 
+def telemetry():
+    return subprocess.check_output(
+        [
+            "nvidia-smi",
+            "--query-gpu=uuid,utilization.gpu,memory.used,clocks.sm,"
+            "clocks.mem,temperature.gpu,power.draw",
+            "--format=csv",
+        ],
+        text=True,
+    )
+
+
 def measure(model, case, reference, events, expected_work, alias, out):
     engine = LLMEngine(
         model,
@@ -37,6 +49,7 @@ def measure(model, case, reference, events, expected_work, alias, out):
     for phase in ("warmup", "measured"):
         replay = Replay(engine, events, exits)
         counters = WorkCounters()
+        before = telemetry()
         torch.cuda.reset_peak_memory_stats()
         captures = engine.model_runner.graphs.captures
         replays = engine.model_runner.graphs.replays
@@ -51,6 +64,8 @@ def measure(model, case, reference, events, expected_work, alias, out):
             "work": counters.summary(),
             "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
             "peak_reserved_bytes": torch.cuda.max_memory_reserved(),
+            "telemetry_before": before,
+            "telemetry_after": telemetry(),
             "graphs": {
                 "captures": engine.model_runner.graphs.captures - captures,
                 "replays": engine.model_runner.graphs.replays - replays,
@@ -60,6 +75,7 @@ def measure(model, case, reference, events, expected_work, alias, out):
         dump(out / f"{phase}.json", row)
         dump(out / f"{phase}-requests.json", completed)
         assert row["exact_request_objects"], "fixed-schedule output/exit mismatch"
+        assert phase == "warmup" or row["graphs"]["captures"] == 0
         # JSON counters have string keys; normalize the in-memory result identically.
         assert json.loads(json.dumps(row["work"])) == expected_work
     engine.close()
