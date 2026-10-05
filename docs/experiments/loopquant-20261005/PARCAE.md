@@ -44,8 +44,11 @@ unresolved G0 evidence. No native cached, quantized or performance gate passed.
 
 The official checkpoint was independently rehashed and is reused read-only from
 the existing local owner. [Verification](parcae-v1/parcae-official-reuse-verified.json).
-A frozen96-case official BF16 CPU comparison is running:32 inputs × R1/R4/R8,
-all dense recurrent states and final logits. [Runner](parcae-v1/run_official_cpu.py),
+The frozen96-case official BF16 CPU comparison completed:32 inputs × R1/R4/R8,
+all416 dense recurrent states and96 final logits bitwise exact. The controller
+and child returned0 naturally; the short-term reader hold is released and peer
+weights remain untouched. [Raw results](parcae-v1/official-parcae-adapter-cpu-attempt1.json),
+[verified summary](parcae-v1/official-parcae-adapter-cpu-summary.json). [Runner](parcae-v1/run_official_cpu.py),
 [manifest](parcae-v1/official-cpu-manifest.json). This is not a serving benchmark.
 
 | Model | BF16 tok/s | Strong quantized baseline tok/s | Candidate tok/s | Paired speedup | Speed change |

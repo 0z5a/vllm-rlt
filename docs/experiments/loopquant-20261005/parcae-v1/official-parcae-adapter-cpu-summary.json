@@ -1,0 +1,22 @@
+{
+  "status": "pass",
+  "cases": 96,
+  "states": 416,
+  "logits": 96,
+  "bitwise_exact": true,
+  "unique_inputs": 32,
+  "input_tokens": 1732,
+  "model_revision": "439284464ee4999bd1f762da7d044613a4828efe",
+  "source_commit": "b617669b1d1ef96dfe319e7fbfaa42c89722b39b",
+  "runner_sha256": "00e93c24b64fd88ec047ea71b29f540959b34df331cc67e4a980ad3b6e8a7185",
+  "raw_sha256": "99a6a35a726f461376622a461f9d49722f8143dfb171fa3a9107de8b60b676a5",
+  "elapsed_seconds": 237.24032473564148,
+  "controller_returncode": 0,
+  "own_pids_absent": [
+    75623,
+    75631
+  ],
+  "own_reader_hold_released": true,
+  "peer_weights_untouched": true,
+  "timestamp": 1791183039.373089
+}

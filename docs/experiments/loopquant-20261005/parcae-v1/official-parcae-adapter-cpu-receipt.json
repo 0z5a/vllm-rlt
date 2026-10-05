@@ -1,0 +1,15 @@
+{
+  "controller_pid": 75623,
+  "start_unix": 1791182742.9185631,
+  "child_pid": 75631,
+  "command": [
+    "/Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/bin/python",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/snapshots/parcae-official-cpu-v1/run.py",
+    "--root",
+    "/Users/0z5a/Documents/infra/loopquant-20261005",
+    "--requests",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/snapshots/parcae-official-cpu-v1/requests.json"
+  ],
+  "returncode": 0,
+  "end_unix": 1791182986.21854
+}
