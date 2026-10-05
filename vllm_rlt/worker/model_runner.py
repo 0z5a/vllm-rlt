@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 import torch
 
 from vllm_rlt.config import ExecutionConfig, ExitConfig, SchedulerConfig
+from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.models.huginn import HuginnForCausalLM
 from vllm_rlt.request import Request, Stage
@@ -539,6 +540,22 @@ class ModelRunner:
 
     def finalize_many(self, requests):
         if not requests:
+            return
+        if isinstance(self.cache_manager, AliasKVCacheManager):
+            stream = self.boundary_stream
+            with torch.cuda.stream(stream) if stream is not None else nullcontext():
+                for request in requests:
+                    event = self.events.get(request.request_id)
+                    if stream is not None and event is not None:
+                        stream.wait_event(event)
+                self.cache_manager.finalize_tokens(
+                    (r.request_id, r.position, r.loops_done - 1) for r in requests
+                )
+                if stream is not None:
+                    event = torch.cuda.Event()
+                    event.record(stream)
+                    for request in requests:
+                        self.events[request.request_id] = event
             return
         if self.async_state is None or self.cache_manager.layout == "shared":
             for request in requests:

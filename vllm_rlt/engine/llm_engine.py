@@ -323,6 +323,7 @@ class LLMEngine:
 
     def _update(self, batch, result) -> list[RequestOutput]:
         outputs = []
+        finalizations = []
         for index, item in enumerate(batch.items):
             request = item.request
             # Ignore results for a request that is no longer registered: it may
@@ -361,7 +362,10 @@ class LLMEngine:
                 else:
                     should_exit = self._delayed_exit(request, result[index])
                 if should_exit:
-                    self.model_runner.finalize(request)
+                    if isinstance(self.cache_manager, AliasKVCacheManager):
+                        finalizations.append(request)
+                    else:
+                        self.model_runner.finalize(request)
                     self.scheduler.enqueue(request, Stage.CODA)
                 else:
                     self.scheduler.enqueue(request, Stage.RECURRENT)
@@ -380,6 +384,8 @@ class LLMEngine:
                         request, Stage.SPECULATIVE if self.speculative_config else Stage.PRELUDE
                     )
                 outputs.append(RequestOutput.from_request(request))
+        if finalizations:
+            self.model_runner.finalize_many(finalizations)
         return outputs
 
     def _should_exit(self, request: Request) -> bool:

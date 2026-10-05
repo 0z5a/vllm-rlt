@@ -116,6 +116,31 @@ class AliasKVCacheManager(KVCacheManager):
             raise RuntimeError("uninitialized logical KV history")
 
     def finalize_token(self, request_id, position, exit_depth):
+        self.finalize_tokens(((request_id, position, exit_depth),))
+
+    def finalize_tokens(self, tokens):
+        targets = []
+        for request_id, position, exit_depth in tokens:
+            target = self._finalize_metadata(request_id, position, exit_depth)
+            if target is not None:
+                targets.append((*target, exit_depth))
+        if not targets:
+            return
+        if self.device.type == "cuda":
+            from vllm_rlt.kernels.record_map import publish_exits
+
+            count = len(targets)
+            packed = self._stage(
+                [tensor.data_ptr() + index * tensor.element_size() for tensor, index, _ in targets]
+                + [depth for _, _, depth in targets],
+                torch.int64,
+            )
+            publish_exits(packed[:count], packed[count:])
+        else:
+            for tensor, index, depth in targets:
+                tensor.view(-1)[index] = depth
+
+    def _finalize_metadata(self, request_id, position, exit_depth):
         allocation = self._get_allocation(request_id)
         self._validate_depth(exit_depth)
         self._validate_position(allocation, position)
@@ -125,15 +150,16 @@ class AliasKVCacheManager(KVCacheManager):
                     raise RuntimeError("cannot finalize before every executed version is written")
         if position in self._exits[id(allocation)]:
             raise ValueError("position already finalized")
-        if exit_depth + 1 < self.max_loops:
-            block = allocation.block_tables[0][position // self.block_size]
-            self.source_depths[block, position % self.block_size].fill_(exit_depth)
         self._exits[id(allocation)][position] = exit_depth
         for depth in range(exit_depth + 1, self.max_loops):
             starts = self._alias_starts[id(allocation)]
             starts[depth] = min(starts[depth], position)
             for layer in self.recurrent_layers:
                 self._readable[id(allocation)][depth][layer].add(position)
+        if exit_depth + 1 < self.max_loops:
+            block = allocation.block_tables[0][position // self.block_size]
+            return self.source_depths, block * self.block_size + position % self.block_size
+        return None
 
     def _attend_prepared(self, layer, batch, q):
         self._validate_layer(layer)

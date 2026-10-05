@@ -156,7 +156,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
         self.peak_live_records = max(self.peak_live_records, self.live_records)
         return tuple(batches)
 
-    def finalize_token(self, request_id, position, exit_depth):
+    def _finalize_metadata(self, request_id, position, exit_depth):
         allocation = self._get_allocation(request_id)
         self._validate_depth(exit_depth)
         self._validate_position(allocation, position)
@@ -167,7 +167,6 @@ class CompactKVCacheManager(AliasKVCacheManager):
             for layer in self.recurrent_layers:
                 if position not in allocation.written[depth][layer]:
                     raise RuntimeError("cannot finalize an unwritten executed version")
-        self._maps[key][self.max_loops, position].fill_(exit_depth)
         self._exits[key][position] = exit_depth
         if self.reclaim_skipped_credits:
             released = sum(
@@ -179,6 +178,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
         for depth in range(exit_depth + 1, self.max_loops):
             for layer in self.recurrent_layers:
                 self._readable[key][depth][layer].add(position)
+        return self._maps[key], self.max_loops * allocation.max_tokens + position
 
     def _attend_prepared(self, layer, batch, q):
         if self.backend != "triton":
