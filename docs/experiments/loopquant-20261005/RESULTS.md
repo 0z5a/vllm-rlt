@@ -221,8 +221,8 @@ scale comparison at M17/K64 under DYN (four FP32 scales differ by at most
 9.313225746154785e-10). Packed activation values are identical. The retained
 sample isolates RN division versus Torch's rounded reciprocal multiplication.
 [Raw failure](fused-fp8-probe-attempt1.log), [diagnosis and sample hash](fused-fp8-failure-analysis.json).
-The implementation now matches the reciprocal product; repeat GPU qualification
-is pending. No threshold was relaxed. Native model integration and a reference
+The implementation now matches the reciprocal product; the full repeat passes
+as detailed below. No threshold was relaxed. Native model integration and a reference
 NVFP4 block16/global-scale encoder are also staged, without a performance claim.
 Shared scratch uses one allocation per feature width, with row-bucket views,
 rather than allocating a separate buffer for every batch shape.
@@ -277,8 +277,8 @@ are not paired throughput trials, so no E2E speedup is inferred.
 
 NVFP4 CPU checks cover all256 packed bytes (including signed zero), nearest-even
 midpoints, tail padding, fixed scale reuse and independent swizzle coordinates.
-[Three checks pass](nvfp4-format-cpu-attempt1.log). Native installed NVFP4 ABI
-and the new FP8 model/graph checks remain unrun.
+[Three checks pass](nvfp4-format-cpu-attempt1.log). Native installed NVFP4 ABI now passes60 cases as below. The FP8 model/graph
+check has a retained constructor failure awaiting corrected-mode repetition.
 
 ## Arrival traces and paired task metrics
 
@@ -299,3 +299,37 @@ steady window. Scheduler shape histograms report host effective/submitted
 rows; they are not kernel-profiler measurements. Question-paired bootstrap
 accuracy drops complement document-paired PPL intervals. These are tested
 measurement facilities; GPU open-arrival and HTTP results remain pending.
+
+## Native formats and full-checkpoint gradients
+
+On the same RTX5090 runtime, all **120 fused FP8 cases and three CUDA Graph
+replays pass** the unchanged criteria. Encoded inputs match the independent
+reference exactly in every case, including optional RMSNorm. DYN/SH1/ST2,
+M1/17/32/64/128 and the four registered K/N shapes are covered. Worst absolute
+GEMM error0.25 occurs with large outliers and passes `atol=rtol=0.02`; this is
+not an absolute-only0.02 claim. [Receipt](fused-fp8-probe-attempt2.json).
+
+NVFP4's installed native block16/global-scale ABI passes all60 shapes/policies
+against independently decoded packed operands, max abs0.015625. Policies
+cover dynamic, fixed-global and fixed-global/local scales. The current encoder
+is an ordinary Torch reference; no fused NVFP4 producer or speedup is claimed.
+[Receipt](nvfp4-probe-attempt1.json).
+
+Ouro1.4B's actual checkpoint completes two128-valid-token, R4 gradient audits:
+168 per-loop scale groups have finite gradients/updates; all BF16 weights keep
+`grad=None`, storage identities and tensor versions. Gradient norms are0.04456
+and0.04998, peak allocation13,085,885,952 bytes. This is **not** the prescribed
+8192-token/update20+200 Q0 training run. [Receipt](ouro-gradient-audit-attempt1.json).
+
+The tiny serving probe failed before generation because async scheduling
+requires an explicit supported exit mode. The [constructor error](fp8-serving-probe-attempt1.log)
+is retained; the test now specifies `ouro_delayed` while keeping fixed requested
+depths and all12 registered cases unchanged. It awaits another finite GPU run.
+Window3 actual child exits are0/1/0/0, controller/SSH0, with all9 files independently
+hashed. [Receipt](gpu-window-v3-receipt.json), [handoff](gpu-window-v3-complete.json).
+
+The Ouro2.6B local duplicate weight was removed only after original-class CPU
+completion, peer upload/hash completion, independent verification of all nine
+owned remote hardlinks and an empty local reader check. It frees5,336,011,242
+bytes; remote inputs still needed for experiments remain retained.
+[Cleanup](official-ouro-2.6b-cpu-cleanup.json).

@@ -1,0 +1,42 @@
+{
+  "completed_unix": 1791160927.9311934,
+  "controller_returncode": 0,
+  "ssh_returncode": 0,
+  "children": [
+    {
+      "job": "fused-fp8-probe-attempt2",
+      "returncode": 0,
+      "start_unix": 1791160647.3062034,
+      "end_unix": 1791160659.5955987
+    },
+    {
+      "job": "fp8-serving-probe-attempt1",
+      "returncode": 1,
+      "start_unix": 1791160659.5961275,
+      "end_unix": 1791160661.5466313
+    },
+    {
+      "job": "nvfp4-probe-attempt1",
+      "returncode": 0,
+      "start_unix": 1791160661.5477133,
+      "end_unix": 1791160664.1753862
+    },
+    {
+      "job": "ouro-gradient-audit-attempt1",
+      "returncode": 0,
+      "start_unix": 1791160664.1760948,
+      "end_unix": 1791160670.09506
+    }
+  ],
+  "active_children": [],
+  "own_model_readers": [],
+  "gpu0_compute": "",
+  "locks_taken_released": [
+    "gpu0-perf.lock",
+    "heavy-io.lock"
+  ],
+  "lock_check_unix": 1791160927.9311855,
+  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+  "bundle_sha256": "0008ec62de313f4bcad2dbe88c5bfb7b321b56480c46bfef450b5a598f84df42",
+  "local_verification": "all9files SHA256/size verified"
+}
