@@ -101,3 +101,20 @@ Full quantization calibration, INT4/FP8 GPU qualification, NVFP4 native export, 
 multiple batch sizes, high concurrency, mixed/open arrivals and formal paired
 performance remain unrun. Retained numerical failures do not justify running a
 full QAT search before native G0 is resolved.
+
+
+## Boundary prefill repair after H20 execution
+
+The first H20 FP8 case stopped before completing its request-lifecycle checks:
+prelude returned six live states, but the core metadata described eight padded
+rows. The error was retained at the original numerical budgets. The executor
+now prepares core metadata with the actual prelude row count and records that
+submitted size. Prelude and coda keep their existing unpadded boundary KV.
+No rotary slicing or fabricated KV rows are introduced.
+
+The added regression compares eager and static-buffer paths bitwise for
+FP32/BF16, 3/6/7 live rows, single/multiple requests and two allocation lifetimes.
+GPU repair validation is prepared separately; these CPU tests do not turn the
+failed H20 attempt into a pass.
+
+[New checks](boundary-prefill-v2/source-parcae-prefill-rows-cpu-attempt1.log): 12 passed. [Model/engine/KV regression](boundary-prefill-v2/source-parcae-prefill-rows-regression-attempt1.log): 97 passed, 3 GPU cases deselected; both test processes naturally exited 0.
