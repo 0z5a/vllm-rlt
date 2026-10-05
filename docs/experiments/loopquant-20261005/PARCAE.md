@@ -118,3 +118,42 @@ GPU repair validation is prepared separately; these CPU tests do not turn the
 failed H20 attempt into a pass.
 
 [New checks](boundary-prefill-v2/source-parcae-prefill-rows-cpu-attempt1.log): 12 passed. [Model/engine/KV regression](boundary-prefill-v2/source-parcae-prefill-rows-regression-attempt1.log): 97 passed, 3 GPU cases deselected; both test processes naturally exited 0.
+
+
+## H20 boundary repair verification
+
+The repaired packet completed with a mixed outcome at unchanged criteria.
+
+| Check | Passed | Failed | Unrun | Outcome |
+|---|---:|---:|---:|---|
+| Huginn FP8 | 4 | 1 | 11 | DYN Graph off/on × norm off/on passed; first SH1 generated sequence differs from decoded FP8 reference |
+| Parcae FP8 | 16 | 0 | 0 | DYN/SH1/ST2/LOOP × Graph off/on × norm off/on passed |
+| Huginn INT4 | 2 | 0 | 0 | Graph off/on passed |
+| Parcae INT4 | 1 | 1 | 2 | Native eager passed; compact with synchronous static buffers rejected by runtime |
+| Separate Graph row-depth controls | 0 | 0 | 2 | Not reached after Huginn FP8 assertion |
+
+The controller and all four children finished naturally (controller 1; children
+1/0/0/1). The SH1 assertion and unsupported compact configuration remain failures;
+no tolerances or sequence equality checks were relaxed. Successful checks cover
+tiny native request lifecycles and encoded reload, not full-checkpoint quality
+or serving performance. Failed children have per-case progress logs, not final
+success JSON. The compact failure is configuration rejection, not an arithmetic
+comparison result.
+
+[Summary](h20-boundary-v2/h20-boundary-fix-v2-summary.json),
+[natural receipt](h20-boundary-v2/h20-boundary-fix-v2-receipt.json),
+[archive manifest](h20-boundary-v2/h20-boundary-fix-v2-archive-manifest.json) and
+[completion](h20-boundary-v2/h20-boundary-fix-v2-complete.json) retain the outcome.
+The 541,913-byte archive SHA256 is
+`4cb2af439863ff7908ede8124d33ef6cb493ceb5e13248faded2f27c5d4bcdd5`.
+All 37 files were verified offbox. Two archived temporary failed payloads
+(733,942 bytes) were then removed; the unique archive and logs remain. Original
+GPU0/IO lock identities were preserved and the finite window was handed back.
+
+| Model | BF16 tok/s | Quantized tok/s | Paired speedup | Speed change |
+|---|---:|---:|---:|---:|
+| Huginn | Not measured | Not measured | — | — |
+| Parcae | Not measured | Not measured | — | — |
+
+Full-checkpoint native G0, locked quality and the multiple-batch/high-concurrency
+E2E matrix remain pending. These checks establish no additional memory saving.

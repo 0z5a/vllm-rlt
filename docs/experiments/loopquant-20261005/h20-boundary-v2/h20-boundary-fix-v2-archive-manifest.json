@@ -1,0 +1,150 @@
+{
+  "h20-boundary-fix-v2-exports/huginn_fp8/case-00/manifest.json": {
+    "size": 1224,
+    "sha256": "faae098b2c9bb7206bc86fbe057a95ec648abbd51dd992597ca13e93ebf1c337"
+  },
+  "h20-boundary-fix-v2-exports/huginn_fp8/case-01/manifest.json": {
+    "size": 1223,
+    "sha256": "fed5186e940e04caec7bc31096697971a554f050c56c2fe0e402dc739559b16f"
+  },
+  "h20-boundary-fix-v2-exports/huginn_fp8/case-02/manifest.json": {
+    "size": 1224,
+    "sha256": "faae098b2c9bb7206bc86fbe057a95ec648abbd51dd992597ca13e93ebf1c337"
+  },
+  "h20-boundary-fix-v2-exports/huginn_fp8/case-03/manifest.json": {
+    "size": 1223,
+    "sha256": "fed5186e940e04caec7bc31096697971a554f050c56c2fe0e402dc739559b16f"
+  },
+  "h20-boundary-fix-v2-exports/huginn_fp8/case-04/manifest.json": {
+    "size": 1223,
+    "sha256": "be0092131ff01caa18cdb2804673f793d1bd1b0fb45fc68ce70c0d6ac7c32492"
+  },
+  "h20-boundary-fix-v2-exports/huginn_fp8/case-04/tensors.pt": {
+    "size": 303995,
+    "sha256": "d6d8592a71baa3eece03572a1a476422e946667f9917a335d4294236633210ea"
+  },
+  "h20-boundary-fix-v2-exports/huginn_int4/case-00/manifest.json": {
+    "size": 1315,
+    "sha256": "e5cc48545f0f9106a17f301b84cb4fe82c6eab919f7331e080e1c3308398344e"
+  },
+  "h20-boundary-fix-v2-exports/huginn_int4/case-01/manifest.json": {
+    "size": 1315,
+    "sha256": "e5cc48545f0f9106a17f301b84cb4fe82c6eab919f7331e080e1c3308398344e"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-00/manifest.json": {
+    "size": 1050,
+    "sha256": "ce60d8fc072199b099d57f05f7de3dfe1850e311b410c27ed9d1c71fce161718"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-01/manifest.json": {
+    "size": 1049,
+    "sha256": "b54d77a870e758e60b10cbfb4db0054fb82495d4a4dea800dfed4e29d83ea67c"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-02/manifest.json": {
+    "size": 1050,
+    "sha256": "ce60d8fc072199b099d57f05f7de3dfe1850e311b410c27ed9d1c71fce161718"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-03/manifest.json": {
+    "size": 1049,
+    "sha256": "b54d77a870e758e60b10cbfb4db0054fb82495d4a4dea800dfed4e29d83ea67c"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-04/manifest.json": {
+    "size": 1049,
+    "sha256": "339b01dac2068e8a112cac646149e8990203d68e97566a54c3fa04d009bc9d53"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-05/manifest.json": {
+    "size": 1048,
+    "sha256": "19508e99d91a3e07bd07a0d10e71edeaa78addad6336e9b019ce313112bf8a6b"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-06/manifest.json": {
+    "size": 1049,
+    "sha256": "339b01dac2068e8a112cac646149e8990203d68e97566a54c3fa04d009bc9d53"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-07/manifest.json": {
+    "size": 1048,
+    "sha256": "19508e99d91a3e07bd07a0d10e71edeaa78addad6336e9b019ce313112bf8a6b"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-08/manifest.json": {
+    "size": 1062,
+    "sha256": "32457fef84b14f6cb036d43629bff4557383ae370362435b9908275b0c35efd2"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-09/manifest.json": {
+    "size": 1061,
+    "sha256": "1256cc205105e23ef44fba92829a4e6a20979535e3134174d61335f8da4b2f83"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-10/manifest.json": {
+    "size": 1062,
+    "sha256": "32457fef84b14f6cb036d43629bff4557383ae370362435b9908275b0c35efd2"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-11/manifest.json": {
+    "size": 1061,
+    "sha256": "1256cc205105e23ef44fba92829a4e6a20979535e3134174d61335f8da4b2f83"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-12/manifest.json": {
+    "size": 1071,
+    "sha256": "0058c760f76e0ae358302e06ef3db0cbd4f8c95f5d0940b0424bfae183b80664"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-13/manifest.json": {
+    "size": 1070,
+    "sha256": "22d6da4386ea98761c3be648a294b1a4b021b5c2d3ffaabdaba38f74afe33391"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-14/manifest.json": {
+    "size": 1071,
+    "sha256": "0058c760f76e0ae358302e06ef3db0cbd4f8c95f5d0940b0424bfae183b80664"
+  },
+  "h20-boundary-fix-v2-exports/parcae_fp8/case-15/manifest.json": {
+    "size": 1070,
+    "sha256": "22d6da4386ea98761c3be648a294b1a4b021b5c2d3ffaabdaba38f74afe33391"
+  },
+  "h20-boundary-fix-v2-exports/parcae_int4/case-00/manifest.json": {
+    "size": 1095,
+    "sha256": "ba0921ae25325ccaca7555bc28842e893db6ef12754d4868c38f3ac8f17fbdc9"
+  },
+  "h20-boundary-fix-v2-exports/parcae_int4/case-01/manifest.json": {
+    "size": 1095,
+    "sha256": "ba0921ae25325ccaca7555bc28842e893db6ef12754d4868c38f3ac8f17fbdc9"
+  },
+  "h20-boundary-fix-v2-exports/parcae_int4/case-01/tensors.pt": {
+    "size": 429947,
+    "sha256": "3c3def2b489f68a27571cd9ea12163cacb1b60dd904d383e9b4eb274d8a86434"
+  },
+  "h20-boundary-fix-v2-huginn_fp8.log": {
+    "size": 980,
+    "sha256": "c4a249002f98f547b381a2eee80dd3e40f5681fbbb245aa8e39c02dae736dea8"
+  },
+  "h20-boundary-fix-v2-huginn_int4.json": {
+    "size": 4395,
+    "sha256": "5ac98b8098095bca50f664e0f7ec8d03efe376e904329023812b5f2e3c2f616c"
+  },
+  "h20-boundary-fix-v2-huginn_int4.log": {
+    "size": 167,
+    "sha256": "a71ae248c9f84a4c0b77e153bbbac38eec60241cf4adb3f17b9dd195cd77a2df"
+  },
+  "h20-boundary-fix-v2-parcae_fp8.json": {
+    "size": 27847,
+    "sha256": "b5811dc25e912252641cc4daed484c8f765ac483a60156a8c5de2a9d843ea0ea"
+  },
+  "h20-boundary-fix-v2-parcae_fp8.log": {
+    "size": 1434,
+    "sha256": "8ab6228d0006895ddd9c5c7451271487905e69d051d600223c2618e87b4c9429"
+  },
+  "h20-boundary-fix-v2-parcae_int4.log": {
+    "size": 1058,
+    "sha256": "0fa96f1f18cec3cb380f18cb426e2b451299f51897353732c942baed969b1c20"
+  },
+  "h20-boundary-fix-v2-process-complete.json": {
+    "size": 509,
+    "sha256": "a61fc0a3f7d89dcc6734ea036a6ea9d3a138ca3cbf57e701592f9ef4667213ec"
+  },
+  "h20-boundary-fix-v2-progress.json": {
+    "size": 2596,
+    "sha256": "fd2f6612884ce88c70f6cd74ae5fb9a93b3a69c912e4683af01fbaa894d6e1cc"
+  },
+  "h20-boundary-fix-v2-receipt.json": {
+    "size": 2649,
+    "sha256": "069c6252e7d05547801335a9f7e029b935d707b5816ccc93813e77622b164e0a"
+  },
+  "h20-boundary-fix-v2-running.json": {
+    "size": 2535,
+    "sha256": "3e3f84ef303c732b6f25391a38dbee2f8258518f5a6c06c6678dff7363a64754"
+  }
+}

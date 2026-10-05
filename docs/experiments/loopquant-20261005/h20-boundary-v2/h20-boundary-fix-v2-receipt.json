@@ -1,0 +1,86 @@
+{
+  "controller_pid": 47259,
+  "controller_start_ticks": 2499471819,
+  "start_unix": 1791221297.1268437,
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "children": [
+    {
+      "family": "huginn_fp8",
+      "child_pid": 47273,
+      "child_start_ticks": 2499471840,
+      "start_unix": 1791221297.1275668,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-boundary-fix-v2/probe.py",
+        "--family",
+        "huginn_fp8",
+        "--output",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-boundary-fix-v2-huginn_fp8.json"
+      ],
+      "returncode": 1,
+      "end_unix": 1791221304.2591872
+    },
+    {
+      "family": "parcae_fp8",
+      "child_pid": 47350,
+      "child_start_ticks": 2499472554,
+      "start_unix": 1791221304.2604609,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-boundary-fix-v2/probe.py",
+        "--family",
+        "parcae_fp8",
+        "--output",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-boundary-fix-v2-parcae_fp8.json"
+      ],
+      "returncode": 0,
+      "end_unix": 1791221314.4725037
+    },
+    {
+      "family": "huginn_int4",
+      "child_pid": 47489,
+      "child_start_ticks": 2499473575,
+      "start_unix": 1791221314.4748633,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-boundary-fix-v2/probe.py",
+        "--family",
+        "huginn_int4",
+        "--output",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-boundary-fix-v2-huginn_int4.json"
+      ],
+      "returncode": 0,
+      "end_unix": 1791221319.1040783
+    },
+    {
+      "family": "parcae_int4",
+      "child_pid": 47530,
+      "child_start_ticks": 2499474038,
+      "start_unix": 1791221319.1053176,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-boundary-fix-v2/probe.py",
+        "--family",
+        "parcae_int4",
+        "--output",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-boundary-fix-v2-parcae_int4.json"
+      ],
+      "returncode": 1,
+      "end_unix": 1791221323.5872023
+    }
+  ],
+  "manifest_sha256": "30b94269a410daa2ec79fc9e340fa5c49949cade20624ab7982ddea30ef42486",
+  "returncode": 1,
+  "end_unix": 1791221323.5876553
+}

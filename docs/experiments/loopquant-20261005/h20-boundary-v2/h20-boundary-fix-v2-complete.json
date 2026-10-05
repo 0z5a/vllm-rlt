@@ -1,0 +1,38 @@
+{
+  "time_unix": 1791221825.3420002,
+  "own_pids_absent": [
+    47259,
+    47273,
+    47350,
+    47489,
+    47530
+  ],
+  "all_children_naturally_finished": true,
+  "success": false,
+  "offbox_verified_files": 37,
+  "archive_sha256": "4cb2af439863ff7908ede8124d33ef6cb493ceb5e13248faded2f27c5d4bcdd5",
+  "removed_verified_temporary_payloads": [
+    {
+      "path": "h20-boundary-fix-v2-exports/huginn_fp8/case-04/tensors.pt",
+      "size": 303995,
+      "sha256": "d6d8592a71baa3eece03572a1a476422e946667f9917a335d4294236633210ea"
+    },
+    {
+      "path": "h20-boundary-fix-v2-exports/parcae_int4/case-01/tensors.pt",
+      "size": 429947,
+      "sha256": "3c3def2b489f68a27571cd9ea12163cacb1b60dd904d383e9b4eb274d8a86434"
+    }
+  ],
+  "node_idle_at_observation": true,
+  "foreign_compute_apps": "",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  }
+}
