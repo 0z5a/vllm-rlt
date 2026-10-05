@@ -1,0 +1,74 @@
+{
+  "scope": "diagnostic author attention substituted with native CPU paged arithmetic; not unchanged author qualification",
+  "substituted_attention_calls": 60,
+  "source_revision": "69284c13746e849104f738d6d1a347b1f457df76",
+  "generation_source_sha256": "14363edd0b425f6d264517ae6d8f941a394313899425e97aaff596efddb2b382",
+  "cases": [
+    {
+      "dtype": "torch.float32",
+      "tokens": 1,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "native_max_abs_logit_error": 0.0,
+      "dense_max_abs_logit_error": 0.0,
+      "native_close": true,
+      "dense_close": true,
+      "greedy_exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "tokens": 3,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "native_max_abs_logit_error": 0.0,
+      "dense_max_abs_logit_error": 3.814697265625e-06,
+      "native_close": true,
+      "dense_close": true,
+      "greedy_exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "tokens": 7,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "native_max_abs_logit_error": 0.0,
+      "dense_max_abs_logit_error": 7.62939453125e-06,
+      "native_close": true,
+      "dense_close": false,
+      "greedy_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "tokens": 1,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "native_max_abs_logit_error": 0.0,
+      "dense_max_abs_logit_error": 0.0,
+      "native_close": true,
+      "dense_close": true,
+      "greedy_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "tokens": 3,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "native_max_abs_logit_error": 0.0,
+      "dense_max_abs_logit_error": 0.4375,
+      "native_close": true,
+      "dense_close": false,
+      "greedy_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "tokens": 7,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "native_max_abs_logit_error": 0.0,
+      "dense_max_abs_logit_error": 0.40625,
+      "native_close": true,
+      "dense_close": false,
+      "greedy_exact": true
+    }
+  ]
+}

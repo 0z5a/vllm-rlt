@@ -57,8 +57,19 @@ comparison program writes all six cases and returns 1 for these failures.
 
 [Raw author comparison and constructor audit](evidence/parcae-cpu.json).
 Matching greedy tokens on these tiny inputs does not establish numerical or
-quality equivalence. The BF16 discrepancy requires further investigation before
-claiming author-reference qualification.
+quality equivalence. A separate diagnostic replaces only the author's attention
+call with the native CPU paged arithmetic. All six native logit comparisons then
+become bitwise exact, including BF16 P3/P7; 60 substituted attention calls are
+recorded. This isolates the observed native discrepancy to the attention path
+for these fixtures. It does not qualify the unchanged author backend or CUDA.
+The independent dense path still exceeds the unchanged budget at FP32 P7 and
+BF16 P3/P7 in this diagnostic, and the program retains return code 1.
+[Raw attention diagnostic](evidence/parcae-attention-diagnostic.json).
+
+Reproduce the original comparison with
+`python -m experiments.loopkv.parcae_author_gate --author-repo <pinned-checkout> --official-config <config.json> --out <original.json>`.
+Add `--shared-attention-diagnostic` and use a separate output path for the
+arithmetic isolation. Neither command changes the pinned author checkout.
 
 | Official E2E comparison | Native tokens/s | Candidate tokens/s | Speedup |
 |---|---:|---:|---:|

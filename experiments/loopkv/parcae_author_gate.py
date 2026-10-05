@@ -5,13 +5,16 @@ import hashlib
 import json
 import subprocess
 import sys
+from contextlib import nullcontext
 from pathlib import Path
+from unittest.mock import patch
 
 import torch
 
 from experiments.loopkv.capture import dump
 from tests.reference.parcae import dense_parcae_reference
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
+from vllm_rlt.kernels.paged_attention import torch_paged_attention
 from vllm_rlt.models import ParcaeConfig, ParcaeForCausalLM
 
 
@@ -21,6 +24,7 @@ def main():
     parser.add_argument("--author-repo", type=Path, required=True)
     parser.add_argument("--official-config", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--shared-attention-diagnostic", action="store_true")
     args = parser.parse_args()
     revision = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=args.author_repo, text=True
@@ -28,8 +32,22 @@ def main():
     assert revision == "69284c13746e849104f738d6d1a347b1f457df76"
     assert not subprocess.check_output(["git", "diff", "HEAD"], cwd=args.author_repo)
     sys.path.insert(0, str(args.author_repo.resolve()))
+    from parcae_lm.attention_backends import flash_attn
     from parcae_lm.models.parcae.config import ParcaeConfig as AuthorConfig
     from receval.models.parcae import ModelingParcae
+
+    attention_calls = 0
+
+    def shared_attention(q, k, v, causal=False, window_size=(-1, -1)):
+        nonlocal attention_calls
+        attention_calls += 1
+        assert causal and window_size == (-1, -1) and q.shape == k.shape == v.shape
+        batch, length, heads, width = q.shape
+        tables = torch.arange(batch, device=q.device).repeat_interleave(length)[:, None]
+        lengths = torch.arange(1, length + 1, device=q.device).repeat(batch)
+        return torch_paged_attention(q.reshape(-1, heads, width), k, v, tables, lengths).reshape(
+            q.shape
+        )
 
     torch.set_num_threads(2)
     torch.manual_seed(41)
@@ -69,7 +87,12 @@ def main():
         for count in (1, 3, 7):
             tokens = (torch.arange(count) * 263 + 257) % config.vocab_size
             torch.manual_seed(109)
-            expected = original.forward_for_generation(tokens[None])["logits"][0]
+            with (
+                patch.object(flash_attn, "flash_attn_func", shared_attention)
+                if args.shared_attention_diagnostic
+                else nullcontext()
+            ):
+                expected = original.forward_for_generation(tokens[None])["logits"][0]
             torch.manual_seed(109)
             initial = original.initialize_state(original.transformer.wte(tokens[None]))[0]
             _, dense, _ = dense_parcae_reference(native, tokens, initial)
@@ -112,7 +135,13 @@ def main():
     dump(
         args.out,
         {
-            "scope": "tiny author forward, copied weights and FP32 RoPE; not official checkpoint",
+            "scope": (
+                "diagnostic author attention substituted with native CPU paged arithmetic; "
+                "not unchanged author qualification"
+                if args.shared_attention_diagnostic
+                else "tiny author forward, copied weights and FP32 RoPE; not official checkpoint"
+            ),
+            "substituted_attention_calls": attention_calls,
             "source_revision": revision,
             "generation_source_sha256": hashlib.sha256(
                 (args.author_repo / "receval/models/parcae.py").read_bytes()
