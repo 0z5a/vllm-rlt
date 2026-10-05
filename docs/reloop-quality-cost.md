@@ -100,7 +100,24 @@ at most one candidate. A separate fixed128-output, P512 C32/C64 protocol uses
 two fresh starts, reversed arm order, five warmups and five measurements for
 true D4 off, matched D3 off and D3 guided. Each trial submits and completes C
 requests; it does not use the plan's default4C refill trace. Only the first
-full-D4 C32 calibration has started; the complete cost gate is pending.
+full-D4 C32 calibration has completed; the complete cost gate is pending.
+
+| Fixed-work arm | B / total C | Observed A / S | Tokens/s | TTFT mean ms | TPOT mean ms | Peak allocated GiB | Candidate speed |
+|---|---|---|---:|---:|---:|---:|---|
+| D4 off, fresh0 | 16 /32 | 16 /16 | 143.872 | 11980.360 | 74.652 | 69.385 | Baseline only |
+| D3 off / D3 guided | 16 /32 | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+
+The first process completed10 trials,320 requests and40960 outputs, with five
+warmups and five measurements at the common64GiB R4 FP32 pool. The table
+averages measured trials. All29 original payload hashes and per-request
+timing, token, depth and drain records were verified; the child took295.832
+seconds and exited naturally. Neutral core/head observers are identical across
+arms and preserve the capability-off path. Status is
+`PARTIAL_CASE_RAW_PASS_NO_COST_GATE`; one baseline process cannot establish
+candidate speed or the two-fresh C32/C64 matrix. The unchanged21-file
+[scientific archive](../benchmarks/results/reloop-20261006/cost-c32-first-a.tar.gz)
+and [receipt](../benchmarks/results/reloop-20261006/cost-c32-first-a.json)
+retain this partial result separately.
 
 Independent505-question mathematics and148-task HumanEval+ confirmation,
 family M2, is prepared with148 verified canonical code references. Final
