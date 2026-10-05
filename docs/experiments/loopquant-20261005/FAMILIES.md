@@ -1,4 +1,4 @@
-# Shared INT4 deployment for HRM and LoopFormer
+# Looped-family quantization adapters and shared INT4 deployment
 
 This incremental change uses the frozen integration base
 `b836c1eb79412669f8cb6f07605b08be4e149f6b`. It combines the existing
@@ -38,3 +38,33 @@ high-concurrency/multiple-batch E2E remain required.
 |---|---:|---:|---:|---:|
 | HRM-Text-1B | Not measured | Not measured | — | — |
 | LoopFormer3×8 | Not measured | Not measured | — | — |
+
+
+LoopFormer's differentiable adapter preserves the same eight1/8 steps, learned
+positions, protected conditioning and tied readout. The
+[adapter manifest](loopformer-adapter-manifest.json) specifies physical versus
+resident state width and its1024-token context constraint.
+[Eight pinned-author comparisons](loopformer-author-adapter-attempt1.json)
+pass bitwise for FP32/BF16 × B1/B2 × T3/T7: all64 recurrent state tensors and
+eight logit tensors. This uses copied tiny weights, not the full checkpoint.
+The [runner](probe_loopformer_author_adapter.py) records both source hashes.
+[Three focused checks](loopformer-adapter-cpu-attempt2.log) cover masked rows,
+clocks, fixed depth and gradients from final logits through all eight applications
+of the shared projection. Two tiny scale updates preserve all frozen parameters.
+Full LoopFormer QAT and native FP8 deployment remain pending.
+
+
+Native quality evaluation now accepts an explicit prefix/continuation boundary.
+HRM admits the complete bidirectional prompt atomically, then scores each next
+token before adding it to the causal continuation cache. The generic full-window
+NLL rejects HRM to prevent target leakage. LoopFormer always uses its complete
+eight-step recurrence. [Eleven CPU checks](native-continuation-cpu-attempt2.log)
+match independent HRM/LoopFormer oracles for prefixes1/5, native/compact KV and
+two request lifetimes; causal Ouro/Nanbeige/LoopFormer controls agree with full-window
+targets. Full-checkpoint quality remains unrun.
+
+The LoopFormer adapter snapshot also passes the
+[647-test CPU suite](native-families-full-cpu-attempt5.log), with36 subtests,
+29 skipped and217 GPU cases deselected.
+
+The final continuation-quality snapshot `a513200` passes [658 CPU tests and36 subtests](native-families-full-cpu-attempt6.log), with29 skipped and217 GPU cases deselected. Frozen GPU64-case qualification still uses source18cd202b; no result is inferred from the CPU suite.

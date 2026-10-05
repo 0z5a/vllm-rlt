@@ -1,0 +1,29 @@
+{
+  "family": "loopformer",
+  "model_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "native_source": "4176b1bfc0a6ca0478cc4d459245f819d38e5e7a",
+  "adapter_source": "da8a9d08ae769ce8401883a6407a6f7bd953c822",
+  "author_source_sha256": "a4fdd1330a88a859f5f726a15fdce5b6c37d523fd7f04b9c9765d6c58133e665",
+  "prelude": "wte plus learned position embedding once at time zero",
+  "core": "three physical LoopFormer blocks repeated for eight steps",
+  "loop_boundary": "after all physical blocks; dt=1/8; clock preserved per row",
+  "fixed_input_injection": "none after first-step position embedding",
+  "norm": "two nonaffine RMSNorm per block; eps=None follows input dtype; AdaLN scales/gates protected",
+  "coda": "learned RMSNorm followed by tied wte linear",
+  "state": "BF16 physical hidden width2048 plus protected BF16 clock column; native width2049",
+  "quantized_physical_sites": [
+    "attn.c_attn",
+    "attn.c_proj",
+    "mlp.c_fc",
+    "mlp.c_proj"
+  ],
+  "protected": "time/dt embedders, AdaLN, embeddings, norms and head",
+  "kv_index": "depth0..7 and physical layer0..2; causal per-token positions",
+  "max_context_tokens": 1024,
+  "long_workload_constraint": "prefill plus generated context must fit1024; register shorter long variant before timing",
+  "dense_reference": "same attention backend for teacher/student; 8/8 tiny author cases all states/logits bitwise exact",
+  "full_checkpoint_g0": "not_run",
+  "native_quantized_gpu": "not_run",
+  "native_fp8_deployment": "not_implemented",
+  "qat": "two tiny scale updates and all8step gradient audit only; full Q0 not_run"
+}

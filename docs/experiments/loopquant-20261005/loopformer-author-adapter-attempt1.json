@@ -1,0 +1,170 @@
+{
+  "status": "pass",
+  "scope": "pinned author tiny weights, all8steps; not official weights/GPU/performance",
+  "model_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "author_sha256": "a4fdd1330a88a859f5f726a15fdce5b6c37d523fd7f04b9c9765d6c58133e665",
+  "source_commit": "da8a9d08ae769ce8401883a6407a6f7bd953c822",
+  "runner_sha256": "fa8789fe72105abf983010fb33b43a7cdb562c66fed8f2ac694836676ecb3622",
+  "cases": [
+    {
+      "dtype": "torch.float32",
+      "batch": 1,
+      "length": 3,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "state_max_abs": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "logits_max_abs": 0.0,
+      "state_exact": true,
+      "logits_exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "batch": 1,
+      "length": 7,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "state_max_abs": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "logits_max_abs": 0.0,
+      "state_exact": true,
+      "logits_exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "batch": 2,
+      "length": 3,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "state_max_abs": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "logits_max_abs": 0.0,
+      "state_exact": true,
+      "logits_exact": true
+    },
+    {
+      "dtype": "torch.float32",
+      "batch": 2,
+      "length": 7,
+      "atol": 3e-06,
+      "rtol": 3e-05,
+      "state_max_abs": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "logits_max_abs": 0.0,
+      "state_exact": true,
+      "logits_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "batch": 1,
+      "length": 3,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "state_max_abs": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "logits_max_abs": 0.0,
+      "state_exact": true,
+      "logits_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "batch": 1,
+      "length": 7,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "state_max_abs": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "logits_max_abs": 0.0,
+      "state_exact": true,
+      "logits_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "batch": 2,
+      "length": 3,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "state_max_abs": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "logits_max_abs": 0.0,
+      "state_exact": true,
+      "logits_exact": true
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "batch": 2,
+      "length": 7,
+      "atol": 0.03,
+      "rtol": 0.02,
+      "state_max_abs": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "logits_max_abs": 0.0,
+      "state_exact": true,
+      "logits_exact": true
+    }
+  ]
+}
