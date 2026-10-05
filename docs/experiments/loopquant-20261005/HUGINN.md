@@ -43,3 +43,18 @@ tied embedding/head. [Frozen runner](run_official_huginn_cpu.py),
 This completes the full-weight dense-adapter CPU comparison. Native cached GPU
 semantics, all-loop calibration, quantized export, locked quality and the full
 multiple-batch/high-concurrency E2E matrix remain to be executed.
+
+
+The native likelihood helper now scores a complete causal window through the
+actual prelude, recurrent, and coda KV layers. It fixes the initial-state seed
+while restoring the caller's CPU and selected-device random state, then frees
+the request's complete cache allocation after scoring. Nine new CPU cases cover
+two lengths, two depths, two seeds, and rejection of a cache lacking boundary
+layers. Repeated scores agree exactly; dense-adapter likelihood agrees within
+the existing FP32 numerical envelope.
+
+The [frozen CPU regression](full-cpu-huginn-quality-attempt1.log) passed
+484 tests, with 29 skipped and 116 GPU cases deselected. The
+[manifest](huginn-quality-cpu-manifest.json) identifies source, snapshot, and raw
+evidence. GPU random-state restoration, full-weight native likelihood, and
+quantized Huginn performance have not yet been evaluated.
