@@ -1,0 +1,1863 @@
+{
+  "scope": "preregistered native calibration only; excluded from candidate performance",
+  "plan_sha256": "7a388563a2f2a0f405875a1cdca6169ba4045b16fef3f53f2bf1df9fe01bae4d",
+  "checkpoint": {
+    "repo": "ByteDance/Ouro-1.4B",
+    "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+    "download_endpoint": "https://hf-mirror.com",
+    "files": [
+      {
+        "path": "config.json",
+        "bytes": 1472,
+        "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+      },
+      {
+        "path": "merges.txt",
+        "bytes": 466391,
+        "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+      },
+      {
+        "path": "model.safetensors",
+        "bytes": 2869336434,
+        "sha256": "58872a72616c736595b8b7662079c5b12c5a162ec16eae94f21c348dfa9885af"
+      },
+      {
+        "path": "special_tokens_map.json",
+        "bytes": 825,
+        "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+      },
+      {
+        "path": "tokenizer.json",
+        "bytes": 3522644,
+        "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+      },
+      {
+        "path": "tokenizer_config.json",
+        "bytes": 4211,
+        "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+      },
+      {
+        "path": "vocab.json",
+        "bytes": 800656,
+        "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+      }
+    ]
+  },
+  "measured_requests": 6144,
+  "warmup_requests": 1536,
+  "calibrated": [
+    {
+      "case": "b32-c64-variable",
+      "native_arm": "native-async",
+      "slo": {
+        "ttft_s": 11.700000000000001,
+        "request_s": 25.700000000000003,
+        "request_p99_itl_s": 0.54
+      },
+      "open_loop_rates_requests_s": [
+        2.8304439370883014,
+        4.528710299341283,
+        5.660887874176603,
+        6.793065449011923
+      ],
+      "runs": [
+        {
+          "run": "rep0-b32-c64-variable-native-async",
+          "pid": 30567,
+          "p99": {
+            "ttft": 7.434765964746475,
+            "request": 16.121521946042776,
+            "per_request_p99_itl": 0.35897221788764
+          },
+          "seconds": 90.38862421363592,
+          "requests_s": 5.664429616606116,
+          "output_tokens": 26624,
+          "graphs": null,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 22,
+              "2": 23,
+              "3": 23,
+              "4": 26,
+              "5": 24,
+              "6": 18,
+              "7": 4,
+              "8": 20,
+              "9": 1,
+              "10": 22,
+              "11": 1,
+              "12": 20,
+              "13": 6,
+              "14": 17,
+              "15": 3,
+              "16": 3,
+              "17": 20,
+              "18": 6,
+              "19": 2,
+              "20": 13,
+              "21": 8,
+              "22": 2,
+              "23": 18,
+              "24": 6,
+              "25": 2,
+              "26": 9,
+              "27": 5,
+              "28": 13,
+              "29": 2,
+              "30": 7,
+              "31": 155,
+              "32": 2533
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11638
+            },
+            "submitted_recurrent_rows": 89974,
+            "recurrent_calls": 3034,
+            "effective_batch_mean": 29.65524060646012,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 24,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 32
+          },
+          "output_reference_run": "rep0-b32-c64-variable-native-async",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        },
+        {
+          "run": "rep2-b32-c64-variable-native-async",
+          "pid": 30833,
+          "p99": {
+            "ttft": 7.495921608060598,
+            "request": 16.389890853315592,
+            "per_request_p99_itl": 0.3154013454914093
+          },
+          "seconds": 90.44517598301172,
+          "requests_s": 5.660887874176603,
+          "output_tokens": 26624,
+          "graphs": null,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 22,
+              "2": 23,
+              "3": 23,
+              "4": 26,
+              "5": 24,
+              "6": 18,
+              "7": 4,
+              "8": 20,
+              "9": 1,
+              "10": 22,
+              "11": 1,
+              "12": 20,
+              "13": 6,
+              "14": 17,
+              "15": 3,
+              "16": 3,
+              "17": 20,
+              "18": 6,
+              "19": 2,
+              "20": 13,
+              "21": 8,
+              "22": 2,
+              "23": 18,
+              "24": 6,
+              "25": 2,
+              "26": 9,
+              "27": 5,
+              "28": 13,
+              "29": 2,
+              "30": 7,
+              "31": 155,
+              "32": 2533
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11638
+            },
+            "submitted_recurrent_rows": 89974,
+            "recurrent_calls": 3034,
+            "effective_batch_mean": 29.65524060646012,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 24,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 32
+          },
+          "output_reference_run": "rep0-b32-c64-variable-native-async",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        },
+        {
+          "run": "rep1-b32-c64-variable-native-async",
+          "pid": 30906,
+          "p99": {
+            "ttft": 7.790640961378813,
+            "request": 17.130854230374098,
+            "per_request_p99_itl": 0.342962097376585
+          },
+          "seconds": 94.27597055956721,
+          "requests_s": 5.430864269665604,
+          "output_tokens": 26624,
+          "graphs": null,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 22,
+              "2": 23,
+              "3": 23,
+              "4": 26,
+              "5": 24,
+              "6": 18,
+              "7": 4,
+              "8": 20,
+              "9": 1,
+              "10": 22,
+              "11": 1,
+              "12": 20,
+              "13": 6,
+              "14": 17,
+              "15": 3,
+              "16": 3,
+              "17": 20,
+              "18": 6,
+              "19": 2,
+              "20": 13,
+              "21": 8,
+              "22": 2,
+              "23": 18,
+              "24": 6,
+              "25": 2,
+              "26": 9,
+              "27": 5,
+              "28": 13,
+              "29": 2,
+              "30": 7,
+              "31": 155,
+              "32": 2533
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11638
+            },
+            "submitted_recurrent_rows": 89974,
+            "recurrent_calls": 3034,
+            "effective_batch_mean": 29.65524060646012,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 24,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 32
+          },
+          "output_reference_run": "rep0-b32-c64-variable-native-async",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        }
+      ]
+    },
+    {
+      "case": "b32-c64-variable",
+      "native_arm": "native-graph",
+      "slo": {
+        "ttft_s": 20.400000000000002,
+        "request_s": 28.8,
+        "request_p99_itl_s": 0.56
+      },
+      "open_loop_rates_requests_s": [
+        2.89481878170907,
+        4.631710050734512,
+        5.78963756341814,
+        6.9475650761017675
+      ],
+      "runs": [
+        {
+          "run": "rep0-b32-c64-variable-native-graph",
+          "pid": 30108,
+          "p99": {
+            "ttft": 13.590544246137142,
+            "request": 17.843617882579565,
+            "per_request_p99_itl": 0.34414318576455116
+          },
+          "seconds": 87.99334904551506,
+          "requests_s": 5.818621583946817,
+          "output_tokens": 26624,
+          "graphs": {
+            "captures": 0,
+            "replays": 8656,
+            "fallbacks": 278
+          },
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 18,
+              "2": 40,
+              "3": 51,
+              "4": 43,
+              "5": 130,
+              "6": 403,
+              "7": 838,
+              "8": 1270,
+              "9": 1438,
+              "10": 1517,
+              "11": 1167,
+              "12": 854,
+              "13": 516,
+              "14": 246,
+              "15": 113,
+              "16": 59,
+              "17": 13,
+              "18": 9,
+              "19": 5,
+              "20": 2,
+              "21": 6,
+              "22": 9,
+              "23": 10,
+              "24": 15,
+              "25": 4,
+              "26": 17,
+              "27": 18,
+              "28": 4,
+              "29": 4,
+              "30": 10,
+              "31": 8,
+              "32": 97
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11509
+            },
+            "submitted_recurrent_rows": 89845,
+            "recurrent_calls": 8934,
+            "effective_batch_mean": 10.056525632415491,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 7,
+              "p50": 10,
+              "p90": 13
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 32
+          },
+          "output_reference_run": "rep0-b32-c64-variable-native-graph",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        },
+        {
+          "run": "rep1-b32-c64-variable-native-graph",
+          "pid": 30410,
+          "p99": {
+            "ttft": 12.605283726006746,
+            "request": 18.886672407388687,
+            "per_request_p99_itl": 0.36950474977493286
+          },
+          "seconds": 89.27336739376187,
+          "requests_s": 5.735193092265688,
+          "output_tokens": 26624,
+          "graphs": {
+            "captures": 0,
+            "replays": 4521,
+            "fallbacks": 1518
+          },
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 20,
+              "2": 48,
+              "3": 40,
+              "4": 50,
+              "5": 101,
+              "6": 217,
+              "7": 437,
+              "8": 600,
+              "9": 753,
+              "10": 783,
+              "11": 598,
+              "12": 427,
+              "13": 243,
+              "14": 134,
+              "15": 63,
+              "16": 21,
+              "17": 6,
+              "18": 9,
+              "19": 1,
+              "20": 12,
+              "21": 11,
+              "22": 5,
+              "23": 13,
+              "24": 6,
+              "25": 4,
+              "26": 4,
+              "27": 9,
+              "28": 8,
+              "29": 6,
+              "30": 13,
+              "31": 95,
+              "32": 1302
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11542
+            },
+            "submitted_recurrent_rows": 89878,
+            "recurrent_calls": 6039,
+            "effective_batch_mean": 14.882927637025997,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 7,
+              "p50": 10,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 32
+          },
+          "output_reference_run": "rep0-b32-c64-variable-native-graph",
+          "token_ids_different_requests": 8,
+          "exit_depths_different_requests": 270
+        },
+        {
+          "run": "rep2-b32-c64-variable-native-graph",
+          "pid": 30487,
+          "p99": {
+            "ttft": 13.53504452854395,
+            "request": 19.179475281387568,
+            "per_request_p99_itl": 0.34060750901699066
+          },
+          "seconds": 88.4338603913784,
+          "requests_s": 5.78963756341814,
+          "output_tokens": 26624,
+          "graphs": {
+            "captures": 0,
+            "replays": 6514,
+            "fallbacks": 935
+          },
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 28,
+              "2": 34,
+              "3": 42,
+              "4": 54,
+              "5": 139,
+              "6": 322,
+              "7": 577,
+              "8": 918,
+              "9": 1103,
+              "10": 1108,
+              "11": 902,
+              "12": 644,
+              "13": 355,
+              "14": 209,
+              "15": 90,
+              "16": 41,
+              "17": 10,
+              "18": 8,
+              "19": 5,
+              "20": 18,
+              "21": 2,
+              "22": 2,
+              "23": 18,
+              "24": 5,
+              "25": 4,
+              "26": 2,
+              "27": 16,
+              "28": 10,
+              "29": 2,
+              "30": 10,
+              "31": 51,
+              "32": 720
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11548
+            },
+            "submitted_recurrent_rows": 89884,
+            "recurrent_calls": 7449,
+            "effective_batch_mean": 12.06658611894214,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 7,
+              "p50": 10,
+              "p90": 31
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 32
+          },
+          "output_reference_run": "rep0-b32-c64-variable-native-graph",
+          "token_ids_different_requests": 4,
+          "exit_depths_different_requests": 186
+        }
+      ]
+    },
+    {
+      "case": "b64-c128-variable",
+      "native_arm": "native-async",
+      "slo": {
+        "ttft_s": 18.7,
+        "request_s": 38.1,
+        "request_p99_itl_s": 0.6900000000000001
+      },
+      "open_loop_rates_requests_s": [
+        3.7509367100890056,
+        6.001498736142409,
+        7.501873420178011,
+        9.002248104213614
+      ],
+      "runs": [
+        {
+          "run": "rep2-b64-c128-variable-native-async",
+          "pid": 30339,
+          "p99": {
+            "ttft": 12.365118626505136,
+            "request": 25.374871280044317,
+            "per_request_p99_itl": 0.45767731592059135
+          },
+          "seconds": 68.24961863830686,
+          "requests_s": 7.501873420178011,
+          "output_tokens": 26624,
+          "graphs": null,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 11,
+              "2": 10,
+              "3": 11,
+              "4": 13,
+              "5": 15,
+              "6": 10,
+              "7": 15,
+              "8": 8,
+              "9": 14,
+              "10": 8,
+              "11": 13,
+              "12": 11,
+              "13": 2,
+              "14": 12,
+              "15": 5,
+              "16": 10,
+              "17": 2,
+              "18": 11,
+              "19": 4,
+              "20": 7,
+              "21": 3,
+              "22": 13,
+              "24": 11,
+              "25": 4,
+              "26": 10,
+              "28": 6,
+              "29": 7,
+              "30": 4,
+              "31": 2,
+              "32": 5,
+              "33": 5,
+              "34": 3,
+              "35": 5,
+              "36": 5,
+              "37": 5,
+              "38": 5,
+              "39": 1,
+              "40": 6,
+              "41": 10,
+              "42": 4,
+              "43": 2,
+              "44": 9,
+              "45": 5,
+              "46": 1,
+              "47": 5,
+              "48": 5,
+              "49": 2,
+              "50": 1,
+              "51": 7,
+              "52": 2,
+              "53": 3,
+              "54": 5,
+              "55": 5,
+              "56": 2,
+              "57": 4,
+              "58": 3,
+              "59": 6,
+              "60": 3,
+              "61": 11,
+              "62": 33,
+              "63": 165,
+              "64": 1061
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11587
+            },
+            "submitted_recurrent_rows": 89923,
+            "recurrent_calls": 1646,
+            "effective_batch_mean": 54.63122721749696,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 64,
+              "p90": 64
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 64
+          },
+          "output_reference_run": "rep2-b64-c128-variable-native-async",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        },
+        {
+          "run": "rep0-b64-c128-variable-native-async",
+          "pid": 30640,
+          "p99": {
+            "ttft": 12.44924870505929,
+            "request": 25.261623241007328,
+            "per_request_p99_itl": 0.34049897640943527
+          },
+          "seconds": 68.29484655335546,
+          "requests_s": 7.496905342630782,
+          "output_tokens": 26624,
+          "graphs": null,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 11,
+              "2": 10,
+              "3": 11,
+              "4": 13,
+              "5": 15,
+              "6": 10,
+              "7": 15,
+              "8": 8,
+              "9": 14,
+              "10": 8,
+              "11": 13,
+              "12": 11,
+              "13": 2,
+              "14": 12,
+              "15": 5,
+              "16": 10,
+              "17": 2,
+              "18": 11,
+              "19": 4,
+              "20": 7,
+              "21": 3,
+              "22": 13,
+              "24": 11,
+              "25": 4,
+              "26": 10,
+              "28": 6,
+              "29": 7,
+              "30": 4,
+              "31": 2,
+              "32": 5,
+              "33": 5,
+              "34": 3,
+              "35": 5,
+              "36": 5,
+              "37": 5,
+              "38": 5,
+              "39": 1,
+              "40": 6,
+              "41": 10,
+              "42": 4,
+              "43": 2,
+              "44": 9,
+              "45": 5,
+              "46": 1,
+              "47": 5,
+              "48": 5,
+              "49": 2,
+              "50": 1,
+              "51": 7,
+              "52": 2,
+              "53": 3,
+              "54": 5,
+              "55": 5,
+              "56": 2,
+              "57": 4,
+              "58": 3,
+              "59": 6,
+              "60": 3,
+              "61": 11,
+              "62": 33,
+              "63": 165,
+              "64": 1061
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11587
+            },
+            "submitted_recurrent_rows": 89923,
+            "recurrent_calls": 1646,
+            "effective_batch_mean": 54.63122721749696,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 64,
+              "p90": 64
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 64
+          },
+          "output_reference_run": "rep2-b64-c128-variable-native-async",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        },
+        {
+          "run": "rep1-b64-c128-variable-native-async",
+          "pid": 30701,
+          "p99": {
+            "ttft": 12.33247136324644,
+            "request": 25.039725590497255,
+            "per_request_p99_itl": 0.34152858331799507
+          },
+          "seconds": 67.77231280878186,
+          "requests_s": 7.55470750193515,
+          "output_tokens": 26624,
+          "graphs": null,
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 11,
+              "2": 10,
+              "3": 11,
+              "4": 13,
+              "5": 15,
+              "6": 10,
+              "7": 15,
+              "8": 8,
+              "9": 14,
+              "10": 8,
+              "11": 13,
+              "12": 11,
+              "13": 2,
+              "14": 12,
+              "15": 5,
+              "16": 10,
+              "17": 2,
+              "18": 11,
+              "19": 4,
+              "20": 7,
+              "21": 3,
+              "22": 13,
+              "24": 11,
+              "25": 4,
+              "26": 10,
+              "28": 6,
+              "29": 7,
+              "30": 4,
+              "31": 2,
+              "32": 5,
+              "33": 5,
+              "34": 3,
+              "35": 5,
+              "36": 5,
+              "37": 5,
+              "38": 5,
+              "39": 1,
+              "40": 6,
+              "41": 10,
+              "42": 4,
+              "43": 2,
+              "44": 9,
+              "45": 5,
+              "46": 1,
+              "47": 5,
+              "48": 5,
+              "49": 2,
+              "50": 1,
+              "51": 7,
+              "52": 2,
+              "53": 3,
+              "54": 5,
+              "55": 5,
+              "56": 2,
+              "57": 4,
+              "58": 3,
+              "59": 6,
+              "60": 3,
+              "61": 11,
+              "62": 33,
+              "63": 165,
+              "64": 1061
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11587
+            },
+            "submitted_recurrent_rows": 89923,
+            "recurrent_calls": 1646,
+            "effective_batch_mean": 54.63122721749696,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 64,
+              "p90": 64
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 64
+          },
+          "output_reference_run": "rep2-b64-c128-variable-native-async",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        }
+      ]
+    },
+    {
+      "case": "b64-c128-variable",
+      "native_arm": "native-graph",
+      "slo": {
+        "ttft_s": 20.1,
+        "request_s": 42.800000000000004,
+        "request_p99_itl_s": 0.6
+      },
+      "open_loop_rates_requests_s": [
+        3.7205563818966803,
+        5.952890211034688,
+        7.4411127637933605,
+        8.929335316552033
+      ],
+      "runs": [
+        {
+          "run": "rep1-b64-c128-variable-native-graph",
+          "pid": 30201,
+          "p99": {
+            "ttft": 13.222877491265535,
+            "request": 28.28293850272894,
+            "per_request_p99_itl": 0.35883282870054245
+          },
+          "seconds": 68.6671669781208,
+          "requests_s": 7.45625635266323,
+          "output_tokens": 26624,
+          "graphs": {
+            "captures": 0,
+            "replays": 408,
+            "fallbacks": 1452
+          },
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 14,
+              "2": 23,
+              "3": 21,
+              "4": 19,
+              "5": 28,
+              "6": 33,
+              "7": 33,
+              "8": 23,
+              "9": 26,
+              "10": 37,
+              "11": 42,
+              "12": 34,
+              "13": 41,
+              "14": 26,
+              "15": 9,
+              "16": 7,
+              "17": 6,
+              "18": 8,
+              "19": 6,
+              "20": 7,
+              "21": 3,
+              "22": 11,
+              "23": 5,
+              "24": 6,
+              "25": 4,
+              "26": 10,
+              "27": 1,
+              "28": 4,
+              "29": 7,
+              "30": 2,
+              "31": 3,
+              "32": 8,
+              "33": 1,
+              "34": 3,
+              "35": 13,
+              "36": 2,
+              "37": 5,
+              "38": 9,
+              "40": 1,
+              "41": 12,
+              "42": 2,
+              "43": 2,
+              "44": 12,
+              "45": 4,
+              "46": 1,
+              "47": 7,
+              "48": 2,
+              "49": 2,
+              "50": 3,
+              "51": 7,
+              "52": 2,
+              "53": 1,
+              "54": 3,
+              "55": 6,
+              "56": 1,
+              "57": 4,
+              "58": 3,
+              "59": 8,
+              "60": 3,
+              "61": 9,
+              "62": 23,
+              "63": 153,
+              "64": 1049
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11593
+            },
+            "submitted_recurrent_rows": 89929,
+            "recurrent_calls": 1860,
+            "effective_batch_mean": 48.3489247311828,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 8,
+              "p50": 64,
+              "p90": 64
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 64
+          },
+          "output_reference_run": "rep1-b64-c128-variable-native-graph",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        },
+        {
+          "run": "rep0-b64-c128-variable-native-graph",
+          "pid": 30270,
+          "p99": {
+            "ttft": 13.360166132450104,
+            "request": 28.529771357774734,
+            "per_request_p99_itl": 0.3679034635424614
+          },
+          "seconds": 70.30564211308956,
+          "requests_s": 7.28248807082121,
+          "output_tokens": 26624,
+          "graphs": {
+            "captures": 0,
+            "replays": 408,
+            "fallbacks": 1452
+          },
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 14,
+              "2": 23,
+              "3": 21,
+              "4": 19,
+              "5": 28,
+              "6": 33,
+              "7": 33,
+              "8": 23,
+              "9": 26,
+              "10": 37,
+              "11": 42,
+              "12": 34,
+              "13": 41,
+              "14": 26,
+              "15": 9,
+              "16": 7,
+              "17": 6,
+              "18": 8,
+              "19": 6,
+              "20": 7,
+              "21": 3,
+              "22": 11,
+              "23": 5,
+              "24": 6,
+              "25": 4,
+              "26": 10,
+              "27": 1,
+              "28": 4,
+              "29": 7,
+              "30": 2,
+              "31": 3,
+              "32": 8,
+              "33": 1,
+              "34": 3,
+              "35": 13,
+              "36": 2,
+              "37": 5,
+              "38": 9,
+              "40": 1,
+              "41": 12,
+              "42": 2,
+              "43": 2,
+              "44": 12,
+              "45": 4,
+              "46": 1,
+              "47": 7,
+              "48": 2,
+              "49": 2,
+              "50": 3,
+              "51": 7,
+              "52": 2,
+              "53": 1,
+              "54": 3,
+              "55": 6,
+              "56": 1,
+              "57": 4,
+              "58": 3,
+              "59": 8,
+              "60": 3,
+              "61": 9,
+              "62": 23,
+              "63": 153,
+              "64": 1049
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11593
+            },
+            "submitted_recurrent_rows": 89929,
+            "recurrent_calls": 1860,
+            "effective_batch_mean": 48.3489247311828,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 8,
+              "p50": 64,
+              "p90": 64
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 64
+          },
+          "output_reference_run": "rep1-b64-c128-variable-native-graph",
+          "token_ids_different_requests": 0,
+          "exit_depths_different_requests": 0
+        },
+        {
+          "run": "rep2-b64-c128-variable-native-graph",
+          "pid": 30764,
+          "p99": {
+            "ttft": 13.32598865404725,
+            "request": 27.546337611973286,
+            "per_request_p99_itl": 0.3949245698750019
+          },
+          "seconds": 68.80691319331527,
+          "requests_s": 7.4411127637933605,
+          "output_tokens": 26624,
+          "graphs": {
+            "captures": 0,
+            "replays": 289,
+            "fallbacks": 1486
+          },
+          "work": {
+            "recurrent_batch_histogram": {
+              "1": 17,
+              "2": 13,
+              "3": 21,
+              "4": 22,
+              "5": 24,
+              "6": 17,
+              "7": 22,
+              "8": 28,
+              "9": 27,
+              "10": 30,
+              "11": 19,
+              "12": 15,
+              "13": 18,
+              "14": 14,
+              "15": 22,
+              "16": 10,
+              "17": 5,
+              "18": 3,
+              "19": 6,
+              "20": 6,
+              "21": 5,
+              "22": 7,
+              "23": 7,
+              "24": 8,
+              "25": 5,
+              "26": 10,
+              "27": 2,
+              "28": 4,
+              "29": 4,
+              "30": 4,
+              "31": 4,
+              "32": 7,
+              "33": 1,
+              "34": 5,
+              "35": 5,
+              "36": 6,
+              "37": 3,
+              "38": 10,
+              "39": 5,
+              "40": 6,
+              "41": 8,
+              "42": 2,
+              "43": 3,
+              "44": 9,
+              "45": 2,
+              "46": 1,
+              "47": 8,
+              "48": 3,
+              "49": 1,
+              "50": 4,
+              "51": 4,
+              "52": 6,
+              "53": 3,
+              "54": 3,
+              "55": 6,
+              "56": 2,
+              "57": 3,
+              "58": 2,
+              "59": 8,
+              "60": 3,
+              "61": 6,
+              "62": 25,
+              "63": 165,
+              "64": 1051
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 26112,
+              "2": 26112,
+              "3": 26112,
+              "4": 11585
+            },
+            "submitted_recurrent_rows": 89921,
+            "recurrent_calls": 1775,
+            "effective_batch_mean": 50.65971830985915,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 9,
+              "p50": 64,
+              "p90": 64
+            },
+            "submitted_prefill_tokens": 61440,
+            "observed_peak_residents_after_step": 64
+          },
+          "output_reference_run": "rep1-b64-c128-variable-native-graph",
+          "token_ids_different_requests": 10,
+          "exit_depths_different_requests": 100
+        }
+      ]
+    }
+  ],
+  "completion": {
+    "status": "complete",
+    "scope": "native_baseline_calibration_not_formal_candidate_performance",
+    "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+    "controller": {
+      "controller_pid": 30103,
+      "started": 1791178365.5421333,
+      "plan_sha256": "7a388563a2f2a0f405875a1cdca6169ba4045b16fef3f53f2bf1df9fe01bae4d",
+      "controller_sha256": "0cfb91a6b2a4cb57b5f60be081f417fc9d01a0fd573a7617368df317a4a0b22d",
+      "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+      "lock_inodes": {
+        "gpu0-perf.lock": 12895501670,
+        "gpu1-perf.lock": 12895501695,
+        "heavy-io.lock": 12895501666
+      },
+      "workers": [
+        {
+          "run": {
+            "name": "rep0-b32-c64-variable-native-graph",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b32-c64-variable",
+            "arm": "native-graph"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b32-c64-variable",
+            "--arm",
+            "native-graph",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep0-b32-c64-variable-native-graph"
+          ],
+          "started": 1791178365.5773022,
+          "pid": 30108,
+          "returncode": 0,
+          "ended": 1791178484.3445964
+        },
+        {
+          "run": {
+            "name": "rep1-b64-c128-variable-native-graph",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b64-c128-variable",
+            "arm": "native-graph"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b64-c128-variable",
+            "--arm",
+            "native-graph",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep1-b64-c128-variable-native-graph"
+          ],
+          "started": 1791178484.417276,
+          "pid": 30201,
+          "returncode": 0,
+          "ended": 1791178577.22708
+        },
+        {
+          "run": {
+            "name": "rep0-b64-c128-variable-native-graph",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b64-c128-variable",
+            "arm": "native-graph"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b64-c128-variable",
+            "--arm",
+            "native-graph",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep0-b64-c128-variable-native-graph"
+          ],
+          "started": 1791178577.2649815,
+          "pid": 30270,
+          "returncode": 0,
+          "ended": 1791178672.2519548
+        },
+        {
+          "run": {
+            "name": "rep2-b64-c128-variable-native-async",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b64-c128-variable",
+            "arm": "native-async"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b64-c128-variable",
+            "--arm",
+            "native-async",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep2-b64-c128-variable-native-async"
+          ],
+          "started": 1791178672.2884305,
+          "pid": 30339,
+          "returncode": 0,
+          "ended": 1791178765.3302703
+        },
+        {
+          "run": {
+            "name": "rep1-b32-c64-variable-native-graph",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b32-c64-variable",
+            "arm": "native-graph"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b32-c64-variable",
+            "--arm",
+            "native-graph",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep1-b32-c64-variable-native-graph"
+          ],
+          "started": 1791178765.3684316,
+          "pid": 30410,
+          "returncode": 0,
+          "ended": 1791178883.7334864
+        },
+        {
+          "run": {
+            "name": "rep2-b32-c64-variable-native-graph",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b32-c64-variable",
+            "arm": "native-graph"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b32-c64-variable",
+            "--arm",
+            "native-graph",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep2-b32-c64-variable-native-graph"
+          ],
+          "started": 1791178883.7694142,
+          "pid": 30487,
+          "returncode": 0,
+          "ended": 1791179001.5237193
+        },
+        {
+          "run": {
+            "name": "rep0-b32-c64-variable-native-async",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b32-c64-variable",
+            "arm": "native-async"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b32-c64-variable",
+            "--arm",
+            "native-async",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep0-b32-c64-variable-native-async"
+          ],
+          "started": 1791179001.560572,
+          "pid": 30567,
+          "returncode": 0,
+          "ended": 1791179121.6260922
+        },
+        {
+          "run": {
+            "name": "rep0-b64-c128-variable-native-async",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b64-c128-variable",
+            "arm": "native-async"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b64-c128-variable",
+            "--arm",
+            "native-async",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep0-b64-c128-variable-native-async"
+          ],
+          "started": 1791179121.6643088,
+          "pid": 30640,
+          "returncode": 0,
+          "ended": 1791179213.5696168
+        },
+        {
+          "run": {
+            "name": "rep1-b64-c128-variable-native-async",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b64-c128-variable",
+            "arm": "native-async"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b64-c128-variable",
+            "--arm",
+            "native-async",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep1-b64-c128-variable-native-async"
+          ],
+          "started": 1791179213.6064997,
+          "pid": 30701,
+          "returncode": 0,
+          "ended": 1791179305.1703002
+        },
+        {
+          "run": {
+            "name": "rep2-b64-c128-variable-native-graph",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b64-c128-variable",
+            "arm": "native-graph"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b64-c128-variable",
+            "--arm",
+            "native-graph",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep2-b64-c128-variable-native-graph"
+          ],
+          "started": 1791179305.2084422,
+          "pid": 30764,
+          "returncode": 0,
+          "ended": 1791179402.3302011
+        },
+        {
+          "run": {
+            "name": "rep2-b32-c64-variable-native-async",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b32-c64-variable",
+            "arm": "native-async"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b32-c64-variable",
+            "--arm",
+            "native-async",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep2-b32-c64-variable-native-async"
+          ],
+          "started": 1791179402.3654091,
+          "pid": 30833,
+          "returncode": 0,
+          "ended": 1791179522.2898254
+        },
+        {
+          "run": {
+            "name": "rep1-b32-c64-variable-native-async",
+            "source": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/http-independent-v1",
+            "source_sha": "cd8a742f437c6ead5c33331f62f2af71c6c4c8d0",
+            "experiment_plan": "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "experiment_sha256": "1102850fbfbeecbd5b93715b6e13496c03f8fb9e553b69a9dcb351a1103d350b",
+            "device": "GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79",
+            "case": "b32-c64-variable",
+            "arm": "native-async"
+          },
+          "command": [
+            "/root/miniconda3/bin/python",
+            "-m",
+            "experiments.loopkv.http_bench",
+            "--plan",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-experiment-v1-plan.json",
+            "--case",
+            "b32-c64-variable",
+            "--arm",
+            "native-async",
+            "--outer-quiet",
+            "--out",
+            "/root/autodl-tmp/0z5a/loopkv-zero-copy-20261005/evidence/http-pilot-quiet-v1/rep1-b32-c64-variable-native-async"
+          ],
+          "started": 1791179522.3285804,
+          "pid": 30906,
+          "returncode": 0,
+          "ended": 1791179647.1517172
+        }
+      ],
+      "returncode": 0,
+      "ended": 1791179647.1532464
+    },
+    "ssh_actual_returncode": 0,
+    "offbox_ssh_actual_returncode": 0,
+    "archive": {
+      "files": 74,
+      "raw_bytes": 55947035,
+      "archive_bytes": 6637566,
+      "archive_sha256": "deaf6e87b614d1c94e953a4a744267933a3f4832bf9511e13fdd5aa3650b704f",
+      "file_manifest_sha256": "a002c9625d63e9e1790cc71ba1e60cb35c2edeae46ad9098500df5739218b319",
+      "timestamp": 1791180244.1783361
+    },
+    "offbox_files_verified": 74,
+    "audit_sha256": "244a3ff908e89ea9b1f536947739eba54b5b7d61a933412b2837c6310b4e8d46",
+    "measured_requests": 6144,
+    "warmup_requests": 1536,
+    "postflight": {
+      "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+      "own_pids_absent": [
+        30103,
+        30108,
+        30201,
+        30270,
+        30339,
+        30410,
+        30487,
+        30567,
+        30640,
+        30701,
+        30764,
+        30833,
+        30906
+      ],
+      "own_model_readers": [],
+      "both_gpu_compute_empty": true,
+      "original_locks_take_release": {
+        "gpu0-perf.lock": 12895501670,
+        "gpu1-perf.lock": 12895501695,
+        "heavy-io.lock": 12895501666
+      },
+      "timestamp": 1791180405.2612865
+    },
+    "models_retained_for_remaining_matrix_and_registered_readers": true,
+    "timestamp": 1791180429.4535959
+  },
+  "raw_files": {
+    "DONE.json": {
+      "bytes": 47,
+      "sha256": "3f95c8e7bd8932eb524a65e0a587c1a9f0f5d61230d2c050355af5365b7aac7c"
+    },
+    "controller.json": {
+      "bytes": 14920,
+      "sha256": "8e77855ade03cfc4b467fe5b128e6f50f1cbe8521fa77729ecc09aff637e3467"
+    },
+    "rep0-b32-c64-variable-native-async/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep0-b32-c64-variable-native-async/b32-c64-variable-native-async/requests.json": {
+      "bytes": 3714738,
+      "sha256": "ac5fec1ca647b3ede35aaf395653587bc357b2dcef444805f968d6414d724d45"
+    },
+    "rep0-b32-c64-variable-native-async/b32-c64-variable-native-async/summary.json": {
+      "bytes": 3695,
+      "sha256": "a4d1f35b9f1d393698f112e30ece841856609d6618a857531aa9a2292a5fe767"
+    },
+    "rep0-b32-c64-variable-native-async/b32-c64-variable-native-async/warmup0.json": {
+      "bytes": 934004,
+      "sha256": "fe6dd24e484df9cb86a16e7072d005c0a928c4ad0a10098fc4a34c7134ac9d99"
+    },
+    "rep0-b32-c64-variable-native-async/plan.json": {
+      "bytes": 4006,
+      "sha256": "c93db6b3bceac9c4d08bd510c97254c1c935691086c9d005321f07dfdc6b08cc"
+    },
+    "rep0-b32-c64-variable-native-async.log": {
+      "bytes": 69,
+      "sha256": "644e9a45dd144c5d4557c7c4eac0f5f2a764e3992339d7ae5cce1735ecab2a72"
+    },
+    "rep0-b32-c64-variable-native-graph/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep0-b32-c64-variable-native-graph/b32-c64-variable-native-graph/requests.json": {
+      "bytes": 3715509,
+      "sha256": "a111ee08d0df6f5377fa1d2ba2ed56f2cd14f7a43c0e349c79dc7729607b42a4"
+    },
+    "rep0-b32-c64-variable-native-graph/b32-c64-variable-native-graph/summary.json": {
+      "bytes": 3780,
+      "sha256": "f99abfab30f58b36f7d90122499fc4d2b0ab8b4f361b5b28b7f0f0d498d02c5a"
+    },
+    "rep0-b32-c64-variable-native-graph/b32-c64-variable-native-graph/warmup0.json": {
+      "bytes": 934565,
+      "sha256": "5ebc064ca3c2bdf0e62454b6714be926098dcc016456d6694dd821488639d247"
+    },
+    "rep0-b32-c64-variable-native-graph/plan.json": {
+      "bytes": 4006,
+      "sha256": "a4ddd8a32098fbd7eab56caa57b5a787816ef2599b6c57368e127e387d1c5c1c"
+    },
+    "rep0-b32-c64-variable-native-graph.log": {
+      "bytes": 69,
+      "sha256": "0bf118191ac55d1c48fab886fb208814fb3877af0df8dbf3d72368733d52a2c2"
+    },
+    "rep0-b64-c128-variable-native-async/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep0-b64-c128-variable-native-async/b64-c128-variable-native-async/requests.json": {
+      "bytes": 3721700,
+      "sha256": "8b1dea2b5f4d47dacd51be6b441a66522e7937132a38bfe72bb4bb61f2921d7f"
+    },
+    "rep0-b64-c128-variable-native-async/b64-c128-variable-native-async/summary.json": {
+      "bytes": 4158,
+      "sha256": "ec5eb5048d3b0ffb26309c7070afe5c48ea66cf31b21dd461def9272005fdb3f"
+    },
+    "rep0-b64-c128-variable-native-async/b64-c128-variable-native-async/warmup0.json": {
+      "bytes": 934989,
+      "sha256": "c2b75e5c80f3eea9daf6fcc9452586a4a43eb261f925ec32a54245f92758c9e6"
+    },
+    "rep0-b64-c128-variable-native-async/plan.json": {
+      "bytes": 4007,
+      "sha256": "f492916b5c4013da4643bb9e459f55dceed34fbad7f84f632a388bf717fbb2b8"
+    },
+    "rep0-b64-c128-variable-native-async.log": {
+      "bytes": 70,
+      "sha256": "0e5a6d5933c09556fce548db0cba4695fafd748f093311bfefa009e767514849"
+    },
+    "rep0-b64-c128-variable-native-graph/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep0-b64-c128-variable-native-graph/b64-c128-variable-native-graph/requests.json": {
+      "bytes": 3721195,
+      "sha256": "1c561437ea031c2e9c3832b3ddfb080347ca9209a91e21b08ecda2753268a02a"
+    },
+    "rep0-b64-c128-variable-native-graph/b64-c128-variable-native-graph/summary.json": {
+      "bytes": 4229,
+      "sha256": "5c3aa1b8901b28d90062035331f3fb93b57be01db6c899fd7d3f530029c8395f"
+    },
+    "rep0-b64-c128-variable-native-graph/b64-c128-variable-native-graph/warmup0.json": {
+      "bytes": 935964,
+      "sha256": "3dc7c3d56bcae204046ce50bc85dcf95f61adaab499ea50cf27397be0bed509f"
+    },
+    "rep0-b64-c128-variable-native-graph/plan.json": {
+      "bytes": 4007,
+      "sha256": "d58f467174133374b687392a1edad660f3d20aaf70d3c077e34e8d2581b71044"
+    },
+    "rep0-b64-c128-variable-native-graph.log": {
+      "bytes": 70,
+      "sha256": "93cc854594d119e7c0e600b97c24a73938e108d4d4029092c8be85f46c178f6e"
+    },
+    "rep1-b32-c64-variable-native-async/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep1-b32-c64-variable-native-async/b32-c64-variable-native-async/requests.json": {
+      "bytes": 3713727,
+      "sha256": "89bcb11390ce2139fca22ea8295e7a026e5b17348d6d9de02db4c08ff46a9053"
+    },
+    "rep1-b32-c64-variable-native-async/b32-c64-variable-native-async/summary.json": {
+      "bytes": 3696,
+      "sha256": "5da384b28806752b91a87d3bbbea643ae03bfe37110e45c9974ab4ee75230953"
+    },
+    "rep1-b32-c64-variable-native-async/b32-c64-variable-native-async/warmup0.json": {
+      "bytes": 933990,
+      "sha256": "23ebe72f147ba4076e9c7867b7a8ed462254d65bc7f4b67d80a56dc3498744ce"
+    },
+    "rep1-b32-c64-variable-native-async/plan.json": {
+      "bytes": 4006,
+      "sha256": "98d9f4f0c90c963402161fe242dab07ca88df1bf2e6d61a2e5ccb6870734517b"
+    },
+    "rep1-b32-c64-variable-native-async.log": {
+      "bytes": 69,
+      "sha256": "644e9a45dd144c5d4557c7c4eac0f5f2a764e3992339d7ae5cce1735ecab2a72"
+    },
+    "rep1-b32-c64-variable-native-graph/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep1-b32-c64-variable-native-graph/b32-c64-variable-native-graph/requests.json": {
+      "bytes": 3715537,
+      "sha256": "9eebc9916814e00e5fd77815703144e52b4ddee890c5c73a11fd477d903f0e5a"
+    },
+    "rep1-b32-c64-variable-native-graph/b32-c64-variable-native-graph/summary.json": {
+      "bytes": 3775,
+      "sha256": "330949e932ad8627b9586e40b460906829eeb37c817f9d5c9e6b44768fba1fac"
+    },
+    "rep1-b32-c64-variable-native-graph/b32-c64-variable-native-graph/warmup0.json": {
+      "bytes": 933824,
+      "sha256": "97fc2ae7ad7dd0ee8013393daad62f5faffa10f83dd23e412e5453e44cb0dbe4"
+    },
+    "rep1-b32-c64-variable-native-graph/plan.json": {
+      "bytes": 4006,
+      "sha256": "0936b5547b25c92a9e613f495c458ae32b56ab800ac5a58e09d4578a0911ff27"
+    },
+    "rep1-b32-c64-variable-native-graph.log": {
+      "bytes": 69,
+      "sha256": "0bf118191ac55d1c48fab886fb208814fb3877af0df8dbf3d72368733d52a2c2"
+    },
+    "rep1-b64-c128-variable-native-async/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep1-b64-c128-variable-native-async/b64-c128-variable-native-async/requests.json": {
+      "bytes": 3722296,
+      "sha256": "45f6c8e3951c45d6dd3b9449324beb106ae037d3a9f87e8818fb69d849052dc2"
+    },
+    "rep1-b64-c128-variable-native-async/b64-c128-variable-native-async/summary.json": {
+      "bytes": 4157,
+      "sha256": "70bf8d0f753a4510fa49f5c5c73dbfd9c2d1065a6c50dca25d68dbcc4a184137"
+    },
+    "rep1-b64-c128-variable-native-async/b64-c128-variable-native-async/warmup0.json": {
+      "bytes": 935136,
+      "sha256": "5e70aca1f411aa80cfc01469820934a3ba1ff0c187b205f88e324cf3abce6bfd"
+    },
+    "rep1-b64-c128-variable-native-async/plan.json": {
+      "bytes": 4007,
+      "sha256": "0bd0e1b2e383e4d383e9e4d7483844cdb3950e458ec6462a8405ae4e23b14b17"
+    },
+    "rep1-b64-c128-variable-native-async.log": {
+      "bytes": 70,
+      "sha256": "0e5a6d5933c09556fce548db0cba4695fafd748f093311bfefa009e767514849"
+    },
+    "rep1-b64-c128-variable-native-graph/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep1-b64-c128-variable-native-graph/b64-c128-variable-native-graph/requests.json": {
+      "bytes": 3721127,
+      "sha256": "f62d82bddb5814976cd360b069846728d8ac18380b8d4328596a37de3d9aa656"
+    },
+    "rep1-b64-c128-variable-native-graph/b64-c128-variable-native-graph/summary.json": {
+      "bytes": 4234,
+      "sha256": "141d5dd3e356b5dd214e83d312b2774f06d2168e5f8f0b3cbb1b71131184b443"
+    },
+    "rep1-b64-c128-variable-native-graph/b64-c128-variable-native-graph/warmup0.json": {
+      "bytes": 936007,
+      "sha256": "e3eeee1f92cb3f95ff306196d2c72360987c6025de68e68af684740330853ebb"
+    },
+    "rep1-b64-c128-variable-native-graph/plan.json": {
+      "bytes": 4007,
+      "sha256": "19d22335a16ea32988f58aa79ce73bb4ef95d1d0035011fd3a3c2160827a3a97"
+    },
+    "rep1-b64-c128-variable-native-graph.log": {
+      "bytes": 70,
+      "sha256": "93cc854594d119e7c0e600b97c24a73938e108d4d4029092c8be85f46c178f6e"
+    },
+    "rep2-b32-c64-variable-native-async/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep2-b32-c64-variable-native-async/b32-c64-variable-native-async/requests.json": {
+      "bytes": 3714623,
+      "sha256": "61204c0878f4302a080c00adabd26691b18a08aab742ac9787f956ebdf151337"
+    },
+    "rep2-b32-c64-variable-native-async/b32-c64-variable-native-async/summary.json": {
+      "bytes": 3694,
+      "sha256": "8edc032164eff448ec967a7f1c34bb454b3b1f06744aadd4049c686fc3b1c121"
+    },
+    "rep2-b32-c64-variable-native-async/b32-c64-variable-native-async/warmup0.json": {
+      "bytes": 934043,
+      "sha256": "81024944373f43c50f2dc76ec934bf9ea165039c0f7eda6975e43ec657a485c5"
+    },
+    "rep2-b32-c64-variable-native-async/plan.json": {
+      "bytes": 4006,
+      "sha256": "509f54f26e89ba84a4d965c8847b8d5bb1856f7173e618df9a2646114df94867"
+    },
+    "rep2-b32-c64-variable-native-async.log": {
+      "bytes": 69,
+      "sha256": "644e9a45dd144c5d4557c7c4eac0f5f2a764e3992339d7ae5cce1735ecab2a72"
+    },
+    "rep2-b32-c64-variable-native-graph/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep2-b32-c64-variable-native-graph/b32-c64-variable-native-graph/requests.json": {
+      "bytes": 3715505,
+      "sha256": "b7c79ca8d0a51e4508b51c99d05a97edec7c24ed62c40fdb8d52d1544f82a947"
+    },
+    "rep2-b32-c64-variable-native-graph/b32-c64-variable-native-graph/summary.json": {
+      "bytes": 3776,
+      "sha256": "d6cbfa1e0e2cbf4a14659bd69674af7fb18f5310ba983f6720da693c99882446"
+    },
+    "rep2-b32-c64-variable-native-graph/b32-c64-variable-native-graph/warmup0.json": {
+      "bytes": 934217,
+      "sha256": "2125c2600a5b4603a93a5dc14dea87fec0199028bad6e8aa5dbaf0c86c4d808f"
+    },
+    "rep2-b32-c64-variable-native-graph/plan.json": {
+      "bytes": 4006,
+      "sha256": "9a510e254b127e12f79380c0b73e091d40b54f68914d447d594b2f497a9deb41"
+    },
+    "rep2-b32-c64-variable-native-graph.log": {
+      "bytes": 69,
+      "sha256": "0bf118191ac55d1c48fab886fb208814fb3877af0df8dbf3d72368733d52a2c2"
+    },
+    "rep2-b64-c128-variable-native-async/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep2-b64-c128-variable-native-async/b64-c128-variable-native-async/requests.json": {
+      "bytes": 3721901,
+      "sha256": "be1874ed985ebe0992e24a83143d7f70a713e8e543891c72ffe26f4645170812"
+    },
+    "rep2-b64-c128-variable-native-async/b64-c128-variable-native-async/summary.json": {
+      "bytes": 4159,
+      "sha256": "54f220156336ad8ccd6d656c1c2185da3bf4a84e8bb4af8161bbdeb6d9c99065"
+    },
+    "rep2-b64-c128-variable-native-async/b64-c128-variable-native-async/warmup0.json": {
+      "bytes": 935096,
+      "sha256": "f7906a11f6506a9769bdd3d68c1156eb63fbf971b0bd8cdb8a48d33bcda7274a"
+    },
+    "rep2-b64-c128-variable-native-async/plan.json": {
+      "bytes": 4007,
+      "sha256": "cb1fc96bdbfd2c4eb21c6d1b649817fbe8e6d8caf795e64c0999aa1fb71309e7"
+    },
+    "rep2-b64-c128-variable-native-async.log": {
+      "bytes": 70,
+      "sha256": "0e5a6d5933c09556fce548db0cba4695fafd748f093311bfefa009e767514849"
+    },
+    "rep2-b64-c128-variable-native-graph/DONE.json": {
+      "bytes": 22,
+      "sha256": "1e3f6691f455051e8adb15d961e4bf3c7a17e83dd88b2afdd13315cc288250bb"
+    },
+    "rep2-b64-c128-variable-native-graph/b64-c128-variable-native-graph/requests.json": {
+      "bytes": 3721518,
+      "sha256": "1fdc20d6ad156b30f6b58f60148859bbf2022a3a8bb9b8e0145941e1f4c2d49b"
+    },
+    "rep2-b64-c128-variable-native-graph/b64-c128-variable-native-graph/summary.json": {
+      "bytes": 4245,
+      "sha256": "e9ded3130bf797609c109e6caba6dbca1c88e7bfcd2c7ad09ca6b27f6ceb83c7"
+    },
+    "rep2-b64-c128-variable-native-graph/b64-c128-variable-native-graph/warmup0.json": {
+      "bytes": 934083,
+      "sha256": "83783011892e63b1b13460664b07f6096fc9dfd46e2dbd8691ecc329aeac73ef"
+    },
+    "rep2-b64-c128-variable-native-graph/plan.json": {
+      "bytes": 4007,
+      "sha256": "e3a94f13b4362ddf75106f1a142f89f07886d160347a0da7b33812374591c7bc"
+    },
+    "rep2-b64-c128-variable-native-graph.log": {
+      "bytes": 70,
+      "sha256": "93cc854594d119e7c0e600b97c24a73938e108d4d4029092c8be85f46c178f6e"
+    }
+  }
+}
