@@ -84,3 +84,10 @@ The latest directly verified shared-resource priority places ready FlashNS/LoopC
 All Quant retry/follow-up packets wait for later separate grants. Original locked quality,
 all-model high-concurrency/multi-batch paired E2E, RTN/GPTQ, QAT and NVFP4 remain incomplete;
 old5090 INT4 child31380 remains UNKNOWN and is never duplicated or killed.
+
+To reconstruct the reviewed packet mirrors, place the shared `fixed-loop-g0-v2/probe.py`
+inside each v2 child directory and regenerate `source.tar.gz` with
+`git archive --format=tar.gz 0a73ba23f4441cdac50b181e4841fba296b61218`.
+For LF G0v3, regenerate the archive from the family-stack commit
+`8045c32f49a86cfc3fc103195f52057444ec2c59`. Verify every manifest digest before admission.
+Runtime archives are omitted from the review copies; frozen execution packets retain them.
