@@ -47,12 +47,28 @@ and checkpoint conversion at that same revision.
 | BF16 cast preserves FP32 RoPE constants | Pass |
 | Unwritten full-prefix reads and unsupported shallow requests | Rejected before execution |
 | Affected CPU regressions | 214 passed, 27 GPU tests deselected, 36 subtests passed |
-| Official checkpoint inference and CUDA qualification | Pending |
+| Tiny CUDA FP32 states, logits and all KV against independent CPU oracle | Pass at the same tolerances |
+| Tiny BF16 CUDA sync/async/Graph, four storage modes, B1–128/C2B | All 72 arms pass, including two request-ID lifetimes |
+| Official checkpoint inference | Pending |
 
 The dense oracle uses functional weights and a complete prefix/causal attention
 matrix independent of the scheduler, model forward and paged cache. FP32 state,
 logit and KV comparisons use absolute tolerance `3e-6`, relative tolerance `3e-5`.
 The real CPU engine also matches dense greedy decoding for variable prompts.
+
+The CUDA gate ran frozen source `224521d0d9cd2bf7fb3c5f37d3ab5f32bde35134`
+on RTX5090 #1 with torch 2.12.1+cu130. It completed 11,760 tiny-model requests
+and 70,560 output tokens. Each storage variant exactly matches native within
+the same execution mode, and every completed request object matches across two
+ID lifetimes. Every request completes both H cycles and returns its entire
+cache reservation. Graph execution records 96 captures, 1,040 replays and zero
+fallbacks across all arms. The controller and child processes exited naturally
+with code 0; all eight evidence files were verified after copying off the node.
+The archive SHA256 is
+`bab1e0d4c4c921fbea30d407c58929733ed9620c2b62fe4caf6a1ef429b6dd55`.
+[Raw CUDA cases and completion receipt](evidence/hrm-tiny-cuda.json).
+This is tiny-model correctness evidence on a shared node; it does not establish
+official-model quality or speed.
 
 | Official model E2E comparison | Native tokens/s | Candidate tokens/s | Speedup |
 |---|---:|---:|---:|
@@ -60,6 +76,6 @@ The real CPU engine also matches dense greedy decoding for variable prompts.
 
 Only torch/Triton LAST_EXITED execution is admitted. Prefix reuse, preemption,
 speculation, FlashAttention and prefill UVA are not qualified. The implementation
-supports synchronous and resident execution, but CUDA/Graph validation is still
-required. Full production text serving, task quality and high-concurrency official
+supports synchronous and resident execution with tiny CUDA/Graph qualification.
+Full production text serving, task quality and high-concurrency official
 checkpoint results remain separate work.
