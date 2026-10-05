@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "scope": "Tiny CPU tar transport \u2192 standalone meta checkpoint loader \u2192 complete R8 dense adapter; no peer weight/CUDA run",
+  "files": [
+    {
+      "name": "config.json",
+      "bytes": 265,
+      "sha256": "23d38b076eeb7feaac2ec158fa8896e44af3a8bec816f577302c0519bc34aa2a",
+      "independently_verified": true
+    },
+    {
+      "name": "model.safetensors",
+      "bytes": 294864,
+      "sha256": "aad312f207152ff80ad2679da4040768956b23d486f3100fc05779f26488245c",
+      "independently_verified": true
+    }
+  ],
+  "states_bitwise": 8,
+  "logits_bitwise": true,
+  "all_model_storage_materialized": true,
+  "start_unix": 1791227405.6853812,
+  "end_unix": 1791227443.354048
+}

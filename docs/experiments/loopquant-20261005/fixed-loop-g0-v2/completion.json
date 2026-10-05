@@ -1,0 +1,13 @@
+{
+  "controller_pid": 70483,
+  "independently_absent": true,
+  "tool_handle": "73056 unavailable after desktop transition",
+  "probe_returncodes": [
+    0,
+    0,
+    1,
+    0
+  ],
+  "controller_tool_returncode": null,
+  "scope": "Completed direct probe function calls and final summary inspected; no inferred tool exit"
+}

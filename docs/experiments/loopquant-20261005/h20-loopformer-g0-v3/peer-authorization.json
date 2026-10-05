@@ -1,0 +1,61 @@
+{
+  "status": "authorized_future_read_only_transfer",
+  "checked_unix": 1791227004.915856,
+  "holder_thread": "01a10839-8042-7072-b744-1e54b8421800",
+  "model_path": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu",
+  "manifest_path": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu/verified-manifest.json",
+  "manifest_sha256": "6fa133807d60d2191add3e37330e6e2d8f68036e33bcdbf7b7ece85d770f9a84",
+  "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "verified_files": [
+    {
+      "path": "config.json",
+      "bytes": 296,
+      "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
+    },
+    {
+      "path": "generation_config.json",
+      "bytes": 69,
+      "sha256": "52e8c2bef1d50a9aa99ce1da2a586ec40f524c1eded9c9ece289f3146b909ded"
+    },
+    {
+      "path": "merges.txt",
+      "bytes": 456318,
+      "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+    },
+    {
+      "path": "model.safetensors",
+      "bytes": 556342528,
+      "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185"
+    },
+    {
+      "path": "special_tokens_map.json",
+      "bytes": 131,
+      "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 3557680,
+      "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "bytes": 507,
+      "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
+    },
+    {
+      "path": "vocab.json",
+      "bytes": 798156,
+      "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
+    }
+  ],
+  "scope": "one bounded streaming transfer into task-owned H20 directory in a separate granted window; no local duplicate or mutation",
+  "owner_future_test_hold": true,
+  "reader_active": false,
+  "reader_requirements": [
+    "independently verify bytes and SHA before transfer",
+    "register actual reader/SSH PID and start identity",
+    "keep all source assets read only",
+    "verify exact remote file hashes before use",
+    "report natural completion and release transfer reader; retain model for owner future work"
+  ]
+}

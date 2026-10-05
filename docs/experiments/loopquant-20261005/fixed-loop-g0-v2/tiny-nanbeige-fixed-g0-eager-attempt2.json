@@ -1,0 +1,348 @@
+{
+  "status": "pass",
+  "records": [
+    {
+      "request_id": "tiny-5",
+      "tokens": 5,
+      "incremental": false,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0087890625
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-5",
+      "tokens": 5,
+      "incremental": true,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0048828125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0087890625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-7",
+      "tokens": 7,
+      "incremental": false,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0087890625
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-7",
+      "tokens": 7,
+      "incremental": true,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0048828125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0087890625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0068359375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    }
+  ],
+  "full_checkpoint": false,
+  "atol": 0.02,
+  "rtol": 0.02,
+  "loops": 2,
+  "family": "nanbeige",
+  "repository": "Nanbeige/Nanbeige4.2-3B",
+  "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "model_plan_sha256": null,
+  "backend": "torch",
+  "reference_sdpa": "eager",
+  "torch_version": "2.13.0",
+  "start_unix": 1791226174.437663,
+  "end_unix": 1791226174.530175,
+  "runner_sha256": "bafcdfa1a9d05c45664eacfc46f9d5b7417a7083294c8415d298fc1b0d397440",
+  "scope": "Native BF16 vs dense adapter: official CPU qualification applies to eager; auto/math SDPA are separate internal controls, all registered loop states and readouts, full/incremental cache. Not original-author CUDA attention qualification. No PTQ/QAT search, quality or timing; separate from UNKNOWN old5090 INT4 job."
+}

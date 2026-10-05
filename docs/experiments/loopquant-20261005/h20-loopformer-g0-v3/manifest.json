@@ -1,0 +1,49 @@
+{
+  "target_device": "NVIDIA H20",
+  "compute_capability": [
+    9,
+    0
+  ],
+  "target_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "source_commit": "8045c32f49a86cfc3fc103195f52057444ec2c59",
+  "model": "armenjeddi/LoopFormer-3block-8iterations",
+  "model_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "model_bytes": 556342824,
+  "requests": 32,
+  "input_tokens": 1724,
+  "cases": 64,
+  "loops": 8,
+  "atol": 0.03,
+  "rtol": 0.02,
+  "resource_status": "local_only_not_registered",
+  "scope": "Same64 full checkpoint BF16 R8 cache/state/logit checks as failedv2, same source/requests/budgets. One authorized read-only stream of8 exact peer files, no mirror/environment change. NEW independent grant and fresh originalGPU0\u2192IO admission required; LOCALONLY_UNSUBMITTED.",
+  "files": {
+    "launch.py": "7eda45f97ea77594f2770c4a9be1c710f5100a7b18edf46efb53c7f968208046",
+    "materialize_verified_tar.py": "527044dfa5405dad3dd54da9039d3f18272f361896208296d609688f115d49a7",
+    "model-plan.json": "1536553246e9214cb6679abcfc41d5b61f41fe03725b0c28ae227ca802a1ff94",
+    "peer-authorization.json": "4ae519a6d57ef9caf512864f1678000db91e645fc91aa597e1ad8cb15c4a8a5e",
+    "probe.py": "affca83eac9cb2e1daf2b5cee844adc1ea5578512c316480c9384756a37a0dac",
+    "requests.json": "b06bfc5c7b1537d2071a381eb4528e963a6f46a603e8ac0a897cba59ad05b693",
+    "run.py": "cfb737080899e84cb97711eb88b9b30a3cabc4fd28b5b523a82de64cb63f4917",
+    "source.tar.gz": "3750677038a9f79bfee28637156b3c34996ee308cd7450369af9777601ef5fc6"
+  },
+  "download_endpoint": "https://hf-mirror.com",
+  "supersedes_unsubmitted_manifest": "73d2dd63af16bf370d6dd6e6916fc451cba350687c32592ba53dd2b4ffd9c64c",
+  "endpoint_reason": "Same-node owner observed huggingface.co connection refused;public mirror used with unchanged immutable revision/full hashes,no credentials",
+  "model_download": false,
+  "model_transfer_bytes": 561155685,
+  "model_transfer_files": 8,
+  "peer_model_directory": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu",
+  "peer_manifest_sha256": "6fa133807d60d2191add3e37330e6e2d8f68036e33bcdbf7b7ece85d770f9a84"
+}

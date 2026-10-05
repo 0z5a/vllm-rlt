@@ -48,3 +48,6 @@ resubmitted as a substitute for the unknown process. An SSH failure is not a mod
 test failure or a completed GPU experiment.
 
 Latest H20 boundary repair verification: Parcae FP8 16/16 and Huginn INT4 2/2 pass. Huginn FP8 DYN 4/4 pass but first SH1 sequence comparison fails; Parcae INT4 native eager passes but compact/static synchronous construction fails. See [mixed result and raw evidence](ASSOCIATIVE_IO.md#h20-boundary-repair-verification). Full-checkpoint E2E and memory savings remain unmeasured for these families.
+
+
+The latest full LoopFormer CUDA G0 attempt stops at mirror configuration HTTP403 before all64 checks (NOT_RUN); all12 raw files are verified offbox and the window is handed back. A new read-only peer-stream G0v3 is ready. Ouro-2.6B/Nanbeige v2 each freeze384 planned cache cases including eager and SDPA controls; earlier unsubmitted v1 packets are superseded. Tiny Ouro eager argmax discrepancy is retained. [Exact attempts, inputs, packet hashes and diagnostics](NATIVE_G0_QUEUE.md).

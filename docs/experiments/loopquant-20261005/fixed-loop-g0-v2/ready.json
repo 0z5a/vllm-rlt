@@ -1,0 +1,36 @@
+{
+  "status": "LOCALREADY_NOT_ADMITTED",
+  "supersedes_unsubmitted_v1": true,
+  "packets": [
+    {
+      "packet": "h20-ouro-2.6b-native-g0-v2",
+      "manifest_sha256": "d69e8bc013094716ab3cf77440428738d045252c862db234769f79aee89e1358",
+      "total_bytes": 4061205,
+      "files": 8,
+      "source_commit": "0a73ba23f4441cdac50b181e4841fba296b61218",
+      "model_bytes": 5340852869,
+      "input_tokens": 1724,
+      "loops": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cache_cases": 384
+    },
+    {
+      "packet": "h20-nanbeige-4.2-3b-native-g0-v2",
+      "manifest_sha256": "f7e1e53fc6590990c9a00e569bedc0e7e2b07485f6acacf6b7c1e50c9caf838a",
+      "total_bytes": 4073019,
+      "files": 8,
+      "source_commit": "0a73ba23f4441cdac50b181e4841fba296b61218",
+      "model_bytes": 8361039496,
+      "input_tokens": 1756,
+      "loops": [
+        1,
+        2
+      ],
+      "cache_cases": 384
+    }
+  ]
+}

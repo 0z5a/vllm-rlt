@@ -562,3 +562,6 @@ remain unchanged and unresolved.
 
 
 HRM official BF16 CPU qualification completes112/112 cases: all224 H/L state tensors and112 logits bitwise exact using unchanged author recurrence with an explicit CPU SDPA dependency shim. This does not qualify original CUDA attention, cached GPU or quantized serving. [Verified summary](hrm-official-cpu-v1/summary.json); full raw results and reproducible runner are in [family draft23](https://github.com/0z5a/vllm-rlt/pull/23).
+
+
+The latest full LoopFormer CUDA G0 attempt stops at mirror configuration HTTP403 before all64 checks (NOT_RUN); all12 raw files are verified offbox and the window is handed back. A new read-only peer-stream G0v3 is ready. Ouro-2.6B/Nanbeige v2 each freeze384 planned cache cases including eager and SDPA controls; earlier unsubmitted v1 packets are superseded. Tiny Ouro eager argmax discrepancy is retained. [Exact attempts, inputs, packet hashes and diagnostics](NATIVE_G0_QUEUE.md).

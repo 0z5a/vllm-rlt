@@ -1,0 +1,71 @@
+{
+  "target_device": "NVIDIA H20",
+  "compute_capability": [
+    9,
+    0
+  ],
+  "target_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "source_commit": "0a73ba23f4441cdac50b181e4841fba296b61218",
+  "model": "Nanbeige/Nanbeige4.2-3B",
+  "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "model_download": true,
+  "model_download_bytes": 8361039496,
+  "model_directory": "/root/autodl-tmp/0z5a/loopquant-h20-20261006/models/nanbeige-4.2-3b",
+  "requests": 32,
+  "input_tokens": 1756,
+  "loops": [
+    1,
+    2
+  ],
+  "arms": [
+    {
+      "backend": "torch",
+      "reference_sdpa": "eager"
+    },
+    {
+      "backend": "torch",
+      "reference_sdpa": "auto"
+    },
+    {
+      "backend": "torch",
+      "reference_sdpa": "math"
+    },
+    {
+      "backend": "triton",
+      "reference_sdpa": "eager"
+    },
+    {
+      "backend": "triton",
+      "reference_sdpa": "auto"
+    },
+    {
+      "backend": "triton",
+      "reference_sdpa": "math"
+    }
+  ],
+  "cache_cases": 384,
+  "atol": 0.02,
+  "rtol": 0.02,
+  "scope": "Full BF16 checkpoint/cache diagnostic against dense eager and SDPA references. Official CPU qualification applies to eager; auto/math SDPA are separate internal controls. All six probe arms run after a verified download, including failures. Math is a separate control; no tolerance/production change, original-author CUDA attention, quantized quality or E2E timing claim. LOCALONLY; new independent window required. No relation to UNKNOWN old5090 INT4 process.",
+  "files": {
+    "download.py": "649cdfff0f67fc775d451d21d5881702237d7ebb2451e18f7163b6d772b14246",
+    "model-metadata.json": "959be46004f08b2242e45da6172c82081a2c29771edae6cacf79ddb37debc808",
+    "model-plan.json": "1317325b0396ad8f09356a8e5d69472370db8d09809e9b01a3291a9aeeaeb6fd",
+    "probe.py": "bafcdfa1a9d05c45664eacfc46f9d5b7417a7083294c8415d298fc1b0d397440",
+    "requests.json": "2a2e974e66f3c99724ad99e98802c03557acb3b8be84b8535b39da9e496107f4",
+    "run.py": "cdea2bd3b54983780ddb080aa00d8c21e2762009e3534b109a00ecc35e691864",
+    "source.tar.gz": "01c9e3f72e02c576124955c14e83d0ebf1787188d17d2c5f1b3211cb4c64c37a",
+    "tiny-math-control.json": "40c207cf30e7be3d567acce8b1ee3d1da2957ddb85e08a501902881c96fbd4a5"
+  }
+}

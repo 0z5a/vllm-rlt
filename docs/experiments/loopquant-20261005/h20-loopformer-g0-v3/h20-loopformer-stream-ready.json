@@ -1,0 +1,14 @@
+{
+  "status": "LOCALREADY_NOT_ADMITTED",
+  "packet": "h20-loopformer-native-g0-v3",
+  "manifest_sha256": "067c7e866c640d882c55366f95b5b6a74e7d41939ea6ea02e62f245c831e1f7d",
+  "total_bytes": 4260602,
+  "files": 8,
+  "source_commit": "8045c32f49a86cfc3fc103195f52057444ec2c59",
+  "model_transfer_bytes": 561155685,
+  "model_transfer_files": 8,
+  "cache_cases": 64,
+  "local_client_source_sha256": "a7dcd8ecf8b8e74b80285c839f5ffe593addbee2bc34d9ba2a07ce482634f66a",
+  "stream_loader_preflight_sha256": "409437f43d76507030718dac52391772eaf5d9d08f12e808be0f910b0c2b2770",
+  "reader_active": false
+}

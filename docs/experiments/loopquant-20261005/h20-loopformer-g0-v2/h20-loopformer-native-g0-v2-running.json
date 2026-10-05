@@ -1,0 +1,37 @@
+{
+  "controller_pid": 71525,
+  "controller_start_ticks": 2500013826,
+  "start_unix": 1791226717.5198734,
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "children": [
+    {
+      "phase": "download",
+      "child_pid": 71532,
+      "child_start_ticks": 2500013841,
+      "start_unix": 1791226717.5205088,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-loopformer-native-g0-v2/download.py",
+        "--metadata",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-loopformer-native-g0-v2/model-metadata.json",
+        "--endpoint",
+        "https://hf-mirror.com",
+        "--destination",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/models/loopformer-3block-8iterations"
+      ]
+    }
+  ],
+  "manifest_sha256": "6a9d29f69bb2666f908da8c1483eec8c887168473061de648bfd1e7f4fb305c7",
+  "model_hold": "retained for remaining registered quantization and E2E work"
+}

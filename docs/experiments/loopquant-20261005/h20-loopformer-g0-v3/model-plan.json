@@ -1,0 +1,46 @@
+{
+  "model": "armenjeddi/LoopFormer-3block-8iterations",
+  "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "files": [
+    {
+      "name": "config.json",
+      "size": 296,
+      "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
+    },
+    {
+      "name": "generation_config.json",
+      "size": 69,
+      "sha256": "52e8c2bef1d50a9aa99ce1da2a586ec40f524c1eded9c9ece289f3146b909ded"
+    },
+    {
+      "name": "merges.txt",
+      "size": 456318,
+      "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+    },
+    {
+      "name": "model.safetensors",
+      "size": 556342528,
+      "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185"
+    },
+    {
+      "name": "special_tokens_map.json",
+      "size": 131,
+      "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
+    },
+    {
+      "name": "tokenizer.json",
+      "size": 3557680,
+      "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
+    },
+    {
+      "name": "tokenizer_config.json",
+      "size": 507,
+      "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
+    },
+    {
+      "name": "vocab.json",
+      "size": 798156,
+      "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
+    }
+  ]
+}
