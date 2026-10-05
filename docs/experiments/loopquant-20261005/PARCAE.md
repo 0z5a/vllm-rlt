@@ -40,6 +40,27 @@ and36 passing subtests. [Source manifest](parcae-v1/cpu-source-manifest.json).
 Existing native full-checkpoint discrepancies in the dependency remain separate
 unresolved G0 evidence. No native cached, quantized or performance gate passed.
 
+## INT4 artifact and native preflight
+
+The INT4 exporter now covers Parcae's six physical core projections per block.
+Injection B/Alog/dtbias, C, token value embeddings and gates, boundary layers and
+norms stay BF16. RoPE stays FP32. The artifact stores the embedding once and
+restores its tied readout alias. RTN and supplied GPTQ codes share this format;
+the supplied-code test does not qualify a GPTQ calibration procedure.
+
+The frozen source `1e1f0858151a00b2fc003fc9b32a165ee15270b8` passes
+[677 CPU tests](parcae-int4-v1/full-cpu-parcae-int4-attempt1.log), with 29 skipped,
+221 GPU tests deselected, 2 retained strict expected failures and 36 passing
+subtests. The [focused run](parcae-int4-v1/parcae-int4-cpu-attempt1.log) passes
+18 tests. Successful temporary CPU weight payloads are removed.
+
+Four [GPU cases](parcae-int4-v1/gpu-packet-manifest.json) are prepared for Graph
+off/on × native/compact KV. They check encoded reload, tied readout, FP32 RoPE,
+tokens above 255, repeated requests, fixed full recurrence and KV drain.
+They are **not run**: the packet is local and awaits a resource grant. Parcae
+uses synchronous scheduling; no mixed-depth or asynchronous support is claimed.
+[Probe](parcae-int4-v1/probe.py), [finite controller](parcae-int4-v1/run.py).
+
 ## Full checkpoint and performance
 
 The official checkpoint was independently rehashed and is reused read-only from
@@ -55,7 +76,7 @@ weights remain untouched. [Raw results](parcae-v1/official-parcae-adapter-cpu-at
 |---|---:|---:|---:|---:|---:|
 | Parcae370M | Not measured | Not measured | Not measured | — | — |
 
-Full quantization calibration, INT4/FP8/NVFP4 native export, locked quality,
+Full quantization calibration, INT4 GPU qualification, FP8/NVFP4 native export, locked quality,
 multiple batch sizes, high concurrency, mixed/open arrivals and formal paired
 performance remain unrun. Retained numerical failures do not justify running a
 full QAT search before native G0 is resolved.
