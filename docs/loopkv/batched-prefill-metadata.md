@@ -26,7 +26,7 @@ Six seeded tiny checkpoints ran through the existing `experiments.loopkv.screen`
 | Parcae | 32 | 848 | 3,392 | Exact |
 | Total | 192 | 5,088 | 20,352 | Exact |
 
-Separate official BF16 LoopFormer/Parcae CPU runs at P8/D16/R8, B=1/4/16/32 and C=2B are still running. Their planned 64 arms are excluded from completed counts. That controller's source checkout remains frozen. Shared-machine CPU timings are diagnostic and are not used for speed claims.
+Official BF16 LoopFormer/Parcae CPU runs at P8/D16/R8, B=1/4/16/32 and C=2B completed all **64 arms, 1,696 requests and 27,136 output tokens**. Both children returned zero. Independent audits found every complete request object and every work histogram exact against the first native arm and the previous official CPU golden runs. All cache blocks and compact records drained. [Raw official comparison](evidence/batched-prefill-official-cpu.json) includes plan/checkpoint hashes and child receipts. This is CPU correctness evidence, not CUDA, unchanged-author, quality or E2E speed qualification.
 
 ## Metadata and speed comparison
 

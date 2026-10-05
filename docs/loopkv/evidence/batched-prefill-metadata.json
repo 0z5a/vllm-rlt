@@ -10089,6 +10089,7 @@
     "returncode": 1,
     "reason": "Initial counter included CPU reference-read staging; alias R1 saw66 stages instead of2. Numerical hash comparison passed. Corrected phase counter separates preparation from reference reads; v3 exactly reproduces v2."
   },
-  "official_weight_ablation_status": "running; not included in completed counts",
-  "h20_status": "local prepared and registered; not uploaded or executed"
+  "official_weight_ablation_status": "complete: 64 arms, 1696 requests, 27136 output tokens; all objects and work exact against prior golden runs",
+  "h20_status": "local prepared and registered; not uploaded or executed",
+  "official_weight_ablation_report": "batched-prefill-official-cpu.json"
 }
