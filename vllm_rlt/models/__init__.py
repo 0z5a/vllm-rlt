@@ -10,10 +10,12 @@ import torch
 
 from .hrm_text import HrmTextConfig, HrmTextForCausalLM
 from .huginn import HuginnConfig, HuginnForCausalLM
+from .loopformer import LoopFormerConfig, LoopFormerForCausalLM
 from .nanbeige import NanbeigeConfig, NanbeigeForCausalLM
 from .ouro import OuroConfig, OuroForCausalLM
 
 MODEL_MAPPING = {
+    "loopformer": LoopFormerForCausalLM,
     "hrm_text": HrmTextForCausalLM,
     "ouro": OuroForCausalLM,
     "nanbeige": NanbeigeForCausalLM,
@@ -158,6 +160,8 @@ class AutoModelForCausalLM:
 
 
 __all__ = [
+    "LoopFormerConfig",
+    "LoopFormerForCausalLM",
     "HrmTextConfig",
     "HrmTextForCausalLM",
     "OuroConfig",

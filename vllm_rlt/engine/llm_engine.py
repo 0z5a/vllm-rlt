@@ -10,6 +10,7 @@ from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS
 from vllm_rlt.models.hrm_text import HrmTextForCausalLM
 from vllm_rlt.models.huginn import HuginnForCausalLM
+from vllm_rlt.models.loopformer import LoopFormerForCausalLM
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
@@ -49,7 +50,7 @@ class LLMEngine:
                 raise ValueError("Huginn requires synchronous scheduling without prefill UVA")
             if speculative_config is not None:
                 raise ValueError("Huginn speculative decoding is not yet supported")
-        if isinstance(model, HrmTextForCausalLM):
+        if isinstance(model, (HrmTextForCausalLM, LoopFormerForCausalLM)):
             if (
                 cache_config.layout != "last_exited"
                 or cache_config.enable_prefix_caching
@@ -60,7 +61,7 @@ class LLMEngine:
                 or self.exit_config.mode not in ("ouro", "ouro_delayed")
             ):
                 raise ValueError(
-                    "HRM requires full-depth LAST_EXITED, torch/Triton and atomic prefill "
+                    "HRM/LoopFormer require full-depth LAST_EXITED and torch/Triton "
                     "without prefix reuse, preemption or speculation"
                 )
         self.speculative_config = speculative_config
@@ -200,6 +201,10 @@ class LLMEngine:
         if any(type(t) is not int or not 0 <= t < config.vocab_size for t in prompt_token_ids):
             raise ValueError("prompt token IDs must be integers within the model vocabulary")
         max_loops = params.max_loops or config.total_ut_steps
+        if isinstance(self.model, LoopFormerForCausalLM) and (
+            max_loops != 8 or params.exit_threshold != 1.0
+        ):
+            raise ValueError("LoopFormer requires eight steps and exit_threshold=1")
         if isinstance(self.model, HrmTextForCausalLM):
             if len(prompt_token_ids) > self.scheduler.config.max_num_batched_tokens:
                 raise ValueError("HRM atomic prompt exceeds max_num_batched_tokens")
