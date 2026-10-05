@@ -75,3 +75,18 @@ using tiny generated weights, not official checkpoint qualification.
 ## Ouro 2.6B official checkpoint
 
 [All24 synchronous original-policy cache diagnostics](ouro-2.6b.md) completed with exact output tokens at B1–128/C2B. Alias/compact request objects match native; credits at B128 raise residency64→75 and change252/256 exit sequences. This is correctness/capacity evidence, not timing or quality.
+
+## HRM-Text asset qualification
+
+The official `sapientinc/HRM-Text-1B` checkpoint at
+`22097cbcecdd1301afe30a19a3ee61b96a9863e5` is downloaded and verified:
+four model/tokenizer assets, a 2,365,606,568-byte weight file and131 tensors
+containing1,182,795,264 elements. The weight SHA256 matches the official LFS
+digest. [Immutable asset receipt](evidence/hrm-verified-assets-v1.json).
+
+H2/L3 recurrence applies L,L,L,H,L,L,L,H, with16 layers per module and separate
+KV versions for all eight applications. Default inference is a fixed-depth
+negative control: it has no skipped-version promotion to remove. The prompt is
+bidirectional; replacing it with causal chunked prefill would change the model.
+Native adaptation, independent prefix/decode logits checks and official high-B/C
+engine runs remain pending. Asset verification is not model execution evidence.
