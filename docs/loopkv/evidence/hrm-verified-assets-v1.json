@@ -1,0 +1,11 @@
+{
+  "repo": "sapientinc/HRM-Text-1B",
+  "revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+  "download_actual_exit": 0,
+  "manifest_sha256": "2bc231aa176e7dc725e28604ae2d3f1fd3f0cd5505878b076330345b3733fceb",
+  "weight_sha256": "f8fe2b2bf6948414e8e8d6538659198726d98f967c55b533b7aabe8a1fa9a584",
+  "header_sha256": "5e131c40fd95538d4731224d39898ff0d52d1f5e271d9808a41e90b4d26eb5ac",
+  "tensor_count": 131,
+  "parameter_elements": 1182795264,
+  "scope": "asset_verification_not_model_execution"
+}
