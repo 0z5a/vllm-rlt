@@ -33,3 +33,7 @@ readers. Completed duplicate Ouro CPU weights have already been removed after
 verifying the retained node copies. New full-weight downloads wait for space and
 their upcoming execution slot; small immutable configs and inventories are
 prepared independently.
+
+All five additional family tokenizer splits are now frozen and integrity checked;
+see [family data protocols and counts](FAMILY_DATA.md). This prepares evaluation
+inputs and does not qualify model quality or performance.

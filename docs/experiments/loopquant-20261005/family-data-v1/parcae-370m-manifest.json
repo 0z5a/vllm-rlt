@@ -1,0 +1,40 @@
+{
+  "model": "parcae-370m",
+  "model_revision": "439284464ee4999bd1f762da7d044613a4828efe",
+  "dataset_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+  "tokenizer_revision": "6247b5d0592876b73660f34c2dd16c9db9e9045c",
+  "tokenizer_sha256": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77",
+  "document_add_special_tokens": false,
+  "special_token_protocol": "encode each complete document before token-window slicing; no reinsertion at later windows",
+  "scoring": "causal next-token full window",
+  "window": 512,
+  "stride": 512,
+  "minimum_tokens": 128,
+  "seed": 17,
+  "document_overlap_between_splits": 0,
+  "splits": {
+    "calibration": {
+      "windows": 128,
+      "documents": 116,
+      "input_tokens": 63919,
+      "scored_targets": 63791,
+      "sha256": "231bb3ea0782c4a31660df75bf84a7dae89c35ad40f68aa7a20f6e37cbe6058e"
+    },
+    "dev": {
+      "windows": 128,
+      "documents": 51,
+      "input_tokens": 64239,
+      "scored_targets": 64111,
+      "sha256": "6c237f1107eac37bdec321429dbeea44ae151c6a26ceca4a83736f7f0ba87358"
+    },
+    "locked_test": {
+      "windows": 607,
+      "documents": 61,
+      "input_tokens": 300867,
+      "scored_targets": 300260,
+      "sha256": "2273d50427e8b271372b27b93517a07e09da66a47b37372bc27a8dfbbd80bb13"
+    }
+  },
+  "locked_test_opened_for_model_evaluation": false,
+  "runner_sha256": "14669a1563995d0f13b2207acd46a0ec1e50ec7b18d6f829b19d187e9067c6ab"
+}

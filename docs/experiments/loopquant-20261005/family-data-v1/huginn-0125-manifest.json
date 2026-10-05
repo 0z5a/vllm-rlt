@@ -1,0 +1,40 @@
+{
+  "model": "huginn-0125",
+  "model_revision": "bb6621b65e90b6a4b9b29ef88dc83866d450470c",
+  "dataset_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+  "tokenizer_revision": "bb6621b65e90b6a4b9b29ef88dc83866d450470c",
+  "tokenizer_sha256": "9cc201a5061b70aba0d227ef9766fcfe21e0989e0c0ba442b4d7732c4de12308",
+  "document_add_special_tokens": true,
+  "special_token_protocol": "encode each complete document before token-window slicing; no reinsertion at later windows",
+  "scoring": "causal next-token full window",
+  "window": 512,
+  "stride": 512,
+  "minimum_tokens": 128,
+  "seed": 17,
+  "document_overlap_between_splits": 0,
+  "splits": {
+    "calibration": {
+      "windows": 128,
+      "documents": 113,
+      "input_tokens": 62173,
+      "scored_targets": 62045,
+      "sha256": "216e995f5c8ba6501a0f477a4876822c79a1f495d890a273571ea959bf64bd96"
+    },
+    "dev": {
+      "windows": 128,
+      "documents": 44,
+      "input_tokens": 62821,
+      "scored_targets": 62693,
+      "sha256": "8c8f6bc92ca63280b1b4114cb481f806c2205f58ea219c22ed13b459bdce6cd4"
+    },
+    "locked_test": {
+      "windows": 610,
+      "documents": 61,
+      "input_tokens": 303450,
+      "scored_targets": 302840,
+      "sha256": "86886dc038d64300a41749fde73a560c13c119fd737d1f0576a56761a53bd502"
+    }
+  },
+  "locked_test_opened_for_model_evaluation": false,
+  "runner_sha256": "14669a1563995d0f13b2207acd46a0ec1e50ec7b18d6f829b19d187e9067c6ab"
+}
