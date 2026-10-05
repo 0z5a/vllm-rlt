@@ -111,3 +111,20 @@ arithmetic, repeats request IDs, checks exact encoded reload and tied storage,
 and requires zero KV after drain. Full-weight calibration, native GPU G0,
 locked quality and formal performance remain unrun. The packet is not admitted,
 uploaded or executed.
+
+
+## Boundary prefill repair after H20 execution
+
+The first H20 FP8 case stopped before completing its request-lifecycle checks:
+prelude returned six live states, but the core metadata described eight padded
+rows. The error was retained at the original numerical budgets. The executor
+now prepares core metadata with the actual prelude row count and records that
+submitted size. Prelude and coda keep their existing unpadded boundary KV.
+No rotary slicing or fabricated KV rows are introduced.
+
+The added regression compares eager and static-buffer paths bitwise for
+FP32/BF16, 3/6/7 live rows, single/multiple requests and two allocation lifetimes.
+GPU repair validation is prepared separately; these CPU tests do not turn the
+failed H20 attempt into a pass.
+
+[New checks](boundary-prefill-v2/source-huginn-prefill-rows-cpu-attempt1.log): 6 passed. [Model/engine/KV regression](boundary-prefill-v2/source-huginn-prefill-rows-regression-attempt1.log): 79 passed, 3 GPU cases deselected; both test processes naturally exited 0.
