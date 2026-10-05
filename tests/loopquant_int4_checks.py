@@ -92,7 +92,12 @@ def check_native_int4(rows: int, columns: int, outputs: int) -> dict:
 
 
 def check_int4_native_model(
-    family: str, graphs: bool, export_folder: Path, *, compact: bool = False
+    family: str,
+    graphs: bool,
+    export_folder: Path,
+    *,
+    compact: bool = False,
+    static_buffers: bool = True,
 ) -> dict:
     from loopquant.int4_export import core_projections, export_int4_model, load_int4_model
     from vllm_rlt import (
@@ -146,8 +151,8 @@ def check_int4_native_model(
             cuda_graphs=graphs,
             async_scheduling=family != "parcae",
             multi_stream=family != "parcae",
-            static_buffers=True,
-            pad_to_power_of_two=True,
+            static_buffers=static_buffers,
+            pad_to_power_of_two=static_buffers,
         ),
         **common,
     )
@@ -182,6 +187,7 @@ def check_int4_native_model(
     return dict(
         model_family=family,
         cache_storage="compact" if compact else "native",
+        static_buffers=static_buffers,
         graphs=graphs,
         repeated_requests=6,
         physical_packed_weights=len(weights),
