@@ -3,6 +3,9 @@
 This is an in-progress numerical qualification. No model has completed G0–G3.
 There are no measured E2E speedups yet; missing values are not zero speedup.
 
+The [Q0 schedule and pool](Q0_SCHEDULE.md) are registered. Its 8192-token updates
+have not run; the earlier two 128-token gradient audits remain a separate result.
+
 | Model | Baseline tok/s | Candidate tok/s | Paired speedup | Speed change | Lower 95% bound | Status |
 |---|---:|---:|---:|---:|---:|---|
 | Ouro-1.4B | — | — | — | — | — | G0 incomplete |
@@ -61,8 +64,8 @@ fixed-tolerance failures (maximum logit error 0.00420481).
 
 ## CPU checks
 
-[Latest full regression](full-cpu-native-formats-attempt1.log): **471 passed, 29 skipped, 128 GPU
-cases deselected**; [JUnit](full-cpu-native-formats-attempt1.xml). Earlier full collection stalled
+[Latest full regression](full-cpu-q0-deployment-attempt1.log): **487 passed, 29 skipped, 164 GPU
+cases deselected**; [JUnit](full-cpu-q0-deployment-attempt1.xml). Earlier full collection stalled
 inside an existing macOS dependency load; both processes subsequently completed
 naturally. The final run includes serving, GSM8K collection, and the latest
 quantization changes. Skipped optional/dependency/GPU paths are not claimed as

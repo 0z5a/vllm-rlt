@@ -67,10 +67,19 @@ def main() -> None:
     report = commands.add_parser("report")
     report.add_argument("--pairs", type=Path, required=True)
     report.add_argument("--output", type=Path, required=True)
+    train = commands.add_parser("train")
+    train.add_argument("--config", type=Path, required=True)
+    train.add_argument("--level", choices=["Q0"], required=True)
+    train.add_argument("--output", type=Path, required=True)
+    train.add_argument("--resume", type=Path)
     args = parser.parse_args()
     if args.command == "preflight":
         result = preflight(read_config(args.config))
         args.output.write_text(json.dumps(result, indent=2) + "\n")
+    elif args.command == "train":
+        from .train_run import run_ouro_q0
+
+        run_ouro_q0(read_config(args.config), args.output, args.resume)
     else:
         raw = json.loads(args.pairs.read_text())
         pairs = {case: [TrialPair(**row) for row in rows] for case, rows in raw.items()}

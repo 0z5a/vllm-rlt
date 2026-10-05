@@ -17,8 +17,12 @@ This draft implements the first numerical and measurement building blocks:
 - Native FP8 scalar-scale GEMM through `torch._scaled_mm`. Padding and conversion
   remain in the operation. This initial unfused implementation is a correctness
   backend; it is not the optimized dynamic deployment baseline.
-- Q0 token-normalized updates with per-module gradient/update audits and exact
-  optimizer/RNG/data-position resumption; one-packed-weight SH1 export/reload.
+- Q0 token-normalized updates, producer-shared scales, deterministic training
+  pools, optimizer/RNG/data-position resumption, and native encoded export.
+- Fused FP8 producers for static, staged, and dynamic row scales, with native
+  mixed-depth serving, explicit GPU loop IDs, and one packed weight per projection.
+- Native INT4 W4A16 packing for PyTorch's installed tensor-core backend; GPU
+  qualification remains pending. No optional package is installed.
 - Native-engine cohorts measure admission through final drain, fixed output work,
   TTFT/TPOT, loop depths, graph counters, and post-drain KV usage.
 - Native activation traces use actual prepared request/position/loop metadata,
@@ -34,8 +38,8 @@ training adapter does not use the inference cache's no-gradient writes.
 
 ## Validation recorded on 2026-10-05
 
-The final full CPU regression run passed 454 tests, skipped 29, and deselected
-113 GPU cases. Earlier dependency-loading stalls resolved naturally without
+The latest completed full CPU regression passed 487 tests, skipped 29, and
+deselected 164 GPU cases, including the Q0 deployment and data checks. Earlier dependency-loading stalls resolved naturally without
 terminating either process. Ruff lint and formatting checks pass; the
 `pre-commit` wrapper itself is absent and was not installed.
 
@@ -80,21 +84,23 @@ See the [raw evidence and comparison table](experiments/loopquant-20261005/RESUL
 | Model | Baseline tok/s | Candidate tok/s | Paired speedup | Status |
 | --- | ---: | ---: | ---: | --- |
 | Ouro-1.4B | — | — | — | Full semantics qualification in progress; no performance measurement |
-| Ouro-2.6B | — | — | — | Not run |
-| Huginn-3.5B | — | — | — | Not run |
-| Nanbeige4.2-3B | — | — | — | Not run |
+| Ouro-2.6B | — | — | — | Official CPU exact; GPU/E2E pending |
+| Huginn-3.5B | — | — | — | Full official CPU comparison running |
+| Nanbeige4.2-3B | — | — | — | Full verified checkpoint; official CPU queued |
 
-No official-model quantization quality, high-concurrency performance, or speedup
-is claimed. FP8 fusion, per-row mixed-depth execution, official-model GPTQ/QAT,
-GPU export qualification, and the remaining model adapters are subsequent work.
+The fused FP8 primitives pass 120 cases and three CUDA Graph cases on SM120;
+12 tiny native serving combinations also pass. These qualify the tested
+operations, not complete model quality or high-concurrency speed. Official-model
+GPTQ/QAT, GPU native-export qualification, and final serving results remain pending.
 
 ## Reproduction interfaces
 
-The implemented CLI commands are `preflight` and `report`:
+The implemented CLI commands are `preflight`, `train` (Q0), and `report`:
 
 ```bash
 python -m loopquant.cli preflight --config experiment.json --output preflight.json
 python -m loopquant.cli report --pairs trial-pairs.json --output results.md
+python -m loopquant.cli train --config q0-run.json --level Q0 --output run-q0-20
 python -m pytest tests/test_loopquant.py -m 'not gpu'
 ```
 
@@ -103,6 +109,8 @@ an explicit `format`, and a `data_manifest` path. The manifest lists JSONL
 window files under `files`. Windows record `document_id`, `source_revision`,
 `split`, `start`, `token_ids`, and `content_sha256`. Calibration and QAT may
 share registered training documents; dev and locked test cannot share them.
+The [Q0 schedule](experiments/loopquant-20261005/Q0_SCHEDULE.md) records exact
+sampling budgets, configuration fields, continuation, and deployment semantics.
 
 `trial-pairs.json` maps case names to `TrialPair` records. The estimator is the
 median of paired throughput ratios. At least five independent pairs are needed

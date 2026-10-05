@@ -1,7 +1,8 @@
 """Document ownership and token-window manifests."""
 
 import hashlib
-from dataclasses import dataclass
+import random
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -47,3 +48,41 @@ def validate_windows(windows: list[Window]) -> None:
             "qat_train",
         }:
             raise ValueError(f"document crosses independent data splits: {window.document_id}")
+
+
+def training_windows(windows: list[Window], length: int) -> list[Window]:
+    """Full, disjoint microbatches from registered training/calibration documents.
+
+    Short tails are omitted rather than joined across document boundaries. The
+    caller reports both the retained pool and repeated tokens consumed by QAT.
+    """
+    validate_windows(windows)
+    if length < 2 or any(row.split not in {"calibration", "qat_train"} for row in windows):
+        raise ValueError("QAT requires training documents and at least two tokens per sequence")
+    result = [
+        replace(
+            row,
+            split="qat_train",
+            start=row.start + offset,
+            token_ids=row.token_ids[offset : offset + length],
+        )
+        for row in windows
+        for offset in range(0, len(row.token_ids) - length + 1, length)
+    ]
+    if not result:
+        raise ValueError("training pool has no full sequences")
+    validate_windows(result)
+    return result
+
+
+def training_order(size: int, seed: int, position: int, count: int) -> list[int]:
+    """Epoch shuffles indexed by consumed microbatches, including after resume."""
+    if size < 1 or position < 0 or count < 1:
+        raise ValueError("invalid training pool size or sampling interval")
+    result = []
+    while len(result) < count:
+        epoch, offset = divmod(position + len(result), size)
+        order = list(range(size))
+        random.Random(f"{seed}:{epoch}").shuffle(order)
+        result.extend(order[offset : offset + count - len(result)])
+    return result
