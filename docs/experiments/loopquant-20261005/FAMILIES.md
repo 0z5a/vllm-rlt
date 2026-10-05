@@ -50,7 +50,8 @@ The [runner](probe_loopformer_author_adapter.py) records both source hashes.
 [Three focused checks](loopformer-adapter-cpu-attempt2.log) cover masked rows,
 clocks, fixed depth and gradients from final logits through all eight applications
 of the shared projection. Two tiny scale updates preserve all frozen parameters.
-Full LoopFormer QAT and native FP8 deployment remain pending.
+Full LoopFormer QAT remains pending; native FP8 implementation and its unrun
+GPU qualification packet are described below.
 
 The unchanged pinned author and dense adapter also agree **bitwise on all48
 official-checkpoint BF16 CPU cases**:32 single inputs and16 right-padded pairs,
@@ -115,3 +116,33 @@ native likelihood targets are also compared against the decoded FP8 reference
 at unchanged0.02 absolute/relative budgets. [Probe](loopformer-fp8-v1/probe.py),
 [finite controller](loopformer-fp8-v1/run.py). Full-model quality and E2E remain
 pending; the existing INT4 GPU result does not qualify this FP8 implementation.
+
+## HRM differentiable recurrence and continuation supervision
+
+The dense HRM adapter unfolds every H/L application: three applications of the
+shared L module, then one H application, for each of two outer cycles. Explicit
+outer-cycle IDs select scale stages; repeated L calls accumulate into the same
+physical projection and stage. Embeddings, the initial low state, untied head,
+normalization, gated attention and rotary arithmetic keep their original roles.
+This enables gradients through the full recurrence and does not reproduce the
+author's truncated-backpropagation training schedule.
+
+Each row supplies its prefix length. Prefix attention is bidirectional and the
+continuation is causal; right padding is excluded from attention keys. CE and
+KL start at the first continuation target, excluding prompt and padding targets.
+The update budget still counts all valid input tokens, while supervised targets
+are reported separately. Teacher and student use the same prefix boundaries.
+
+Eight new CPU checks cover ragged FP32 states/logits against an independent
+functional oracle, eager/SDPA and causal/prefix modes, future-token isolation,
+bidirectional-prefix behavior, target masking and gradients through all six L
+projection applications. Two tiny Q0 updates change scales while preserving
+frozen weights and packed storage; each records seven input tokens and four
+supervised targets. These are preparation checks, not full-checkpoint quality.
+
+Frozen source `edc3eb0f21fa2635f28557964474466b1133d6ea` passes
+[666 CPU tests and 36 subtests](hrm-adapter-v1/full-cpu-hrm-adapter-attempt1.log),
+with 29 skipped and 233 GPU tests deselected; the process exited naturally with
+code 0. [Focused checks](hrm-adapter-v1/hrm-adapter-cpu-attempt1.log) and
+[adapter/evidence manifest](hrm-adapter-v1/manifest.json) are retained. Full HRM
+adapter comparison, Q0 training, quantized quality and E2E remain unrun.
