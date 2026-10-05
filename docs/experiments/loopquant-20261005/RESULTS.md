@@ -424,3 +424,55 @@ is retained; the corrected test explicitly checks all32/64/128 widths and shared
 bucket storage. The latest full suite passes492 tests. New32 Nanbeige GPU
 export/Graph/norm/readout combinations and an Ouro regression repeat are
 prepared but unrun; earlier16-case GPU evidence remains tied to source72b8634.
+
+## Full Ouro1.4B calibration
+
+The frozen 128-window run completed naturally on GPU0 with 128/128 requests,
+4,096 generated tokens, no failed requests and zero KV blocks after drain.
+It recorded 2,199,150 activation calls, summarized as 2,896 groups across
+362 physical observation sites, four loop depths and both execution phases.
+Each group retains at most 4,096 sampled elements plus exact counts, amax and
+channel energy. [Summary and file hashes](ouro-full-calibration-summary.json).
+
+The first query projection observes 62,993 prompt rows per loop and 3,968 decode
+rows per loop. The latter is 128 × 31: the final generated token is delivered
+but does not re-enter the core. This is consistent with 128 × 32 output tokens.
+All 168 physical core projections have SH1, ST2 and LOOP tables for each phase.
+The registered ST2 boundary remains 2 and prefill/decode use their shared
+maximum in deployment. No clipping search or dev-based choice was made.
+[Statistics](ouro-full-calibration-statistics-summary.json).
+
+The six raw files were archived and independently hashed locally; their archive
+SHA256 is `8d0a44c8db014f8afc24eb2bed0d2d9770e6c3e11011991a2e05980a7cb90433`.
+The child, controller and SSH returned 0, and fresh reader, GPU0 compute and
+original-lock checks confirmed [complete handoff](ouro-split-calibration-complete.json).
+This instrumented run is calibration evidence, not an E2E speed measurement.
+
+## First full-model engine pilot
+
+The [eight-arm Ouro1.4B pilot](PILOT_E2E.md) completed64 requests and2,048
+output tokens per arm with no failures, residual KV, timed Graph captures or
+fallbacks. Its single-trial speed comparison is below; formal G2/G3 remain
+not run. All FP8 policies are slower than BF16 in this smoke workload.
+
+| Batch token cap | Policy | Output tok/s | Vs BF16 | Speed change vs BF16 | Vs DYN | Speed change vs DYN | TPOT p95 (ms) | SLO coverage |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| 128 | BF16 | 180.608 | 1.0000× | +0.00% | 1.0795× | +7.95% | 104.72 | 85.94% |
+| 128 | DYN | 167.313 | 0.9264× | -7.36% | 1.0000× | +0.00% | 165.58 | 28.12% |
+| 128 | SH1 | 166.168 | 0.9200× | -8.00% | 0.9932× | -0.68% | 166.70 | 28.12% |
+| 128 | ST2 | 167.968 | 0.9300× | -7.00% | 1.0039× | +0.39% | 165.59 | 28.12% |
+| 512 | BF16 | 387.146 | 1.0000× | +0.00% | 1.0651× | +6.51% | 77.47 | 100.00% |
+| 512 | DYN | 363.494 | 0.9389× | -6.11% | 1.0000× | +0.00% | 82.31 | 100.00% |
+| 512 | SH1 | 361.615 | 0.9341× | -6.59% | 0.9948× | -0.52% | 82.94 | 100.00% |
+| 512 | ST2 | 359.988 | 0.9299× | -7.01% | 0.9904× | -0.96% | 83.55 | 100.00% |
+
+## INT4 model artifact preparation
+
+The INT4 artifact keeps signed low-nibble portable codes, explicitly rounded
+BF16 group scales and unchanged protected weights. Loading converts each
+physical core matrix once to Torch tinygemm storage; the temporary portable
+payload is released, with BF16 activations/state/KV retained. RTN and supplied
+first/all/matched GPTQ matrices share this path. Two CPU model fixtures verify
+codes, shapes and protected weights; four mixed-depth/Graph native model cases
+are prepared but not run. Latest full CPU regression:494 passed,29 skipped,
+200 GPU cases deselected. [Log](full-cpu-int4-export-attempt1.log).

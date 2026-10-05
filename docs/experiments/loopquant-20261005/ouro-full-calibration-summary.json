@@ -1,0 +1,44 @@
+{
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "scope": "BF16 calibration, no performance claim",
+  "source_sha256": "c18faedb1682c981924b15c3d768456be30a539e18c315d17ed2478c0d097aff",
+  "windows_sha256": "b33e74f657049f725ca1fb025213110789594d2118d148f85fb2bf192e620d68",
+  "registered_requests": 128,
+  "pid": 22254,
+  "start_unix": 1791167218.1846633,
+  "end_unix": 1791168575.2660425,
+  "trace_calls": 2199150,
+  "completed_requests": 128,
+  "output_tokens": 4096,
+  "failed_requests": 0,
+  "kv_used_after_drain": 0,
+  "archive_sha256": "8d0a44c8db014f8afc24eb2bed0d2d9770e6c3e11011991a2e05980a7cb90433",
+  "file_manifest_sha256": "72da863ad02d28598474df5bf6a43ed3ada3369300d0bf3695ad69ddb84176f9",
+  "archived_files": 6,
+  "files": {
+    "ouro-full-calibration-attempt1/activation-scales.json": {
+      "bytes": 118282,
+      "sha256": "6548a1354985ea39cee991d522966df4fc6d85d6acd63519d45ca3edb89ba92b"
+    },
+    "ouro-full-calibration-attempt1/loop_trace.jsonl.gz": {
+      "bytes": 40885971,
+      "sha256": "2f61bd97ea2ad25f8141eca8dc8bc344c003667dc3a62f17be79bec4bbac9ac9"
+    },
+    "ouro-full-calibration-attempt1/receipt.json": {
+      "bytes": 1048982,
+      "sha256": "5c9d238b6957589fa1ffab8bcbd5dd17a039bb19f0d8bee98c1184afbdf7aaa3"
+    },
+    "ouro-full-calibration-attempt1/statistics.json": {
+      "bytes": 145539084,
+      "sha256": "b05c4c42a9b9f2de7bc7fae1ed777524c008a9db64a911ea07d4f25c7e5fb83a"
+    },
+    "ouro-full-calibration-attempt1.log": {
+      "bytes": 107,
+      "sha256": "c5db44495e3337e9cba52e015f32b501f0cb1468938cc31f16fdb30d6425ba53"
+    },
+    "ouro-split-calibration-receipt.json": {
+      "bytes": 386,
+      "sha256": "5087bb91f06d5549cfb62829e6b013a18db469e6ec09fda2932d7878a3174fdd"
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "phase": "pilot",
+  "controller_pid": 23720,
+  "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
+  "manifest_sha256": "888923adf1ed51e7290c40ff08f46648c616cefa871bb6b3ff31eeecc6dbdd02",
+  "records": [
+    {
+      "job": "ouro-pilot-v1-bf16-c32-b128",
+      "returncode": 0,
+      "start_unix": 1791169623.3972185,
+      "end_unix": 1791169647.6684518
+    },
+    {
+      "job": "ouro-pilot-v1-dyn-c32-b128",
+      "returncode": 0,
+      "start_unix": 1791169647.6689503,
+      "end_unix": 1791169682.0954666
+    },
+    {
+      "job": "ouro-pilot-v1-sh1-c32-b128",
+      "returncode": 0,
+      "start_unix": 1791169682.0964391,
+      "end_unix": 1791169716.260667
+    },
+    {
+      "job": "ouro-pilot-v1-st2-c32-b128",
+      "returncode": 0,
+      "start_unix": 1791169716.2642553,
+      "end_unix": 1791169750.4733958
+    },
+    {
+      "job": "ouro-pilot-v1-st2-c32-b512",
+      "returncode": 0,
+      "start_unix": 1791169750.4747915,
+      "end_unix": 1791169765.4690526
+    },
+    {
+      "job": "ouro-pilot-v1-sh1-c32-b512",
+      "returncode": 0,
+      "start_unix": 1791169765.4704747,
+      "end_unix": 1791169780.384413
+    },
+    {
+      "job": "ouro-pilot-v1-dyn-c32-b512",
+      "returncode": 0,
+      "start_unix": 1791169780.3858945,
+      "end_unix": 1791169795.2466753
+    },
+    {
+      "job": "ouro-pilot-v1-bf16-c32-b512",
+      "returncode": 0,
+      "start_unix": 1791169795.2481742,
+      "end_unix": 1791169808.8832421
+    }
+  ]
+}
