@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="0.678" timestamp="2026-10-05T12:45:01.173303+08:00" hostname="192.168.10.10"><testcase classname="tests.test_group_prefill" name="test_fork_counts_as_fresh_admission_for_bounded_bypass" file="tests/test_group_prefill.py" line="343" time="0.040"><failure message="AssertionError: assert &lt;Stage.CODA: 'coda'&gt; == &lt;Stage.WAITING: 'waiting'&gt;&#10;  &#10;  - waiting&#10;  + coda">tests/test_group_prefill.py:355: in test_fork_counts_as_fresh_admission_for_bounded_bypass
+    assert e.scheduler.requests["4"].stage == Stage.WAITING
+E   AssertionError: assert &lt;Stage.CODA: 'coda'&gt; == &lt;Stage.WAITING: 'waiting'&gt;
+E     
+E     - waiting
+E     + coda</failure></testcase><testcase classname="tests.test_group_prefill" name="test_pending_snapshot_can_be_reclaimed_for_large_priority_request" file="tests/test_group_prefill.py" line="358" time="0.189"><failure message="assert 0 &gt;= 1&#10; +  where 0 = &lt;vllm_rlt.core.group_prefill.GroupPrefillFork object at 0x10bff7350&gt;.capacity_fallbacks&#10; +    where &lt;vllm_rlt.core.group_prefill.GroupPrefillFork object at 0x10bff7350&gt; = &lt;vllm_rlt.core.scheduler.Scheduler object at 0x10bff6960&gt;.group_forks&#10; +      where &lt;vllm_rlt.core.scheduler.Scheduler object at 0x10bff6960&gt; = &lt;vllm_rlt.engine.llm_engine.LLMEngine object at 0x10bff68d0&gt;.scheduler">tests/test_group_prefill.py:373: in test_pending_snapshot_can_be_reclaimed_for_large_priority_request
+    assert e.scheduler.group_forks.capacity_fallbacks &gt;= 1
+E   assert 0 &gt;= 1
+E    +  where 0 = &lt;vllm_rlt.core.group_prefill.GroupPrefillFork object at 0x10bff7350&gt;.capacity_fallbacks
+E    +    where &lt;vllm_rlt.core.group_prefill.GroupPrefillFork object at 0x10bff7350&gt; = &lt;vllm_rlt.core.scheduler.Scheduler object at 0x10bff6960&gt;.group_forks
+E    +      where &lt;vllm_rlt.core.scheduler.Scheduler object at 0x10bff6960&gt; = &lt;vllm_rlt.engine.llm_engine.LLMEngine object at 0x10bff68d0&gt;.scheduler</failure></testcase><testcase classname="tests.test_group_prefill" name="test_larger_follower_falls_back_after_short_leader_finishes" file="tests/test_group_prefill.py" line="376" time="0.053"><failure message="RuntimeError: scheduler made no progress">tests/test_group_prefill.py:385: in test_larger_follower_falls_back_after_short_leader_finishes
+    outputs.append(drain(e)[0])
+                   ^^^^^^^^
+tests/test_group_prefill.py:88: in drain
+    for out in e.step(final_only=True):
+               ^^^^^^^^^^^^^^^^^^^^^^^
+vllm_rlt/engine/llm_engine.py:310: in step
+    return self._step(final_only=final_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+vllm_rlt/engine/llm_engine.py:338: in _step
+    raise RuntimeError("scheduler made no progress")
+E   RuntimeError: scheduler made no progress</failure></testcase></testsuite></testsuites>

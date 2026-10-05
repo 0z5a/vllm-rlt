@@ -1,0 +1,25 @@
+Starting s31-parent-a1
+Finished s31-parent-a1: 0
+Starting s31-fork-b1
+Finished s31-fork-b1: 0
+Starting s31-fork-b2
+Finished s31-fork-b2: 0
+Starting s31-parent-a2
+Finished s31-parent-a2: 0
+Starting s32-parent-a1
+Finished s32-parent-a1: 0
+Starting s32-fork-b1
+Finished s32-fork-b1: 0
+Starting s32-fork-b2
+Finished s32-fork-b2: 0
+Starting s32-parent-a2
+Finished s32-parent-a2: 0
+Starting s33-parent-a1
+Finished s33-parent-a1: 0
+Starting s33-fork-b1
+Finished s33-fork-b1: 0
+Starting s33-fork-b2
+Finished s33-fork-b2: 0
+Starting s33-parent-a2
+Finished s33-parent-a2: 0
+All 12 fresh paired processes completed naturally

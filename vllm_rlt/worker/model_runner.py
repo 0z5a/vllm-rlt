@@ -84,6 +84,7 @@ class ModelRunner:
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
         scheduler = scheduler_config or SchedulerConfig()
+        self.group_prefill_fork = scheduler.group_prefill_fork
         self.graphs = (
             RecurrentGraphs(
                 model,
@@ -531,7 +532,16 @@ class ModelRunner:
                 kv = prepared.routing.transfer(prepared.kv)
             stream.wait_event(prepared.routing.ready_event)
             prepared = replace(prepared, kv=kv)
+        caller_stream = (
+            torch.cuda.current_stream(self.device)
+            if stream is not None and self.group_prefill_fork
+            else None
+        )
         with torch.cuda.stream(stream) if stream is not None else nullcontext():
+            if caller_stream is not None:
+                # Prefix snapshots and partial-page copies are queued on the
+                # caller stream. Order their reads before any shared-tail write.
+                stream.wait_stream(caller_stream)
             for item in batch.items:
                 event = self.events.get(item.request.request_id)
                 if stream is not None and event is not None:

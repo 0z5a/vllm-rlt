@@ -1,0 +1,360 @@
+diff --git a/vllm_rlt/config.py b/vllm_rlt/config.py
+index 690838a..71252de 100644
+--- a/vllm_rlt/config.py
++++ b/vllm_rlt/config.py
+@@ -61,6 +61,7 @@ class SchedulerConfig:
+     max_prefill_batches_before_decode: int = 1
+     policy: str = "fcfs"
+     enable_preemption: bool = False
++    group_prefill_fork: bool = False
+ 
+     def __post_init__(self):
+         for name in (
+@@ -75,6 +76,8 @@ class SchedulerConfig:
+             _positive(name, getattr(self, name))
+         if type(self.enable_preemption) is not bool:
+             raise ValueError("enable_preemption must be a boolean")
++        if type(self.group_prefill_fork) is not bool:
++            raise ValueError("group_prefill_fork must be a boolean")
+         if self.policy not in ("fcfs", "priority"):
+             raise ValueError("policy must be fcfs or priority")
+         if self.mode not in ("refill", "no_refill"):
+diff --git a/vllm_rlt/core/kv_cache_manager.py b/vllm_rlt/core/kv_cache_manager.py
+index 1fec77f..ff90ae7 100644
+--- a/vllm_rlt/core/kv_cache_manager.py
++++ b/vllm_rlt/core/kv_cache_manager.py
+@@ -48,6 +48,7 @@ class _Allocation:
+     written: list[list[_WrittenPositions]]
+     transfer_leases: set[str] = field(default_factory=set)
+     release_requested: bool = False
++    shared_prefix_tokens: int = 0
+ 
+ 
+ @dataclass(frozen=True, eq=False)
+@@ -155,6 +156,7 @@ class KVCacheManager:
+         self._prefixes = OrderedDict()
+         self._pending_prefixes = []
+         self.prefix_hits = self.prefix_queries = 0
++        self._has_forked_prefix = False
+         if enable_prefix_caching and layout != "last_exited":
+             raise ValueError("prefix caching requires last_exited KV")
+ 
+@@ -301,7 +303,16 @@ class KVCacheManager:
+             self._drop_refs(blocks)
+         self._prefixes.clear()
+ 
+-    def allocate(self, request_id: str, max_tokens: int, *, initial_tokens=None, prefix=()) -> bool:
++    def allocate(
++        self,
++        request_id: str,
++        max_tokens: int,
++        *,
++        initial_tokens=None,
++        prefix=(),
++        prefix_tokens=None,
++        record_prefix=True,
++    ) -> bool:
+         """Reserve a logical capacity; acquire physical pages for the current frontier."""
+         if not isinstance(request_id, str) or not request_id:
+             raise ValueError("request_id must be a nonempty string")
+@@ -318,6 +329,11 @@ class KVCacheManager:
+         pages = (initial_tokens + self.block_size - 1) // self.block_size
+         if len(prefix) > pages:
+             raise ValueError("prefix exceeds initial KV frontier")
++        length = len(prefix) * self.block_size if prefix_tokens is None else prefix_tokens
++        if not 0 <= length <= initial_tokens or (
++            length + self.block_size - 1
++        ) // self.block_size != len(prefix):
++            raise ValueError("prefix extent does not match its shared pages")
+         claimed = [b for group in prefix for b in group]
+         for b in claimed:
+             self._refs[b] += 1
+@@ -330,7 +346,6 @@ class KVCacheManager:
+             tuple(g[d] for g in prefix) + tuple(fresh[d * tail : (d + 1) * tail])
+             for d in range(self.storage_depths)
+         )
+-        length = len(prefix) * self.block_size
+         self._allocations[request_id] = _Allocation(
+             int(max_tokens),
+             tables,
+@@ -338,15 +353,80 @@ class KVCacheManager:
+                 [_WrittenPositions(prefix=length) for _ in range(self.num_layers)]
+                 for _ in range(self.storage_depths)
+             ],
++            shared_prefix_tokens=length,
+         )
+-        self.prefix_queries += 1
+-        self.prefix_hits += length
++        if record_prefix:
++            self.prefix_queries += 1
++            self.prefix_hits += length
++        return True
++
++    def fork_prefix(self, source_id: str, target_id: str, length: int, max_tokens: int) -> bool:
++        """Share a completed prefix, including a partial page, until first write.
++
++        The caller orders source completion and subsequent device execution.
++        Independent sampling/hidden state belongs to the engine, not KV pages.
++        """
++        source = self._get_allocation(source_id)
++        if self.layout != "last_exited" or self.recurrent_layers != tuple(range(self.num_layers)):
++            raise ValueError("full-prefix fork requires rectangular full-depth KV")
++        if not 0 < length <= min(source.max_tokens, max_tokens):
++            raise ValueError("fork prefix exceeds source or destination capacity")
++        if any(w.prefix < length for plane in source.written for w in plane):
++            raise ValueError("fork requires a completely written full-depth prefix")
++        pages = (length + self.block_size - 1) // self.block_size
++        prefix = tuple(tuple(table[p] for table in source.block_tables) for p in range(pages))
++        initial = length if self.incremental_allocation else max_tokens
++        if not self.allocate(
++            target_id,
++            max_tokens,
++            initial_tokens=initial,
++            prefix=prefix,
++            prefix_tokens=length,
++            record_prefix=False,
++        ):
++            return False
++        source.shared_prefix_tokens = max(source.shared_prefix_tokens, length)
++        self._has_forked_prefix = True
++        return True
++
++    def cow_blocks_needed(self, request_id: str, tokens: int) -> int:
++        allocation = self._get_allocation(request_id)
++        boundary = allocation.shared_prefix_tokens
++        if not boundary % self.block_size or tokens <= boundary:
++            return 0
++        page = boundary // self.block_size
++        return (
++            self.storage_depths
++            if any(self._refs[t[page]] > 1 for t in allocation.block_tables)
++            else 0
++        )
++
++    def _detach_prefix_tail(self, allocation: _Allocation) -> bool:
++        page, offset = divmod(allocation.shared_prefix_tokens, self.block_size)
++        fresh = self._claim(self.storage_depths)
++        if fresh is None:
++            return False
++        old = [table[page] for table in allocation.block_tables]
++        for src, dst in zip(old, fresh, strict=True):
++            self.key_cache[dst, :, :offset].copy_(self.key_cache[src, :, :offset])
++            self.value_cache[dst, :, :offset].copy_(self.value_cache[src, :, :offset])
++        allocation.block_tables = tuple(
++            table[:page] + (block,) + table[page + 1 :]
++            for table, block in zip(allocation.block_tables, fresh, strict=True)
++        )
++        self._drop_refs(old)
+         return True
+ 
+     def ensure_capacity(self, request_id, tokens):
+         allocation = self._get_allocation(request_id)
+         if not 0 < tokens <= allocation.max_tokens:
+             raise ValueError("KV growth exceeds logical capacity")
++        if (
++            self._has_forked_prefix
++            and self.cow_blocks_needed(request_id, tokens)
++            and not self._detach_prefix_tail(allocation)
++        ):
++            return False
+         pages = (tokens + self.block_size - 1) // self.block_size
+         extra = pages - len(allocation.block_tables[0])
+         if extra <= 0:
+@@ -508,6 +588,14 @@ class KVCacheManager:
+         ):
+             raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
+         first = tuple(self._validate_rows(request_ids, depth_sets[0], positions))
++        if for_write and self._has_forked_prefix:
++            for request_id, (allocation, _, position) in zip(request_ids, first, strict=True):
++                if position < allocation.shared_prefix_tokens:
++                    raise ValueError("cannot overwrite an immutable shared prefix")
++                if self.cow_blocks_needed(request_id, position + 1) and not self.ensure_capacity(
++                    request_id, position + 1
++                ):
++                    raise RuntimeError("insufficient KV capacity for partial-prefix copy-on-write")
+         row_sets = [first]
+         for depths in depth_sets[1:]:
+             if len(depths) != len(first):
+diff --git a/vllm_rlt/core/scheduler.py b/vllm_rlt/core/scheduler.py
+index 8b90d39..3b17d59 100644
+--- a/vllm_rlt/core/scheduler.py
++++ b/vllm_rlt/core/scheduler.py
+@@ -5,6 +5,7 @@ from dataclasses import dataclass
+ from enum import Enum, auto
+ 
+ from vllm_rlt.config import SchedulerConfig
++from vllm_rlt.core.group_prefill import ForkAdmission, GroupPrefillFork
+ from vllm_rlt.core.scheduling_policy import NoRefillPolicy, RefillPolicy, SpeculativePolicy
+ from vllm_rlt.request import FinishReason, Request, Stage
+ 
+@@ -68,6 +69,7 @@ class Scheduler:
+         # device state and mutate queues; they are operations, not predicates.
+         self.preempt_callback = None
+         self.resume_callback = None
++        self.group_forks: GroupPrefillFork | None = None
+         policy_cls = NoRefillPolicy if config.mode == "no_refill" else RefillPolicy
+         self.policy = (SpeculativePolicy if speculative_config else policy_cls)(config)
+ 
+@@ -76,6 +78,8 @@ class Scheduler:
+             raise ValueError(f"duplicate request ID: {request.request_id}")
+         self.requests[request.request_id] = request
+         self.queues[Stage.WAITING].append(request.request_id)
++        if self.group_forks is not None:
++            self.group_forks.add(request)
+ 
+     def enqueue(self, request: Request, stage: Stage):
+         request.stage = stage
+@@ -86,6 +90,8 @@ class Scheduler:
+         for queue in self.queues.values():
+             while request.request_id in queue:
+                 queue.remove(request.request_id)
++        if self.group_forks is not None:
++            self.group_forks.remove(request)
+         self.cache_manager.free(request.request_id)
+         request.stage = Stage.FINISHED
+         request.finish_reason = reason
+@@ -159,6 +165,13 @@ class Scheduler:
+         reserved = 0
+         for request in self.requests.values():
+             active = request.stage not in (Stage.WAITING, Stage.RECEIVING)
++            if (
++                cache._has_forked_prefix
++                and active
++                and (reserve_outputs or not cache.incremental_allocation)
++            ):
++                capacity = len(request.prompt_token_ids) + request.sampling_params.max_tokens - 1
++                reserved += cache.cow_blocks_needed(request.request_id, capacity)
+             if request.stage != Stage.PREFILL and not (reserve_outputs and active):
+                 continue
+             tokens = len(request.prompt_token_ids)
+@@ -230,6 +243,8 @@ class Scheduler:
+         ):
+             return False
+         request.num_prefilled_tokens = plan.cached_tokens
++        if self.group_forks is not None:
++            self.group_forks.started(request)
+         self.enqueue(request, Stage.PREFILL)
+         return True
+ 
+@@ -266,6 +281,15 @@ class Scheduler:
+                 deferred.append(request_id)
+                 continue
+ 
++            if self.group_forks is not None:
++                fork = self.group_forks.admit(request, active_count)
++                if fork == ForkAdmission.DEFER:
++                    deferred.append(request_id)
++                    continue
++                if fork == ForkAdmission.FORKED:
++                    active_count += 1
++                    continue
++
+             plan = self._plan_admission(request, active_count)
+             if not self._commit_admission(request, plan):
+                 deferred.append(request_id)
+diff --git a/vllm_rlt/core/scheduling_policy.py b/vllm_rlt/core/scheduling_policy.py
+index 411a962..9048bba 100644
+--- a/vllm_rlt/core/scheduling_policy.py
++++ b/vllm_rlt/core/scheduling_policy.py
+@@ -50,8 +50,14 @@ class RefillPolicy(SchedulingPolicy):
+         if self.decode_due and q[Stage.RECURRENT]:
+             return scheduler._take(Stage.RECURRENT)
+         scheduler._admit()
++        if q[Stage.PRELUDE]:
++            return scheduler._take(Stage.PRELUDE)
+         if q[Stage.PREFILL]:
+             return scheduler._take(Stage.PREFILL)
++        if q[Stage.CODA] and (
++            len(q[Stage.CODA]) >= self.config.min_coda_batch_size or not q[Stage.RECURRENT]
++        ):
++            return scheduler._take(Stage.CODA)
+         if q[Stage.RECURRENT]:
+             return scheduler._take(Stage.RECURRENT)
+         return None
+@@ -106,6 +112,8 @@ class SpeculativePolicy(SchedulingPolicy):
+         scheduler._admit()
+         if q[Stage.PREFILL]:
+             return scheduler._take(Stage.PREFILL)
++        if q[Stage.CODA]:
++            return scheduler._take(Stage.CODA)
+         if q[Stage.SPECULATIVE]:
+             return scheduler._take(Stage.SPECULATIVE)
+         return None
+diff --git a/vllm_rlt/engine/llm_engine.py b/vllm_rlt/engine/llm_engine.py
+index 7f451c1..72f94b1 100644
+--- a/vllm_rlt/engine/llm_engine.py
++++ b/vllm_rlt/engine/llm_engine.py
+@@ -4,6 +4,7 @@ from dataclasses import replace
+ import torch
+ 
+ from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
++from vllm_rlt.core.group_prefill import GroupPrefillFork
+ from vllm_rlt.core.memory import make_cache_manager, plan_cache
+ from vllm_rlt.core.scheduler import Scheduler
+ from vllm_rlt.engine.preemption import PreemptionManager
+@@ -40,6 +41,16 @@ class LLMEngine:
+         scheduler_config = scheduler_config or SchedulerConfig()
+         parameter = next(model.parameters())
+         config = model.config
++        if scheduler_config.group_prefill_fork:
++            from vllm_rlt.models import NanbeigeForCausalLM, OuroForCausalLM
++
++            if (
++                not isinstance(model, (OuroForCausalLM, NanbeigeForCausalLM))
++                or cache_config.layout != "last_exited"
++            ):
++                raise ValueError(
++                    "group prefill fork requires Ouro/Nanbeige full-depth last_exited KV"
++                )
+         if getattr(model, "requires_boundary_kv", False):
+             if cache_config.layout != "last_exited":
+                 raise ValueError("Huginn requires last_exited KV")
+@@ -112,6 +123,10 @@ class LLMEngine:
+             execution_config=self.execution_config,
+             scheduler_config=scheduler_config,
+         )
++        if scheduler_config.group_prefill_fork:
++            self.scheduler.group_forks = GroupPrefillFork(
++                self.scheduler, self.model_runner, config.total_ut_steps
++            )
+         self._exit_traces = {
+             key: tuple(values) for key, values in (self.exit_config.depths_by_request or {}).items()
+         }
+@@ -390,6 +405,8 @@ class LLMEngine:
+                 )
+                 if request.num_prefilled_tokens == len(request.prompt_token_ids):
+                     request.loops_done = self.model.config.total_ut_steps
++                    if self.scheduler.group_forks is not None:
++                        self.scheduler.group_forks.capture(request)
+                     self.scheduler.enqueue(request, Stage.CODA)
+                 else:
+                     self.scheduler.enqueue(request, Stage.PREFILL)
+diff --git a/vllm_rlt/worker/model_runner.py b/vllm_rlt/worker/model_runner.py
+index 36ed0f3..d3e58b7 100644
+--- a/vllm_rlt/worker/model_runner.py
++++ b/vllm_rlt/worker/model_runner.py
+@@ -84,6 +84,7 @@ class ModelRunner:
+         self.exit_config = exit_config or ExitConfig()
+         self.execution_config = execution_config or ExecutionConfig()
+         scheduler = scheduler_config or SchedulerConfig()
++        self.group_prefill_fork = scheduler.group_prefill_fork
+         self.graphs = (
+             RecurrentGraphs(
+                 model,
+@@ -531,7 +532,16 @@ class ModelRunner:
+                 kv = prepared.routing.transfer(prepared.kv)
+             stream.wait_event(prepared.routing.ready_event)
+             prepared = replace(prepared, kv=kv)
++        caller_stream = (
++            torch.cuda.current_stream(self.device)
++            if stream is not None and self.group_prefill_fork
++            else None
++        )
+         with torch.cuda.stream(stream) if stream is not None else nullcontext():
++            if caller_stream is not None:
++                # Prefix snapshots and partial-page copies are queued on the
++                # caller stream. Order their reads before any shared-tail write.
++                stream.wait_stream(caller_stream)
+             for item in batch.items:
+                 event = self.events.get(item.request.request_id)
+                 if stream is not None and event is not None:

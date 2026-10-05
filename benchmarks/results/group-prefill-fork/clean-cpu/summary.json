@@ -1,0 +1,1050 @@
+{
+  "observations": 480,
+  "processes": 12,
+  "measured_requests": 3504,
+  "measured_output_tokens": 28032,
+  "max_cross_arm_score_error": 9.5367431640625e-07,
+  "max_oracle_score_error": 9.5367431640625e-07,
+  "workloads": [
+    {
+      "family": "nanbeige",
+      "prompt_length": 7,
+      "group_size": 1,
+      "concurrency": 1,
+      "ratio": 0.784032210619778,
+      "ci95": [
+        0.2611275257428784,
+        2.35404714819154
+      ],
+      "seed_ratios": [
+        1.0095142266730248,
+        0.4703171330636323,
+        1.0150757960872148
+      ],
+      "parent_seconds": 0.0066516735,
+      "parent_prefill_tokens": 7,
+      "parent_peak_used_pages_including_group_snapshot": 4,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 30,
+      "fork_seconds": 0.009172486166666667,
+      "fork_prefill_tokens": 7,
+      "fork_peak_used_pages_including_group_snapshot": 4,
+      "fork_peak_shared_pages_including_cache_owners": 0,
+      "fork_scheduler_steps": 30
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 7,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.1105011007563663,
+      "ci95": [
+        0.947973108683477,
+        1.3008941746182636
+      ],
+      "seed_ratios": [
+        1.1925491320909123,
+        1.054911473224233,
+        1.088590860258821
+      ],
+      "parent_seconds": 0.053189131833333333,
+      "parent_prefill_tokens": 56,
+      "parent_peak_used_pages_including_group_snapshot": 4,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 240,
+      "fork_seconds": 0.04786898616666667,
+      "fork_prefill_tokens": 7,
+      "fork_peak_used_pages_including_group_snapshot": 6,
+      "fork_peak_shared_pages_including_cache_owners": 2,
+      "fork_scheduler_steps": 233
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 7,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.0262830975629187,
+      "ci95": [
+        0.7246229585682546,
+        1.4535241864602462
+      ],
+      "seed_ratios": [
+        1.070248194353355,
+        1.1506036820815804,
+        0.8777912869548135
+      ],
+      "parent_seconds": 0.026315326333333333,
+      "parent_prefill_tokens": 56,
+      "parent_peak_used_pages_including_group_snapshot": 16,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 60,
+      "fork_seconds": 0.025750396000000002,
+      "fork_prefill_tokens": 7,
+      "fork_peak_used_pages_including_group_snapshot": 18,
+      "fork_peak_shared_pages_including_cache_owners": 2,
+      "fork_scheduler_steps": 90
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 7,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 1.1877159192051792,
+      "ci95": [
+        1.0407520465808577,
+        1.3554324580651271
+      ],
+      "seed_ratios": [
+        1.1430892725962036,
+        1.161392683736812,
+        1.2620556266977516
+      ],
+      "parent_seconds": 0.0212203335,
+      "parent_prefill_tokens": 56,
+      "parent_peak_used_pages_including_group_snapshot": 32,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 30,
+      "fork_seconds": 0.017863819333333333,
+      "fork_prefill_tokens": 7,
+      "fork_peak_used_pages_including_group_snapshot": 32,
+      "fork_peak_shared_pages_including_cache_owners": 2,
+      "fork_scheduler_steps": 46
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 8,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.1624754340098455,
+      "ci95": [
+        0.9466820758794857,
+        1.4274582450723485
+      ],
+      "seed_ratios": [
+        1.1101718680721548,
+        1.1064519769513825,
+        1.2788763751730536
+      ],
+      "parent_seconds": 0.053611576333333334,
+      "parent_prefill_tokens": 64,
+      "parent_peak_used_pages_including_group_snapshot": 4,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 240,
+      "fork_seconds": 0.04607685416666667,
+      "fork_prefill_tokens": 8,
+      "fork_peak_used_pages_including_group_snapshot": 4,
+      "fork_peak_shared_pages_including_cache_owners": 2,
+      "fork_scheduler_steps": 233
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 8,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.2096884764690894,
+      "ci95": [
+        0.9932931396938346,
+        1.4732269373703293
+      ],
+      "seed_ratios": [
+        1.1550274035100032,
+        1.1560265063564696,
+        1.3257466868490486
+      ],
+      "parent_seconds": 0.027419285166666668,
+      "parent_prefill_tokens": 64,
+      "parent_peak_used_pages_including_group_snapshot": 16,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 60,
+      "fork_seconds": 0.022642534833333332,
+      "fork_prefill_tokens": 8,
+      "fork_peak_used_pages_including_group_snapshot": 10,
+      "fork_peak_shared_pages_including_cache_owners": 2,
+      "fork_scheduler_steps": 90
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 8,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 1.3002960638844216,
+      "ci95": [
+        0.9611060673285369,
+        1.7591917387983367
+      ],
+      "seed_ratios": [
+        1.2259689031728305,
+        1.199059487852204,
+        1.495569361062853
+      ],
+      "parent_seconds": 0.022869333166666665,
+      "parent_prefill_tokens": 64,
+      "parent_peak_used_pages_including_group_snapshot": 32,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 30,
+      "fork_seconds": 0.01754577766666667,
+      "fork_prefill_tokens": 8,
+      "fork_peak_used_pages_including_group_snapshot": 18,
+      "fork_peak_shared_pages_including_cache_owners": 2,
+      "fork_scheduler_steps": 46
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 9,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.0553091365582072,
+      "ci95": [
+        0.7968107043581468,
+        1.3976686904580768
+      ],
+      "seed_ratios": [
+        0.9470788381381144,
+        1.0456098843322819,
+        1.1868156969471593
+      ],
+      "parent_seconds": 0.04908325683333333,
+      "parent_prefill_tokens": 16,
+      "parent_peak_used_pages_including_group_snapshot": 4,
+      "parent_peak_shared_pages_including_cache_owners": 2,
+      "parent_scheduler_steps": 241,
+      "fork_seconds": 0.046400625,
+      "fork_prefill_tokens": 9,
+      "fork_peak_used_pages_including_group_snapshot": 6,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 234
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 9,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.1377639076920367,
+      "ci95": [
+        0.8070999770924879,
+        1.6038988308610893
+      ],
+      "seed_ratios": [
+        0.9778244549140044,
+        1.1750181091084977,
+        1.281890721997847
+      ],
+      "parent_seconds": 0.026020180333333334,
+      "parent_prefill_tokens": 40,
+      "parent_peak_used_pages_including_group_snapshot": 16,
+      "parent_peak_shared_pages_including_cache_owners": 2,
+      "parent_scheduler_steps": 61,
+      "fork_seconds": 0.022816263666666666,
+      "fork_prefill_tokens": 9,
+      "fork_peak_used_pages_including_group_snapshot": 12,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 91
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 9,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 1.43756976648223,
+      "ci95": [
+        1.1330318512444724,
+        1.8239618164607667
+      ],
+      "seed_ratios": [
+        1.29241356872464,
+        1.4769559301867032,
+        1.556387541890057
+      ],
+      "parent_seconds": 0.024972416833333334,
+      "parent_prefill_tokens": 72,
+      "parent_peak_used_pages_including_group_snapshot": 32,
+      "parent_peak_shared_pages_including_cache_owners": 2,
+      "parent_scheduler_steps": 31,
+      "fork_seconds": 0.017342805333333332,
+      "fork_prefill_tokens": 9,
+      "fork_peak_used_pages_including_group_snapshot": 18,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 47
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 17,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.0502162447089236,
+      "ci95": [
+        0.9321186387019507,
+        1.1832765861076064
+      ],
+      "seed_ratios": [
+        1.0008742509328246,
+        1.1017674054159172,
+        1.050429133593736
+      ],
+      "parent_seconds": 0.049598020666666666,
+      "parent_prefill_tokens": 24,
+      "parent_peak_used_pages_including_group_snapshot": 6,
+      "parent_peak_shared_pages_including_cache_owners": 4,
+      "parent_scheduler_steps": 242,
+      "fork_seconds": 0.04724082633333333,
+      "fork_prefill_tokens": 17,
+      "fork_peak_used_pages_including_group_snapshot": 8,
+      "fork_peak_shared_pages_including_cache_owners": 6,
+      "fork_scheduler_steps": 235
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 17,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.1961341862768444,
+      "ci95": [
+        1.0703529710190667,
+        1.3366964266170869
+      ],
+      "seed_ratios": [
+        1.198464896941896,
+        1.2495907223064584,
+        1.1427378140961473
+      ],
+      "parent_seconds": 0.02881547216666667,
+      "parent_prefill_tokens": 72,
+      "parent_peak_used_pages_including_group_snapshot": 24,
+      "parent_peak_shared_pages_including_cache_owners": 4,
+      "parent_scheduler_steps": 62,
+      "fork_seconds": 0.024117118,
+      "fork_prefill_tokens": 17,
+      "fork_peak_used_pages_including_group_snapshot": 14,
+      "fork_peak_shared_pages_including_cache_owners": 6,
+      "fork_scheduler_steps": 92
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 17,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 1.8278114671962677,
+      "ci95": [
+        1.644474602367601,
+        2.0315879338021907
+      ],
+      "seed_ratios": [
+        1.777912896532143,
+        1.919593553974631,
+        1.7892640239725097
+      ],
+      "parent_seconds": 0.03474170833333333,
+      "parent_prefill_tokens": 136,
+      "parent_peak_used_pages_including_group_snapshot": 48,
+      "parent_peak_shared_pages_including_cache_owners": 4,
+      "parent_scheduler_steps": 32,
+      "fork_seconds": 0.019016000166666665,
+      "fork_prefill_tokens": 17,
+      "fork_peak_used_pages_including_group_snapshot": 20,
+      "fork_peak_shared_pages_including_cache_owners": 6,
+      "fork_scheduler_steps": 48
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 128,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.2718704054071288,
+      "ci95": [
+        1.1754202517765542,
+        1.3762348621316831
+      ],
+      "seed_ratios": [
+        1.2650701842550345,
+        1.235855970418014,
+        1.3159703547129338
+      ],
+      "parent_seconds": 0.08759830566666667,
+      "parent_prefill_tokens": 184,
+      "parent_peak_used_pages_including_group_snapshot": 34,
+      "parent_peak_shared_pages_including_cache_owners": 30,
+      "parent_scheduler_steps": 255,
+      "fork_seconds": 0.06882545833333334,
+      "fork_prefill_tokens": 128,
+      "fork_peak_used_pages_including_group_snapshot": 34,
+      "fork_peak_shared_pages_including_cache_owners": 32,
+      "fork_scheduler_steps": 248
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 128,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 2.333258084776648,
+      "ci95": [
+        2.0561590289452605,
+        2.647700500563045
+      ],
+      "seed_ratios": [
+        2.20017782973807,
+        2.3983324137247433,
+        2.407249897180731
+      ],
+      "parent_seconds": 0.11897623616666667,
+      "parent_prefill_tokens": 544,
+      "parent_peak_used_pages_including_group_snapshot": 136,
+      "parent_peak_shared_pages_including_cache_owners": 30,
+      "parent_scheduler_steps": 75,
+      "fork_seconds": 0.050983618333333335,
+      "fork_prefill_tokens": 128,
+      "fork_peak_used_pages_including_group_snapshot": 40,
+      "fork_peak_shared_pages_including_cache_owners": 32,
+      "fork_scheduler_steps": 105
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 128,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 4.509935724896603,
+      "ci95": [
+        4.2590522549995145,
+        4.775597721024196
+      ],
+      "seed_ratios": [
+        4.4437938404996515,
+        4.6312719470136665,
+        4.457146112192034
+      ],
+      "parent_seconds": 0.193367403,
+      "parent_prefill_tokens": 1024,
+      "parent_peak_used_pages_including_group_snapshot": 272,
+      "parent_peak_shared_pages_including_cache_owners": 30,
+      "parent_scheduler_steps": 45,
+      "fork_seconds": 0.04289022233333333,
+      "fork_prefill_tokens": 128,
+      "fork_peak_used_pages_including_group_snapshot": 48,
+      "fork_peak_shared_pages_including_cache_owners": 32,
+      "fork_scheduler_steps": 61
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 129,
+      "group_size": 1,
+      "concurrency": 1,
+      "ratio": 0.7024377658764748,
+      "ci95": [
+        0.14176125401260642,
+        3.480632408102534
+      ],
+      "seed_ratios": [
+        1.018433650729232,
+        0.333832064654468,
+        1.0194425811369434
+      ],
+      "parent_seconds": 0.03411336116666667,
+      "parent_prefill_tokens": 129,
+      "parent_peak_used_pages_including_group_snapshot": 34,
+      "parent_peak_shared_pages_including_cache_owners": 32,
+      "parent_scheduler_steps": 46,
+      "fork_seconds": 0.05602353483333333,
+      "fork_prefill_tokens": 129,
+      "fork_peak_used_pages_including_group_snapshot": 34,
+      "fork_peak_shared_pages_including_cache_owners": 32,
+      "fork_scheduler_steps": 46
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 129,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.1268495485295358,
+      "ci95": [
+        1.0072634182366116,
+        1.2606333974127693
+      ],
+      "seed_ratios": [
+        1.1244173877400736,
+        1.0782969409765284,
+        1.180135511984028
+      ],
+      "parent_seconds": 0.0784400625,
+      "parent_prefill_tokens": 136,
+      "parent_peak_used_pages_including_group_snapshot": 34,
+      "parent_peak_shared_pages_including_cache_owners": 32,
+      "parent_scheduler_steps": 256,
+      "fork_seconds": 0.06955779866666667,
+      "fork_prefill_tokens": 129,
+      "fork_peak_used_pages_including_group_snapshot": 36,
+      "fork_peak_shared_pages_including_cache_owners": 34,
+      "fork_scheduler_steps": 249
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 129,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 2.171152668087531,
+      "ci95": [
+        1.9102508037165664,
+        2.4676884830893804
+      ],
+      "seed_ratios": [
+        2.1086782844453085,
+        2.1063347641818955,
+        2.3042700052725484
+      ],
+      "parent_seconds": 0.11328916683333334,
+      "parent_prefill_tokens": 520,
+      "parent_peak_used_pages_including_group_snapshot": 136,
+      "parent_peak_shared_pages_including_cache_owners": 32,
+      "parent_scheduler_steps": 76,
+      "fork_seconds": 0.052089382,
+      "fork_prefill_tokens": 129,
+      "fork_peak_used_pages_including_group_snapshot": 42,
+      "fork_peak_shared_pages_including_cache_owners": 34,
+      "fork_scheduler_steps": 106
+    },
+    {
+      "family": "nanbeige",
+      "prompt_length": 129,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 2.570220609230211,
+      "ci95": [
+        0.2590934768990796,
+        25.49672056269042
+      ],
+      "seed_ratios": [
+        4.354781391194716,
+        0.8846491634602894,
+        4.407311790885299
+      ],
+      "parent_seconds": 0.19259663900000001,
+      "parent_prefill_tokens": 1032,
+      "parent_peak_used_pages_including_group_snapshot": 272,
+      "parent_peak_shared_pages_including_cache_owners": 32,
+      "parent_scheduler_steps": 46,
+      "fork_seconds": 0.09843917366666667,
+      "fork_prefill_tokens": 129,
+      "fork_peak_used_pages_including_group_snapshot": 48,
+      "fork_peak_shared_pages_including_cache_owners": 34,
+      "fork_scheduler_steps": 62
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 7,
+      "group_size": 1,
+      "concurrency": 1,
+      "ratio": 0.9313458724705542,
+      "ci95": [
+        0.6025792390042614,
+        1.4394872541597867
+      ],
+      "seed_ratios": [
+        1.125490442163154,
+        0.7963524810830402,
+        0.9013341662647092
+      ],
+      "parent_seconds": 0.013716791833333334,
+      "parent_prefill_tokens": 7,
+      "parent_peak_used_pages_including_group_snapshot": 8,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 44,
+      "fork_seconds": 0.0148004375,
+      "fork_prefill_tokens": 7,
+      "fork_peak_used_pages_including_group_snapshot": 8,
+      "fork_peak_shared_pages_including_cache_owners": 0,
+      "fork_scheduler_steps": 44
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 7,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.0879913806889392,
+      "ci95": [
+        0.8424220682455423,
+        1.4051451037111267
+      ],
+      "seed_ratios": [
+        1.0981327614710419,
+        0.9772936151200624,
+        1.2000420234250622
+      ],
+      "parent_seconds": 0.10700962483333333,
+      "parent_prefill_tokens": 56,
+      "parent_peak_used_pages_including_group_snapshot": 8,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 352,
+      "fork_seconds": 0.09920184016666667,
+      "fork_prefill_tokens": 7,
+      "fork_peak_used_pages_including_group_snapshot": 12,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 345
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 7,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.1372499162184688,
+      "ci95": [
+        0.6303095221760551,
+        2.0519083504781093
+      ],
+      "seed_ratios": [
+        1.1745561597777885,
+        0.8838696207820034,
+        1.416790860330872
+      ],
+      "parent_seconds": 0.05389756983333333,
+      "parent_prefill_tokens": 56,
+      "parent_peak_used_pages_including_group_snapshot": 32,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 88,
+      "fork_seconds": 0.048280152666666666,
+      "fork_prefill_tokens": 7,
+      "fork_peak_used_pages_including_group_snapshot": 36,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 118
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 7,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 1.1580651081563664,
+      "ci95": [
+        0.6015844440758968,
+        2.2293043111999413
+      ],
+      "seed_ratios": [
+        1.2420617228829216,
+        0.8651605478448188,
+        1.4453034693117712
+      ],
+      "parent_seconds": 0.042824263833333334,
+      "parent_prefill_tokens": 56,
+      "parent_peak_used_pages_including_group_snapshot": 64,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 44,
+      "fork_seconds": 0.0377380835,
+      "fork_prefill_tokens": 7,
+      "fork_peak_used_pages_including_group_snapshot": 64,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 60
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 8,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.0975843952706392,
+      "ci95": [
+        0.5054181153177782,
+        2.383554265727443
+      ],
+      "seed_ratios": [
+        1.105022657984874,
+        0.8006082015602158,
+        1.4945916575048601
+      ],
+      "parent_seconds": 0.11607042349999999,
+      "parent_prefill_tokens": 64,
+      "parent_peak_used_pages_including_group_snapshot": 8,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 352,
+      "fork_seconds": 0.10828449983333333,
+      "fork_prefill_tokens": 8,
+      "fork_peak_used_pages_including_group_snapshot": 8,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 345
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 8,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.1452955937004106,
+      "ci95": [
+        0.6355398693362385,
+        2.0639177182062944
+      ],
+      "seed_ratios": [
+        1.1494745576836287,
+        0.9019295323898924,
+        1.4490414175707371
+      ],
+      "parent_seconds": 0.05558149316666667,
+      "parent_prefill_tokens": 64,
+      "parent_peak_used_pages_including_group_snapshot": 32,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 88,
+      "fork_seconds": 0.049098562666666665,
+      "fork_prefill_tokens": 8,
+      "fork_peak_used_pages_including_group_snapshot": 20,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 118
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 8,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 1.317519233625021,
+      "ci95": [
+        0.9108318611446118,
+        1.905792940521942
+      ],
+      "seed_ratios": [
+        1.1846720307666243,
+        1.2364323939878024,
+        1.5613576004948793
+      ],
+      "parent_seconds": 0.048976638833333336,
+      "parent_prefill_tokens": 64,
+      "parent_peak_used_pages_including_group_snapshot": 64,
+      "parent_peak_shared_pages_including_cache_owners": 0,
+      "parent_scheduler_steps": 44,
+      "fork_seconds": 0.03712302766666667,
+      "fork_prefill_tokens": 8,
+      "fork_peak_used_pages_including_group_snapshot": 36,
+      "fork_peak_shared_pages_including_cache_owners": 4,
+      "fork_scheduler_steps": 60
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 9,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.027487377221333,
+      "ci95": [
+        0.6373843078606695,
+        1.656348136170233
+      ],
+      "seed_ratios": [
+        0.9064011339484845,
+        0.9335170372900119,
+        1.2819963745361482
+      ],
+      "parent_seconds": 0.1108204515,
+      "parent_prefill_tokens": 16,
+      "parent_peak_used_pages_including_group_snapshot": 8,
+      "parent_peak_shared_pages_including_cache_owners": 4,
+      "parent_scheduler_steps": 353,
+      "fork_seconds": 0.10756564566666667,
+      "fork_prefill_tokens": 9,
+      "fork_peak_used_pages_including_group_snapshot": 12,
+      "fork_peak_shared_pages_including_cache_owners": 8,
+      "fork_scheduler_steps": 346
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 9,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.126268057938915,
+      "ci95": [
+        0.7951528441755472,
+        1.595265297263341
+      ],
+      "seed_ratios": [
+        0.9775664454040449,
+        1.1296082527058258,
+        1.2937523720427828
+      ],
+      "parent_seconds": 0.055022694166666664,
+      "parent_prefill_tokens": 40,
+      "parent_peak_used_pages_including_group_snapshot": 32,
+      "parent_peak_shared_pages_including_cache_owners": 4,
+      "parent_scheduler_steps": 89,
+      "fork_seconds": 0.04872161083333333,
+      "fork_prefill_tokens": 9,
+      "fork_peak_used_pages_including_group_snapshot": 24,
+      "fork_peak_shared_pages_including_cache_owners": 8,
+      "fork_scheduler_steps": 119
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 9,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 1.5537372800397167,
+      "ci95": [
+        1.1602678847642363,
+        2.0806397962792498
+      ],
+      "seed_ratios": [
+        1.4311368188236102,
+        1.4743422090911373,
+        1.7776788465556312
+      ],
+      "parent_seconds": 0.0552778055,
+      "parent_prefill_tokens": 72,
+      "parent_peak_used_pages_including_group_snapshot": 64,
+      "parent_peak_shared_pages_including_cache_owners": 4,
+      "parent_scheduler_steps": 45,
+      "fork_seconds": 0.03537837516666667,
+      "fork_prefill_tokens": 9,
+      "fork_peak_used_pages_including_group_snapshot": 36,
+      "fork_peak_shared_pages_including_cache_owners": 8,
+      "fork_scheduler_steps": 61
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 17,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.0704789991784305,
+      "ci95": [
+        0.7342079327800749,
+        1.5607639696060127
+      ],
+      "seed_ratios": [
+        1.028893120435648,
+        0.941817440586916,
+        1.2658943547813941
+      ],
+      "parent_seconds": 0.1098022985,
+      "parent_prefill_tokens": 24,
+      "parent_peak_used_pages_including_group_snapshot": 12,
+      "parent_peak_shared_pages_including_cache_owners": 8,
+      "parent_scheduler_steps": 354,
+      "fork_seconds": 0.10248441666666666,
+      "fork_prefill_tokens": 17,
+      "fork_peak_used_pages_including_group_snapshot": 16,
+      "fork_peak_shared_pages_including_cache_owners": 12,
+      "fork_scheduler_steps": 347
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 17,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.2622313192317338,
+      "ci95": [
+        0.8998456542655479,
+        1.7705568679440613
+      ],
+      "seed_ratios": [
+        1.1218796732813445,
+        1.2233714478934241,
+        1.4652517074824936
+      ],
+      "parent_seconds": 0.06349722916666667,
+      "parent_prefill_tokens": 72,
+      "parent_peak_used_pages_including_group_snapshot": 48,
+      "parent_peak_shared_pages_including_cache_owners": 8,
+      "parent_scheduler_steps": 90,
+      "fork_seconds": 0.0500695695,
+      "fork_prefill_tokens": 17,
+      "fork_peak_used_pages_including_group_snapshot": 28,
+      "fork_peak_shared_pages_including_cache_owners": 12,
+      "fork_scheduler_steps": 120
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 17,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 1.8111949405338983,
+      "ci95": [
+        1.4495172198466906,
+        2.263117034899764
+      ],
+      "seed_ratios": [
+        1.7673999044575615,
+        1.6805071045252626,
+        2.000416412074905
+      ],
+      "parent_seconds": 0.06961063166666667,
+      "parent_prefill_tokens": 136,
+      "parent_peak_used_pages_including_group_snapshot": 96,
+      "parent_peak_shared_pages_including_cache_owners": 8,
+      "parent_scheduler_steps": 46,
+      "fork_seconds": 0.038422097,
+      "fork_prefill_tokens": 17,
+      "fork_peak_used_pages_including_group_snapshot": 40,
+      "fork_peak_shared_pages_including_cache_owners": 12,
+      "fork_scheduler_steps": 62
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 128,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 1.037736236333619,
+      "ci95": [
+        0.7955325239298884,
+        1.3536800367130857
+      ],
+      "seed_ratios": [
+        1.1346026805980352,
+        0.9216691926117832,
+        1.0686661896926606
+      ],
+      "parent_seconds": 0.1740730835,
+      "parent_prefill_tokens": 184,
+      "parent_peak_used_pages_including_group_snapshot": 68,
+      "parent_peak_shared_pages_including_cache_owners": 60,
+      "parent_scheduler_steps": 367,
+      "fork_seconds": 0.16875593066666666,
+      "fork_prefill_tokens": 128,
+      "fork_peak_used_pages_including_group_snapshot": 68,
+      "fork_peak_shared_pages_including_cache_owners": 64,
+      "fork_scheduler_steps": 360
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 128,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 2.171080577227383,
+      "ci95": [
+        1.550510598590439,
+        3.0400249292710977
+      ],
+      "seed_ratios": [
+        2.512996561716949,
+        1.9230373849702653,
+        2.1176208515313304
+      ],
+      "parent_seconds": 0.22746256950000002,
+      "parent_prefill_tokens": 544,
+      "parent_peak_used_pages_including_group_snapshot": 272,
+      "parent_peak_shared_pages_including_cache_owners": 60,
+      "parent_scheduler_steps": 103,
+      "fork_seconds": 0.10507756266666667,
+      "fork_prefill_tokens": 128,
+      "fork_peak_used_pages_including_group_snapshot": 80,
+      "fork_peak_shared_pages_including_cache_owners": 64,
+      "fork_scheduler_steps": 133
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 128,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 3.6308026384624155,
+      "ci95": [
+        2.423309152473455,
+        5.439969467374857
+      ],
+      "seed_ratios": [
+        3.618569116782527,
+        3.0907288183335115,
+        4.279668726939635
+      ],
+      "parent_seconds": 0.357944875,
+      "parent_prefill_tokens": 1024,
+      "parent_peak_used_pages_including_group_snapshot": 544,
+      "parent_peak_shared_pages_including_cache_owners": 60,
+      "parent_scheduler_steps": 59,
+      "fork_seconds": 0.0986937225,
+      "fork_prefill_tokens": 128,
+      "fork_peak_used_pages_including_group_snapshot": 96,
+      "fork_peak_shared_pages_including_cache_owners": 64,
+      "fork_scheduler_steps": 75
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 129,
+      "group_size": 1,
+      "concurrency": 1,
+      "ratio": 0.8951029690481803,
+      "ci95": [
+        0.6540593518139614,
+        1.2249795419586955
+      ],
+      "seed_ratios": [
+        1.0280971738092362,
+        0.8028694019548468,
+        0.8688402279224126
+      ],
+      "parent_seconds": 0.06995863183333334,
+      "parent_prefill_tokens": 129,
+      "parent_peak_used_pages_including_group_snapshot": 68,
+      "parent_peak_shared_pages_including_cache_owners": 64,
+      "parent_scheduler_steps": 60,
+      "fork_seconds": 0.0781933125,
+      "fork_prefill_tokens": 129,
+      "fork_peak_used_pages_including_group_snapshot": 68,
+      "fork_peak_shared_pages_including_cache_owners": 64,
+      "fork_scheduler_steps": 60
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 129,
+      "group_size": 8,
+      "concurrency": 1,
+      "ratio": 0.9865861600411899,
+      "ci95": [
+        0.7078778145328387,
+        1.3750286153934355
+      ],
+      "seed_ratios": [
+        1.0161088958762963,
+        0.8526342588533364,
+        1.1084140554782176
+      ],
+      "parent_seconds": 0.15647427116666668,
+      "parent_prefill_tokens": 136,
+      "parent_peak_used_pages_including_group_snapshot": 68,
+      "parent_peak_shared_pages_including_cache_owners": 64,
+      "parent_scheduler_steps": 368,
+      "fork_seconds": 0.15955561099999999,
+      "fork_prefill_tokens": 129,
+      "fork_peak_used_pages_including_group_snapshot": 72,
+      "fork_peak_shared_pages_including_cache_owners": 68,
+      "fork_scheduler_steps": 361
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 129,
+      "group_size": 8,
+      "concurrency": 4,
+      "ratio": 1.9960478573478642,
+      "ci95": [
+        1.2860622361332787,
+        3.097989301670237
+      ],
+      "seed_ratios": [
+        2.159800453850917,
+        1.6298606847225168,
+        2.2591690892668566
+      ],
+      "parent_seconds": 0.22703382616666667,
+      "parent_prefill_tokens": 520,
+      "parent_peak_used_pages_including_group_snapshot": 272,
+      "parent_peak_shared_pages_including_cache_owners": 64,
+      "parent_scheduler_steps": 104,
+      "fork_seconds": 0.11477670816666666,
+      "fork_prefill_tokens": 129,
+      "fork_peak_used_pages_including_group_snapshot": 84,
+      "fork_peak_shared_pages_including_cache_owners": 68,
+      "fork_scheduler_steps": 134
+    },
+    {
+      "family": "ouro",
+      "prompt_length": 129,
+      "group_size": 8,
+      "concurrency": 8,
+      "ratio": 3.6222264167289024,
+      "ci95": [
+        2.8749117096088046,
+        4.563800749148586
+      ],
+      "seed_ratios": [
+        4.016386236268233,
+        3.3533090792456006,
+        3.528724279801243
+      ],
+      "parent_seconds": 0.3661377568333333,
+      "parent_prefill_tokens": 1032,
+      "parent_peak_used_pages_including_group_snapshot": 544,
+      "parent_peak_shared_pages_including_cache_owners": 64,
+      "parent_scheduler_steps": 60,
+      "fork_seconds": 0.10118964566666667,
+      "fork_prefill_tokens": 129,
+      "fork_peak_used_pages_including_group_snapshot": 96,
+      "fork_peak_shared_pages_including_cache_owners": 68,
+      "fork_scheduler_steps": 76
+    }
+  ]
+}

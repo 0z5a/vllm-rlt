@@ -1,0 +1,15 @@
+import json
+
+from tests.test_group_prefill import add, engine, make_model
+
+for enabled in (False, True):
+    e = engine(make_model(), enabled, blocks=16, incremental=True, preemption=True)
+    add(e, 8, [2, 3, 4, 5, 6, 7, 8, 9, 10], 9)
+    for step in range(500):
+        if not e.has_unfinished_requests():
+            break
+        print(json.dumps({"enabled": enabled, "step": step, "free": e.cache_manager.num_free_blocks,
+                          "requests": {k: [v.stage.value, v.position] for k, v in e.scheduler.requests.items()},
+                          "allocations": {k: [v.max_tokens, v.shared_prefix_tokens, v.block_tables] for k, v in e.cache_manager._allocations.items()},
+                          "snapshots": list(e.preemption.snapshots)}), flush=True)
+        e.step(final_only=True)
