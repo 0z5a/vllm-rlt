@@ -36,6 +36,9 @@ def main():
     assert not subprocess.check_output(["git", "diff", "HEAD"], cwd=source)
     args.out.mkdir(parents=True, exist_ok=False)
     model_path, prompt_path = Path(plan["model"]), Path(plan["prompts"])
+    prompt_sha = hashlib.sha256(prompt_path.read_bytes()).hexdigest()
+    if "prompts_sha256" in plan:
+        assert prompt_sha == plan["prompts_sha256"]
     prompts = json.loads(prompt_path.read_text())
     stops_path = Path(plan["quality_stops"]) if plan.get("quality_stops") else None
     stop_spec = json.loads(stops_path.read_text()) if stops_path else None
@@ -50,7 +53,7 @@ def main():
             "plan": plan,
             "plan_sha256": hashlib.sha256(args.plan.read_bytes()).hexdigest(),
             "checkpoint": json.loads((model_path / "verified-manifest.json").read_text()),
-            "prompts_sha256": hashlib.sha256(prompt_path.read_bytes()).hexdigest(),
+            "prompts_sha256": prompt_sha,
             "driver_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "pid": os.getpid(),
             "torch": torch.__version__,
