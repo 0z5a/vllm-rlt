@@ -52,8 +52,8 @@ rejecting any overwrite of finalized recurrent or already-written boundary
 data. CPU tests cover R1/R3, all four cache modes and request-ID reuse.
 
 The combined targeted CPU suite passed117 tests and36 address subtests, with
-eight unavailable CUDA/official-checkpoint cases skipped. Official Nanbeige and
-Huginn full-weight CUDA E2E remains pending. HRM-Text's public1B checkpoint is
+eight unavailable CUDA/official-checkpoint cases skipped. Nanbeige now passes [32 official synchronous storage arms](nanbeige.md),
+including actual B512 residency. Official Huginn CUDA E2E remains pending. HRM-Text's public1B checkpoint is
 registered for a separate PrefixLM/hierarchical-recurrence adapter; it is not
 covered by these results.
 
