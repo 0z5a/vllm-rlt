@@ -14,6 +14,8 @@ def metadata_kernel(
     Blocks,
     Offsets,
     OutTables,
+    DepthTables,
+    QueryDepths,
     N,
     SIZE,
     WIDTH: tl.constexpr,
@@ -21,6 +23,7 @@ def metadata_kernel(
     PLANES: tl.constexpr,
     OUT_WIDTH,
     TILE: tl.constexpr,
+    ALIAS: tl.constexpr,
 ):
     row = tl.program_id(0)
     valid = row < N
@@ -39,6 +42,16 @@ def metadata_kernel(
         col = start * TILE + tl.arange(0, TILE)
         value = tl.load(Tables + base + col, valid & (col < OUT_WIDTH), 0)
         tl.store(OutTables + row * WIDTH + col, value, col < OUT_WIDTH)
+        if ALIAS:
+            for d in tl.static_range(PLANES):
+                value = tl.load(
+                    Tables + (slot * PLANES + d) * WIDTH + col,
+                    valid & (col < OUT_WIDTH),
+                    0,
+                )
+                tl.store(DepthTables + (row * PLANES + d) * WIDTH + col, value, col < OUT_WIDTH)
+    if ALIAS:
+        tl.store(QueryDepths + row, depth)
 
 
 @triton.jit

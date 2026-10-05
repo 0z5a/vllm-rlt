@@ -10,6 +10,7 @@ from dataclasses import replace
 
 import torch
 
+from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
 from vllm_rlt.core.kv_cache_manager import _PreparedKVBatch
 
 
@@ -20,6 +21,7 @@ class RoutingBank:
         self.done = self.ready_event = None
         self.uploads = []
         self.imports = []
+        self.dependencies = []
         self.descriptor = None
         if control_only:
             return
@@ -30,6 +32,15 @@ class RoutingBank:
         self.offsets = torch.empty_like(self.slots)
         self.lengths = torch.empty(rows, dtype=torch.int32, device=device)
         self.tables = torch.empty((rows, owner.width), dtype=torch.int32, device=device)
+        self.depth_tables = self.depths = self.alias_starts = None
+        if owner.alias:
+            self.depth_tables = torch.empty(
+                (rows, owner.planes, owner.width), dtype=torch.int32, device=device
+            )
+            self.depths = torch.empty(rows, dtype=torch.int32, device=device)
+            # Until resident first-alias positions are published, resolve every
+            # tile. A context-length fallback would incorrectly bypass aliases.
+            self.alias_starts = torch.zeros(rows, dtype=torch.int32, device=device)
         self.hidden = torch.empty(
             (rows, owner.hidden.shape[1]), dtype=owner.hidden.dtype, device=device
         )
@@ -41,11 +52,14 @@ class RoutingBank:
             self.done.synchronize()
         self.uploads.clear()
         self.imports.clear()
+        self.dependencies.clear()
         self.descriptor = None
 
     def transfer(self, batch=None):
         from vllm_rlt.kernels.routing import metadata_kernel
 
+        for ready in self.dependencies:
+            torch.cuda.current_stream(self.owner.cache.device).wait_event(ready)
         for slot, table in self.uploads:
             self.owner.tables[slot, :, : table.shape[1]].copy_(table, non_blocking=True)
         for slot, hidden in self.imports:
@@ -65,6 +79,8 @@ class RoutingBank:
             self.blocks,
             self.offsets,
             self.tables,
+            self.depth_tables,
+            self.depths,
             self.count,
             self.size,
             self.owner.width,
@@ -72,6 +88,7 @@ class RoutingBank:
             self.owner.planes,
             self.width,
             256,
+            self.owner.alias and batch is not None,
         )
         self.ready_event = torch.cuda.Event()
         self.ready_event.record(torch.cuda.current_stream(self.owner.cache.device))
@@ -84,6 +101,11 @@ class RoutingBank:
             write_blocks=self.blocks[: self.count],
             write_offsets=self.offsets[: self.count],
             block_tables=self.tables[: self.size, : self.width],
+            depth_block_tables=self.depth_tables[: self.size, :, : self.width]
+            if self.owner.alias
+            else None,
+            query_depths=self.depths[: self.size] if self.owner.alias else None,
+            alias_starts=self.alias_starts[: self.size] if self.owner.alias else None,
         )
 
     def record_done(self):
@@ -115,6 +137,7 @@ class RoutingBank:
 class AsyncState:
     def __init__(self, cache, config, scheduler, rows, *, use_uva=True):
         self.cache = cache
+        self.alias = isinstance(cache, AliasKVCacheManager)
         self.use_uva = use_uva
         self.width = math.ceil(config.max_position_embeddings / cache.block_size)
         self.planes = config.total_ut_steps if cache.layout == "last_exited" else 1
@@ -158,6 +181,8 @@ class AsyncState:
         slot = self.free.pop()
         self.slots[rid] = slot
         self.owners[rid] = (id(request), id(allocation))
+        if self.alias:
+            bank.dependencies.append(self.cache._allocation_ready[id(allocation)])
         table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
         bank.uploads.append((slot, table))
         self.table_versions[rid] = allocation.block_tables

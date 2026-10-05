@@ -21,17 +21,17 @@ from pathlib import Path
 import torch
 
 from experiments.loopkv.capacity import Geometry, account
+from experiments.loopkv.metrics import WorkCounters
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import AutoModelForCausalLM
-from vllm_rlt.request import Stage
 
 
 def dump(path: Path, value) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n")
 
 
-def drive(engine, prompts, params, *, trace, stop_spec=None):
+def drive(engine, prompts, params, *, trace, stop_spec=None, counters=None):
     completed, steps = {}, []
     matchers, matches = {}, {}
     if stop_spec is not None:
@@ -44,7 +44,10 @@ def drive(engine, prompts, params, *, trace, stop_spec=None):
     for index, prompt in enumerate(prompts):
         engine.add_request(str(index), prompt, params)
     while engine.has_unfinished_requests():
-        for output in engine.step():
+        outputs = engine.step()
+        if counters is not None:
+            counters.observe(engine.last_schedule, len(engine.cache_manager._allocations))
+        for output in outputs:
             if stop_spec is not None:
                 match = matchers[output.request_id].update(output.token_ids)
                 if match is not None:
@@ -206,6 +209,7 @@ def main():
             "warmup_rounds": int(args.measure),
             "profile_range": args.profile_range,
             "measurement_boundary": "all submissions through full drain, after warmup",
+            "timed_counters": "CPU batch/depth histograms and observed residency; no device reads",
             "gpu": subprocess.check_output(
                 [
                     "nvidia-smi",
@@ -265,8 +269,9 @@ def main():
     torch.cuda.reset_peak_memory_stats()
     if args.profile_range:
         torch.cuda.cudart().cudaProfilerStart()
+    counters = WorkCounters()
     completed, steps, elapsed = drive(
-        engine, prompts, params, trace=not args.measure, stop_spec=stop_spec
+        engine, prompts, params, trace=not args.measure, stop_spec=stop_spec, counters=counters
     )
     if args.profile_range:
         torch.cuda.cudart().cudaProfilerStop()
@@ -285,11 +290,6 @@ def main():
         "decode_exit_histogram": dict(Counter(exits)),
         "cached_decode_positions": len(exits),
         "executed_decode_loops": sum(exits),
-        "recurrent_batch_histogram": dict(
-            Counter(s["rows"] for s in steps if s["stage"] == Stage.RECURRENT.value)
-        )
-        if steps
-        else None,
         "promotion_payload_bytes_from_trace": sum(
             r["avoidable_promotion_payload_bytes"] for r in ledgers
         ),
@@ -301,6 +301,7 @@ def main():
         "geometry": asdict(shape),
         "finalization_exposed_ms": None,
     }
+    summary.update(counters.summary())
     if args.compact:
         cache = engine.cache_manager
         summary["compact"] = {
