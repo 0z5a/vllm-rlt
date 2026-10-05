@@ -12,8 +12,11 @@ The public contract is pinned to
 Its configuration relies on the defaults defined in that source: hidden width
 2,048, 32 heads, head width 64, FFN width 5,120 and context 1,024. All 29 tensor
 names and shapes agree with the published safetensors header, totaling
-278,169,600 stored parameters. The header came from a range request; this is not
-full-weight verification or official inference.
+278,169,600 stored parameters. The initial shape audit used a range request. The complete 556,342,528-byte
+checkpoint is now locally hash-verified as
+`077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185`.
+Official-weight CPU arithmetic checks below retain failures; CUDA serving remains
+pending.
 
 | Validation | Result |
 |---|---|
@@ -26,7 +29,8 @@ full-weight verification or official inference.
 | Actual pinned author GPT forward, tiny copied BF16 parameters | Three lengths pass at atol 0.03 / rtol 0.02; max absolute error 0.0625; greedy tokens exact |
 | CUDA FP32 state/logits/all-KV oracle | Pass at the same 3e-6 / 3e-5 tolerances |
 | Tiny BF16 CUDA sync/async/Graph, four storage modes, B1–128/C2B | All 72 arms pass across two request-ID lifetimes |
-| Official-weight inference | Pending |
+| Official-weight CPU author/dense/cached comparison | 12 diagnostic cases complete; frozen numerical budgets fail |
+| Official-weight CUDA E2E | Pending |
 
 The author comparison uses the original full dense forward against the independent
 functional oracle. The paged implementation is separately checked against that
@@ -57,3 +61,57 @@ Fixed-depth execution is a negative control for skipped-depth storage savings.
 | LoopFormer 3-block / 8-step | — | — | Not measured |
 
 [Raw author comparison](evidence/loopformer-author-tiny.json).
+
+
+## Official-weight CPU diagnostic
+
+The complete released weights are loaded strictly into the native model and the
+unchanged pinned author GPT. The author model shares the loaded weight values;
+forward hooks observe each attention projection without replacing its arithmetic.
+The independent dense oracle compares all logits, all 24 layer/depth KV pairs and
+every native recurrent state. Inputs are actual tokenizer-produced IDs from the
+frozen P128 fixture, truncated to P1/7/33 with two additional teacher-forced IDs.
+No free-running generation or task quality is measured.
+
+Two native executions are compared: cached P+1+1 execution, and a single full
+prefill of all P+2 tokens. Both retain the prior FP32 `3e-6 / 3e-5` and BF16
+`.03 / .02` absolute/relative budgets. **Neither dtype passes the complete gate**
+on these official weights; the tiny-model result must not be generalized.
+
+| Dtype | P + continuation | Author max logit error | Cached native max logit error | Full-prefill native max logit error | Cached / full native greedy IDs | Gate | Speedup |
+|---|---|---:|---:|---:|---|---|---|
+| float32 | 1 + 2 | 2.67029e-05 | 6.58035e-05 | 6.77109e-05 | True / True | Fail | Not measured |
+| float32 | 7 + 2 | 2.95639e-05 | 6.29425e-05 | 6.29425e-05 | True / True | Fail | Not measured |
+| float32 | 33 + 2 | 3.14713e-05 | 6.77109e-05 | 6.77109e-05 | True / True | Fail | Not measured |
+| bfloat16 | 1 + 2 | 0.125 | 0.125 | 0.125 | True / True | Fail | Not measured |
+| bfloat16 | 7 + 2 | 0.1875 | 0.21875 | 0.21875 | True / True | Fail | Not measured |
+| bfloat16 | 33 + 2 | 0.488281 | 0.1875 | 0.1875 | False / False | Fail | Not measured |
+
+All author argmax IDs match the dense oracle. For BF16 P33, the native path first
+differs at absolute position 30: the oracle/author selects token 257 and native
+selects 4572, with a 0.0625 top-two logit margin in each path. The same divergence
+and BF16 error counts occur in the full-prefill diagnostic. Therefore incremental
+decode alone does not explain this discrepancy. The actual reduction/conditioning
+source has not yet been isolated; tolerances have not been widened.
+
+The cached run's maximum all-KV errors are 1.11e-4 in FP32 and 0.25 in BF16;
+the author-vs-dense maxima are 3.24e-5 and 0.703125 respectively. The raw report
+includes failed-element counts, first differing values and logical locations,
+per-depth state errors and argmax margins. The cached numerical measurements
+were repeated exactly before adding the full-prefill diagnostic.
+
+```bash
+python -m experiments.loopkv.loopformer_checkpoint_gate \
+  --model /path/to/verified-loopformer \
+  --author-source /path/to/pinned/modeling_loopformer.py \
+  --prompts /path/to/loopformer-prompts-p128-v1.json \
+  --out checkpoint-cached.json
+# Repeat with --prefill-only for the full-prefill diagnostic.
+```
+
+Both commands naturally return one after retaining all six cases. They require
+an existing compatible Transformers runtime for the author source and do not
+install packages. CPU PyTorch 2.13.0 was used.
+[Official checkpoint raw results and source hashes](evidence/loopformer-official-cpu.json).
+These findings leave author-equivalence and GPU/quality qualification open;
+they do not establish a zero-copy storage regression or an end-to-end speedup.
