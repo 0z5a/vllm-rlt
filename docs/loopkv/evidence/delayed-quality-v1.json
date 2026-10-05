@@ -1,0 +1,521 @@
+{
+  "scope": "natural_generation_quality_not_timing",
+  "source_sha": "77ccbbb1bcd3df16bd9fa3a248be2467aab10ecf",
+  "rows": [
+    {
+      "case": {
+        "name": "gsm8k100-b16",
+        "batch": 16,
+        "requests": 100,
+        "outputs": 1024,
+        "blocks": 5696
+      },
+      "arm": {
+        "name": "native-sync",
+        "execution": "sync",
+        "alias": false,
+        "async": false,
+        "graphs": false
+      },
+      "output_tokens": 10706,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "exact_request_objects": true,
+      "peak_allocated_bytes": 20828022784,
+      "peak_reserved_bytes": 21030240256,
+      "free_blocks_after_drain": 5696,
+      "recurrent_batch_histogram": {
+        "1": 5,
+        "2": 159,
+        "3": 44,
+        "4": 16,
+        "5": 8,
+        "6": 33,
+        "7": 56,
+        "8": 13,
+        "9": 56,
+        "10": 8,
+        "11": 15,
+        "12": 21,
+        "13": 5,
+        "14": 13,
+        "15": 183,
+        "16": 2304
+      },
+      "submitted_recurrent_depth_rows": {
+        "1": 10606,
+        "2": 10606,
+        "3": 10606,
+        "4": 10292
+      },
+      "submitted_recurrent_rows": 42110,
+      "recurrent_calls": 2939,
+      "effective_batch_mean": 14.32800272201429,
+      "effective_batch_nearest_rank_quantiles": {
+        "p10": 7,
+        "p50": 16,
+        "p90": 16
+      },
+      "submitted_prefill_tokens": 32360,
+      "observed_peak_residents_after_step": 16,
+      "score": {
+        "correct": 63,
+        "count": 100,
+        "strict_match": 0.63,
+        "missing_answer": 26,
+        "length_limited": 0,
+        "text_stopped": 100,
+        "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+        "requests_sha256": "123e663f561a3b599a960e28d0ae8ff15cdbbd732ff280f0bc93ce48984df588",
+        "wilson95": [
+          0.5322052958094291,
+          0.7181763946567546
+        ]
+      },
+      "versus_native_sync": {
+        "token_different_requests": 0,
+        "exit_different_requests": 0
+      },
+      "raw_requests_sha256": "9ebd7317596ae1bfcf499520e3565416c275b2673bcd7c5e6092a2dd06d26317",
+      "committed_decode_rows": 42110,
+      "submitted_minus_committed_rows": 0
+    },
+    {
+      "case": {
+        "name": "gsm8k100-b16",
+        "batch": 16,
+        "requests": 100,
+        "outputs": 1024,
+        "blocks": 5696
+      },
+      "arm": {
+        "name": "alias-sync",
+        "execution": "sync",
+        "alias": true,
+        "async": false,
+        "graphs": false
+      },
+      "output_tokens": 10706,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "exact_request_objects": true,
+      "peak_allocated_bytes": 20828387328,
+      "peak_reserved_bytes": 21030240256,
+      "free_blocks_after_drain": 5696,
+      "recurrent_batch_histogram": {
+        "1": 5,
+        "2": 159,
+        "3": 44,
+        "4": 16,
+        "5": 8,
+        "6": 33,
+        "7": 56,
+        "8": 13,
+        "9": 56,
+        "10": 8,
+        "11": 15,
+        "12": 21,
+        "13": 5,
+        "14": 13,
+        "15": 183,
+        "16": 2304
+      },
+      "submitted_recurrent_depth_rows": {
+        "1": 10606,
+        "2": 10606,
+        "3": 10606,
+        "4": 10292
+      },
+      "submitted_recurrent_rows": 42110,
+      "recurrent_calls": 2939,
+      "effective_batch_mean": 14.32800272201429,
+      "effective_batch_nearest_rank_quantiles": {
+        "p10": 7,
+        "p50": 16,
+        "p90": 16
+      },
+      "submitted_prefill_tokens": 32360,
+      "observed_peak_residents_after_step": 16,
+      "score": {
+        "correct": 63,
+        "count": 100,
+        "strict_match": 0.63,
+        "missing_answer": 26,
+        "length_limited": 0,
+        "text_stopped": 100,
+        "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+        "requests_sha256": "123e663f561a3b599a960e28d0ae8ff15cdbbd732ff280f0bc93ce48984df588",
+        "wilson95": [
+          0.5322052958094291,
+          0.7181763946567546
+        ]
+      },
+      "versus_native_sync": {
+        "token_different_requests": 0,
+        "exit_different_requests": 0
+      },
+      "raw_requests_sha256": "9ebd7317596ae1bfcf499520e3565416c275b2673bcd7c5e6092a2dd06d26317",
+      "committed_decode_rows": 42110,
+      "submitted_minus_committed_rows": 0
+    },
+    {
+      "case": {
+        "name": "gsm8k100-b16",
+        "batch": 16,
+        "requests": 100,
+        "outputs": 1024,
+        "blocks": 5696
+      },
+      "arm": {
+        "name": "native-async",
+        "execution": "async",
+        "alias": false,
+        "async": true,
+        "graphs": false
+      },
+      "output_tokens": 10706,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "exact_request_objects": true,
+      "peak_allocated_bytes": 20906689536,
+      "peak_reserved_bytes": 21147680768,
+      "free_blocks_after_drain": 5696,
+      "recurrent_batch_histogram": {
+        "1": 5,
+        "2": 159,
+        "3": 44,
+        "4": 16,
+        "5": 8,
+        "6": 33,
+        "7": 56,
+        "8": 13,
+        "9": 56,
+        "10": 8,
+        "11": 15,
+        "12": 21,
+        "13": 5,
+        "14": 13,
+        "15": 183,
+        "16": 2304
+      },
+      "submitted_recurrent_depth_rows": {
+        "1": 10606,
+        "2": 10606,
+        "3": 10606,
+        "4": 10292
+      },
+      "submitted_recurrent_rows": 42110,
+      "recurrent_calls": 2939,
+      "effective_batch_mean": 14.32800272201429,
+      "effective_batch_nearest_rank_quantiles": {
+        "p10": 7,
+        "p50": 16,
+        "p90": 16
+      },
+      "submitted_prefill_tokens": 32360,
+      "observed_peak_residents_after_step": 16,
+      "score": {
+        "correct": 63,
+        "count": 100,
+        "strict_match": 0.63,
+        "missing_answer": 26,
+        "length_limited": 0,
+        "text_stopped": 100,
+        "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+        "requests_sha256": "123e663f561a3b599a960e28d0ae8ff15cdbbd732ff280f0bc93ce48984df588",
+        "wilson95": [
+          0.5322052958094291,
+          0.7181763946567546
+        ]
+      },
+      "versus_native_sync": {
+        "token_different_requests": 0,
+        "exit_different_requests": 0
+      },
+      "raw_requests_sha256": "9ebd7317596ae1bfcf499520e3565416c275b2673bcd7c5e6092a2dd06d26317",
+      "committed_decode_rows": 42110,
+      "submitted_minus_committed_rows": 0
+    },
+    {
+      "case": {
+        "name": "gsm8k100-b16",
+        "batch": 16,
+        "requests": 100,
+        "outputs": 1024,
+        "blocks": 5696
+      },
+      "arm": {
+        "name": "alias-async",
+        "execution": "async",
+        "alias": true,
+        "async": true,
+        "graphs": false
+      },
+      "output_tokens": 10706,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "exact_request_objects": true,
+      "peak_allocated_bytes": 21007721472,
+      "peak_reserved_bytes": 21256732672,
+      "free_blocks_after_drain": 5696,
+      "recurrent_batch_histogram": {
+        "1": 5,
+        "2": 159,
+        "3": 44,
+        "4": 16,
+        "5": 8,
+        "6": 33,
+        "7": 56,
+        "8": 13,
+        "9": 56,
+        "10": 8,
+        "11": 15,
+        "12": 21,
+        "13": 5,
+        "14": 13,
+        "15": 183,
+        "16": 2304
+      },
+      "submitted_recurrent_depth_rows": {
+        "1": 10606,
+        "2": 10606,
+        "3": 10606,
+        "4": 10292
+      },
+      "submitted_recurrent_rows": 42110,
+      "recurrent_calls": 2939,
+      "effective_batch_mean": 14.32800272201429,
+      "effective_batch_nearest_rank_quantiles": {
+        "p10": 7,
+        "p50": 16,
+        "p90": 16
+      },
+      "submitted_prefill_tokens": 32360,
+      "observed_peak_residents_after_step": 16,
+      "score": {
+        "correct": 63,
+        "count": 100,
+        "strict_match": 0.63,
+        "missing_answer": 26,
+        "length_limited": 0,
+        "text_stopped": 100,
+        "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+        "requests_sha256": "123e663f561a3b599a960e28d0ae8ff15cdbbd732ff280f0bc93ce48984df588",
+        "wilson95": [
+          0.5322052958094291,
+          0.7181763946567546
+        ]
+      },
+      "versus_native_sync": {
+        "token_different_requests": 0,
+        "exit_different_requests": 0
+      },
+      "raw_requests_sha256": "9ebd7317596ae1bfcf499520e3565416c275b2673bcd7c5e6092a2dd06d26317",
+      "committed_decode_rows": 42110,
+      "submitted_minus_committed_rows": 0
+    },
+    {
+      "case": {
+        "name": "gsm8k100-b16",
+        "batch": 16,
+        "requests": 100,
+        "outputs": 1024,
+        "blocks": 5696
+      },
+      "arm": {
+        "name": "native-graph",
+        "execution": "graph",
+        "alias": false,
+        "async": true,
+        "graphs": true
+      },
+      "output_tokens": 11531,
+      "token_different_requests": 0,
+      "exit_different_requests": 0,
+      "exact_request_objects": true,
+      "peak_allocated_bytes": 21088320512,
+      "peak_reserved_bytes": 21323841536,
+      "free_blocks_after_drain": 5696,
+      "recurrent_batch_histogram": {
+        "1": 1642,
+        "2": 83,
+        "3": 45,
+        "4": 129,
+        "5": 151,
+        "6": 327,
+        "7": 345,
+        "8": 304,
+        "9": 301,
+        "10": 445,
+        "11": 382,
+        "12": 376,
+        "13": 473,
+        "14": 399,
+        "15": 291,
+        "16": 206
+      },
+      "submitted_recurrent_depth_rows": {
+        "1": 11431,
+        "2": 11431,
+        "3": 11431,
+        "4": 10999
+      },
+      "submitted_recurrent_rows": 45292,
+      "recurrent_calls": 5899,
+      "effective_batch_mean": 7.677911510425496,
+      "effective_batch_nearest_rank_quantiles": {
+        "p10": 1,
+        "p50": 8,
+        "p90": 14
+      },
+      "submitted_prefill_tokens": 32360,
+      "observed_peak_residents_after_step": 16,
+      "graphs": {
+        "captures": 16,
+        "replays": 5899,
+        "fallbacks": 0
+      },
+      "score": {
+        "correct": 63,
+        "count": 100,
+        "strict_match": 0.63,
+        "missing_answer": 26,
+        "length_limited": 1,
+        "text_stopped": 99,
+        "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+        "requests_sha256": "8bad0d649be0b03dde89da0a62080b5c87f50347826efbd9286329936f296588",
+        "wilson95": [
+          0.5322052958094291,
+          0.7181763946567546
+        ]
+      },
+      "versus_native_sync": {
+        "token_different_requests": 22,
+        "exit_different_requests": 50
+      },
+      "raw_requests_sha256": "68006cc3942d0993796e93e88cf291d54fd13a68f1720fc53037f91f9d7aad11",
+      "committed_decode_rows": 45292,
+      "submitted_minus_committed_rows": 0
+    },
+    {
+      "case": {
+        "name": "gsm8k100-b16",
+        "batch": 16,
+        "requests": 100,
+        "outputs": 1024,
+        "blocks": 5696
+      },
+      "arm": {
+        "name": "alias-graph",
+        "execution": "graph",
+        "alias": true,
+        "async": true,
+        "graphs": true
+      },
+      "output_tokens": 11489,
+      "token_different_requests": 15,
+      "exit_different_requests": 43,
+      "exact_request_objects": false,
+      "peak_allocated_bytes": 21198215168,
+      "peak_reserved_bytes": 21441282048,
+      "free_blocks_after_drain": 5696,
+      "recurrent_batch_histogram": {
+        "1": 3381,
+        "2": 166,
+        "3": 82,
+        "4": 87,
+        "5": 65,
+        "6": 113,
+        "7": 188,
+        "8": 196,
+        "9": 118,
+        "10": 195,
+        "11": 204,
+        "12": 247,
+        "13": 406,
+        "14": 465,
+        "15": 554,
+        "16": 535
+      },
+      "submitted_recurrent_depth_rows": {
+        "1": 11402,
+        "2": 11389,
+        "3": 11389,
+        "4": 10892
+      },
+      "submitted_recurrent_rows": 45072,
+      "recurrent_calls": 7002,
+      "effective_batch_mean": 6.4370179948586115,
+      "effective_batch_nearest_rank_quantiles": {
+        "p10": 1,
+        "p50": 2,
+        "p90": 15
+      },
+      "submitted_prefill_tokens": 32360,
+      "observed_peak_residents_after_step": 16,
+      "graphs": {
+        "captures": 16,
+        "replays": 7002,
+        "fallbacks": 0
+      },
+      "score": {
+        "correct": 62,
+        "count": 100,
+        "strict_match": 0.62,
+        "missing_answer": 26,
+        "length_limited": 1,
+        "text_stopped": 99,
+        "protocol_sha256": "632f572c373dd39ad42901eaae39156edf1d9f3490c17919cadfe36c12286ede",
+        "requests_sha256": "73b3b00baad749837eb383b4288f9a63f57dfcd9e4f7292469e63afd3ee5ac41",
+        "wilson95": [
+          0.5220975529551107,
+          0.7090240074752127
+        ]
+      },
+      "versus_native_sync": {
+        "token_different_requests": 21,
+        "exit_different_requests": 45
+      },
+      "raw_requests_sha256": "dec961fcfe547c3980d84491157a2d7fdd7f3f3129e6147767c71cb00fe84888",
+      "committed_decode_rows": 45059,
+      "submitted_minus_committed_rows": 13
+    }
+  ],
+  "discordant_graph_answers": [
+    {
+      "source_id": 595,
+      "native_correct": false,
+      "alias_correct": true,
+      "native_prediction": "[invalid]",
+      "alias_prediction": "13",
+      "gold": "13"
+    },
+    {
+      "source_id": 1069,
+      "native_correct": true,
+      "alias_correct": false,
+      "native_prediction": "300",
+      "alias_prediction": "15",
+      "gold": "300"
+    },
+    {
+      "source_id": 1303,
+      "native_correct": true,
+      "alias_correct": false,
+      "native_prediction": "4",
+      "alias_prediction": "[invalid]",
+      "gold": "4"
+    }
+  ],
+  "raw_archive_sha256": "4c005745908ae4fd978bd284a975c94b929a59bd57b82e9fa4cd6173782189f6",
+  "all_five_children_natural0": true,
+  "graph_accuracy_delta": {
+    "alias_minus_native": -0.01,
+    "paired_bootstrap95": [
+      -0.05,
+      0.02
+    ],
+    "resamples": 10000,
+    "seed": 1705
+  }
+}
