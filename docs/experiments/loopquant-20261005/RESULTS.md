@@ -521,3 +521,7 @@ After all local readers exited and the shared future-read hold was released, bot
 ## NVFP4 fused producer preflight preparation
 
 The [fixed-global fused producer](F2_PREFLIGHT.md) and64-case native/Graph probe are implemented and frozen. Full CPU regression passes494 tests,29 skips and264 GPU deselections. These CPU checks do not validate the new kernel; fused GPU results, model export and speedup remain unrun.
+
+## Four-family native INT4 qualification
+
+[All64 tiny GPU cases](native-families-v1/summary.json) pass in the separately integrated [family adapter draft](https://github.com/0z5a/vllm-rlt/pull/23):48 updated Ouro/Nanbeige FP8 regressions plus16 INT4 cases across Ouro/Nanbeige/HRM/LoopFormer, Graph off/on and native/compact KV.67 files were verified offbox and64 temporary weight payloads cleaned. Full family checkpoint quality and performance remain pending.

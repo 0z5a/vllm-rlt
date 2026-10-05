@@ -1,0 +1,31 @@
+{
+  "status": "complete",
+  "scope": "64 tiny FP8/INT4 native cases including four INT4 families; no full model or performance claim",
+  "controller_pid": 29910,
+  "child_pid": 29913,
+  "controller_ssh_returncode": 0,
+  "offbox_ssh_returncode": 0,
+  "package_manifest_sha256": "59b1143853fb62a1ca5e852aaf5ebbef1d2a8f88482bff47cb55df08afd69d4b",
+  "archived_files": 67,
+  "file_manifest_sha256": "f2fda9fd3ee5b32433a931d445522847564473f2d0cbda990c38cc30cbec6c0d",
+  "local_archive_sha256": "b9004c2f138ee9efdc696cdcd1d4a995b6f563d59a3e5d52bce7257aec1abd1d",
+  "local_archive_bytes": 10157,
+  "temporary_weight_payloads_removed": 64,
+  "local_verification": "all67 sizes and hashes independently verified",
+  "postflight": {
+    "status": "pass",
+    "timestamp": 1791178255.5868115,
+    "own_pids_absent": [
+      29910,
+      29913
+    ],
+    "own_readers": [],
+    "gpu1_compute_apps": "",
+    "original_locks_take_release": {
+      "gpu1-perf.lock": 12895501695,
+      "heavy-io.lock": 12895501666
+    },
+    "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7"
+  },
+  "timestamp": 1791178274.186411
+}
