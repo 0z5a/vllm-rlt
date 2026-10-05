@@ -23,7 +23,7 @@ import torch
 from experiments.loopkv.capacity import Geometry, account
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import AutoModelForCausalLM, OuroConfig, OuroForCausalLM
+from vllm_rlt.models import AutoModelForCausalLM
 from vllm_rlt.request import Stage
 
 
@@ -31,14 +31,26 @@ def dump(path: Path, value) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n")
 
 
-def drive(engine, prompts, params, *, trace):
+def drive(engine, prompts, params, *, trace, stop_spec=None):
     completed, steps = {}, []
+    matchers, matches = {}, {}
+    if stop_spec is not None:
+        from experiments.loopkv.text_stops import ByteStops
+
+        pieces = tuple(bytes.fromhex(value) for value in stop_spec["token_bytes_hex"])
+        matchers = {str(i): ByteStops(pieces, stop_spec["stops"]) for i in range(len(prompts))}
     torch.cuda.synchronize()
     start = time.perf_counter()
     for index, prompt in enumerate(prompts):
         engine.add_request(str(index), prompt, params)
     while engine.has_unfinished_requests():
         for output in engine.step():
+            if stop_spec is not None:
+                match = matchers[output.request_id].update(output.token_ids)
+                if match is not None:
+                    matches[output.request_id] = match
+                    if not output.finished:
+                        output = engine.abort_request(output.request_id)
             if output.finished:
                 completed[output.request_id] = output
         if trace:
@@ -56,7 +68,10 @@ def drive(engine, prompts, params, *, trace):
     engine.model_runner.synchronize()
     torch.cuda.synchronize()
     elapsed = time.perf_counter() - start
-    return {rid: asdict(output) for rid, output in completed.items()}, steps, elapsed
+    serialized = {rid: asdict(output) for rid, output in completed.items()}
+    for rid, (text, offset) in matches.items():
+        serialized[rid]["text_stop"] = {"text": text, "byte_offset": offset}
+    return serialized, steps, elapsed
 
 
 def main():
@@ -69,6 +84,8 @@ def main():
     parser.add_argument("--requests", type=int)
     parser.add_argument("--num-blocks", type=int, required=True)
     parser.add_argument("--threshold", type=float, required=True)
+    parser.add_argument("--min-loops", type=int, default=2)
+    parser.add_argument("--max-loops", type=int)
     parser.add_argument("--policy", choices=("ouro", "ouro_delayed"), default="ouro")
     parser.add_argument("--alias", action="store_true")
     parser.add_argument("--compact", action="store_true")
@@ -78,11 +95,24 @@ def main():
     parser.add_argument("--graphs", action="store_true")
     parser.add_argument("--measure", action="store_true")
     parser.add_argument("--profile-range", action="store_true")
+    parser.add_argument("--quality-stops", type=Path)
+    parser.add_argument("--load-lock", type=Path)
     args = parser.parse_args()
     scope = (
         "finite_batch_engine_e2e" if args.measure else "diagnostic_engine_capture_not_performance"
     )
     manifest = json.loads((args.model / "verified-manifest.json").read_text())
+    stop_spec = None
+    if args.quality_stops is not None:
+        if args.measure or args.profile_range or args.async_scheduling:
+            raise ValueError("quality text stops currently require synchronous diagnostic mode")
+        stop_spec = json.loads(args.quality_stops.read_text())
+        if (
+            hashlib.sha256((args.model / "tokenizer.json").read_bytes()).hexdigest()
+            != stop_spec["tokenizer_sha256"]
+        ):
+            raise ValueError("quality stop table belongs to a different tokenizer")
+        scope = "quality_engine_generation_with_eos_and_text_stops"
     prompts = json.loads(args.prompts.read_text())
     if args.requests is not None:
         if args.requests < 1:
@@ -119,10 +149,14 @@ def main():
     for name in (
         "vllm_rlt.engine.llm_engine",
         "vllm_rlt.core.alias_kv_cache",
+        "vllm_rlt.core.compact_kv_cache",
         "vllm_rlt.core.kv_cache_manager",
         "vllm_rlt.kernels.triton_attention",
         "vllm_rlt.models.ouro",
+        "vllm_rlt.models.nanbeige",
+        "vllm_rlt.models.huginn",
         "experiments.loopkv.checkpoint",
+        "experiments.loopkv.text_stops",
     ):
         path = Path(importlib.import_module(name).__file__).resolve()
         modules[name] = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
@@ -159,9 +193,14 @@ def main():
             "sampling": {
                 "max_tokens": args.max_tokens,
                 "exit_threshold": args.threshold,
+                "min_loops": args.min_loops,
+                "max_loops": args.max_loops,
                 "seed": 17,
-                "ignore_eos": True,
+                "ignore_eos": stop_spec is None,
             },
+            "quality_stops_sha256": hashlib.sha256(args.quality_stops.read_bytes()).hexdigest()
+            if args.quality_stops is not None
+            else None,
             "request_count": len(prompts),
             "scope": scope,
             "warmup_rounds": int(args.measure),
@@ -177,21 +216,22 @@ def main():
             ),
         },
     )
+    load_lock = None
+    if args.load_lock is not None:
+        import fcntl
+
+        load_lock = args.load_lock.open("a")
+        fcntl.flock(load_lock, fcntl.LOCK_EX)
     if args.checkpoint_reader == "native":
         model = AutoModelForCausalLM.from_pretrained(
             str(args.model), device="cuda", dtype=torch.bfloat16
         )
     else:
-        from experiments.loopkv.checkpoint import load_weights
+        from experiments.loopkv.checkpoint import load_model
 
-        config_data = json.loads((args.model / "config.json").read_text())
-        if config_data["model_type"] != "ouro":
-            raise ValueError("the standalone reader is qualified for Ouro only")
-        with torch.device("meta"):
-            model = OuroForCausalLM(OuroConfig.from_dict(config_data))
-        load_weights(model, args.model, torch.device("cuda"), torch.bfloat16)
-        model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device="cuda")
-        model.eval()
+        model = load_model(args.model, torch.device("cuda"), torch.bfloat16)
+    if load_lock is not None:
+        load_lock.close()
     config = model.config
     shape = Geometry(
         config.num_hidden_layers, config.num_key_value_heads, config.head_dim, config.total_ut_steps
@@ -210,7 +250,12 @@ def main():
         exit_config=ExitConfig(args.policy),
     )
     params = SamplingParams(
-        max_tokens=args.max_tokens, exit_threshold=args.threshold, seed=17, ignore_eos=True
+        max_tokens=args.max_tokens,
+        exit_threshold=args.threshold,
+        min_loops=args.min_loops,
+        max_loops=args.max_loops,
+        seed=17,
+        ignore_eos=stop_spec is None,
     )
     if args.measure:
         drive(engine, prompts, params, trace=False)
@@ -220,7 +265,9 @@ def main():
     torch.cuda.reset_peak_memory_stats()
     if args.profile_range:
         torch.cuda.cudart().cudaProfilerStart()
-    completed, steps, elapsed = drive(engine, prompts, params, trace=not args.measure)
+    completed, steps, elapsed = drive(
+        engine, prompts, params, trace=not args.measure, stop_spec=stop_spec
+    )
     if args.profile_range:
         torch.cuda.cudart().cudaProfilerStop()
     # The first output comes from prefill; its exit depth is not a decode KV position.

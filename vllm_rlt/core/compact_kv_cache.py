@@ -101,7 +101,14 @@ class CompactKVCacheManager(AliasKVCacheManager):
                 key = id(allocation)
                 versions = self._records[key]
                 if for_write and position in self._exits[key]:
-                    raise ValueError("cannot overwrite a finalized source")
+                    # Coda may fill an unwritten boundary layer after recurrent
+                    # finalization. Its depth-zero record already exists.
+                    if (
+                        len(self.recurrent_layers) == self.num_layers
+                        or depth != 0
+                        or (depth, position) not in versions
+                    ):
+                        raise ValueError("cannot overwrite a finalized source")
                 if for_write and (depth, position) not in versions:
                     versions[depth, position] = self._free_records.pop()
                 records.append(versions.get((depth, position), -1))
@@ -157,7 +164,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
         if position in self._exits[key]:
             raise ValueError("position already finalized")
         for depth in range(exit_depth + 1):
-            for layer in range(self.num_layers):
+            for layer in self.recurrent_layers:
                 if position not in allocation.written[depth][layer]:
                     raise RuntimeError("cannot finalize an unwritten executed version")
         self._maps[key][self.max_loops, position].fill_(exit_depth)
@@ -170,7 +177,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
             self._credits[key] -= released
             self._reserved_records -= released
         for depth in range(exit_depth + 1, self.max_loops):
-            for layer in range(self.num_layers):
+            for layer in self.recurrent_layers:
                 self._readable[key][depth][layer].add(position)
 
     def _attend_prepared(self, layer, batch, q):

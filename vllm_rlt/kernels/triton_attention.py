@@ -21,6 +21,7 @@ def _paged_attention_kernel(
     EXITS,
     DEPTH_TABLES,
     QUERY_DEPTHS,
+    ALIAS_STARTS,
     RECORD_MAP_POINTERS,
     RECORD_MAP_WIDTHS,
     q_batch_stride: tl.constexpr,
@@ -79,26 +80,35 @@ def _paged_attention_kernel(
             )
             blocks, offsets = records // PAGE_SIZE, records % PAGE_SIZE
         elif ALIAS:
-            query_depth = tl.load(QUERY_DEPTHS + row)
-            first_blocks = tl.load(
-                DEPTH_TABLES + row * depth_row_stride + positions // PAGE_SIZE,
-                mask=valid_tokens,
-                other=0,
-            ).to(tl.int64)
-            exit_depths = tl.load(
-                EXITS + first_blocks * PAGE_SIZE + positions % PAGE_SIZE,
-                mask=valid_tokens,
-                other=-1,
-            )
-            sources = tl.where(exit_depths >= 0, tl.minimum(query_depth, exit_depths), query_depth)
-            blocks = tl.load(
-                DEPTH_TABLES
-                + row * depth_row_stride
-                + sources * depth_stride
-                + positions // PAGE_SIZE,
-                mask=valid_tokens,
-                other=0,
-            ).to(tl.int64)
+            if start + BLOCK_T <= tl.load(ALIAS_STARTS + row):
+                blocks = tl.load(
+                    TABLES + row * table_stride + positions // PAGE_SIZE,
+                    mask=valid_tokens,
+                    other=0,
+                ).to(tl.int64)
+            else:
+                query_depth = tl.load(QUERY_DEPTHS + row)
+                first_blocks = tl.load(
+                    DEPTH_TABLES + row * depth_row_stride + positions // PAGE_SIZE,
+                    mask=valid_tokens,
+                    other=0,
+                ).to(tl.int64)
+                exit_depths = tl.load(
+                    EXITS + first_blocks * PAGE_SIZE + positions % PAGE_SIZE,
+                    mask=valid_tokens,
+                    other=-1,
+                )
+                sources = tl.where(
+                    exit_depths >= 0, tl.minimum(query_depth, exit_depths), query_depth
+                )
+                blocks = tl.load(
+                    DEPTH_TABLES
+                    + row * depth_row_stride
+                    + sources * depth_stride
+                    + positions // PAGE_SIZE,
+                    mask=valid_tokens,
+                    other=0,
+                ).to(tl.int64)
         else:
             blocks = tl.load(
                 TABLES + row * table_stride + positions // PAGE_SIZE,
@@ -152,6 +162,7 @@ def paged_attention(
     source_depths=None,
     depth_block_tables=None,
     query_depths=None,
+    alias_starts=None,
     record_map_pointers=None,
     record_map_widths=None,
     max_loops=0,
@@ -170,6 +181,7 @@ def paged_attention(
         source_depths if source_depths is not None else block_tables,
         depth_block_tables if depth_block_tables is not None else block_tables,
         query_depths if query_depths is not None else context_lengths,
+        alias_starts if alias_starts is not None else context_lengths,
         record_map_pointers if record_map_pointers is not None else block_tables,
         record_map_widths if record_map_widths is not None else context_lengths,
         *q.stride(),
