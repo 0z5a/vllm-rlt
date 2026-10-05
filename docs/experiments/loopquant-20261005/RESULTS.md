@@ -1,7 +1,8 @@
 # Quantization experiment results — 2026-10-05
 
 This is an in-progress numerical qualification. No model has completed G0–G3.
-There are no measured E2E speedups yet; missing values are not zero speedup.
+The [measured engine pilot](PILOT_E2E.md) shows FP8 throughput regressions.
+No quality-qualified formal G3 speedup is established; missing values are not zero speedup.
 The [coverage queue](MODEL_COVERAGE.md) lists immutable model versions and the
 remaining original-model, adapter, and serving work for each family.
 
@@ -14,6 +15,9 @@ have not run; the earlier two 128-token gradient audits remain a separate result
 | Ouro-2.6B | — | — | — | — | — | Official CPU exact; GPU/E2E pending |
 | Huginn-3.5B | — | — | — | — | — | Full official CPU96/96 exact; cached GPU pending |
 | Nanbeige4.2-3B | — | — | — | — | — | Official CPU64/64 exact; full native GPU pending |
+| LoopFormer3×8 | — | — | — | — | — | Tiny INT4 GPU passes; full quantized serving pending |
+| Parcae370M | — | — | — | — | — | Official dense CPU96/96 exact; quantized GPU pending |
+| HRM-Text-1B | — | — | — | — | — | Tiny INT4 GPU passes; full quantized serving pending |
 
 ## Native FP8 correctness
 
@@ -66,8 +70,10 @@ fixed-tolerance failures (maximum logit error 0.00420481).
 
 ## CPU checks
 
-[Latest full regression](full-cpu-nanbeige-native-attempt2.log): **492 passed, 29 skipped, 196 GPU
-cases deselected**; [JUnit](full-cpu-nanbeige-native-attempt2.xml). Earlier full collection stalled
+[Latest main-branch regression](full-cpu-fused-nvfp4-attempt1.log): **494 passed, 29 skipped, 264 GPU
+cases deselected**; [JUnit](full-cpu-fused-nvfp4-attempt1.xml). Family stack counts and
+GPU execution status are tracked separately in the [coverage queue](MODEL_COVERAGE.md).
+Earlier full collection stalled
 inside an existing macOS dependency load; both processes subsequently completed
 naturally. The final run includes serving, GSM8K collection, and the latest
 quantization changes. Skipped optional/dependency/GPU paths are not claimed as
