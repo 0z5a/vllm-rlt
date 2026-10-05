@@ -141,7 +141,7 @@ def check_huginn_fp8(folder: Path, policy: str, graphs: bool, fuse_norm: bool) -
                 assert finished[str(i)][1] == [3, depth, depth, depth]
             rounds.append(finished)
         results.append(rounds)
-    assert results[0] == results[1]
+    assert results[0] == results[1], {"reference": results[0], "native": results[1]}
     assert weights == {
         name: layer.packed_weight.data_ptr()
         for name, layer in native.named_modules()
