@@ -513,3 +513,7 @@ After all local readers exited and the shared future-read hold was released, bot
 ## Verified native cost profile
 
 [Three Nsight captures](COST_PROFILE.md) and all 15 stats reports completed with natural exit 0. All 28 files were verified offbox; every captured arm completed 64 requests/2,048 output tokens with zero failures, residual KV, new captures or fallbacks. The full fused FP8 producer contributes 4.150%/3.951% of accumulated GPU kernel duration in DYN/SH1 and includes mandatory norm/cast/pack work. Kernel sums are not critical-path or removable durations. G1 is inconclusive; the prior uninstrumented FP8 smoke pilot remains slower than BF16, and the full QAT grid is not expanded on this scale-only evidence. [Decision record](decision.json).
+
+## Frozen fixed F0 diagnostic packets
+
+[RTN and first/all/matched-row GPTQ packets](F0_BASELINES.md) now retain exact source/data hashes, packing settings, per-loop budgets, finite controllers and native reload/dev evaluation runners. The three-policy tiny CPU export integration passes; the full checkpoint calibration, exports and depth curves remain unrun. The existing queued BF16/RTN job is unchanged.

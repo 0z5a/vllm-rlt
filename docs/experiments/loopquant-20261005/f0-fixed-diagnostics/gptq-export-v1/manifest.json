@@ -1,0 +1,21 @@
+{
+  "source_commit": "f8b87c390dafa73de1019cf4464155fa416bab21",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "scope": "fixed first/all/matched GPTQ native BF16 calibration exports; no search, dev or locked quality yet",
+  "calibration_rows": 62993,
+  "all_loop_rows": 251972,
+  "loops": 4,
+  "gram_bytes": 12759072768,
+  "group_size": 128,
+  "block_size": 128,
+  "damping": 0.01,
+  "selection_seed": 17,
+  "export": "one packed W per physical matrix, BF16 native group scales; expected3exports168matrices each",
+  "locks": "child originalGPU wholejob; originalIO for modelread and each export; no same enclosing lock",
+  "files": {
+    "calibration.jsonl": "b33e74f657049f725ca1fb025213110789594d2118d148f85fb2bf192e620d68",
+    "probe.py": "5512f931defe3fb41bb91f4e89c0a6a8c1ca0552e7ff3ba3c67d45519fe2dfce",
+    "run.py": "e70befaa6fd4a8cae699a979d42dcf50e17d5afd277fe494d459ddff27f82387",
+    "source.tar.gz": "227725eb99121b2c31b18760b3e10eeb1fc03da754674a472b81ae808fcc9cf7"
+  }
+}

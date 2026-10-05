@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "scope": "tiny CPU integration only; native GPU and full checkpoint not run",
+  "policies": 3,
+  "physical_matrices_per_policy": 14,
+  "first_rows": 9,
+  "all_rows": 36,
+  "matched_rows": 9,
+  "gram_summaries": 24,
+  "model_weights_unchanged": true,
+  "temporary_payloads_removed": true,
+  "runner_sha256": "5512f931defe3fb41bb91f4e89c0a6a8c1ca0552e7ff3ba3c67d45519fe2dfce"
+}
