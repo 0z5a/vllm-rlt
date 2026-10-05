@@ -517,3 +517,7 @@ After all local readers exited and the shared future-read hold was released, bot
 ## Frozen fixed F0 diagnostic packets
 
 [RTN and first/all/matched-row GPTQ packets](F0_BASELINES.md) now retain exact source/data hashes, packing settings, per-loop budgets, finite controllers and native reload/dev evaluation runners. The three-policy tiny CPU export integration passes; the full checkpoint calibration, exports and depth curves remain unrun. The existing queued BF16/RTN job is unchanged.
+
+## NVFP4 fused producer preflight preparation
+
+The [fixed-global fused producer](F2_PREFLIGHT.md) and64-case native/Graph probe are implemented and frozen. Full CPU regression passes494 tests,29 skips and264 GPU deselections. These CPU checks do not validate the new kernel; fused GPU results, model export and speedup remain unrun.
