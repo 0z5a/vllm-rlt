@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "format": "fused_rowwise_fp8_e4m3fn",
+  "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model_config": {
+    "model_type": "nanbeige",
+    "architectures": [
+      "NanbeigeForCausalLM"
+    ],
+    "vocab_size": 64,
+    "hidden_size": 64,
+    "intermediate_size": 256,
+    "num_hidden_layers": 2,
+    "num_attention_heads": 4,
+    "num_key_value_heads": 2,
+    "head_dim": 32,
+    "hidden_act": "silu",
+    "max_position_embeddings": 128,
+    "initializer_range": 0.02,
+    "rms_norm_eps": 1e-05,
+    "rope_theta": 70000000.0,
+    "num_loops": 2,
+    "total_ut_steps": 2,
+    "early_exit_threshold": 1.0,
+    "bos_token_id": 0,
+    "eos_token_id": 1,
+    "pad_token_id": 0,
+    "tie_word_embeddings": false,
+    "attention_dropout": 0.0,
+    "attention_bias": false,
+    "skip_loop_final_norm": false,
+    "rope_scaling": null
+  },
+  "layout": {
+    "max_loops": 2,
+    "boundaries": [
+      1
+    ]
+  },
+  "mode": "static",
+  "fused_norm": false,
+  "packed_weight_matrices": 14,
+  "packed_weight_copies": 1,
+  "packed_weight_bytes": 147456,
+  "state_dtype": "bfloat16",
+  "kv_dtype": "bfloat16",
+  "native_quality": "not_run",
+  "tensor_sha256": "7a9b9635378236579c75fe4d343ce7669525d6eb729e45c0077167a0f31380a6"
+}

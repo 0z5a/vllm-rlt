@@ -1,0 +1,197 @@
+{
+  "status": "complete",
+  "scope": "dev only, actual native export or BF16 baseline; not locked-test G2",
+  "policy": "DYN",
+  "loops": 4,
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "documents": {
+    "e60e3ad21b09b24072a38ac84b6b05b4058e1cdbf8ca45f8f432358010e4fbf6": {
+      "nll": 12048.427734375,
+      "tokens": 5047
+    },
+    "9c5f6692141e98dde1e57a76d85f234d503e7eb314f2cf7c3223d8b5035a57ae": {
+      "nll": 1607.364013671875,
+      "tokens": 687
+    },
+    "ead820f5fd355ff74bcf1d27a9c1dc259d2fa0c586fe0b71d8c765b2024d9416": {
+      "nll": 4355.9239501953125,
+      "tokens": 1533
+    },
+    "92445b992e7d30f109ae7f16b04433a4ef8a4df719be52911bd54208eb002fbf": {
+      "nll": 8550.063842773438,
+      "tokens": 3577
+    },
+    "650c530c8f7ed50693a1cd6e46bb89c86568463f7608c655cceaf2fdc31ed0d0": {
+      "nll": 2551.19140625,
+      "tokens": 1022
+    },
+    "e294e4d3f9a9225fd8657fdbe37e1ef040c2527c81d2300e18cc033b68ecd3f2": {
+      "nll": 4247.347900390625,
+      "tokens": 1533
+    },
+    "56bd4996587a4baba1d220965dd9550e638797c9298824cb32c7e32e7aa5e447": {
+      "nll": 6001.2666015625,
+      "tokens": 2296
+    },
+    "a17e4ba7f3733586964231dad46d761e8b1370b8a7dde13e2c01172c0c1510a8": {
+      "nll": 3775.1505126953125,
+      "tokens": 1533
+    },
+    "48c231dd9620f52787e8f197d7c303ad6fc9f62a6f6496dc750b718022b55343": {
+      "nll": 10127.493041992188,
+      "tokens": 4599
+    },
+    "c731d8eb5332440fe838a217e7928d63d072dc5c915d9db413c88600933bde2b": {
+      "nll": 2428.4912109375,
+      "tokens": 1022
+    },
+    "b4b073dab9d66400ec36aef4bb82bc796f0298b6ac77a8fbc702c3a57b57171b": {
+      "nll": 4250.5391845703125,
+      "tokens": 1471
+    },
+    "506e968ed72addd7aa65516ff9b1aa5d2de58d3eb3b6ac7ba1362e305cdab248": {
+      "nll": 5522.570739746094,
+      "tokens": 2302
+    },
+    "0b4345a4fc89b614c4f1446b3e8a030b8fcfcbb9071cf28001259056ed940a2b": {
+      "nll": 5003.918273925781,
+      "tokens": 1825
+    },
+    "2a852dac56b94232174447b28ed49f858b2e638edc84b53c48b142d2ae8926ca": {
+      "nll": 2529.96240234375,
+      "tokens": 931
+    },
+    "65367c6d9eaf12fe9b770624616e478c45a881dffd111864a76049fcaaf25fee": {
+      "nll": 1162.1898193359375,
+      "tokens": 511
+    },
+    "cb0118dbaa7b51789fef722b95ecb9b6499a320fa72f735adcfbaa384f16e36e": {
+      "nll": 1926.9198608398438,
+      "tokens": 701
+    },
+    "f3736baa0d26407fa826759e011f14a27bb0569637a6ed925c839ebdabe91fa9": {
+      "nll": 1755.1888427734375,
+      "tokens": 1022
+    },
+    "2aec1fda80d74493e650c26762238a921b88627022cd46c1193072274943d639": {
+      "nll": 3621.47509765625,
+      "tokens": 1533
+    },
+    "097d706538153cd17e567698dd6f2912b16183de8d273511448cf469d96f1ad0": {
+      "nll": 1768.4495849609375,
+      "tokens": 511
+    },
+    "c251e98619a16a15079dac46797023c91a4d791de8693d38d9705466422be40a": {
+      "nll": 1134.2305908203125,
+      "tokens": 511
+    },
+    "2d32cbddec05194bc0c3b2f056bc21344c33a979a12c41aaa7f24c01db0dfcec": {
+      "nll": 6015.8660888671875,
+      "tokens": 2487
+    },
+    "b3f39e5492f845dc188fffbae5acf340e2c88ebfa2e380fa064d6920f24dcce8": {
+      "nll": 1715.5116577148438,
+      "tokens": 770
+    },
+    "05b41ecf40df139648f49844e1fc220bd8e6d00bbf438f0fad9367ad9fbfb9cc": {
+      "nll": 3859.0406494140625,
+      "tokens": 1705
+    },
+    "33029ea50d518060713e4d9a3e893fef1fdbd038765525936a7d21105e65e286": {
+      "nll": 4971.9041748046875,
+      "tokens": 2194
+    },
+    "a71be26a1a13e684e463f446d83a18e6e5c23d986773c321bdacb073f2b75ac9": {
+      "nll": 1275.066650390625,
+      "tokens": 510
+    },
+    "76b172c8afcce355ba9c3826350a6fcd9d1f8d51406783d14458e92a8709b0a4": {
+      "nll": 2430.2078857421875,
+      "tokens": 1022
+    },
+    "573e1d244efc95bd7bb4ee3df0735bfdd688d3abf7f70a849ac2061c6de8a4d9": {
+      "nll": 842.0677490234375,
+      "tokens": 511
+    },
+    "05bafcd868fbab05e9d08ded7a9f5163a4a92b8a5d3189a9af52bac81016a1f2": {
+      "nll": 5194.12353515625,
+      "tokens": 1998
+    },
+    "82a91de2fa3bd97e7e923be4180ca53e4db2d2008270787b5f8a03cf02a012b0": {
+      "nll": 6431.5782470703125,
+      "tokens": 2555
+    },
+    "3dafe10403852cfc9b6126674c29fa2afaa70262ebcac37db233da591f2652ff": {
+      "nll": 5236.5062255859375,
+      "tokens": 2044
+    },
+    "89b066c987c41c842de5c48c4788e35697d52f5c6ae7abb0bd283c40327d689d": {
+      "nll": 7616.5467529296875,
+      "tokens": 3066
+    },
+    "5161ac00205a9bdb4a419d41381b478a4722f75d8b71081f2fe8e94b7c1dd698": {
+      "nll": 1339.20263671875,
+      "tokens": 511
+    },
+    "115b0d84ba8d28c177b01bb53af13d42a9c766155347d36b86083caae7b79fbf": {
+      "nll": 3654.1800537109375,
+      "tokens": 1533
+    },
+    "6c088c55eefe4cb3462727235eca6e9269de2778a67bc337b3aec2009bd52c90": {
+      "nll": 2078.735595703125,
+      "tokens": 981
+    },
+    "30381aac0b915e5f4b6f40c7624109ad14dd716a4ed4b8b1172c364a383e6e9b": {
+      "nll": 1433.4482421875,
+      "tokens": 511
+    },
+    "b1b610c47f4980335df7300bcd0b58b3e5791004073ebce075fdab8f1f52e0fc": {
+      "nll": 2891.0205078125,
+      "tokens": 1022
+    },
+    "9f94a2de5b79be03371ba649ec6b46361df4718c6836cb697ba1f689bb41fa12": {
+      "nll": 1144.8349609375,
+      "tokens": 511
+    },
+    "ccf04b04e5ee6ea86e66edf57ab5e525959446bdd7eab6130de947ffb3148069": {
+      "nll": 2693.60498046875,
+      "tokens": 1022
+    },
+    "8a981c6525715ff9f54dc993e6287f8984730cac8052433454393d1b1edb3db8": {
+      "nll": 1310.6033935546875,
+      "tokens": 511
+    },
+    "12d68dfab6f7f4c42e62921fc7a50f489f8493742b362afb6dfa5434fd766f72": {
+      "nll": 2177.2584228515625,
+      "tokens": 1022
+    },
+    "8bab1a54305dd24a80fa682dbae650c3c602945552f28fe526cd1a59525695be": {
+      "nll": 1505.18701171875,
+      "tokens": 511
+    },
+    "529b263c4997589f3e4d9f3672951a17ab877ee83372dec139481f2da1e03227": {
+      "nll": 1192.8221435546875,
+      "tokens": 511
+    },
+    "aea14627dfafcade32859e6a5b47484b851aef58dc272096e1f0508279c6659a": {
+      "nll": 1255.443359375,
+      "tokens": 511
+    },
+    "b7b8a5f488df420c3456f7d685ebad23c23413d31bfe721dcb4bb206c02b49aa": {
+      "nll": 477.87188720703125,
+      "tokens": 175
+    }
+  },
+  "windows": 128,
+  "nll": 153110.7974243164,
+  "tokens": 62361,
+  "perplexity": 11.649149783833906,
+  "kv_used_after_drain": 0,
+  "pid": 24797,
+  "start_unix": 1791170744.8287954,
+  "end_unix": 1791170769.690815,
+  "windows_sha256": "325f23166ecec45f22a8a8254dc5edc7bf465b1d456beff801b58c7a07770c1c",
+  "scales_sha256": null,
+  "native_export_manifest_sha256": "64fc13573a9a2cc1994be6f1c1b4f15724410bea3aefddba2c3db1b13e0b2c79",
+  "runner_sha256": "c76b1e086f3d48e04cf36800746d875cfbd9d6f0e036f30d309366614c2634e4"
+}

@@ -1,0 +1,48 @@
+{
+  "name": "dyn-c32-b512",
+  "trial_kind": "pilot",
+  "model_path": "/root/autodl-tmp/0z5a/loopquant-20261005/models/ouro-1.4b",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "trace_path": "/root/autodl-tmp/0z5a/loopquant-20261005/ouro-calibration-pilot-split-v2/trace.json",
+  "trace_sha256": "490559fcc4d8e45217d2ef477727f207abc3997d0d68abbfdbf6f36c715e83aa",
+  "policy": "DYN",
+  "prefill_loops": 4,
+  "calibration_max_loops": 4,
+  "scale_boundaries": [],
+  "activation_scales": "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/ouro-full-calibration-attempt1/activation-scales.json",
+  "activation_scales_sha256": "6548a1354985ea39cee991d522966df4fc6d85d6acd63519d45ca3edb89ba92b",
+  "seed": 17,
+  "bf16_reduced_precision_reduction": true,
+  "fused_norm": true,
+  "concurrency": 32,
+  "warmup_requests": 32,
+  "ttft_budget_ms": 10000,
+  "tpot_budget_ms": 100,
+  "steady_window": null,
+  "attention_backend": "triton",
+  "cache": {
+    "kv_cache_memory_bytes": 21474836480,
+    "block_size": 16,
+    "layout": "last_exited",
+    "enable_prefix_caching": false,
+    "incremental_allocation": false
+  },
+  "scheduler": {
+    "max_num_seqs": 32,
+    "max_num_batched_tokens": 512,
+    "prefill_chunk_size": 512
+  },
+  "execution": {
+    "async_scheduling": true,
+    "multi_stream": true,
+    "static_buffers": true,
+    "pad_to_power_of_two": true,
+    "cuda_graphs": true,
+    "cuda_graph_max_batch_size": 512,
+    "cuda_graph_max_graphs": 32
+  },
+  "exit": {
+    "mode": "ouro_delayed"
+  },
+  "calibration_receipt_sha256": "5c9d238b6957589fa1ffab8bcbd5dd17a039bb19f0d8bee98c1184afbdf7aaa3"
+}

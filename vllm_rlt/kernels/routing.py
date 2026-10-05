@@ -9,6 +9,7 @@ def compact_metadata_kernel(
     D,
     Slots,
     Positions,
+    Loops,
     Lengths,
     Blocks,
     Offsets,
@@ -29,6 +30,7 @@ def compact_metadata_kernel(
     record = tl.load(D + row * 6 + 5, valid, 0)
     tl.store(Slots + row, slot)
     tl.store(Positions + row, pos)
+    tl.store(Loops + row, tl.where(valid, depth, -1))
     tl.store(Lengths + row, tl.where(valid, pos + 1, 0))
     tl.store(Blocks + row, record // PAGE, valid)
     tl.store(Offsets + row, record % PAGE, valid)
@@ -46,6 +48,7 @@ def metadata_kernel(
     Tables,
     Slots,
     Positions,
+    Loops,
     Lengths,
     Blocks,
     Offsets,
@@ -73,6 +76,7 @@ def metadata_kernel(
     block = tl.load(Tables + base + pos // PAGE, valid, 0)
     tl.store(Slots + row, slot)
     tl.store(Positions + row, pos)
+    tl.store(Loops + row, tl.where(valid, depth, -1))
     tl.store(Lengths + row, tl.where(valid, pos + 1, 0))
     tl.store(Blocks + row, block, valid)
     tl.store(Offsets + row, pos % PAGE, valid)

@@ -1,0 +1,432 @@
+{
+  "status": "pass",
+  "scope": "unfused NVFP4 format/installed native ABI; no throughput claim",
+  "records": [
+    {
+      "rows": 1,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "dynamic",
+      "max_abs": 0.0
+    },
+    {
+      "rows": 1,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global",
+      "max_abs": 0.0
+    },
+    {
+      "rows": 1,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0
+    },
+    {
+      "rows": 17,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "dynamic",
+      "max_abs": 0.00048828125
+    },
+    {
+      "rows": 17,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 17,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0009765625
+    },
+    {
+      "rows": 32,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "dynamic",
+      "max_abs": 0.0009765625
+    },
+    {
+      "rows": 32,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 32,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global_local",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 64,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "dynamic",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 64,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 64,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "dynamic",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 64,
+      "outputs": 32,
+      "policy": "fixed_global_local",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.0
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.00048828125
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.00048828125
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.0009765625
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.0009765625
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.015625
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "dynamic",
+      "max_abs": 0.0
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global",
+      "max_abs": 0.0009765625
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "dynamic",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global_local",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "dynamic",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global",
+      "max_abs": 0.015625
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global_local",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "dynamic",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "dynamic",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 5632,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 1,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.0
+    },
+    {
+      "rows": 1,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 1,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0001220703125
+    },
+    {
+      "rows": 17,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 17,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 17,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.000244140625
+    },
+    {
+      "rows": 32,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 32,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.0009765625
+    },
+    {
+      "rows": 32,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.001953125
+    },
+    {
+      "rows": 64,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 64,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 64,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "dynamic",
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global",
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 128,
+      "columns": 5632,
+      "outputs": 2048,
+      "policy": "fixed_global_local",
+      "max_abs": 0.0078125
+    }
+  ],
+  "pid": 17863,
+  "start_unix": 1791160662.6654942,
+  "end_unix": 1791160663.7028368,
+  "torch_version": "2.12.1+cu130",
+  "cuda_version": "13.0",
+  "source_sha256": "c69d49a6414b9e205111799376d413b3cbe79b2ea5032ec99865f985061930ab"
+}

@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/root/autodl-tmp/0z5a/loopquant-20261005/gpu-window-v3-gpu0/probe_fp8_serving.py", line 29, in <module>
+    row = check_fused_native_model(policy, graphs, fuse_norm)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/autodl-tmp/0z5a/loopquant-20261005/source-quant-v3-gpu0/tests/loopquant_serving_checks.py", line 85, in check_fused_native_model
+    actual = LLM(
+             ^^^^
+  File "/root/autodl-tmp/0z5a/loopquant-20261005/source-quant-v3-gpu0/vllm_rlt/entrypoints/llm.py", line 46, in __init__
+    self.engine = LLMEngine(
+                  ^^^^^^^^^^
+  File "/root/autodl-tmp/0z5a/loopquant-20261005/source-quant-v3-gpu0/vllm_rlt/engine/llm_engine.py", line 67, in __init__
+    raise ValueError(
+ValueError: async scheduling requires ouro_delayed, random_lookahead or trace exit mode

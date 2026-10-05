@@ -1,0 +1,30 @@
+{
+  "controller_pid": 25387,
+  "manifest_sha256": "660140eec289a63eb029a3671c447aa8bc64e23a98317cebe446c199c1f216cd",
+  "records": [
+    {
+      "name": "native-int4-models-v1",
+      "returncode": 0,
+      "start_unix": 1791171610.033531,
+      "end_unix": 1791171614.472583
+    },
+    {
+      "name": "ouro-static-dev-v1-sh1",
+      "returncode": 0,
+      "start_unix": 1791171614.4731147,
+      "end_unix": 1791171640.3058624
+    },
+    {
+      "name": "ouro-static-dev-v1-st2",
+      "returncode": 0,
+      "start_unix": 1791171640.3069417,
+      "end_unix": 1791171666.5876505
+    },
+    {
+      "name": "ouro-static-dev-v1-loop",
+      "returncode": 0,
+      "start_unix": 1791171666.5889297,
+      "end_unix": 1791171693.1721497
+    }
+  ]
+}

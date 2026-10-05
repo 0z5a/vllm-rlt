@@ -1,0 +1,21 @@
+{
+  "status": "fail",
+  "passed_cases_before_failure": 6,
+  "failed_shape": {
+    "rows": 17,
+    "columns": 64,
+    "outputs": 32,
+    "policy": "DYN",
+    "fused_norm": false
+  },
+  "packed_input_exact": true,
+  "scale_mismatches": 4,
+  "scale_elements": 32,
+  "max_scale_abs": 9.313225746154785e-10,
+  "criterion": "exact; unchanged",
+  "cause": "kernel computes RN division by448; Torch scalar division uses rounded FP32 reciprocal multiplication",
+  "kernel_matches_rn_quotient": true,
+  "reference_matches_reciprocal_product": true,
+  "failed_case_sha256": "db7f36047fde94efb73ca94f214abc71d0691e90444634f017ba27861928c89a",
+  "fix": "use identical rounded FP32 reciprocal multiplication; GPU requalification pending"
+}

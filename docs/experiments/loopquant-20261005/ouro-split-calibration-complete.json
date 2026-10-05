@@ -1,0 +1,24 @@
+{
+  "status": "complete",
+  "scope": "128-window BF16 calibration; no performance claim",
+  "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
+  "package_manifest_sha256": "888923adf1ed51e7290c40ff08f46648c616cefa871bb6b3ff31eeecc6dbdd02",
+  "controller_pid": 22251,
+  "child_pids": [
+    22254
+  ],
+  "child_returncodes": [
+    0
+  ],
+  "controller_ssh_returncode": 0,
+  "archived_files": 6,
+  "file_manifest_sha256": "72da863ad02d28598474df5bf6a43ed3ada3369300d0bf3695ad69ddb84176f9",
+  "local_archive_sha256": "8d0a44c8db014f8afc24eb2bed0d2d9770e6c3e11011991a2e05980a7cb90433",
+  "own_readers": [],
+  "compute_apps": "",
+  "original_locks_take_release": {
+    "gpu0-perf.lock": 12895501670,
+    "heavy-io.lock": 12895501666
+  },
+  "timestamp": 1791169229.4098885
+}

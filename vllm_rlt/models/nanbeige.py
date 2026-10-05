@@ -262,6 +262,8 @@ class NanbeigeForCausalLM(nn.Module):
         return hidden, gate
 
     def coda(self, hidden: torch.Tensor) -> torch.Tensor:
+        if self.config.skip_loop_final_norm:
+            hidden = self.model.norm(hidden)
         return self.lm_head(hidden)
 
     @classmethod

@@ -1,0 +1,44 @@
+{
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "scope": "BF16 calibration, no performance claim",
+  "source_sha256": "04d1c477860f70703684c0a80b59f394a127461c7685ac83ff7d00849ef50489",
+  "windows_sha256": "b33e74f657049f725ca1fb025213110789594d2118d148f85fb2bf192e620d68",
+  "registered_requests": 4,
+  "pid": 10648,
+  "start_unix": 1791147669.0182164,
+  "end_unix": 1791147915.17626,
+  "trace_calls": 69142,
+  "completed_requests": 4,
+  "output_tokens": 128,
+  "failed_requests": 0,
+  "kv_used_after_drain": 0,
+  "concurrency": 4,
+  "batch_size": 128,
+  "prompt_tokens_per_request": 512,
+  "loops": 4,
+  "statistics_groups": 2896,
+  "prefill_rows_per_loop_projection": 2048,
+  "decode_rows_per_loop_projection": 124,
+  "raw_artifacts": {
+    "loop_trace.jsonl.gz": {
+      "bytes": 1240886,
+      "sha256": "1de7104fca7baf1ef399f56c80a3e0b90ab3c1c487ac083ff65dcb26c25cfab1"
+    },
+    "statistics.json": {
+      "bytes": 145448275,
+      "sha256": "9c923644d6016c0137eaa0428a8a68f5ee493bbb5d3cfb8977657f23e1bc112f"
+    },
+    "activation-scales.json": {
+      "bytes": 118364,
+      "sha256": "882d0c99f62722eb003133ff4eb21b78b56bc83ad9eab8812beee8aebda792bd"
+    },
+    "receipt.json": {
+      "bytes": 32524,
+      "sha256": "162f81bc82a4d8f251df9654b08226fe3b010cd6c8778059b56c5bc5b390c7fe"
+    },
+    "statistics.json.gz": {
+      "bytes": 65519837,
+      "sha256": "1bb048fd27c459d87512144543c01a51090c6e353280ee921e1b1833d68e2f64"
+    }
+  }
+}

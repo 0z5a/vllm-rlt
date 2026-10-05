@@ -1,0 +1,166 @@
+{
+  "ouro-split-pilot-receipt.json": {
+    "bytes": 1469,
+    "sha256": "a3ab0ce9cdb16e735255af082de3aca610baf129744a4f36770968faa6adab7f"
+  },
+  "ouro-pilot-v1-bf16-c32-b128/queues.json": {
+    "bytes": 15331,
+    "sha256": "4babe2bfb047203f0a5a91635eb4dbf8c442c8df1284711b4e45039c435585ef"
+  },
+  "ouro-pilot-v1-bf16-c32-b128/requests.json": {
+    "bytes": 86334,
+    "sha256": "66d55c245b811e21b2f78e347d6f29fb2a921015cc0ae28026fa6526f4927992"
+  },
+  "ouro-pilot-v1-bf16-c32-b128/resolved.json": {
+    "bytes": 1619,
+    "sha256": "0892b512f28499a02d5f3089f249c449bc716e65791b88be640c14636639b69c"
+  },
+  "ouro-pilot-v1-bf16-c32-b128/result.json": {
+    "bytes": 3842,
+    "sha256": "3461f6651694ee5ce70a7d162e5fdae85ca0fda3ac5229e3c447642f0c088774"
+  },
+  "ouro-pilot-v1-bf16-c32-b128.log": {
+    "bytes": 2327,
+    "sha256": "a2bdaac09d513bb629f9c32a245f0d183aa5122bc738d7e7d9e67bce6bcbd0c8"
+  },
+  "ouro-pilot-v1-dyn-c32-b128/queues.json": {
+    "bytes": 15561,
+    "sha256": "1d2fe7ad1bd89d08cb52544b27c5597b6b6aa4c8f5108d00a6a65c05ca4883ed"
+  },
+  "ouro-pilot-v1-dyn-c32-b128/requests.json": {
+    "bytes": 86437,
+    "sha256": "ee0860bc5a29b101dbfce30e529f4af939b136e8bdabe848d79bded78496708e"
+  },
+  "ouro-pilot-v1-dyn-c32-b128/resolved.json": {
+    "bytes": 1617,
+    "sha256": "68b08a6f9f4e9053cecd651417f8c6434cec8b895af8ec4e1b5ca70fc0eabba9"
+  },
+  "ouro-pilot-v1-dyn-c32-b128/result.json": {
+    "bytes": 3938,
+    "sha256": "c326619179b0c0e6af55cc37e663d164f33b507fb25b05ee8afc93db88ce819d"
+  },
+  "ouro-pilot-v1-dyn-c32-b128.log": {
+    "bytes": 2396,
+    "sha256": "4234b188f53203c174f4092c0349052635205738227fb237240cca14f039957b"
+  },
+  "ouro-pilot-v1-sh1-c32-b128/queues.json": {
+    "bytes": 15559,
+    "sha256": "0bc674655b927257bbb02b096d58cc1ad77ff194fcf98ff60c05907c7b63c6a9"
+  },
+  "ouro-pilot-v1-sh1-c32-b128/requests.json": {
+    "bytes": 86359,
+    "sha256": "897e66412e18427c556222025b6e399718f542915c2463a9c1337e8dde562db5"
+  },
+  "ouro-pilot-v1-sh1-c32-b128/resolved.json": {
+    "bytes": 1617,
+    "sha256": "33e25ab8d574a30ccf2dcc53ac56ea9d8de5f3bc3b7cbcc22c94ed6fce89af05"
+  },
+  "ouro-pilot-v1-sh1-c32-b128/result.json": {
+    "bytes": 3937,
+    "sha256": "8a7bcdf2eebc4330844428638d21e0e2921e10d7e65feea12554edb384bacd96"
+  },
+  "ouro-pilot-v1-sh1-c32-b128.log": {
+    "bytes": 2393,
+    "sha256": "4b795ac0beed09ce7b1104ecc8e5fa37efe917dc4717c723b5518a615c2460cb"
+  },
+  "ouro-pilot-v1-st2-c32-b128/queues.json": {
+    "bytes": 15573,
+    "sha256": "edc37b6b51ac3b24676eddb70dc4a853b169912780cb10dfd29b011ab459e2a9"
+  },
+  "ouro-pilot-v1-st2-c32-b128/requests.json": {
+    "bytes": 86651,
+    "sha256": "a0fd6036ae5221cc77a5eed26310dd500bf4addd7e77a939a5bcfae2e059e79c"
+  },
+  "ouro-pilot-v1-st2-c32-b128/resolved.json": {
+    "bytes": 1626,
+    "sha256": "dc9b2e369635df1fda2ef53a162cfd5b7daba9019e6cb361e03cefefe6322af3"
+  },
+  "ouro-pilot-v1-st2-c32-b128/result.json": {
+    "bytes": 3939,
+    "sha256": "9b7aeccf740fd9e2e0b3dd5babdddcd69dc12ddbb790621c0265d2f6ff5547c1"
+  },
+  "ouro-pilot-v1-st2-c32-b128.log": {
+    "bytes": 2395,
+    "sha256": "4519e5196a2c9f23126e6c477f9e6b2c204c56406eab2f76ca87149a0d50d7c4"
+  },
+  "ouro-pilot-v1-st2-c32-b512/queues.json": {
+    "bytes": 6349,
+    "sha256": "0b0460993175501847d7d217f70d02202a4df9d19ff66021754145e7a9ecd642"
+  },
+  "ouro-pilot-v1-st2-c32-b512/requests.json": {
+    "bytes": 86695,
+    "sha256": "f3c2ebd3b6afcb9286e261c2b89d6f192ec614d682b485d000e3f6a4ef074f87"
+  },
+  "ouro-pilot-v1-st2-c32-b512/resolved.json": {
+    "bytes": 1626,
+    "sha256": "98852a5d97a9a481f451436c841007ce778cc98c91fff56035078e74843f1441"
+  },
+  "ouro-pilot-v1-st2-c32-b512/result.json": {
+    "bytes": 2712,
+    "sha256": "ecb4836d01eeccfa91a2d87640148be661b2d2863f7827fd562651a2f5ad9590"
+  },
+  "ouro-pilot-v1-st2-c32-b512.log": {
+    "bytes": 1460,
+    "sha256": "821883d30cd8d696aebff11d62aa46e58fd465cd614f793439b7db240ece98ab"
+  },
+  "ouro-pilot-v1-sh1-c32-b512/queues.json": {
+    "bytes": 6347,
+    "sha256": "609220bd560b707d28c8d2191df8ed505abff45a5b69d38f89759debf483dfaf"
+  },
+  "ouro-pilot-v1-sh1-c32-b512/requests.json": {
+    "bytes": 86325,
+    "sha256": "5553b008e348c205320de3ae7867760553e94e52c888b219f15c69bac92f8a12"
+  },
+  "ouro-pilot-v1-sh1-c32-b512/resolved.json": {
+    "bytes": 1617,
+    "sha256": "93d151cc4afe50191b0f38d522dfe9c42ce21960a27ef53d93e947ded84d3325"
+  },
+  "ouro-pilot-v1-sh1-c32-b512/result.json": {
+    "bytes": 2708,
+    "sha256": "64714a5d731f30d4e0626b62fefced1be829ab5010fedad46f8a5b0f92a4e828"
+  },
+  "ouro-pilot-v1-sh1-c32-b512.log": {
+    "bytes": 1457,
+    "sha256": "c50126a35f756a1dc48d5d98c04c579df7075cc38baedcdf9a19c8790995ff89"
+  },
+  "ouro-pilot-v1-dyn-c32-b512/queues.json": {
+    "bytes": 6361,
+    "sha256": "e7ac4ec6f6d2925ff33323049f9b8aa20ed66aa1274464ff9eb7eea06baa3ec8"
+  },
+  "ouro-pilot-v1-dyn-c32-b512/requests.json": {
+    "bytes": 86456,
+    "sha256": "e68a3c8c926aab6e224b03affbb42e852662bf332fe242d323026223f6bb98c0"
+  },
+  "ouro-pilot-v1-dyn-c32-b512/resolved.json": {
+    "bytes": 1617,
+    "sha256": "ca7a6920cb8bd60b4aceca5b68fd47a83a7dad5e7ff50e9b48c29d3950e701b0"
+  },
+  "ouro-pilot-v1-dyn-c32-b512/result.json": {
+    "bytes": 2710,
+    "sha256": "49d0a447a7d7e1d6fa5fed8e41e57be2e4c123578d3baa623a97bd6e91407c62"
+  },
+  "ouro-pilot-v1-dyn-c32-b512.log": {
+    "bytes": 1460,
+    "sha256": "ca1ec9b86b197a71525f1b3b8fe60eeb6ba4095ba743dbbc47ea990244e0a207"
+  },
+  "ouro-pilot-v1-bf16-c32-b512/queues.json": {
+    "bytes": 6144,
+    "sha256": "bd5e2df891491ac969519ffe5dcd88cf6eb052441cb0bd808294e7c1b2fb83e2"
+  },
+  "ouro-pilot-v1-bf16-c32-b512/requests.json": {
+    "bytes": 86893,
+    "sha256": "0c94c29d68568e33342a458763bb3ccaceb8cf187a7719b01c464f3055a42745"
+  },
+  "ouro-pilot-v1-bf16-c32-b512/resolved.json": {
+    "bytes": 1619,
+    "sha256": "c64ffe196815425b820fcdcfed43cffae6ab40a632ebff6df9a2db22d6e14a35"
+  },
+  "ouro-pilot-v1-bf16-c32-b512/result.json": {
+    "bytes": 2706,
+    "sha256": "8502c7b08b71274e5b6c5675eef720fb63d5d79578d621b97763441a842b2d7c"
+  },
+  "ouro-pilot-v1-bf16-c32-b512.log": {
+    "bytes": 1460,
+    "sha256": "437f10e5c76beca665771f7ea7365a7127d1afb4a830198281441b2d0c63894b"
+  }
+}

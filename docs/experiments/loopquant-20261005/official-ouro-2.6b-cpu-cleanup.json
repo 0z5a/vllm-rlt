@@ -1,0 +1,12 @@
+{
+  "removed": [
+    {
+      "name": "model.safetensors",
+      "bytes": 5336011242,
+      "sha256": "2fdf9805a3510b7dc82959a2db4872ef767a5bdc55520c6a1b54fc3e463c1bba"
+    }
+  ],
+  "reader_check": "lsof returned1 with no reader PIDs; original CPU and peer upload/hash finished",
+  "remote_copy": "own independently verified hardlinks retained",
+  "end_unix": 1791160703.174569
+}

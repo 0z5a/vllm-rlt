@@ -1,0 +1,27 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___ test_first_all_matched_hessians_preserve_row_budgets_and_ignore_padding ____
+
+    def test_first_all_matched_hessians_preserve_row_budgets_and_ignore_padding():
+        trace = HessianTrace({"a": 3, "b": 3}, 4)
+        cache = KVCacheManager(1, 1, 4, 16, 16, 4, device="cpu", dtype=torch.float32)
+        for request in ("a", "b"):
+>           cache.allocate_request(request)
+            ^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'KVCacheManager' object has no attribute 'allocate_request'
+
+tests/test_loopquant_gptq_trace.py:14: AttributeError
+______ test_incomplete_fixed_depth_collection_cannot_claim_matched_budget ______
+
+    def test_incomplete_fixed_depth_collection_cannot_claim_matched_budget():
+        trace = HessianTrace({"a": 1}, 2)
+        cache = KVCacheManager(1, 1, 4, 4, 16, 2, device="cpu", dtype=torch.float32)
+>       cache.allocate_request("a")
+        ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'KVCacheManager' object has no attribute 'allocate_request'
+
+tests/test_loopquant_gptq_trace.py:60: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_loopquant_gptq_trace.py::test_first_all_matched_hessians_preserve_row_budgets_and_ignore_padding
+FAILED tests/test_loopquant_gptq_trace.py::test_incomplete_fixed_depth_collection_cannot_claim_matched_budget
+2 failed in 0.16s
