@@ -1,0 +1,2 @@
+{"event": "case_pass", "family": "huginn_int4", "index": 0, "case": [false, false]}
+{"event": "case_pass", "family": "huginn_int4", "index": 1, "case": [true, false]}

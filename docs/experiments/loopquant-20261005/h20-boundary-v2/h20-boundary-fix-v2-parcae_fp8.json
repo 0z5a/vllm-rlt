@@ -1,0 +1,945 @@
+{
+  "status": "pass",
+  "family": "parcae_fp8",
+  "device": "NVIDIA H20",
+  "torch_version": "2.12.1+cu130",
+  "cuda_version": "13.0",
+  "pid": 47350,
+  "start_unix": 1791221305.9009748,
+  "end_unix": 1791221313.5652947,
+  "records": [
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "DYN",
+      "graphs": false,
+      "fuse_norm": false,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": []
+        },
+        "mode": "dynamic",
+        "fused_norm": false,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "32b8117b02e8a661066579324f689c7c39d76c75c4fc6ed7714791f303c0e067"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "DYN",
+      "graphs": false,
+      "fuse_norm": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": []
+        },
+        "mode": "dynamic",
+        "fused_norm": true,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "32b8117b02e8a661066579324f689c7c39d76c75c4fc6ed7714791f303c0e067"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "DYN",
+      "graphs": true,
+      "fuse_norm": false,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 18,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": []
+        },
+        "mode": "dynamic",
+        "fused_norm": false,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "32b8117b02e8a661066579324f689c7c39d76c75c4fc6ed7714791f303c0e067"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "DYN",
+      "graphs": true,
+      "fuse_norm": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 18,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": []
+        },
+        "mode": "dynamic",
+        "fused_norm": true,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "32b8117b02e8a661066579324f689c7c39d76c75c4fc6ed7714791f303c0e067"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "SH1",
+      "graphs": false,
+      "fuse_norm": false,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": []
+        },
+        "mode": "static",
+        "fused_norm": false,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "5a5a92e61ee3f146b42fe22fd13e434d4d23f281ea60a157215df02fc4535c07"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "SH1",
+      "graphs": false,
+      "fuse_norm": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": []
+        },
+        "mode": "static",
+        "fused_norm": true,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "5a5a92e61ee3f146b42fe22fd13e434d4d23f281ea60a157215df02fc4535c07"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "SH1",
+      "graphs": true,
+      "fuse_norm": false,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 18,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": []
+        },
+        "mode": "static",
+        "fused_norm": false,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "5a5a92e61ee3f146b42fe22fd13e434d4d23f281ea60a157215df02fc4535c07"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "SH1",
+      "graphs": true,
+      "fuse_norm": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 18,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": []
+        },
+        "mode": "static",
+        "fused_norm": true,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "5a5a92e61ee3f146b42fe22fd13e434d4d23f281ea60a157215df02fc4535c07"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "ST2",
+      "graphs": false,
+      "fuse_norm": false,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "fused_norm": false,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "fe85fb8e27c972cd9e0f1ec8895b85c0a314a49c17911e79d02c9a8b26ae4a13"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "ST2",
+      "graphs": false,
+      "fuse_norm": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "fused_norm": true,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "fe85fb8e27c972cd9e0f1ec8895b85c0a314a49c17911e79d02c9a8b26ae4a13"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "ST2",
+      "graphs": true,
+      "fuse_norm": false,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 18,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "fused_norm": false,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "fe85fb8e27c972cd9e0f1ec8895b85c0a314a49c17911e79d02c9a8b26ae4a13"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "ST2",
+      "graphs": true,
+      "fuse_norm": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 18,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "fused_norm": true,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "fe85fb8e27c972cd9e0f1ec8895b85c0a314a49c17911e79d02c9a8b26ae4a13"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "LOOP",
+      "graphs": false,
+      "fuse_norm": false,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": [
+            1,
+            2
+          ]
+        },
+        "mode": "static",
+        "fused_norm": false,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "a53ce5f72bf46af9e26d45e7a539088b577c68aa0253b2c148dc5f65575a6a3e"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "LOOP",
+      "graphs": false,
+      "fuse_norm": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": [
+            1,
+            2
+          ]
+        },
+        "mode": "static",
+        "fused_norm": true,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "a53ce5f72bf46af9e26d45e7a539088b577c68aa0253b2c148dc5f65575a6a3e"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "LOOP",
+      "graphs": true,
+      "fuse_norm": false,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 18,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": [
+            1,
+            2
+          ]
+        },
+        "mode": "static",
+        "fused_norm": false,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "a53ce5f72bf46af9e26d45e7a539088b577c68aa0253b2c148dc5f65575a6a3e"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "LOOP",
+      "graphs": true,
+      "fuse_norm": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 12,
+      "repeated_requests": 6,
+      "decode_depths": [
+        3,
+        3,
+        3
+      ],
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 18,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "parcae_fused_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "parcae",
+          "_class_name": "ParcaeConfig",
+          "n_embd": 64,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "n_layers_in_prelude": 1,
+          "n_layers_in_recurrent_block": 2,
+          "n_layers_in_coda": 1,
+          "mean_recurrence": 3,
+          "mean_backprop_depth": 4,
+          "block_size": 64,
+          "vocab_size": 512,
+          "norm_eps": 1e-05,
+          "rope_base": 50000.0,
+          "eos_token_id": null
+        },
+        "layout": {
+          "max_loops": 3,
+          "boundaries": [
+            1,
+            2
+          ]
+        },
+        "mode": "static",
+        "fused_norm": true,
+        "packed_weight_matrices": 12,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 65536,
+        "protected_aliases": {
+          "lm_head.weight": "transformer.wte.weight"
+        },
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "a53ce5f72bf46af9e26d45e7a539088b577c68aa0253b2c148dc5f65575a6a3e"
+      }
+    }
+  ],
+  "scope": "tiny native correctness and encoded reload at unchanged criteria; no full-checkpoint quality or performance"
+}

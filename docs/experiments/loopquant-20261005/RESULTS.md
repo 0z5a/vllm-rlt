@@ -1,4 +1,4 @@
-# Quantization experiment results — 2026-10-05
+# Quantization experiment results — 2026-10-06
 
 This is an in-progress numerical qualification. No model has completed G0–G3.
 The [measured engine pilot](PILOT_E2E.md) shows FP8 throughput regressions.
@@ -15,9 +15,9 @@ have not run; the earlier two 128-token gradient audits remain a separate result
 | Ouro-2.6B | — | — | — | — | — | Official CPU exact; GPU/E2E pending |
 | Huginn-3.5B | — | — | — | — | — | Full official CPU96/96 exact; cached GPU pending |
 | Nanbeige4.2-3B | — | — | — | — | — | Official CPU64/64 exact; full native GPU pending |
-| LoopFormer3×8 | — | — | — | — | — | Tiny INT4 GPU passes; full quantized serving pending |
+| LoopFormer3×8 | — | — | — | — | — | Tiny INT4 and H20 FP8 pass; full quantized serving pending |
 | Parcae370M | — | — | — | — | — | Official dense CPU96/96 exact; quantized GPU pending |
-| HRM-Text-1B | — | — | — | — | — | Tiny INT4 GPU passes; full quantized serving pending |
+| HRM-Text-1B | — | — | — | — | — | Tiny INT4 and H20 FP8 pass; full quantized serving pending |
 
 ## Native FP8 correctness
 
@@ -531,3 +531,5 @@ The [fixed-global fused producer](F2_PREFLIGHT.md) and64-case native/Graph probe
 ## Four-family native INT4 qualification
 
 [All64 tiny GPU cases](native-families-v1/summary.json) pass in the separately integrated [family adapter draft](https://github.com/0z5a/vllm-rlt/pull/23):48 updated Ouro/Nanbeige FP8 regressions plus16 INT4 cases across Ouro/Nanbeige/HRM/LoopFormer, Graph off/on and native/compact KV.67 files were verified offbox and64 temporary weight payloads cleaned. Full family checkpoint quality and performance remain pending.
+
+Latest H20 boundary repair verification: Parcae FP8 16/16 and Huginn INT4 2/2 pass. Huginn FP8 DYN 4/4 pass but first SH1 sequence comparison fails; Parcae INT4 native eager passes but compact/static synchronous construction fails. See [mixed result and raw evidence](ASSOCIATIVE_IO.md#h20-boundary-repair-verification). Full-checkpoint E2E and memory savings remain unmeasured for these families.
