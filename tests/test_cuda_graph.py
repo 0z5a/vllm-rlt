@@ -101,3 +101,11 @@ def test_graph_cache_limit_fallback_and_abort():
         assert engine.cache_manager.num_used_blocks == 0
     assert engine.model_runner.graphs.captures == 1
     assert engine.model_runner.graphs.fallbacks > 0
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_graph_replay_refreshes_loop_ids_for_mixed_depths(asynchronous):
+    from tests.loopquant_huginn_fp8_checks import check_graph_loop_metadata
+
+    check_graph_loop_metadata(asynchronous)

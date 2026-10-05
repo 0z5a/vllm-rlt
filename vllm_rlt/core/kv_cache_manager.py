@@ -62,6 +62,7 @@ class _PreparedKVBatch:
     rows: tuple[tuple[_Allocation, int, int], ...]
     allocations: tuple[tuple[str, _Allocation], ...]
     position_ids: torch.Tensor
+    loop_ids: torch.Tensor
     write_blocks: torch.Tensor
     write_offsets: torch.Tensor
     block_tables: torch.Tensor
@@ -505,7 +506,7 @@ class KVCacheManager:
                 self._group_packed_rows(rows) if packed_prefill else (rows, None, 1)
             )
             block_start = len(wide)
-            wide += blocks
+            wide += blocks + [depth for _, depth, _ in rows]
             table_start = len(narrow)
             for allocation, depth, _ in table_rows:
                 table = allocation.block_tables[self._plane(depth)][:width]
@@ -531,6 +532,7 @@ class KVCacheManager:
                     rows=rows,
                     allocations=allocations,
                     position_ids=wide[:n],
+                    loop_ids=wide[block_start + n : block_start + 2 * n],
                     write_blocks=wide[block_start : block_start + n],
                     write_offsets=wide[n : 2 * n],
                     block_tables=narrow[table_start : table_start + t * width].reshape(t, width),

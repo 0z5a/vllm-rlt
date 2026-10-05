@@ -16,11 +16,11 @@ def execution_buffer_bytes(config, scheduler, cache, execution, element_size):
     total = 0
     if execution.static_buffers:
         # Existing prefill/eager workspaces remain separate from async banks.
-        total += 4 * rows * (hidden + 4 * width + 36) + scheduler.max_num_seqs * hidden
+        total += 4 * rows * (hidden + 4 * width + 44) + scheduler.max_num_seqs * hidden
     if execution.async_scheduling:
         planes = config.total_ut_steps if cache.layout == "last_exited" else 1
         # Four routing banks, including capacity for an H2D descriptor fallback.
-        total += 4 * rows * (hidden + 4 * width + 68)
+        total += 4 * rows * (hidden + 4 * width + 76)
         total += scheduler.max_num_seqs * (hidden + 8 + planes * width * 4)
         total += 2 * scheduler.max_num_seqs * 24  # fallback exit descriptors
     return total
@@ -34,6 +34,7 @@ class Workspace:
         shapes = dict(
             tokens=(rows,),
             positions=(rows,),
+            loops=(rows,),
             blocks=(rows,),
             offsets=(rows,),
             tables=(rows, width),
@@ -73,14 +74,16 @@ class Workspace:
         n = len(rows)
         for name in ("positions", "lengths", "tables"):
             self.host[name][:size].zero_()
+        self.host["loops"][:size].fill_(-1)
         for index, ((allocation, depth, pos), (block, offset)) in enumerate(zip(rows, addresses)):
             self.host["positions"][index] = pos
+            self.host["loops"][index] = depth
             self.host["lengths"][index] = pos + 1
             self.host["blocks"][index] = block
             self.host["offsets"][index] = offset
             table = allocation.block_tables[cache._plane(depth)]
             self.host["tables"][index, : len(table)] = torch.tensor(table, dtype=torch.int32)
-        for name in ("positions", "lengths", "tables", "blocks", "offsets"):
+        for name in ("positions", "loops", "lengths", "tables", "blocks", "offsets"):
             count = n if name in ("blocks", "offsets") else size
             self.gpu[name][:count].copy_(self.host[name][:count], non_blocking=True)
         return _PreparedKVBatch(
@@ -88,6 +91,7 @@ class Workspace:
             rows=rows,
             allocations=tuple(dict(zip(ids, (a for a, _, _ in rows))).items()),
             position_ids=self.gpu["positions"][:size],
+            loop_ids=self.gpu["loops"][:size],
             write_blocks=self.gpu["blocks"][:n],
             write_offsets=self.gpu["offsets"][:n],
             block_tables=self.gpu["tables"][:size],
