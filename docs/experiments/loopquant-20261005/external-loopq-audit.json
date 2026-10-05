@@ -1,0 +1,33 @@
+{
+  "checked_date": "2026-10-05",
+  "status": "not_reproduced",
+  "verified_code_revision": null,
+  "reason": "No official LoopQ source link or code revision identified in the pinned paper, author publication page, author public repositories or repository-name search. Same-name sumterhouse repository is JavaScript and is not taken as the paper implementation.",
+  "sources": [
+    {
+      "file": "paper-v1.html",
+      "url": "https://arxiv.org/html/2605.16343v1",
+      "sha256": "625327b3c6cf2f9852d67f597431d9a4bfb5505c416b963e4ee9cd671488c118"
+    },
+    {
+      "file": "author-publications.html",
+      "url": "https://rui-fang.github.io/publications/",
+      "sha256": "1cd613f0df2910e1e33805ddc20bac7ee217ed0596b248384b71c6f9556a36a8"
+    },
+    {
+      "file": "repository-search.json",
+      "url": "https://api.github.com/search/repositories?q=LoopQ+in:name,description&per_page=100",
+      "sha256": "044efe145a4a4896fe7e636f17fd5e79840fef0d399c440a4932f79666f0d606"
+    },
+    {
+      "file": "author-repositories.json",
+      "url": "https://api.github.com/users/rui-fang/repos?per_page=100",
+      "sha256": "aacde21159195b978838d4221235f868ed0e99b819c73b9d0cfd0a3ba16cfd29"
+    },
+    {
+      "file": "name-collision.json",
+      "url": "https://api.github.com/repos/sumterhouse/LoopQ",
+      "sha256": "f5a363fd6b252b83f2d65d662af1a03270adf04ee88a08fb55d9e8f500f0e8f6"
+    }
+  ]
+}

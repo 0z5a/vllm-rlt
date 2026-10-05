@@ -347,3 +347,11 @@ The latest [full CPU regression](full-cpu-native-deployment-attempt1.log) passes
 The INT4 adapter converts our signed low-nibble-first checkpoint to the installed Torch tinygemm ABI. It explicitly rounds group scales to BF16 and pads activation width where the registered group requires it; the 20-case GPU matrix is pending. No W4A16 speedup is claimed. ABI arithmetic follows the pinned [Torch 2.12.1 CUDA implementation](https://github.com/pytorch/pytorch/blob/v2.12.1/aten/src/ATen/native/cuda/int4mm.cu), including BF16 dequantization.
 
 Nanbeige's default AutoTokenizer route requests an unavailable SentencePiece conversion. Reading its pinned official fast tokenizer JSON directly preserves the existing BOS postprocessor; [all 32 fixed texts encode successfully](nanbeige-tokenizer-json-attempt1.json), totaling 1,756 tokens. The full original model comparison remains queued, using identical IDs for both paths.
+
+## External algorithm track
+
+The [LoopQ reproduction audit](EXTERNAL_BASELINE.md) records `not_reproduced`: no official code revision or exported artifact was identified in the pinned paper, author pages/repositories, or repository-name search as of2026-10-05. Published LoopQ and this strict one-packed-weight track have different transform, weight-sharing and online-operator contracts. No numerical or performance comparison against original LoopQ is claimed.
+
+## Fused-producer scale training
+
+An explicit pre-optimizer binding can share activation log-scales across Q/K/V or gate/up consumers. This keeps the learned scale policy representable by a single fused input producer; it does not silently tie already-divergent scales. The [47 targeted CPU checks](shared-scale-training-cpu-attempt1.log) pass, including equality of the shared gradient to the sum of independent consumer gradients through all four loops, unchanged frozen-weight gradients and rejection of mismatched initial scales. The original168-group full-model gradient audit remains an independent, unbound diagnostic; this new spatial policy has not yet run full-model QAT.

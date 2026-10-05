@@ -41,3 +41,22 @@ class QuantizedProjections(nn.Module):
 
     def attach(self, name: str, quantized: FP8FakeLinear) -> None:
         self.quantized[name.replace(".", "__")] = quantized
+
+    def share_activation_scales(self, groups: list[tuple[str, ...]]) -> None:
+        """Bind consumers of one fused producer before constructing the optimizer.
+
+        Q/K/V and gate/up can then train one input scale without diverging into
+        separate serving quantizers. Callers explicitly register this spatial policy.
+        """
+        for names in groups:
+            modules = [self.quantized[name.replace(".", "__")] for name in names]
+            if len(modules) < 2:
+                raise ValueError("a shared producer needs at least two consumers")
+            first = modules[0]
+            if any(
+                module.layout != first.layout or not torch.equal(module.log_scale, first.log_scale)
+                for module in modules[1:]
+            ):
+                raise ValueError("shared consumers require matching initial scales and layouts")
+            for module in modules[1:]:
+                module.log_scale = first.log_scale
