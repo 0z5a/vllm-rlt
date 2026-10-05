@@ -559,3 +559,6 @@ search. Both reference choices need separate full-checkpoint GPU evidence.
 [math arm](ouro-sdpa-control-v1/tiny-ouro-h20-g0-math-attempt1.json),
 [runner](ouro-sdpa-control-v1/probe.py). Earlier full-checkpoint GPU failures
 remain unchanged and unresolved.
+
+
+HRM official BF16 CPU qualification completes112/112 cases: all224 H/L state tensors and112 logits bitwise exact using unchanged author recurrence with an explicit CPU SDPA dependency shim. This does not qualify original CUDA attention, cached GPU or quantized serving. [Verified summary](hrm-official-cpu-v1/summary.json); full raw results and reproducible runner are in [family draft23](https://github.com/0z5a/vllm-rlt/pull/23).
