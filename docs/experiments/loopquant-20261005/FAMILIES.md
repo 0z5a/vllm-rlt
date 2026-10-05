@@ -108,8 +108,8 @@ embedding-based tied readout.
 Frozen source `9cdc7977f5f848d88cb4ca12def6af72342b8418` passes
 [658 CPU tests and36 subtests](loopformer-fp8-v1/full-cpu-loopformer-fp8-attempt1.log),
 with29 skipped and233 GPU tests deselected. This establishes CPU regression and
-collection only. [Sixteen GPU cases](loopformer-fp8-v1/gpu-packet-manifest.json)
-are prepared but **not uploaded or run**: four policies × Graph off/on ×
+collection only. [Sixteen RTX5090 GPU cases](loopformer-fp8-v1/gpu-packet-manifest.json)
+remain prepared and unrun on that device: four policies × Graph off/on ×
 native/compact KV, with asynchronous scheduling, fixed R8 generated sequences,
 request-ID reuse, stable packed pointers, encoded reload and KV drain. Six
 native likelihood targets are also compared against the decoded FP8 reference
@@ -161,7 +161,7 @@ does not fuse the nonaffine RMSNorm with activation quantization.
 Frozen source `49734509500252cb0548d11fc78c51816666f425` passes
 [666 CPU tests and 36 subtests](hrm-fp8-v1/full-cpu-hrm-fp8-attempt1.log),
 with 29 skipped and 249 GPU cases deselected, natural exit 0. These results
-establish CPU regression and test collection only; native CUDA is **unrun**.
+establish CPU regression and test collection only; the later H20 qualification is reported below.
 [Sixteen prepared GPU cases](hrm-fp8-v1/gpu-packet-manifest.json) cover
 DYN/SH1/ST2/LOOP, Graph off/on and native/compact KV with asynchronous scheduling.
 They compare encoded reloads, protected tensors, fixed R2/L3 generated sequences,
@@ -169,3 +169,30 @@ continuation NLL at prefix lengths 1/3, repeated request IDs, packed pointers
 and complete KV drain. ST2 and per-loop have the same two-stage partition at R2.
 [Probe](hrm-fp8-v1/probe.py), [finite controller](hrm-fp8-v1/run.py).
 Full-weight quantized quality, memory and E2E speed remain unmeasured.
+
+
+## H20 native FP8 qualification
+
+On H20 (SM90), all 16 HRM and all 16 LoopFormer native FP8 cases pass at the
+existing helper criteria. Each family covers DYN/SH1/ST2/LOOP, Graph off/on,
+native/compact KV, generated sequences across repeated request lifetimes,
+encoded reload, protected tensors, stable packed pointers and KV drain. The
+continuation-NLL comparisons also pass their unchanged budgets.
+
+| Family | Native FP8 cases | Encoded reload | Full-model E2E speedup |
+|---|---:|---|---|
+| HRM-Text | 16/16 pass | Exact | Not measured |
+| LoopFormer | 16/16 pass | Exact | Not measured |
+
+This packet uses family source `49734509500252cb0548d11fc78c51816666f425`.
+The [packet manifest](h20-native-v1/manifest.json),
+[HRM raw results](h20-native-v1/h20-native-families-v1-hrm.json),
+[LoopFormer raw results](h20-native-v1/h20-native-families-v1-loopformer.json)
+and [summary](h20-native-v1/h20-native-families-v1-summary.json) are retained.
+Both family children naturally exited 0. The four-child packet itself exited 1
+because the separate Huginn and Parcae branches each failed their first case:
+non-padded boundary prelude states were paired with padded core metadata. Those
+failures and the remaining unrun cases are retained; this is no all-family pass.
+All 46 archived file hashes match the offbox copy. Temporary test tensors were
+removed while preserving their archived evidence and export manifests.
+Full-checkpoint G0, quantized quality, memory savings and E2E remain separate.

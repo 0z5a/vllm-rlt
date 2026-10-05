@@ -1,0 +1,1229 @@
+{
+  "status": "pass",
+  "family": "hrm",
+  "device": "NVIDIA H20",
+  "torch_version": "2.12.1+cu130",
+  "cuda_version": "13.0",
+  "pid": 22129,
+  "start_unix": 1791218742.407931,
+  "end_unix": 1791218754.672506,
+  "records": [
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "DYN",
+      "graphs": false,
+      "compact": false,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.00452423095703,
+          "native_nll": 21.994873046875
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.691913604736328,
+          "native_nll": 14.684331893920898
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": []
+        },
+        "mode": "dynamic",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "a0da1ab213e3263fba65e033d83e8e2e19b0768f2d3baf766348def649f0992e"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "DYN",
+      "graphs": false,
+      "compact": true,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.00452423095703,
+          "native_nll": 21.994873046875
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.691913604736328,
+          "native_nll": 14.684331893920898
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": []
+        },
+        "mode": "dynamic",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "a0da1ab213e3263fba65e033d83e8e2e19b0768f2d3baf766348def649f0992e"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "DYN",
+      "graphs": true,
+      "compact": false,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.00452423095703,
+          "native_nll": 21.994873046875
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.691913604736328,
+          "native_nll": 14.684331893920898
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 12,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": []
+        },
+        "mode": "dynamic",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "a0da1ab213e3263fba65e033d83e8e2e19b0768f2d3baf766348def649f0992e"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "DYN",
+      "graphs": true,
+      "compact": true,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.00452423095703,
+          "native_nll": 21.994873046875
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.691913604736328,
+          "native_nll": 14.684331893920898
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 12,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": []
+        },
+        "mode": "dynamic",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "a0da1ab213e3263fba65e033d83e8e2e19b0768f2d3baf766348def649f0992e"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "SH1",
+      "graphs": false,
+      "compact": false,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 21.994571685791016,
+          "native_nll": 22.0074462890625
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711395263671875,
+          "native_nll": 14.70799732208252
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": []
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "0ba984eb2b812b2ebcc1fd9000f8c8733192c32c401dcf94f4f5815c69e405f2"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "SH1",
+      "graphs": false,
+      "compact": true,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 21.994571685791016,
+          "native_nll": 22.0074462890625
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711395263671875,
+          "native_nll": 14.70799732208252
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": []
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "0ba984eb2b812b2ebcc1fd9000f8c8733192c32c401dcf94f4f5815c69e405f2"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "SH1",
+      "graphs": true,
+      "compact": false,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 21.994571685791016,
+          "native_nll": 22.0074462890625
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711395263671875,
+          "native_nll": 14.70799732208252
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 12,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": []
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "0ba984eb2b812b2ebcc1fd9000f8c8733192c32c401dcf94f4f5815c69e405f2"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "SH1",
+      "graphs": true,
+      "compact": true,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 21.994571685791016,
+          "native_nll": 22.0074462890625
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711395263671875,
+          "native_nll": 14.70799732208252
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 12,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": []
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "0ba984eb2b812b2ebcc1fd9000f8c8733192c32c401dcf94f4f5815c69e405f2"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "ST2",
+      "graphs": false,
+      "compact": false,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.002222061157227,
+          "native_nll": 22.016448974609375
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711803436279297,
+          "native_nll": 14.699736595153809
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "ea632ee210766a3027d93a8d8dd35633198895b3e870e02aafd1eae3c85295ac"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "ST2",
+      "graphs": false,
+      "compact": true,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.002222061157227,
+          "native_nll": 22.016448974609375
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711803436279297,
+          "native_nll": 14.699736595153809
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "ea632ee210766a3027d93a8d8dd35633198895b3e870e02aafd1eae3c85295ac"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "ST2",
+      "graphs": true,
+      "compact": false,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.002222061157227,
+          "native_nll": 22.016448974609375
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711803436279297,
+          "native_nll": 14.699736595153809
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 12,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "ea632ee210766a3027d93a8d8dd35633198895b3e870e02aafd1eae3c85295ac"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "ST2",
+      "graphs": true,
+      "compact": true,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.002222061157227,
+          "native_nll": 22.016448974609375
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711803436279297,
+          "native_nll": 14.699736595153809
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 12,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "ea632ee210766a3027d93a8d8dd35633198895b3e870e02aafd1eae3c85295ac"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "LOOP",
+      "graphs": false,
+      "compact": false,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.002222061157227,
+          "native_nll": 22.016448974609375
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711803436279297,
+          "native_nll": 14.699736595153809
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "ea632ee210766a3027d93a8d8dd35633198895b3e870e02aafd1eae3c85295ac"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "LOOP",
+      "graphs": false,
+      "compact": true,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.002222061157227,
+          "native_nll": 22.016448974609375
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711803436279297,
+          "native_nll": 14.699736595153809
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 0,
+      "replays": 0,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "ea632ee210766a3027d93a8d8dd35633198895b3e870e02aafd1eae3c85295ac"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "LOOP",
+      "graphs": true,
+      "compact": false,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.002222061157227,
+          "native_nll": 22.016448974609375
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711803436279297,
+          "native_nll": 14.699736595153809
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 12,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "ea632ee210766a3027d93a8d8dd35633198895b3e870e02aafd1eae3c85295ac"
+      }
+    },
+    {
+      "kind": "native_model",
+      "temporary_weight_payload_removed": true,
+      "policy": "LOOP",
+      "graphs": true,
+      "compact": true,
+      "asynchronous": true,
+      "encoded_reload_exact": true,
+      "physical_packed_weights": 16,
+      "repeated_requests": 6,
+      "full_depth": 2,
+      "likelihood": [
+        {
+          "prefix": 1,
+          "targets": 6,
+          "reference_nll": 22.002222061157227,
+          "native_nll": 22.016448974609375
+        },
+        {
+          "prefix": 3,
+          "targets": 4,
+          "reference_nll": 14.711803436279297,
+          "native_nll": 14.699736595153809
+        }
+      ],
+      "protected_parameters_unchanged": true,
+      "low_applications_per_outer_cycle": 3,
+      "kv_after_drain": 0,
+      "captures": 1,
+      "replays": 12,
+      "export_manifest": {
+        "schema_version": 1,
+        "format": "hrm_rowwise_fp8_e4m3fn",
+        "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model_config": {
+          "model_type": "hrm_text",
+          "architectures": [
+            "HrmTextForCausalLM"
+          ],
+          "tie_word_embeddings": false,
+          "vocab_size": 32,
+          "intermediate_size": 128,
+          "num_attention_heads": 2,
+          "num_key_value_heads": 2,
+          "head_dim": 32,
+          "H_cycles": 2,
+          "L_cycles": 3,
+          "max_position_embeddings": 64,
+          "rms_norm_eps": 1e-06,
+          "rope_theta": 10000.0,
+          "initializer_range": 0.025515518153991442,
+          "embedding_scale": 4,
+          "prefix_lm": true,
+          "bos_token_id": 6,
+          "eos_token_id": 11,
+          "pad_token_id": 5,
+          "hidden_size": 64,
+          "num_hidden_layers": 2
+        },
+        "layout": {
+          "max_loops": 2,
+          "boundaries": [
+            1
+          ]
+        },
+        "mode": "static",
+        "normalization_fusion": false,
+        "packed_weight_matrices": 16,
+        "packed_weight_copies": 1,
+        "packed_weight_bytes": 180224,
+        "protected_embedding_state_head_dtype": "bfloat16",
+        "state_dtype": "bfloat16",
+        "kv_dtype": "bfloat16",
+        "native_quality": "not_run",
+        "tensor_sha256": "ea632ee210766a3027d93a8d8dd35633198895b3e870e02aafd1eae3c85295ac"
+      }
+    }
+  ],
+  "scope": "tiny native FP8 correctness and encoded reload; no full-checkpoint quality or performance"
+}

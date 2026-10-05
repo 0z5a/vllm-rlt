@@ -1,0 +1,23 @@
+{
+  "archive_sha256": "9957e7e195225f8db1dce1fb77d12c706e29113b15a59b41d22c9e6e0b2a358c",
+  "archive_bytes": 563335,
+  "verified_files": 46,
+  "results": {
+    "hrm": {
+      "cases": 16,
+      "encoded_reload_exact": true
+    },
+    "loopformer": {
+      "cases": 16,
+      "encoded_reload_exact": true
+    }
+  },
+  "native_passed_cases": 32,
+  "native_failed_cases": 2,
+  "native_not_run_cases": 30,
+  "metadata_controls_not_run": 2,
+  "ssh_exit": 1,
+  "controller_returncode": 1,
+  "failure": "boundary prelude returns unpadded rows but core workspace metadata was power-of-two padded",
+  "time_unix": 1791219269.209037
+}
