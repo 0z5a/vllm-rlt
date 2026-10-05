@@ -1,0 +1,11 @@
+torch=2.13.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/torch/__init__.py
+setuptools=84.0.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/setuptools/__init__.py
+{"source_root": "/Users/0z5a/Documents/infra/flashrlt-20261005/baselines/rlt-group-fork-parent", "state_before_resume": "WAITING", "group_fork": "disabled"}
+/Users/0z5a/Documents/infra/flashrlt-20261005/bench/resident_pytest.py:62
+<frozen runpy>:287
+<frozen runpy>:98
+<frozen runpy>:88
+bench/repro_idle_prelude.py:35
+/Users/0z5a/Documents/infra/flashrlt-20261005/baselines/rlt-group-fork-parent/vllm_rlt/engine/llm_engine.py:295
+/Users/0z5a/Documents/infra/flashrlt-20261005/baselines/rlt-group-fork-parent/vllm_rlt/engine/llm_engine.py:323
+RuntimeError: scheduler made no progress

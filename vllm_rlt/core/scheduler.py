@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from vllm_rlt.config import SchedulerConfig
+from vllm_rlt.core.group_prefill import ForkAdmission, GroupPrefillFork
 from vllm_rlt.core.scheduling_policy import NoRefillPolicy, RefillPolicy, SpeculativePolicy
 from vllm_rlt.request import FinishReason, Request, Stage
 
@@ -68,6 +69,7 @@ class Scheduler:
         # device state and mutate queues; they are operations, not predicates.
         self.preempt_callback = None
         self.resume_callback = None
+        self.group_forks: GroupPrefillFork | None = None
         policy_cls = NoRefillPolicy if config.mode == "no_refill" else RefillPolicy
         self.policy = (SpeculativePolicy if speculative_config else policy_cls)(config)
 
@@ -76,6 +78,8 @@ class Scheduler:
             raise ValueError(f"duplicate request ID: {request.request_id}")
         self.requests[request.request_id] = request
         self.queues[Stage.WAITING].append(request.request_id)
+        if self.group_forks is not None:
+            self.group_forks.add(request)
 
     def enqueue(self, request: Request, stage: Stage):
         request.stage = stage
@@ -86,6 +90,8 @@ class Scheduler:
         for queue in self.queues.values():
             while request.request_id in queue:
                 queue.remove(request.request_id)
+        if self.group_forks is not None:
+            self.group_forks.remove(request)
         self.cache_manager.free(request.request_id)
         request.stage = Stage.FINISHED
         request.finish_reason = reason
@@ -159,6 +165,13 @@ class Scheduler:
         reserved = 0
         for request in self.requests.values():
             active = request.stage not in (Stage.WAITING, Stage.RECEIVING)
+            if (
+                cache._has_forked_prefix
+                and active
+                and (reserve_outputs or not cache.incremental_allocation)
+            ):
+                capacity = len(request.prompt_token_ids) + request.sampling_params.max_tokens - 1
+                reserved += cache.cow_blocks_needed(request.request_id, capacity)
             if request.stage != Stage.PREFILL and not (reserve_outputs and active):
                 continue
             tokens = len(request.prompt_token_ids)
@@ -230,7 +243,17 @@ class Scheduler:
         ):
             return False
         request.num_prefilled_tokens = plan.cached_tokens
+        if self.group_forks is not None:
+            self.group_forks.started(request)
         self.enqueue(request, Stage.PREFILL)
+        return True
+
+    def _admit_fresh(self, request: Request, active_count: int) -> bool:
+        plan = self._plan_admission(request, active_count)
+        while not self._commit_admission(request, plan):
+            if self.group_forks is None or not self.group_forks.reclaim():
+                return False
+            plan = self._plan_admission(request, active_count)
         return True
 
     def _admit(self):
@@ -266,8 +289,14 @@ class Scheduler:
                 deferred.append(request_id)
                 continue
 
-            plan = self._plan_admission(request, active_count)
-            if not self._commit_admission(request, plan):
+            fork = (
+                self.group_forks.admit(request, active_count)
+                if self.group_forks is not None
+                else ForkAdmission.NORMAL
+            )
+            if fork == ForkAdmission.DEFER or (
+                fork == ForkAdmission.NORMAL and not self._admit_fresh(request, active_count)
+            ):
                 deferred.append(request_id)
                 if request.admission_bypasses >= self.config.max_admission_bypasses:
                     break

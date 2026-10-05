@@ -4,6 +4,7 @@ from dataclasses import replace
 import torch
 
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
+from vllm_rlt.core.group_prefill import GroupPrefillFork
 from vllm_rlt.core.memory import make_cache_manager, plan_cache
 from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
@@ -40,6 +41,16 @@ class LLMEngine:
         scheduler_config = scheduler_config or SchedulerConfig()
         parameter = next(model.parameters())
         config = model.config
+        if scheduler_config.group_prefill_fork:
+            from vllm_rlt.models import NanbeigeForCausalLM, OuroForCausalLM
+
+            if (
+                not isinstance(model, (OuroForCausalLM, NanbeigeForCausalLM))
+                or cache_config.layout != "last_exited"
+            ):
+                raise ValueError(
+                    "group prefill fork requires Ouro/Nanbeige full-depth last_exited KV"
+                )
         if getattr(model, "requires_boundary_kv", False):
             if cache_config.layout != "last_exited":
                 raise ValueError("Huginn requires last_exited KV")
@@ -112,6 +123,10 @@ class LLMEngine:
             execution_config=self.execution_config,
             scheduler_config=scheduler_config,
         )
+        if scheduler_config.group_prefill_fork:
+            self.scheduler.group_forks = GroupPrefillFork(
+                self.scheduler, self.model_runner, config.total_ut_steps
+            )
         self._exit_traces = {
             key: tuple(values) for key, values in (self.exit_config.depths_by_request or {}).items()
         }
@@ -126,6 +141,10 @@ class LLMEngine:
         if scheduler_config.enable_preemption:
             self.scheduler.preempt_callback = self.preemption.preempt
             self.scheduler.resume_callback = self.preemption.resume
+        self._group_step_event = None
+        if scheduler_config.group_prefill_fork and parameter.device.type == "cuda":
+            self._group_step_event = torch.cuda.Event()
+            self._group_step_event.record(torch.cuda.current_stream(parameter.device))
 
     def add_request(
         self,
@@ -291,15 +310,27 @@ class LLMEngine:
         """Advance all requests; optionally materialize only completed outputs."""
         if self._update_version is not None:
             raise RuntimeError("Generation is unavailable during a weight update")
+        stream = None
+        if self._group_step_event is not None:
+            stream = torch.cuda.current_stream(self.model_runner.device)
+            # Serialize snapshot/COW reads across caller streams before a later
+            # step can recycle or write the last owner of a shared partial page.
+            stream.wait_event(self._group_step_event)
+            for request in self.scheduler.requests.values():
+                if request.hidden_state is not None:
+                    request.hidden_state.record_stream(stream)
         if not self.profiling.recording:
-            return self._step(final_only=final_only)
-        try:
             outputs = self._step(final_only=final_only)
-            self.profiling.step()
-            return outputs
-        except BaseException:
-            self.profiling.stop()
-            raise
+        else:
+            try:
+                outputs = self._step(final_only=final_only)
+                self.profiling.step()
+            except BaseException:
+                self.profiling.stop()
+                raise
+        if self._group_step_event is not None:
+            self._group_step_event.record(stream)
+        return outputs
 
     def _step(self, *, final_only: bool = False) -> list[RequestOutput]:
         if self.execution_config.async_scheduling:
@@ -390,6 +421,8 @@ class LLMEngine:
                 )
                 if request.num_prefilled_tokens == len(request.prompt_token_ids):
                     request.loops_done = self.model.config.total_ut_steps
+                    if self.scheduler.group_forks is not None:
+                        self.scheduler.group_forks.capture(request)
                     self.scheduler.enqueue(request, Stage.CODA)
                 else:
                     self.scheduler.enqueue(request, Stage.PREFILL)

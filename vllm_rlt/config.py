@@ -61,6 +61,7 @@ class SchedulerConfig:
     max_prefill_batches_before_decode: int = 1
     policy: str = "fcfs"
     enable_preemption: bool = False
+    group_prefill_fork: bool = False
 
     def __post_init__(self):
         for name in (
@@ -75,6 +76,8 @@ class SchedulerConfig:
             _positive(name, getattr(self, name))
         if type(self.enable_preemption) is not bool:
             raise ValueError("enable_preemption must be a boolean")
+        if type(self.group_prefill_fork) is not bool:
+            raise ValueError("group_prefill_fork must be a boolean")
         if self.policy not in ("fcfs", "priority"):
             raise ValueError("policy must be fcfs or priority")
         if self.mode not in ("refill", "no_refill"):

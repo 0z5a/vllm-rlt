@@ -48,6 +48,7 @@ class _Allocation:
     written: list[list[_WrittenPositions]]
     transfer_leases: set[str] = field(default_factory=set)
     release_requested: bool = False
+    shared_prefix_tokens: int = 0
 
 
 @dataclass(frozen=True, eq=False)
@@ -155,6 +156,7 @@ class KVCacheManager:
         self._prefixes = OrderedDict()
         self._pending_prefixes = []
         self.prefix_hits = self.prefix_queries = 0
+        self._has_forked_prefix = False
         if enable_prefix_caching and layout != "last_exited":
             raise ValueError("prefix caching requires last_exited KV")
 
@@ -301,7 +303,16 @@ class KVCacheManager:
             self._drop_refs(blocks)
         self._prefixes.clear()
 
-    def allocate(self, request_id: str, max_tokens: int, *, initial_tokens=None, prefix=()) -> bool:
+    def allocate(
+        self,
+        request_id: str,
+        max_tokens: int,
+        *,
+        initial_tokens=None,
+        prefix=(),
+        prefix_tokens=None,
+        record_prefix=True,
+    ) -> bool:
         """Reserve a logical capacity; acquire physical pages for the current frontier."""
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
@@ -318,6 +329,11 @@ class KVCacheManager:
         pages = (initial_tokens + self.block_size - 1) // self.block_size
         if len(prefix) > pages:
             raise ValueError("prefix exceeds initial KV frontier")
+        length = len(prefix) * self.block_size if prefix_tokens is None else prefix_tokens
+        if not 0 <= length <= initial_tokens or (
+            length + self.block_size - 1
+        ) // self.block_size != len(prefix):
+            raise ValueError("prefix extent does not match its shared pages")
         claimed = [b for group in prefix for b in group]
         for b in claimed:
             self._refs[b] += 1
@@ -330,7 +346,6 @@ class KVCacheManager:
             tuple(g[d] for g in prefix) + tuple(fresh[d * tail : (d + 1) * tail])
             for d in range(self.storage_depths)
         )
-        length = len(prefix) * self.block_size
         self._allocations[request_id] = _Allocation(
             int(max_tokens),
             tables,
@@ -338,15 +353,80 @@ class KVCacheManager:
                 [_WrittenPositions(prefix=length) for _ in range(self.num_layers)]
                 for _ in range(self.storage_depths)
             ],
+            shared_prefix_tokens=length,
         )
-        self.prefix_queries += 1
-        self.prefix_hits += length
+        if record_prefix:
+            self.prefix_queries += 1
+            self.prefix_hits += length
+        return True
+
+    def fork_prefix(self, source_id: str, target_id: str, length: int, max_tokens: int) -> bool:
+        """Share a completed prefix, including a partial page, until first write.
+
+        The caller orders source completion and subsequent device execution.
+        Independent sampling/hidden state belongs to the engine, not KV pages.
+        """
+        source = self._get_allocation(source_id)
+        if self.layout != "last_exited" or self.recurrent_layers != tuple(range(self.num_layers)):
+            raise ValueError("full-prefix fork requires rectangular full-depth KV")
+        if not 0 < length <= min(source.max_tokens, max_tokens):
+            raise ValueError("fork prefix exceeds source or destination capacity")
+        if any(w.prefix < length for plane in source.written for w in plane):
+            raise ValueError("fork requires a completely written full-depth prefix")
+        pages = (length + self.block_size - 1) // self.block_size
+        prefix = tuple(tuple(table[p] for table in source.block_tables) for p in range(pages))
+        initial = length if self.incremental_allocation else max_tokens
+        if not self.allocate(
+            target_id,
+            max_tokens,
+            initial_tokens=initial,
+            prefix=prefix,
+            prefix_tokens=length,
+            record_prefix=False,
+        ):
+            return False
+        source.shared_prefix_tokens = max(source.shared_prefix_tokens, length)
+        self._has_forked_prefix = True
+        return True
+
+    def cow_blocks_needed(self, request_id: str, tokens: int) -> int:
+        allocation = self._get_allocation(request_id)
+        boundary = allocation.shared_prefix_tokens
+        if not boundary % self.block_size or tokens <= boundary:
+            return 0
+        page = boundary // self.block_size
+        return (
+            self.storage_depths
+            if any(self._refs[t[page]] > 1 for t in allocation.block_tables)
+            else 0
+        )
+
+    def _detach_prefix_tail(self, allocation: _Allocation) -> bool:
+        page, offset = divmod(allocation.shared_prefix_tokens, self.block_size)
+        fresh = self._claim(self.storage_depths)
+        if fresh is None:
+            return False
+        old = [table[page] for table in allocation.block_tables]
+        for src, dst in zip(old, fresh, strict=True):
+            self.key_cache[dst, :, :offset].copy_(self.key_cache[src, :, :offset])
+            self.value_cache[dst, :, :offset].copy_(self.value_cache[src, :, :offset])
+        allocation.block_tables = tuple(
+            table[:page] + (block,) + table[page + 1 :]
+            for table, block in zip(allocation.block_tables, fresh, strict=True)
+        )
+        self._drop_refs(old)
         return True
 
     def ensure_capacity(self, request_id, tokens):
         allocation = self._get_allocation(request_id)
         if not 0 < tokens <= allocation.max_tokens:
             raise ValueError("KV growth exceeds logical capacity")
+        if (
+            self._has_forked_prefix
+            and self.cow_blocks_needed(request_id, tokens)
+            and not self._detach_prefix_tail(allocation)
+        ):
+            return False
         pages = (tokens + self.block_size - 1) // self.block_size
         extra = pages - len(allocation.block_tables[0])
         if extra <= 0:
@@ -508,6 +588,14 @@ class KVCacheManager:
         ):
             raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
         first = tuple(self._validate_rows(request_ids, depth_sets[0], positions))
+        if for_write and self._has_forked_prefix:
+            for request_id, (allocation, _, position) in zip(request_ids, first, strict=True):
+                if position < allocation.shared_prefix_tokens:
+                    raise ValueError("cannot overwrite an immutable shared prefix")
+                if self.cow_blocks_needed(request_id, position + 1) and not self.ensure_capacity(
+                    request_id, position + 1
+                ):
+                    raise RuntimeError("insufficient KV capacity for partial-prefix copy-on-write")
         row_sets = [first]
         for depths in depth_sets[1:]:
             if len(depths) != len(first):

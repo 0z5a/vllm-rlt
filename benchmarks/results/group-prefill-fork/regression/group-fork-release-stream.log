@@ -1,0 +1,6 @@
+torch=2.13.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/torch/__init__.py
+setuptools=84.0.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/setuptools/__init__.py
+........................................................................ [ 39%]
+........................................................................ [ 78%]
+.......................................                                  [100%]
+183 passed, 39 deselected in 8.30s

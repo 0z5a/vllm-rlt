@@ -1,0 +1,36 @@
+torch=2.13.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/torch/__init__.py
+setuptools=84.0.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/setuptools/__init__.py
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_fork_counts_as_fresh_admission_for_bounded_bypass ____________
+tests/test_group_prefill.py:355: in test_fork_counts_as_fresh_admission_for_bounded_bypass
+    assert e.scheduler.requests["4"].stage == Stage.WAITING
+E   AssertionError: assert <Stage.CODA: 'coda'> == <Stage.WAITING: 'waiting'>
+E     
+E     - waiting
+E     + coda
+______ test_pending_snapshot_can_be_reclaimed_for_large_priority_request _______
+tests/test_group_prefill.py:373: in test_pending_snapshot_can_be_reclaimed_for_large_priority_request
+    assert e.scheduler.group_forks.capacity_fallbacks >= 1
+E   assert 0 >= 1
+E    +  where 0 = <vllm_rlt.core.group_prefill.GroupPrefillFork object at 0x10bff7350>.capacity_fallbacks
+E    +    where <vllm_rlt.core.group_prefill.GroupPrefillFork object at 0x10bff7350> = <vllm_rlt.core.scheduler.Scheduler object at 0x10bff6960>.group_forks
+E    +      where <vllm_rlt.core.scheduler.Scheduler object at 0x10bff6960> = <vllm_rlt.engine.llm_engine.LLMEngine object at 0x10bff68d0>.scheduler
+_________ test_larger_follower_falls_back_after_short_leader_finishes __________
+tests/test_group_prefill.py:385: in test_larger_follower_falls_back_after_short_leader_finishes
+    outputs.append(drain(e)[0])
+                   ^^^^^^^^
+tests/test_group_prefill.py:88: in drain
+    for out in e.step(final_only=True):
+               ^^^^^^^^^^^^^^^^^^^^^^^
+vllm_rlt/engine/llm_engine.py:310: in step
+    return self._step(final_only=final_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+vllm_rlt/engine/llm_engine.py:338: in _step
+    raise RuntimeError("scheduler made no progress")
+E   RuntimeError: scheduler made no progress
+=========================== short test summary info ============================
+FAILED tests/test_group_prefill.py::test_fork_counts_as_fresh_admission_for_bounded_bypass
+FAILED tests/test_group_prefill.py::test_pending_snapshot_can_be_reclaimed_for_large_priority_request
+FAILED tests/test_group_prefill.py::test_larger_follower_falls_back_after_short_leader_finishes
+3 failed, 66 deselected in 0.68s

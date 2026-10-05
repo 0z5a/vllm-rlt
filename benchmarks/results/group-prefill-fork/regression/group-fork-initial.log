@@ -1,0 +1,20 @@
+torch=2.13.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/torch/__init__.py
+setuptools=84.0.0 /Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/setuptools/__init__.py
+....................................................F...                 [100%]
+=================================== FAILURES ===================================
+_________________ test_memory_pressure_still_drains[True-True] _________________
+tests/test_group_prefill.py:211: in test_memory_pressure_still_drains
+    outputs.append(drain(e)[0])
+                   ^^^^^^^^
+tests/test_group_prefill.py:88: in drain
+    for out in e.step(final_only=True):
+               ^^^^^^^^^^^^^^^^^^^^^^^
+vllm_rlt/engine/llm_engine.py:310: in step
+    return self._step(final_only=final_only)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+vllm_rlt/engine/llm_engine.py:338: in _step
+    raise RuntimeError("scheduler made no progress")
+E   RuntimeError: scheduler made no progress
+=========================== short test summary info ============================
+FAILED tests/test_group_prefill.py::test_memory_pressure_still_drains[True-True]
+1 failed, 55 passed in 10.90s
