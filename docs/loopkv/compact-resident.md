@@ -18,8 +18,9 @@ optional past-skip credit reclamation retain their existing rules.
 | CPU loopkv suite | 102 passed, 2 CUDA cases deselected, 36 subtests passed |
 | Cancellation and request ID reuse | Native/alias/compact/credits exact under normal and held coda readiness |
 | Complete logical schedule, opposite coda readiness | Native/alias/compact/credits exact over two request lifetimes, three depth policies |
-| CUDA bank publication, delayed reader, padding and Graph replay | Prepared; not run |
-| Official checkpoint and performance | Not run |
+| CUDA bank publication, delayed reader, padding and Graph replay | All 84 arms pass at B1–128/C2B, two request lifetimes |
+| Official complete-schedule replay | All six B16/C32 and B32/C64 arms exact, 288 requests / 36,864 tokens |
+| Compact performance | Not measured |
 
 The finite CUDA gate is `python -m experiments.loopkv.async_gate --compact --out
 RESULT.json`. It compares seven execution paths at B1/4/16/32/64/128 and C2B,
