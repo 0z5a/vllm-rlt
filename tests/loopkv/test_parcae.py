@@ -1,6 +1,7 @@
 """Parcae recurrence, token-value identity, checkpoint and request lifetimes."""
 
 import json
+from itertools import product
 
 import pytest
 import torch
@@ -115,7 +116,7 @@ def test_bf16_token_bytes_and_native_random_initialization(model):
 
 def test_engine_four_modes_reuse_ids_preserves_stochastic_state(model):
     all_modes = []
-    for mode in ("native", "alias", "compact", "credits"):
+    for mode, batched in product(("native", "alias", "compact", "credits"), (False, True)):
         engine = LLMEngine(
             model,
             cache_config=CacheConfig(
@@ -126,6 +127,7 @@ def test_engine_four_modes_reuse_ids_preserves_stochastic_state(model):
                 reclaim_skipped_credits=mode == "credits",
             ),
             scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
+            execution_config=ExecutionConfig(prefill_batch_metadata=batched),
         )
         rounds = []
         for _ in range(2):

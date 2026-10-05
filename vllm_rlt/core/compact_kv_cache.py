@@ -124,28 +124,33 @@ class CompactKVCacheManager(AliasKVCacheManager):
             raise ValueError("compact packed prefill is not implemented")
         if not depth_sets:
             raise ValueError("at least one depth assignment is required")
-        batches = []
+        first = tuple(self._validate_rows(request_ids, depth_sets[0], positions))
+        explicit_lengths = self._validate_read_lengths(first, read_lengths)
+        n = len(first)
+        wide = [self._maps[id(a)].data_ptr() for a, _, _ in first] + [p for _, _, p in first]
+        narrow = [a.max_tokens for a, _, _ in first] + (
+            list(explicit_lengths) if explicit_lengths else [p + 1 for _, _, p in first]
+        )
+        plans = []
         for depths in depth_sets:
             rows = tuple(self._validate_rows(request_ids, depths, positions))
-            explicit_lengths = self._validate_read_lengths(rows, read_lengths)
             records = self._reserve_records(rows, for_write=for_write)
-            n = len(rows)
-            wide = self._stage(
-                [self._maps[id(a)].data_ptr() for a, _, _ in rows]
-                + [p for _, _, p in rows]
-                + records
+            plans.append((rows, records, len(wide), len(narrow)))
+            wide += (
+                records
                 + [record // self.block_size for record in records]
-                + [record % self.block_size for record in records],
-                torch.int64,
+                + [record % self.block_size for record in records]
             )
-            narrow = self._stage(
-                [a.max_tokens for a, _, _ in rows]
-                + [depth for _, depth, _ in rows]
-                + (list(explicit_lengths) if explicit_lengths else [p + 1 for _, _, p in rows]),
-                torch.int32,
-            )
-            pointers, position_ids, record_ids = wide[:n], wide[n : 2 * n], wide[2 * n : 3 * n]
-            widths, query_depths = narrow[:n], narrow[n : 2 * n]
+            narrow += [depth for _, depth, _ in rows]
+        wide = self._stage(wide, torch.int64)
+        narrow = self._stage(narrow, torch.int32)
+        pointers, position_ids = wide[:n], wide[n : 2 * n]
+        widths, lengths = narrow[:n], narrow[n : 2 * n]
+        allocations = tuple(dict(zip(request_ids, (a for a, _, _ in first))).items())
+        batches = []
+        for rows, records, address_start, depth_start in plans:
+            record_ids = wide[address_start : address_start + n]
+            query_depths = narrow[depth_start : depth_start + n]
             if for_write and rows:
                 if self.device.type == "cuda":
                     from vllm_rlt.kernels.record_map import publish_records
@@ -158,12 +163,12 @@ class CompactKVCacheManager(AliasKVCacheManager):
                 _PreparedKVBatch(
                     owner=self,
                     rows=rows,
-                    allocations=tuple(dict(zip(request_ids, (a for a, _, _ in rows))).items()),
+                    allocations=allocations,
                     position_ids=position_ids,
-                    write_blocks=wide[3 * n : 4 * n],
-                    write_offsets=wide[4 * n : 5 * n],
+                    write_blocks=wide[address_start + n : address_start + 2 * n],
+                    write_offsets=wide[address_start + 2 * n : address_start + 3 * n],
                     block_tables=torch.empty((len(rows), 0), dtype=torch.int32, device=self.device),
-                    context_lengths=narrow[2 * n : 3 * n],
+                    context_lengths=lengths,
                     writable=for_write,
                     read_lengths=explicit_lengths,
                     query_depths=query_depths,

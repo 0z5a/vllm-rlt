@@ -11,7 +11,8 @@ from vllm_rlt.worker.model_runner import Submission
 
 @pytest.mark.parametrize("hold_coda", [False, True])
 @pytest.mark.parametrize("storage", ["alias", "compact", "credits"])
-def test_async_alias_trace_abort_and_request_reuse(monkeypatch, hold_coda, storage):
+@pytest.mark.parametrize("batched", [False, True])
+def test_async_alias_trace_abort_and_request_reuse(monkeypatch, hold_coda, storage, batched):
     torch.manual_seed(13)
     model = OuroForCausalLM(tiny_ouro_config()).eval()
     trace = ExitConfig("trace", depths_by_request={"fixed": [4, 1, 3, 2, 4, 1]})
@@ -27,7 +28,9 @@ def test_async_alias_trace_abort_and_request_reuse(monkeypatch, hold_coda, stora
             ),
             scheduler_config=SchedulerConfig(max_num_seqs=3, max_num_batched_tokens=4),
             exit_config=trace,
-            execution_config=ExecutionConfig(async_scheduling=alias),
+            execution_config=ExecutionConfig(
+                async_scheduling=alias, prefill_batch_metadata=batched and alias
+            ),
         )
         for alias in (False, True)
     ]

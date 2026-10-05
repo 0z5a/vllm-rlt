@@ -1,10 +1,12 @@
 """Boundary KV can finish after recurrent finalization without overwriting it."""
 
+from itertools import product
+
 import pytest
 import torch
 
 from tests.test_huginn import tiny_huginn_config
-from vllm_rlt import CacheConfig, SamplingParams, SchedulerConfig
+from vllm_rlt import CacheConfig, ExecutionConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
 from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
@@ -39,7 +41,7 @@ def test_huginn_full_engine_cache_modes_match_with_reuse(loops):
     torch.manual_seed(42)
     model = HuginnForCausalLM(tiny_huginn_config()).eval()
     results = []
-    for mode in ("native", "alias", "compact", "credits"):
+    for mode, batched in product(("native", "alias", "compact", "credits"), (False, True)):
         engine = LLMEngine(
             model,
             cache_config=CacheConfig(
@@ -50,6 +52,7 @@ def test_huginn_full_engine_cache_modes_match_with_reuse(loops):
                 reclaim_skipped_credits=mode == "credits",
             ),
             scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
+            execution_config=ExecutionConfig(prefill_batch_metadata=batched),
         )
         rounds = []
         for _ in range(2):

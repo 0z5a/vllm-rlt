@@ -99,6 +99,7 @@ def main():
                     async_scheduling=arm["async"],
                     static_buffers=arm["graphs"],
                     cuda_graphs=arm["graphs"],
+                    prefill_batch_metadata=arm.get("prefill_batch_metadata", False),
                 ),
             )
             if cuda:
@@ -128,7 +129,7 @@ def main():
             assert len(completed) == case["requests"]
             assert engine.cache_manager.num_free_blocks == case["blocks"]
             if not arm["alias"] and not arm.get("compact", False):
-                baselines[arm["execution"]] = completed
+                baselines.setdefault(arm["execution"], completed)
             baseline = baselines[arm["execution"]]
             summary = {
                 "case": case,
