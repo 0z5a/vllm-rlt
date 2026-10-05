@@ -61,6 +61,27 @@ They are **not run**: the packet is local and awaits a resource grant. Parcae
 uses synchronous scheduling; no mixed-depth or asynchronous support is claimed.
 [Probe](parcae-int4-v1/probe.py), [finite controller](parcae-int4-v1/run.py).
 
+## FP8 artifact and native preflight
+
+The FP8 core uses one shared Q/K/V input producer and separate attention-output,
+MLP-input and MLP-output producers. DYN, SH1, ST2 and per-loop layouts consume
+the runtime's explicit row loop IDs. Each projection owns one encoded matrix;
+the exported artifact preserves those bytes, BF16 protected parameters, the
+tied readout and FP32 RoPE. Q/K RMSNorm, adjacent-pair RoPE, token value gating
+and ReLU²/2 retain the native arithmetic. With fused normalization enabled,
+blocks with value gates still compute the BF16 norm needed by that gate; this
+has no measured performance benefit yet.
+
+Source `08e636877b1e24a46cc65d028001e69a7867396b` passes the
+[full CPU regression](parcae-fp8-v1/full-cpu-parcae-fp8-attempt1.log): 677 passed,
+29 skipped, 237 GPU tests deselected, 2 strict expected failures and 36 passing
+subtests. This validates import/collection and existing CPU behavior, **not the
+CUDA implementation**. The [16-case GPU packet](parcae-fp8-v1/gpu-packet-manifest.json)
+is prepared but not uploaded or run. It compares decoded FP8 references across
+all four policies × Graph off/on × fused norm off/on, with fixed full recurrence,
+encoded reload, tokens above 255, request-ID reuse and KV drain.
+[Probe](parcae-fp8-v1/probe.py), [finite controller](parcae-fp8-v1/run.py).
+
 ## Full checkpoint and performance
 
 The official checkpoint was independently rehashed and is reused read-only from
@@ -76,7 +97,7 @@ weights remain untouched. [Raw results](parcae-v1/official-parcae-adapter-cpu-at
 |---|---:|---:|---:|---:|---:|
 | Parcae370M | Not measured | Not measured | Not measured | — | — |
 
-Full quantization calibration, INT4 GPU qualification, FP8/NVFP4 native export, locked quality,
+Full quantization calibration, INT4/FP8 GPU qualification, NVFP4 native export, locked quality,
 multiple batch sizes, high concurrency, mixed/open arrivals and formal paired
 performance remain unrun. Retained numerical failures do not justify running a
 full QAT search before native G0 is resolved.

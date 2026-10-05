@@ -1,0 +1,13 @@
+{
+  "source_commit": "08e636877b1e24a46cc65d028001e69a7867396b",
+  "scope": "16 tiny Parcae native FP8 cases: DYN/SH1/ST2/LOOP x Graph off/on x fused norm off/on; encoded reload, fixed R3, high token IDs, BF16 token gates/injection, tied readout, FP32 RoPE, request-ID reuse and KV drain",
+  "cases": 16,
+  "full_model": false,
+  "performance": false,
+  "locks": "original GPU lock in child; finite IO; no same outer GPU lock",
+  "files": {
+    "probe.py": "ca739a9f3230044ab44b98c8896874cdbe3f5cb77f34ec47769e56920b31b5e4",
+    "run.py": "490966211b30c5f5dd297193f1139a97024fb39f301551a5d95b73353235dbaf",
+    "source.tar.gz": "a96ab6053bb47bb5292048f91059d0d280be26dbe6e28010116207e0067a3c16"
+  }
+}
