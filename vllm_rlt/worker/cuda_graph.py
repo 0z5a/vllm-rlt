@@ -171,6 +171,7 @@ class RecurrentGraphs:
         if alias:
             entry.metadata.depth_block_tables[:, :, :width].copy_(batch.depth_block_tables[:count])
             entry.metadata.query_depths.copy_(batch.query_depths[:count])
+            entry.metadata.alias_starts.copy_(batch.alias_starts[:count])
         if key not in self.entries:
             proxy = _DeviceCache(cache)
             entry.graph, entry.output = _capture(
