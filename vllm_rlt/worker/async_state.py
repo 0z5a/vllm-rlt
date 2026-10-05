@@ -11,13 +11,15 @@ from dataclasses import replace
 import torch
 
 from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
+from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 from vllm_rlt.core.kv_cache_manager import _PreparedKVBatch
 
 
 class RoutingBank:
     def __init__(self, owner, rows, *, control_only=False):
         self.owner = owner
-        self.host = torch.empty((rows, 4 if owner.alias else 3), dtype=torch.int64, pin_memory=True)
+        columns = 6 if owner.compact else 4 if owner.alias else 3
+        self.host = torch.empty((rows, columns), dtype=torch.int64, pin_memory=True)
         self.done = self.ready_event = None
         self.uploads = []
         self.imports = []
@@ -33,6 +35,11 @@ class RoutingBank:
         self.lengths = torch.empty(rows, dtype=torch.int32, device=device)
         self.tables = torch.empty((rows, owner.width), dtype=torch.int32, device=device)
         self.depth_tables = self.depths = self.alias_starts = None
+        self.map_pointers = self.map_widths = None
+        if owner.compact:
+            self.map_pointers = torch.empty_like(self.slots)
+            self.map_widths = torch.empty_like(self.lengths)
+            self.depths = torch.empty_like(self.lengths)
         if owner.alias:
             self.depth_tables = torch.empty(
                 (rows, owner.planes, owner.width), dtype=torch.int32, device=device
@@ -54,7 +61,7 @@ class RoutingBank:
         self.descriptor = None
 
     def transfer(self, batch=None):
-        from vllm_rlt.kernels.routing import metadata_kernel
+        from vllm_rlt.kernels.routing import compact_metadata_kernel, metadata_kernel
 
         for ready in self.dependencies:
             torch.cuda.current_stream(self.owner.cache.device).wait_event(ready)
@@ -68,28 +75,44 @@ class RoutingBank:
             if self.owner.use_uva
             else self.host[: self.count].to(self.owner.cache.device, non_blocking=True)
         )
-        metadata_kernel[(self.size,)](
-            self.descriptor,
-            self.owner.tables,
-            self.slots,
-            self.positions,
-            self.lengths,
-            self.blocks,
-            self.offsets,
-            self.tables,
-            self.depth_tables,
-            self.depths,
-            self.alias_starts,
-            self.count,
-            self.size,
-            self.owner.width,
-            self.owner.cache.block_size,
-            self.owner.planes,
-            self.width,
-            256,
-            self.owner.alias and batch is not None,
-            self.host.shape[1],
-        )
+        if self.owner.compact:
+            compact_metadata_kernel[(self.size,)](
+                self.descriptor,
+                self.slots,
+                self.positions,
+                self.lengths,
+                self.blocks,
+                self.offsets,
+                self.depths,
+                self.map_pointers,
+                self.map_widths,
+                self.count,
+                self.owner.cache.block_size,
+                batch is not None,
+            )
+        else:
+            metadata_kernel[(self.size,)](
+                self.descriptor,
+                self.owner.tables,
+                self.slots,
+                self.positions,
+                self.lengths,
+                self.blocks,
+                self.offsets,
+                self.tables,
+                self.depth_tables,
+                self.depths,
+                self.alias_starts,
+                self.count,
+                self.size,
+                self.owner.width,
+                self.owner.cache.block_size,
+                self.owner.planes,
+                self.width,
+                256,
+                self.owner.alias and batch is not None,
+                self.host.shape[1],
+            )
         self.ready_event = torch.cuda.Event()
         self.ready_event.record(torch.cuda.current_stream(self.owner.cache.device))
         if batch is None:
@@ -104,8 +127,12 @@ class RoutingBank:
             depth_block_tables=self.depth_tables[: self.size, :, : self.width]
             if self.owner.alias
             else None,
-            query_depths=self.depths[: self.size] if self.owner.alias else None,
+            query_depths=self.depths[: self.size]
+            if self.owner.alias or self.owner.compact
+            else None,
             alias_starts=self.alias_starts[: self.size] if self.owner.alias else None,
+            record_map_pointers=self.map_pointers[: self.size] if self.owner.compact else None,
+            record_map_widths=self.map_widths[: self.size] if self.owner.compact else None,
         )
 
     def record_done(self):
@@ -137,9 +164,12 @@ class RoutingBank:
 class AsyncState:
     def __init__(self, cache, config, scheduler, rows, *, use_uva=True):
         self.cache = cache
-        self.alias = isinstance(cache, AliasKVCacheManager)
+        self.compact = isinstance(cache, CompactKVCacheManager)
+        self.alias = isinstance(cache, AliasKVCacheManager) and not self.compact
         self.use_uva = use_uva
-        self.width = math.ceil(config.max_position_embeddings / cache.block_size)
+        self.width = (
+            0 if self.compact else math.ceil(config.max_position_embeddings / cache.block_size)
+        )
         self.planes = config.total_ut_steps if cache.layout == "last_exited" else 1
         self.hidden = torch.empty(
             (scheduler.max_num_seqs, config.hidden_size),
@@ -171,7 +201,7 @@ class AsyncState:
             if self.owners[rid] != (id(request), id(allocation)):
                 raise RuntimeError("request slot reused before retiring its previous owner")
             slot = self.slots[rid]
-            if self.table_versions.get(rid) != allocation.block_tables:
+            if not self.compact and self.table_versions.get(rid) != allocation.block_tables:
                 table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
                 bank.uploads.append((slot, table))
                 self.table_versions[rid] = allocation.block_tables
@@ -181,11 +211,12 @@ class AsyncState:
         slot = self.free.pop()
         self.slots[rid] = slot
         self.owners[rid] = (id(request), id(allocation))
-        if self.alias:
+        if self.alias or self.compact:
             bank.dependencies.append(self.cache._allocation_ready[id(allocation)])
-        table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
-        bank.uploads.append((slot, table))
-        self.table_versions[rid] = allocation.block_tables
+        if not self.compact:
+            table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
+            bank.uploads.append((slot, table))
+            self.table_versions[rid] = allocation.block_tables
         if request.hidden_state is not None:
             bank.imports.append((slot, request.hidden_state))
             request.hidden_state = self.hidden[slot]
@@ -200,7 +231,9 @@ class AsyncState:
             self.index = (self.index + 1) % len(self.banks)
         bank.acquire()
         bank.count, bank.size = len(requests), size
-        bank.width = max(p // self.cache.block_size + 1 for p in positions)
+        bank.width = 0 if self.compact else max(p // self.cache.block_size + 1 for p in positions)
+        ids = [r.request_id for r in requests]
+        rows = tuple(self.cache._validate_rows(ids, depths, positions)) if recurrent else ()
         descriptors = [
             (self.ensure_slot(r, bank), d if recurrent or finalize else 0, p)
             for r, d, p in zip(requests, depths, positions)
@@ -217,21 +250,27 @@ class AsyncState:
                 )
                 for request, depth, row in zip(requests, depths, descriptors)
             ]
+        if self.compact:
+            records = self.cache._reserve_records(rows) if recurrent else [-1] * len(requests)
+            allocations = [self.cache._get_allocation(rid) for rid in ids]
+            descriptors = [
+                (*row, self.cache._maps[id(a)].data_ptr(), a.max_tokens, record)
+                for row, a, record in zip(descriptors, allocations, records)
+            ]
         # A normal list is CPU-owned; only the contiguous pinned snapshot is GPU-readable.
         bank.host.numpy()[: len(descriptors)] = descriptors
         batch = None
         if recurrent:
-            ids = [r.request_id for r in requests]
-            rows = tuple(self.cache._validate_rows(ids, depths, positions))
-            addresses = [
-                (
-                    a.block_tables[self.cache._plane(d)][p // self.cache.block_size],
-                    p % self.cache.block_size,
-                )
-                for a, d, p in rows
-            ]
-            if len(set(addresses)) != len(addresses):
-                raise ValueError("duplicate KV write addresses")
+            if not self.compact:
+                addresses = [
+                    (
+                        a.block_tables[self.cache._plane(d)][p // self.cache.block_size],
+                        p % self.cache.block_size,
+                    )
+                    for a, d, p in rows
+                ]
+                if len(set(addresses)) != len(addresses):
+                    raise ValueError("duplicate KV write addresses")
             batch = _PreparedKVBatch(
                 owner=self.cache,
                 rows=rows,

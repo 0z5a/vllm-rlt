@@ -14,10 +14,13 @@ def execution_buffer_bytes(config, scheduler, cache, execution, element_size):
     width = math.ceil(config.max_position_embeddings / cache.block_size)
     hidden = config.hidden_size * element_size
     total = 0
-    if execution.static_buffers:
+    if execution.static_buffers and not cache.compact_last_exited:
         # Existing prefill/eager workspaces remain separate from async banks.
         total += 4 * rows * (hidden + 4 * width + 36) + scheduler.max_num_seqs * hidden
     if execution.async_scheduling:
+        if cache.compact_last_exited:
+            # Record addresses replace rectangular tables; include the H2D fallback.
+            return total + 4 * rows * (hidden + 108) + scheduler.max_num_seqs * (hidden + 8)
         planes = config.total_ut_steps if cache.layout == "last_exited" else 1
         # Four routing banks, including capacity for an H2D descriptor fallback.
         total += 4 * rows * (hidden + 4 * width + 68)

@@ -11,11 +11,13 @@ from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroConfig, OuroForCausalLM
 
 
-def routing_lifetime_gate(model, use_uva):
+def routing_lifetime_gate(model, use_uva, compact=False):
     engine = LLMEngine(
         model,
         attention_backend="triton",
-        cache_config=CacheConfig(128, 2, alias_last_exited=True),
+        cache_config=CacheConfig(
+            128, 2, alias_last_exited=not compact, compact_last_exited=compact
+        ),
         scheduler_config=SchedulerConfig(max_num_seqs=1, max_num_batched_tokens=4),
         exit_config=ExitConfig("trace", depths_by_request={"frozen": [4, 1]}),
         execution_config=ExecutionConfig(async_scheduling=True),
@@ -32,7 +34,8 @@ def routing_lifetime_gate(model, use_uva):
     engine.abort_request("warm")
 
     # Poison a reused allocation, then delay its reset on a separate stream.
-    cache.source_depths.fill_(77)
+    if not compact:
+        cache.source_depths.fill_(77)
     torch.cuda.synchronize()
     engine.add_request("reset", [3], params, trace_id="frozen")
     producer, consumer = torch.cuda.Stream(), torch.cuda.Stream()
@@ -42,23 +45,32 @@ def routing_lifetime_gate(model, use_uva):
     request = engine.scheduler.requests["reset"]
     allocation = cache._get_allocation("reset")
     ready = cache._allocation_ready[id(allocation)]
-    bank, batch = state.prepare([request], [0], [0], 1, recurrent=True)
+    bank, batch = state.prepare([request], [0], [0], 2 if compact else 1, recurrent=True)
     assert bank.dependencies == [ready] and not ready.query()
     with torch.cuda.stream(consumer):
         bank.transfer(batch)
-        observed = cache.source_depths[allocation.block_tables[0][0]].clone()
+        observed = (
+            cache._maps[id(allocation)].clone()
+            if compact
+            else cache.source_depths[allocation.block_tables[0][0]].clone()
+        )
         bank.record_done()
     bank.done.synchronize()
-    assert torch.equal(observed.cpu(), torch.full_like(observed.cpu(), -1))
+    expected = torch.full_like(observed.cpu(), -1)
+    if compact:
+        expected[0, 0] = cache._records[id(allocation)][0, 0]
+        assert cache.live_records == 1 and bank.lengths[1].item() == 0
+    assert torch.equal(observed.cpu(), expected)
 
     # The bank owns all depth tables and query depths until its delayed reader ends.
-    expected_tables = bank.depth_tables.clone()
+    tables = bank.map_pointers if compact else bank.depth_tables
+    expected_tables = tables.clone()
     expected_depths = bank.depths.clone()
     torch.cuda.synchronize()
     state.index = state.banks.index(bank)
     with torch.cuda.stream(consumer):
         torch.cuda._sleep(500_000_000)
-        observed_tables = bank.depth_tables.clone()
+        observed_tables = tables.clone()
         observed_depths = bank.depths.clone()
         bank.record_done()
     assert not bank.done.query()
@@ -69,15 +81,34 @@ def routing_lifetime_gate(model, use_uva):
     assert torch.equal(observed_tables, expected_tables)
     assert torch.equal(observed_depths, expected_depths)
     assert bank.depths[0].item() == 3
+    if compact:
+        expected_map = cache._maps[id(allocation)].cpu()
+        with torch.cuda.stream(consumer):
+            torch.cuda._sleep(500_000_000)
+            last_read = cache._maps[id(allocation)].clone()
+            retired = torch.cuda.Event()
+            retired.record(consumer)
+        engine.model_runner.events["reset"] = retired
+        assert not retired.query()
     engine.abort_request("reset")
+    if compact:
+        assert retired.query() and torch.equal(last_read.cpu(), expected_map)
+        assert cache.live_records == cache._reserved_records == 0
     assert cache.num_free_blocks == 128 and not state.owners
     engine.close()
-    return {"use_uva": use_uva, "allocation_reset_ordered": True, "bank_reader_retired": True}
+    return {
+        "use_uva": use_uva,
+        "compact": compact,
+        "allocation_reset_ordered": True,
+        "bank_reader_retired": True,
+        "cancel_waits_for_record_reader": compact,
+    }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--compact", action="store_true")
     args = parser.parse_args()
     torch.set_num_threads(2)
     torch.manual_seed(19)
@@ -98,18 +129,35 @@ def main():
         .to(device="cuda", dtype=torch.bfloat16)
         .eval()
     )
-    lifetime = [routing_lifetime_gate(model, use_uva) for use_uva in (False, True)]
+    lifetime = [routing_lifetime_gate(model, use_uva, args.compact) for use_uva in (False, True)]
     print(json.dumps({"lifetime": lifetime}), flush=True)
     cases = []
     for batch in (1, 4, 16, 32, 64, 128):
         for use_uva in (False, True):
             baseline = None
-            for mode in ("sync", "native_async", "alias_async", "native_graph", "alias_graph"):
+            modes = (
+                (
+                    "sync",
+                    "native_async",
+                    "compact_async",
+                    "credits_async",
+                    "native_graph",
+                    "compact_graph",
+                    "credits_graph",
+                )
+                if args.compact
+                else ("sync", "native_async", "alias_async", "native_graph", "alias_graph")
+            )
+            for mode in modes:
                 engine = LLMEngine(
                     model,
                     attention_backend="triton",
                     cache_config=CacheConfig(
-                        batch * 80, 2, alias_last_exited=mode in ("alias_async", "alias_graph")
+                        batch * 80,
+                        2,
+                        alias_last_exited=mode.startswith("alias"),
+                        compact_last_exited=mode.startswith(("compact", "credits")),
+                        reclaim_skipped_credits=mode.startswith("credits"),
                     ),
                     scheduler_config=SchedulerConfig(
                         max_num_seqs=batch, max_num_batched_tokens=max(4, batch)
@@ -119,9 +167,10 @@ def main():
                     ),
                     execution_config=ExecutionConfig(
                         async_scheduling=mode != "sync",
-                        cuda_graphs=mode in ("native_graph", "alias_graph"),
-                        static_buffers=mode in ("native_graph", "alias_graph"),
-                        pad_to_power_of_two=mode in ("native_graph", "alias_graph"),
+                        multi_stream=True,
+                        cuda_graphs=mode.endswith("graph"),
+                        static_buffers=mode.endswith("graph"),
+                        pad_to_power_of_two=mode.endswith("graph"),
                     ),
                 )
                 if engine.model_runner.async_state is not None:
@@ -166,6 +215,9 @@ def main():
                     assert len(completed) == 2 * batch
                     assert engine.cache_manager.num_free_blocks == batch * 80
                     assert not engine.model_runner.state_slots
+                    if mode.startswith(("compact", "credits")):
+                        assert engine.cache_manager.live_records == 0
+                        assert engine.cache_manager._reserved_records == 0
                     rounds.append(completed)
                 if baseline is None:
                     baseline = rounds

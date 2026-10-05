@@ -9,6 +9,7 @@ import torch
 
 from vllm_rlt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
+from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.models.huginn import HuginnForCausalLM
 from vllm_rlt.request import Request, Stage
@@ -148,7 +149,9 @@ class ModelRunner:
         self.free_state_slots = list(reversed(range(scheduler.max_num_seqs)))
         self.states = None
         self.last_effective_size = self.last_submitted_size = 0
-        if self.execution_config.static_buffers:
+        if self.execution_config.static_buffers and not isinstance(
+            cache_manager, CompactKVCacheManager
+        ):
             rows = scheduler.max_num_batched_tokens
             if self.execution_config.pad_to_power_of_two:
                 rows = 1 << (rows - 1).bit_length()

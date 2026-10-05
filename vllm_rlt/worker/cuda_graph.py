@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import torch
 
 from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
+from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 
 
 def _capture(hidden, stream, pool, run):
@@ -35,6 +36,20 @@ class _DeviceCache:
 
     def _attend_prepared(self, layer, batch, q):
         cache = self.cache
+        if isinstance(cache, CompactKVCacheManager):
+            from vllm_rlt.kernels.triton_attention import paged_attention
+
+            return paged_attention(
+                q,
+                cache.key_cache[:, layer],
+                cache.value_cache[:, layer],
+                batch.block_tables,
+                batch.context_lengths,
+                query_depths=batch.query_depths,
+                record_map_pointers=batch.record_map_pointers,
+                record_map_widths=batch.record_map_widths,
+                max_loops=cache.max_loops,
+            )
         if isinstance(cache, AliasKVCacheManager):
             from vllm_rlt.kernels.triton_attention import paged_attention
 
@@ -104,6 +119,7 @@ class RecurrentGraphs:
             )
         cache = self.cache
         alias = isinstance(cache, AliasKVCacheManager)
+        compact = isinstance(cache, CompactKVCacheManager)
         cache._require_live_batch(batch)
         # A speculative verification batch may write consecutive positions at
         # one depth. Its first position needs committed history; later rows are
@@ -128,7 +144,11 @@ class RecurrentGraphs:
             stream.wait_event(self.last_event)
         entry = self.entries.get(key)
         if entry is None:
-            width = math.ceil(self.model.config.max_position_embeddings / cache.block_size)
+            width = (
+                0
+                if compact
+                else math.ceil(self.model.config.max_position_embeddings / cache.block_size)
+            )
             tables = len(batch.context_lengths)
             entry = SimpleNamespace(
                 hidden=torch.empty_like(hidden[:count]),
@@ -149,13 +169,19 @@ class RecurrentGraphs:
                     depth_block_tables=torch.empty(
                         (tables, cache.max_loops, width), device=cache.device, dtype=torch.int32
                     )
-                    if alias
+                    if alias and not compact
                     else None,
                     query_depths=torch.empty(count, device=cache.device, dtype=torch.int32)
                     if alias
                     else None,
                     alias_starts=torch.zeros(count, device=cache.device, dtype=torch.int32)
-                    if alias
+                    if alias and not compact
+                    else None,
+                    record_map_pointers=torch.empty(count, device=cache.device, dtype=torch.int64)
+                    if compact
+                    else None,
+                    record_map_widths=torch.empty(count, device=cache.device, dtype=torch.int32)
+                    if compact
                     else None,
                 ),
             )
@@ -168,10 +194,14 @@ class RecurrentGraphs:
             entry.metadata.cu_seqlens_q.copy_(batch.cu_seqlens_q)
         width = batch.block_tables.shape[1]
         entry.metadata.block_tables[:, :width].copy_(batch.block_tables)
-        if alias:
+        if compact:
+            entry.metadata.record_map_pointers.copy_(batch.record_map_pointers[:count])
+            entry.metadata.record_map_widths.copy_(batch.record_map_widths[:count])
+        elif alias:
             entry.metadata.depth_block_tables[:, :, :width].copy_(batch.depth_block_tables[:count])
-            entry.metadata.query_depths.copy_(batch.query_depths[:count])
             entry.metadata.alias_starts.copy_(batch.alias_starts[:count])
+        if alias:
+            entry.metadata.query_depths.copy_(batch.query_depths[:count])
         if key not in self.entries:
             proxy = _DeviceCache(cache)
             entry.graph, entry.output = _capture(
