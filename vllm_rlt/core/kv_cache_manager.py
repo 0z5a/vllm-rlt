@@ -74,6 +74,7 @@ class _PreparedKVBatch:
     alias_starts: torch.Tensor | None = None
     record_map_pointers: torch.Tensor | None = None
     record_map_widths: torch.Tensor | None = None
+    read_lengths: tuple[int, ...] = ()
 
 
 class KVCacheManager:
@@ -440,6 +441,7 @@ class KVCacheManager:
         *,
         for_write: bool = True,
         packed_prefill: bool = False,
+        read_lengths: Sequence[int] | None = None,
     ) -> _PreparedKVBatch:
         """Build layer-independent addresses once; do not initialize any KV slot."""
         return self._prepare_batches(
@@ -448,6 +450,7 @@ class KVCacheManager:
             positions,
             for_write=for_write,
             packed_prefill=packed_prefill,
+            read_lengths=read_lengths,
         )[0]
 
     def _prepare_batches(
@@ -458,6 +461,7 @@ class KVCacheManager:
         *,
         for_write: bool = True,
         packed_prefill: bool = False,
+        read_lengths: Sequence[int] | None = None,
     ) -> tuple[_PreparedKVBatch, ...]:
         """Prepare one batch per depth assignment of the same request/position rows.
 
@@ -474,6 +478,9 @@ class KVCacheManager:
         ):
             raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
         first = tuple(self._validate_rows(request_ids, depth_sets[0], positions))
+        explicit_lengths = self._validate_read_lengths(first, read_lengths)
+        if packed_prefill and explicit_lengths:
+            raise ValueError("explicit read lengths require per-query attention")
         row_sets = [first]
         for depths in depth_sets[1:]:
             if len(depths) != len(first):
@@ -489,7 +496,13 @@ class KVCacheManager:
         n = len(first)
         position_list = [position for _, _, position in first]
         offsets = [position % self.block_size for position in position_list]
-        width = max((position // self.block_size + 1 for position in position_list), default=0)
+        width = max(
+            (
+                (length + self.block_size - 1) // self.block_size
+                for length in (explicit_lengths or tuple(p + 1 for p in position_list))
+            ),
+            default=0,
+        )
         # Stage all metadata in two pinned host tensors and copy them without
         # blocking: a pageable H2D copy would wait for all queued GPU work. The
         # caching host allocator keeps each staging block alive until its copy ends.
@@ -516,7 +529,11 @@ class KVCacheManager:
                 table = allocation.block_tables[self._plane(depth)][:width]
                 narrow += table
                 narrow += [-1] * (width - len(table))
-            lengths = [position + 1 for _, _, position in table_rows]
+            lengths = (
+                list(explicit_lengths)
+                if explicit_lengths
+                else [position + 1 for _, _, position in table_rows]
+            )
             key = (tuple(lengths), None if cumulative is None else tuple(cumulative))
             if key not in shared:
                 shared[key] = len(narrow)
@@ -541,6 +558,7 @@ class KVCacheManager:
                     block_tables=narrow[table_start : table_start + t * width].reshape(t, width),
                     context_lengths=narrow[lengths_start : lengths_start + t],
                     writable=for_write,
+                    read_lengths=explicit_lengths,
                     cu_seqlens_q=(
                         narrow[lengths_start + t : lengths_start + 2 * t + 1] if packed else None
                     ),
@@ -548,6 +566,23 @@ class KVCacheManager:
                 )
             )
         return tuple(batches)
+
+    @staticmethod
+    def _validate_read_lengths(rows, read_lengths):
+        if read_lengths is None:
+            return ()
+        lengths = tuple(read_lengths)
+        if len(lengths) != len(rows) or any(
+            type(length) is not int or not position < length <= allocation.max_tokens
+            for (allocation, _, position), length in zip(rows, lengths)
+        ):
+            raise ValueError("read lengths must cover each query within its allocation")
+        return lengths
+
+    def _require_readable_batch(self, layer, batch):
+        for row, (allocation, depth, position) in enumerate(batch.rows):
+            length = batch.read_lengths[row] if batch.read_lengths else position + 1
+            self._require_prefix(allocation, layer, depth, length)
 
     def _group_packed_rows(self, rows):
         """Group consecutive positions of one request/depth into packed query chunks.
@@ -663,8 +698,7 @@ class KVCacheManager:
         self._validate_tensor(q, len(batch.position_ids), "q", query=True)
         if not batch.rows:
             return torch.empty_like(q)
-        for allocation, depth, position in batch.rows:
-            self._require_prefix(allocation, layer, depth, position + 1)
+        self._require_readable_batch(layer, batch)
         if batch.cu_seqlens_q is not None:
             return self.attention.prefill(
                 q,

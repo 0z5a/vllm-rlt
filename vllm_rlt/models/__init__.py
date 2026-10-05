@@ -8,11 +8,13 @@ from typing import Any
 
 import torch
 
+from .hrm_text import HrmTextConfig, HrmTextForCausalLM
 from .huginn import HuginnConfig, HuginnForCausalLM
 from .nanbeige import NanbeigeConfig, NanbeigeForCausalLM
 from .ouro import OuroConfig, OuroForCausalLM
 
 MODEL_MAPPING = {
+    "hrm_text": HrmTextForCausalLM,
     "ouro": OuroForCausalLM,
     "nanbeige": NanbeigeForCausalLM,
     "huginn_raven": HuginnForCausalLM,
@@ -156,6 +158,8 @@ class AutoModelForCausalLM:
 
 
 __all__ = [
+    "HrmTextConfig",
+    "HrmTextForCausalLM",
     "OuroConfig",
     "OuroForCausalLM",
     "NanbeigeConfig",

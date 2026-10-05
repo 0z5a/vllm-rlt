@@ -73,7 +73,8 @@ class AliasKVCacheManager(KVCacheManager):
         plans = []
         for index, batch in enumerate(batches):
             starts = [self._alias_starts[id(a)][d] for a, d, _ in batch.rows]
-            if any(start <= p for start, (_, _, p) in zip(starts, batch.rows)):
+            lengths = batch.read_lengths or tuple(p + 1 for _, _, p in batch.rows)
+            if any(start < length for start, length in zip(starts, lengths)):
                 plans.append((index, starts))
         if not plans:
             return batches
@@ -173,8 +174,7 @@ class AliasKVCacheManager(KVCacheManager):
         self._validate_tensor(q, len(batch.position_ids), "q", query=True)
         if not batch.rows:
             return torch.empty_like(q)
-        for allocation, depth, position in batch.rows:
-            self._require_prefix(allocation, layer, depth, position + 1)
+        self._require_readable_batch(layer, batch)
         if self.backend == "triton":
             from vllm_rlt.kernels.triton_attention import paged_attention
 
@@ -194,7 +194,8 @@ class AliasKVCacheManager(KVCacheManager):
         groups = q.shape[1] // self.num_kv_heads
         for row, (allocation, depth, position) in enumerate(batch.rows):
             request_id = next(rid for rid, a in batch.allocations if a is allocation)
-            keys, values = self.read(layer, request_id, depth, position + 1)
+            length = batch.read_lengths[row] if batch.read_lengths else position + 1
+            keys, values = self.read(layer, request_id, depth, length)
             keys = keys.repeat_interleave(groups, dim=1).float()
             values = values.repeat_interleave(groups, dim=1).float()
             scores = torch.einsum("hd,thd->ht", q[row].float(), keys) * self.head_dim**-0.5
