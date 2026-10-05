@@ -36,3 +36,5 @@ inside the bidirectional prompt.
 Targets here are a protocol-derived count, not a completed model evaluation.
 Full-model BF16/native parity, quantized reload quality, locked G2 and serving
 measurements remain required for every family.
+
+[Performance-only serving inputs](FAMILY_SERVING.md) are also frozen separately from quality data.
