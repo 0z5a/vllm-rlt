@@ -66,8 +66,8 @@ fixed-tolerance failures (maximum logit error 0.00420481).
 
 ## CPU checks
 
-[Latest full regression](full-cpu-gptq-trace-attempt1.log): **490 passed, 29 skipped, 164 GPU
-cases deselected**; [JUnit](full-cpu-gptq-trace-attempt1.xml). Earlier full collection stalled
+[Latest full regression](full-cpu-nanbeige-native-attempt2.log): **492 passed, 29 skipped, 196 GPU
+cases deselected**; [JUnit](full-cpu-nanbeige-native-attempt2.xml). Earlier full collection stalled
 inside an existing macOS dependency load; both processes subsequently completed
 naturally. The final run includes serving, GSM8K collection, and the latest
 quantization changes. Skipped optional/dependency/GPU paths are not claimed as
@@ -404,3 +404,23 @@ backend uses Torch's installed `_convert_weight_to_int4pack` and
 
 These are numerical and lifecycle checks. Full-checkpoint exported quality,
 GPTQ/QAT outcomes and E2E throughput remain unmeasured.
+
+## Nanbeige native deployment preparation
+
+The fused decoder preserves Nanbeige's two-norm residual order; only Ouro uses
+the two additional sandwich norms. Scratch covers every physical projection
+input width. Nanbeige's attention output is 6144 channels, distinct from its
+3072-wide hidden state and10752-wide MLP. Native exports now record and reload
+either model family while preserving the existing frozen Ouro entry points.
+
+When `skip_loop_final_norm=True`, Nanbeige still needs its final readout norm.
+The native coda now applies it once, matching the already-qualified dense
+adapter. The pinned full checkpoint sets this option false; the true branch is
+a separate architecture check. Native NLL tests cover both settings.
+
+The first full CPU run found an old scratch-accounting expectation that omitted
+the fixture's distinct32-wide attention input. Its [failure](full-cpu-nanbeige-native-attempt1.log)
+is retained; the corrected test explicitly checks all32/64/128 widths and shared
+bucket storage. The latest full suite passes492 tests. New32 Nanbeige GPU
+export/Graph/norm/readout combinations and an Ouro regression repeat are
+prepared but unrun; earlier16-case GPU evidence remains tied to source72b8634.

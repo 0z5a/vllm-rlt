@@ -11,8 +11,9 @@ from vllm_rlt.models.ouro import OuroForCausalLM
 def test_scratch_buckets_share_storage_and_memory_grows_linearly():
     model = OuroForCausalLM(tiny_ouro_config(hidden_size=64, intermediate_size=128))
     scratch = FP8Scratch(model, 512)
-    assert scratch.nbytes == 512 * (64 + 128 + 2 * 4)
-    for columns in [64, 128]:
+    # This fixture has a 4-head × 8-channel attention output distinct from hidden.
+    assert scratch.nbytes == 512 * (32 + 64 + 128 + 3 * 4)
+    for columns in [32, 64, 128]:
         addresses = {
             scratch.buffers[rows, columns].packed.data_ptr() for rows in range(16, 513, 16)
         }

@@ -1,0 +1,22 @@
+........................................................................ [ 13%]
+......................................................................s. [ 27%]
+...sssssss...............................s..............ssssssssssssssss [ 41%]
+s....................................................................... [ 55%]
+......F...............sss............................................... [ 69%]
+........................................................................ [ 82%]
+........................................................................ [ 96%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_scratch_buckets_share_storage_and_memory_grows_linearly _________
+
+    def test_scratch_buckets_share_storage_and_memory_grows_linearly():
+        model = OuroForCausalLM(tiny_ouro_config(hidden_size=64, intermediate_size=128))
+        scratch = FP8Scratch(model, 512)
+>       assert scratch.nbytes == 512 * (64 + 128 + 2 * 4)
+E       assert 120832 == (512 * ((64 + 128) + (2 * 4)))
+E        +  where 120832 = <loopquant.serving.FP8Scratch object at 0x114f43ef0>.nbytes
+
+tests/test_loopquant_serving.py:14: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_loopquant_serving.py::test_scratch_buckets_share_storage_and_memory_grows_linearly
+1 failed, 491 passed, 29 skipped, 196 deselected in 23.74s

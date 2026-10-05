@@ -8,11 +8,12 @@ from pathlib import Path
 import torch
 from torch import nn
 
+from vllm_rlt.models.nanbeige import NanbeigeConfig, NanbeigeForCausalLM
 from vllm_rlt.models.ouro import OuroConfig, OuroForCausalLM
 
 from .fused_fp8 import RowwiseFP8Linear
 from .quantizers import ScaleLayout
-from .serving import FP8OuroLayer, quantize_ouro_native
+from .serving import FP8DecoderLayer, quantize_native_core
 
 
 def _digest(path: Path) -> str:
@@ -23,9 +24,11 @@ def _digest(path: Path) -> str:
     return digest.hexdigest()
 
 
-def export_native_ouro(model: OuroForCausalLM, folder: Path, *, model_revision: str) -> None:
+def export_native_model(
+    model: OuroForCausalLM | NanbeigeForCausalLM, folder: Path, *, model_revision: str
+) -> None:
     layers = list(model.model.layers)
-    if not layers or not all(isinstance(layer, FP8OuroLayer) for layer in layers):
+    if not layers or not all(isinstance(layer, FP8DecoderLayer) for layer in layers):
         raise ValueError("export requires a converted fused FP8 core")
     first = layers[0]
     producer = first.producers["qkv"]
@@ -65,7 +68,9 @@ def export_native_ouro(model: OuroForCausalLM, folder: Path, *, model_revision: 
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
 
-def load_native_ouro(folder: Path, device: torch.device, *, max_rows: int) -> OuroForCausalLM:
+def load_native_model(
+    folder: Path, device: torch.device, *, max_rows: int
+) -> OuroForCausalLM | NanbeigeForCausalLM:
     manifest = json.loads((folder / "manifest.json").read_text())
     if manifest["schema_version"] != 1 or manifest["format"] != "fused_rowwise_fp8_e4m3fn":
         raise ValueError("unsupported native export format")
@@ -76,7 +81,13 @@ def load_native_ouro(folder: Path, device: torch.device, *, max_rows: int) -> Ou
         raise ValueError("exported tensor hash mismatch")
     tensors = torch.load(payload, map_location=device, weights_only=True)
     with torch.device("meta"):
-        model = OuroForCausalLM(OuroConfig.from_dict(manifest["model_config"]))
+        config = manifest["model_config"]
+        if config["model_type"] == "ouro":
+            model = OuroForCausalLM(OuroConfig.from_dict(config))
+        elif config["model_type"] == "nanbeige":
+            model = NanbeigeForCausalLM(NanbeigeConfig.from_dict(config))
+        else:
+            raise ValueError("unsupported exported model family")
     projections = {
         name
         for name, module in model.named_modules()
@@ -109,7 +120,7 @@ def load_native_ouro(folder: Path, device: torch.device, *, max_rows: int) -> Ou
             value = tensors[prefix + ".producers." + group + ".scales"]
             scales.update({prefix + "." + member: value for member in members})
     layout = ScaleLayout(manifest["layout"]["max_loops"], tuple(manifest["layout"]["boundaries"]))
-    quantize_ouro_native(
+    quantize_native_core(
         model,
         scales,
         layout,
@@ -123,3 +134,8 @@ def load_native_ouro(folder: Path, device: torch.device, *, max_rows: int) -> Ou
     if any(parameter.is_meta for parameter in model.parameters()):
         raise ValueError("export omitted protected model parameters")
     return model.eval()
+
+
+# Names retained for frozen Ouro scripts; new callers use the family-neutral API.
+export_native_ouro = export_native_model
+load_native_ouro = load_native_model

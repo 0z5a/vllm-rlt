@@ -19,7 +19,7 @@ This draft implements the first numerical and measurement building blocks:
   backend; it is not the optimized dynamic deployment baseline.
 - Q0 token-normalized updates, producer-shared scales, deterministic training
   pools, optimizer/RNG/data-position resumption, and native encoded export.
-- Fused FP8 producers for static, staged, and dynamic row scales, with native
+- Fused Ouro/Nanbeige FP8 producers for static, staged, and dynamic row scales, with native
   mixed-depth serving, explicit GPU loop IDs, and one packed weight per projection.
 - Native INT4 W4A16 packing for PyTorch's installed tensor-core backend; 20
   native shape checks pass on SM120. No optional package is installed.
@@ -38,8 +38,8 @@ training adapter does not use the inference cache's no-gradient writes.
 
 ## Validation recorded on 2026-10-05
 
-The latest completed full CPU regression passed 490 tests, skipped 29, and
-deselected 164 GPU cases, including the Q0 deployment and data checks. Earlier dependency-loading stalls resolved naturally without
+The latest completed full CPU regression passed 492 tests, skipped 29, and
+deselected 196 GPU cases, including the Q0 deployment and data checks. Earlier dependency-loading stalls resolved naturally without
 terminating either process. Ruff lint and formatting checks pass; the
 `pre-commit` wrapper itself is absent and was not installed.
 

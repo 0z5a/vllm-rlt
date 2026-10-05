@@ -8,9 +8,10 @@ from torch import nn
 
 from loopquant.fused_fp8 import RowwiseFP8Linear
 from loopquant.quantizers import ScaleLayout, fp8_encode
-from loopquant.serving import quantize_ouro_native
-from tests.helpers import tiny_ouro_config
+from loopquant.serving import quantize_native_core
+from tests.helpers import tiny_nanbeige_config, tiny_ouro_config
 from vllm_rlt import LLM, CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
+from vllm_rlt.models.nanbeige import NanbeigeForCausalLM
 from vllm_rlt.models.ouro import OuroForCausalLM
 
 
@@ -40,7 +41,7 @@ class ReferenceLinear(nn.Module):
         return nn.functional.linear(decoded, self.decoded_weight).to(values.dtype)
 
 
-class ReferenceOuro(OuroForCausalLM):
+class ReferenceProjections:
     def quantize(self, scales, layout, mode):
         self.context = RowContext()
         for name, module in list(self.named_modules()):
@@ -55,29 +56,60 @@ class ReferenceOuro(OuroForCausalLM):
         return super().recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
 
 
+class ReferenceOuro(ReferenceProjections, OuroForCausalLM):
+    pass
+
+
+class ReferenceNanbeige(ReferenceProjections, NanbeigeForCausalLM):
+    pass
+
+
 def check_fused_native_model(
-    policy: str, graphs: bool, fuse_norm: bool, *, export_folder: Path | None = None
+    policy: str,
+    graphs: bool,
+    fuse_norm: bool,
+    *,
+    export_folder: Path | None = None,
+    family: str = "ouro",
+    skip_loop_final_norm: bool = False,
 ) -> dict:
     torch.manual_seed(37)
-    config = tiny_ouro_config(hidden_size=64, head_dim=32, intermediate_size=128)
-    reference = ReferenceOuro(config).to(device="cuda", dtype=torch.bfloat16)
-    native = OuroForCausalLM(config).to(device="cuda", dtype=torch.bfloat16)
+    if family == "ouro":
+        config = tiny_ouro_config(hidden_size=64, head_dim=32, intermediate_size=128)
+        reference = ReferenceOuro(config)
+        native = OuroForCausalLM(config)
+    elif family == "nanbeige":
+        config = tiny_nanbeige_config(
+            hidden_size=64,
+            head_dim=32,
+            intermediate_size=256,
+            skip_loop_final_norm=skip_loop_final_norm,
+        )
+        reference = ReferenceNanbeige(config)
+        native = NanbeigeForCausalLM(config)
+    else:
+        raise ValueError("unknown model family")
+    reference = reference.to(device="cuda", dtype=torch.bfloat16)
+    native = native.to(device="cuda", dtype=torch.bfloat16)
     native.load_state_dict(reference.state_dict())
     mode = "dynamic" if policy == "DYN" else "static"
-    layout = ScaleLayout(4, {"DYN": (), "SH1": (), "ST2": (2,), "LOOP": (1, 2, 3)}[policy])
+    loops = config.total_ut_steps
+    layout = ScaleLayout(
+        loops, {"DYN": (), "SH1": (), "ST2": (loops // 2,), "LOOP": tuple(range(1, loops))}[policy]
+    )
     scales = {
         name: torch.tensor([0.01, 0.02, 0.03, 0.04][: layout.stages], device="cuda")
         for name, module in reference.named_modules()
         if name.startswith("model.layers.") and isinstance(module, nn.Linear)
     }
     reference.quantize(scales, layout, mode)
-    scratch = quantize_ouro_native(native, scales, layout, mode, max_rows=8, fuse_norm=fuse_norm)
+    scratch = quantize_native_core(native, scales, layout, mode, max_rows=8, fuse_norm=fuse_norm)
     assert scratch.nbytes > 0
     if export_folder is not None:
-        from loopquant.native_export import export_native_ouro, load_native_ouro
+        from loopquant.native_export import export_native_model, load_native_model
 
-        export_native_ouro(native, export_folder, model_revision="a" * 40)
-        restored = load_native_ouro(export_folder, torch.device("cuda"), max_rows=8)
+        export_native_model(native, export_folder, model_revision="a" * 40)
+        restored = load_native_model(export_folder, torch.device("cuda"), max_rows=8)
         original_state, restored_state = native.state_dict(), restored.state_dict()
         assert original_state.keys() == restored_state.keys()
         for name in original_state:
@@ -112,7 +144,7 @@ def check_fused_native_model(
     prompts = [[5, 7], [3, 9, 2], [8]]
     params = [
         SamplingParams(max_tokens=4, min_loops=depth, max_loops=depth, ignore_eos=True)
-        for depth in [1, 4, 2]
+        for depth in [1, loops, 2]
     ]
     for _ in range(2):
         before = expected.generate(prompts, params)
@@ -135,6 +167,8 @@ def check_fused_native_model(
             actual.engine.model_runner.graphs.replays > actual.engine.model_runner.graphs.captures
         )
     return dict(
+        model_family=family,
+        skip_loop_final_norm=skip_loop_final_norm,
         policy=policy,
         graphs=graphs,
         fused_norm=fuse_norm,

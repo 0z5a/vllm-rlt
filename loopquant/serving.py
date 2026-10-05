@@ -1,4 +1,4 @@
-"""Native Ouro FP8 core with shared input producers and explicit row loop IDs."""
+"""Native Ouro/Nanbeige FP8 cores with shared producers and explicit loop IDs."""
 
 from typing import Literal
 
@@ -8,6 +8,7 @@ from torch.nn import functional as F
 
 from vllm_rlt.core.kv_cache_manager import KVCacheManager, _PreparedKVBatch
 from vllm_rlt.layers import apply_rotary_pos_emb
+from vllm_rlt.models.nanbeige import NanbeigeDecoderLayer, NanbeigeForCausalLM
 from vllm_rlt.models.ouro import OuroDecoderLayer, OuroForCausalLM
 
 from .fused_fp8 import FP8InputQuantizer, FP8Workspace, RowwiseFP8Linear
@@ -17,12 +18,16 @@ from .quantizers import ScaleLayout
 class FP8Scratch:
     """One engine's serialized recurrent stream owns these reusable row buckets."""
 
-    def __init__(self, model: OuroForCausalLM, max_rows: int) -> None:
-        config, device = model.config, model.lm_head.weight.device
+    def __init__(self, model: OuroForCausalLM | NanbeigeForCausalLM, max_rows: int) -> None:
+        device = model.lm_head.weight.device
         padded = (max_rows + 15) // 16 * 16
+        widths = {
+            module.in_features
+            for name, module in model.named_modules()
+            if name.startswith("model.layers.") and isinstance(module, nn.Linear)
+        }
         self.storage = {
-            columns: FP8Workspace.allocate(padded, columns, device)
-            for columns in {config.hidden_size, config.intermediate_size}
+            columns: FP8Workspace.allocate(padded, columns, device) for columns in widths
         }
         self.buffers = {
             (rows, columns): FP8Workspace(buffer.packed[:rows], buffer.row_scales[:rows])
@@ -42,10 +47,10 @@ class FP8Scratch:
         )
 
 
-class FP8OuroLayer(nn.Module):
+class FP8DecoderLayer(nn.Module):
     def __init__(
         self,
-        layer: OuroDecoderLayer,
+        layer: OuroDecoderLayer | NanbeigeDecoderLayer,
         prefix: str,
         scales: dict[str, torch.Tensor],
         layout: ScaleLayout,
@@ -58,9 +63,15 @@ class FP8OuroLayer(nn.Module):
         self.config, self.layer_idx = layer.self_attn.config, layer.self_attn.layer_idx
         self.scratch, self.fuse_norm = scratch, fuse_norm
         self.input_layernorm = layer.input_layernorm
-        self.input_layernorm_2 = layer.input_layernorm_2
+        self.input_layernorm_2 = (
+            layer.input_layernorm_2 if isinstance(layer, OuroDecoderLayer) else nn.Identity()
+        )
         self.post_attention_layernorm = layer.post_attention_layernorm
-        self.post_attention_layernorm_2 = layer.post_attention_layernorm_2
+        self.post_attention_layernorm_2 = (
+            layer.post_attention_layernorm_2
+            if isinstance(layer, OuroDecoderLayer)
+            else nn.Identity()
+        )
         self.self_attn = nn.ModuleDict(
             {
                 name: RowwiseFP8Linear.from_packed(*packed[prefix + ".self_attn." + name])
@@ -149,8 +160,8 @@ class FP8OuroLayer(nn.Module):
         )
 
 
-def quantize_ouro_native(
-    model: OuroForCausalLM,
+def quantize_native_core(
+    model: OuroForCausalLM | NanbeigeForCausalLM,
     scales: dict[str, torch.Tensor],
     layout: ScaleLayout,
     mode: Literal["static", "dynamic"],
@@ -179,7 +190,11 @@ def quantize_ouro_native(
             raise ValueError("packed matrices must match every physical core projection")
     scratch = FP8Scratch(model, max_rows)
     for index, layer in enumerate(model.model.layers):
-        model.model.layers[index] = FP8OuroLayer(
+        model.model.layers[index] = FP8DecoderLayer(
             layer, f"model.layers.{index}", scales, layout, mode, scratch, fuse_norm, packed
         )
     return scratch
+
+
+# Preserve the interface used by already frozen Ouro experiment runners.
+quantize_ouro_native = quantize_native_core

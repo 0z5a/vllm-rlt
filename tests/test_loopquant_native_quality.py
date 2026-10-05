@@ -10,14 +10,16 @@ from vllm_rlt.models.nanbeige import NanbeigeForCausalLM
 from vllm_rlt.models.ouro import OuroForCausalLM
 
 
-@pytest.mark.parametrize("kind", ["ouro", "nanbeige"])
+@pytest.mark.parametrize("kind", ["ouro", "nanbeige", "nanbeige_skip_norm"])
 def test_native_quality_matches_dense_reference_and_releases_reused_cache(kind):
     torch.manual_seed(19)
     if kind == "ouro":
         model = OuroForCausalLM(tiny_ouro_config())
         adapter = OuroAdapter(model)
     else:
-        model = NanbeigeForCausalLM(tiny_nanbeige_config())
+        model = NanbeigeForCausalLM(
+            tiny_nanbeige_config(skip_loop_final_norm=kind.endswith("skip_norm"))
+        )
         adapter = NanbeigeAdapter(model)
     config = model.config
     cache = KVCacheManager(
