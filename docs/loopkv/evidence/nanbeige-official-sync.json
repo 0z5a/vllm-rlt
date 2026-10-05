@@ -3665,7 +3665,21 @@
     "prompts_sha256": "dbda51ab2cd1ff30b29f5a0667341b5e77bd66a8b207d8e44815520d2dbe97d1"
   },
   "prompt_provenance": {
-    "sha256": "dbda51ab2cd1ff30b29f5a0667341b5e77bd66a8b207d8e44815520d2dbe97d1"
+    "scope": "repeated_token_fixture_not_quality",
+    "texts": [
+      "Explain how a computer stores and retrieves information.",
+      "Write a short story about a traveler crossing a mountain.",
+      "Describe the steps for solving an arithmetic word problem.",
+      "Compare renewable sources of energy with concrete examples."
+    ],
+    "tokenizer_sha256": "1d858a0fc007f22af6ae18bfa1ae52d30e398aa9cd1ea06e7777176869346a3f",
+    "prompt_sha256": "dbda51ab2cd1ff30b29f5a0667341b5e77bd66a8b207d8e44815520d2dbe97d1",
+    "prompt_lengths": [
+      128,
+      128,
+      128,
+      128
+    ]
   },
   "completion": {
     "status": "complete",
