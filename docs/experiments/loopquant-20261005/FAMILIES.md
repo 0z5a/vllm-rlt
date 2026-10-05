@@ -196,3 +196,36 @@ failures and the remaining unrun cases are retained; this is no all-family pass.
 All 46 archived file hashes match the offbox copy. Temporary test tensors were
 removed while preserving their archived evidence and export manifests.
 Full-checkpoint G0, quantized quality, memory savings and E2E remain separate.
+
+
+## HRM official weights: CPU recurrence qualification
+
+All 112 registered BF16 CPU comparisons passed: 32 inputs at B1 with first-token,
+half-length and full-length prefixes, plus 16 ragged B2 pairs with half-length
+prefixes. All 224 outer H/L state tensors and 112 final logit tensors are bitwise
+exact; argmax is exact. Coverage is 1,728 unique input tokens and 6,912 evaluated
+tokens, using the complete R2/L3 recurrence.
+
+The five author source files remain unchanged at revision
+`aaa948ea674fd84b7bc455c9cfb455ecfefdf914`. The runner explicitly replaces the
+unavailable FlashAttention dependency with CPU SDPA. This qualifies the author's
+recurrence and this declared attention substitution. It does not qualify the
+original CUDA attention, native cached execution, quantized quality or serving.
+The adapter source is `edc3eb0f21fa2635f28557964474466b1133d6ea`;
+its HRM adapter and model files are unchanged in family source `8045c32`.
+
+[Raw results](hrm-official-cpu-v1/official-hrm-adapter-cpu-sdpa-attempt1.json),
+[verified summary](hrm-official-cpu-v1/official-hrm-adapter-cpu-sdpa-summary.json),
+[natural receipt](hrm-official-cpu-v1/official-hrm-adapter-cpu-sdpa-receipt.json),
+[runner](hrm-official-cpu-v1/run.py) and
+[pinned input/source manifest](hrm-official-cpu-v1/manifest.json) retain the evidence.
+The controller and child naturally exited0 and were independently absent.
+The short reader hold was released; the shared model remains under its owner's
+future-work hold and was not copied, changed or deleted.
+
+| Model | BF16 tok/s | Quantized tok/s | Paired speedup | Speed change |
+|---|---:|---:|---:|---:|
+| HRM-Text-1B | Not measured | Not measured | — | — |
+
+Full native G0, quantized quality and the high-concurrency/multiple-batch E2E
+matrix remain pending. No memory saving or throughput is inferred from CPU parity.

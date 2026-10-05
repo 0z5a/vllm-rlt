@@ -1,0 +1,28 @@
+{
+  "status": "verified",
+  "folder": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/hrm-text-1b",
+  "revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+  "manifest_sha256": "2bc231aa176e7dc725e28604ae2d3f1fd3f0cd5505878b076330345b3733fceb",
+  "files": [
+    {
+      "path": "config.json",
+      "bytes": 619,
+      "sha256": "5a708f1230e8abe305c875c92cf4ed481377ba39d34d4d93a45ea5c9a5b924e2"
+    },
+    {
+      "path": "model.safetensors",
+      "bytes": 2365606568,
+      "sha256": "f8fe2b2bf6948414e8e8d6538659198726d98f967c55b533b7aabe8a1fa9a584"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 4732713,
+      "sha256": "ba520107dc9b27d25643e8f43fc1d9921038c86d3ada9dcaabf18526c5836d50"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "bytes": 326,
+      "sha256": "260d448d6f45ec227e6ae53ebc793357aacb3eb09575ffa45877bb4930fc106d"
+    }
+  ]
+}

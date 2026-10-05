@@ -1,0 +1,18 @@
+{
+  "controller_pid": 16791,
+  "start_unix": 1791215178.776169,
+  "command": [
+    "/Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/bin/python",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/snapshots/hrm-official-cpu-sdpa-v1/run.py",
+    "--root",
+    "/Users/0z5a/Documents/infra/loopquant-20261005",
+    "--requests",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/snapshots/hrm-official-cpu-sdpa-v1/requests.json",
+    "--author-root",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/snapshots/hrm-official-cpu-sdpa-v1/author"
+  ],
+  "manifest_sha256": "204dd6ca46042131394adceb0cab729621f01611cb3d4a32711011c947e9bab9",
+  "child_pid": 16796,
+  "returncode": 0,
+  "end_unix": 1791224276.0874739
+}
