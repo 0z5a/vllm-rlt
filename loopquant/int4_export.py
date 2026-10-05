@@ -6,6 +6,8 @@ from pathlib import Path
 import torch
 from torch import nn
 
+from vllm_rlt.models.hrm_text import HrmTextConfig, HrmTextForCausalLM
+from vllm_rlt.models.loopformer import LoopFormerConfig, LoopFormerForCausalLM
 from vllm_rlt.models.nanbeige import NanbeigeConfig, NanbeigeForCausalLM
 from vllm_rlt.models.ouro import OuroConfig, OuroForCausalLM
 
@@ -13,9 +15,49 @@ from .int4_backend import NativeInt4Linear
 from .native_export import _digest
 from .quantizers import int4_pack
 
+Int4Model = OuroForCausalLM | NanbeigeForCausalLM | HrmTextForCausalLM | LoopFormerForCausalLM
+
+
+def core_projections(model: Int4Model) -> dict[str, nn.Linear]:
+    """Physical shared matrices; clocks, gates, embeddings and heads stay protected."""
+    if isinstance(model, LoopFormerForCausalLM):
+        names = [
+            f"gpt.transformer.h.blocks.{index}.{suffix}"
+            for index in range(model.config.n_layer)
+            for suffix in ("attn.c_attn", "attn.c_proj", "mlp.c_fc", "mlp.c_proj")
+        ]
+    elif isinstance(model, HrmTextForCausalLM):
+        names = [
+            f"model.{module}_module.layers.{index}.{suffix}"
+            for module in ("H", "L")
+            for index in range(model.config.module_layers)
+            for suffix in ("attn.gqkv_proj", "attn.o_proj", "mlp.gate_up_proj", "mlp.down_proj")
+        ]
+    else:
+        names = [
+            f"model.layers.{index}.{suffix}"
+            for index in range(model.config.num_hidden_layers)
+            for suffix in (
+                "self_attn.q_proj",
+                "self_attn.k_proj",
+                "self_attn.v_proj",
+                "self_attn.o_proj",
+                "mlp.gate_proj",
+                "mlp.up_proj",
+                "mlp.down_proj",
+            )
+        ]
+    result = {}
+    for name in names:
+        layer = model.get_submodule(name)
+        if not isinstance(layer, nn.Linear):
+            raise ValueError(f"expected an unconverted physical projection: {name}")
+        result[name] = layer
+    return result
+
 
 def export_int4_model(
-    model: OuroForCausalLM | NanbeigeForCausalLM,
+    model: Int4Model,
     folder: Path,
     *,
     model_revision: str,
@@ -24,13 +66,7 @@ def export_int4_model(
     group_size: int = 128,
 ) -> None:
     """Store signed low-nibble codes; native BF16 scale rounding is explicit."""
-    projections = {
-        name: module
-        for name, module in model.named_modules()
-        if name.startswith("model.layers.") and isinstance(module, nn.Linear)
-    }
-    if len(projections) != model.config.num_hidden_layers * 7:
-        raise ValueError("INT4 export requires all seven projections per core layer")
+    projections = core_projections(model)
     if packed is not None and projections.keys() != packed.keys():
         raise ValueError("calibrated weights must cover every physical projection")
     if method not in ("RTN", "GPTQ-first", "GPTQ-all", "GPTQ-matched"):
@@ -86,7 +122,7 @@ def export_int4_model(
     (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
 
-def load_int4_model(folder: Path, device: torch.device) -> OuroForCausalLM | NanbeigeForCausalLM:
+def load_int4_model(folder: Path, device: torch.device) -> Int4Model:
     manifest = json.loads((folder / "manifest.json").read_text())
     if manifest["schema_version"] != 1 or manifest["format"] != "signed_int4_low_nibble_first":
         raise ValueError("unsupported INT4 model artifact")
@@ -102,13 +138,13 @@ def load_int4_model(folder: Path, device: torch.device) -> OuroForCausalLM | Nan
             model = OuroForCausalLM(OuroConfig.from_dict(config))
         elif config["model_type"] == "nanbeige":
             model = NanbeigeForCausalLM(NanbeigeConfig.from_dict(config))
+        elif config["model_type"] == "hrm_text":
+            model = HrmTextForCausalLM(HrmTextConfig.from_dict(config))
+        elif config["model_type"] == "loopformer":
+            model = LoopFormerForCausalLM(LoopFormerConfig.from_dict(config))
         else:
             raise ValueError("unsupported INT4 model family")
-    projections = {
-        name: layer
-        for name, layer in model.named_modules()
-        if name.startswith("model.layers.") and isinstance(layer, nn.Linear)
-    }
+    projections = core_projections(model)
     if (
         projections.keys() != tensors["codes"].keys()
         or projections.keys() != tensors["scales"].keys()
@@ -137,5 +173,6 @@ def load_int4_model(folder: Path, device: torch.device) -> OuroForCausalLM | Nan
                 manifest["group_size"],
             ),
         )
-    model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device=device)
+    if not isinstance(model, LoopFormerForCausalLM):
+        model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device=device)
     return model.eval()
