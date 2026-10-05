@@ -1,0 +1,29 @@
+{
+  "time_unix": 1791221439.6130733,
+  "own_pids_absent": [
+    47259,
+    47273,
+    47350,
+    47489,
+    47530
+  ],
+  "natural_returncodes": {
+    "huginn_fp8": 1,
+    "parcae_fp8": 0,
+    "huginn_int4": 0,
+    "parcae_int4": 1
+  },
+  "controller_returncode": 1,
+  "node_idle_at_observation": true,
+  "foreign_compute_apps": "",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  }
+}

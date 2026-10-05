@@ -1,0 +1,16 @@
+{"event": "case_pass", "family": "parcae_fp8", "index": 0, "case": ["DYN", false, false]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 1, "case": ["DYN", false, true]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 2, "case": ["DYN", true, false]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 3, "case": ["DYN", true, true]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 4, "case": ["SH1", false, false]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 5, "case": ["SH1", false, true]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 6, "case": ["SH1", true, false]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 7, "case": ["SH1", true, true]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 8, "case": ["ST2", false, false]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 9, "case": ["ST2", false, true]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 10, "case": ["ST2", true, false]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 11, "case": ["ST2", true, true]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 12, "case": ["LOOP", false, false]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 13, "case": ["LOOP", false, true]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 14, "case": ["LOOP", true, false]}
+{"event": "case_pass", "family": "parcae_fp8", "index": 15, "case": ["LOOP", true, true]}

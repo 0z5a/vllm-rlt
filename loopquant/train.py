@@ -9,6 +9,7 @@ from torch.nn import functional as F
 from .adapters.loopformer import LoopFormerAdapter
 from .adapters.nanbeige import NanbeigeAdapter
 from .adapters.ouro import OuroAdapter
+from .adapters.parcae import ParcaeAdapter
 from .quality import next_token_nll
 
 
@@ -27,6 +28,7 @@ class Q0Config:
 class TrainingBatch:
     token_ids: torch.Tensor
     valid: torch.Tensor
+    initial_state: torch.Tensor | None = None
 
 
 class Q0Trainer:
@@ -39,7 +41,9 @@ class Q0Trainer:
     """
 
     def __init__(
-        self, student: OuroAdapter | NanbeigeAdapter | LoopFormerAdapter, config: Q0Config
+        self,
+        student: OuroAdapter | NanbeigeAdapter | LoopFormerAdapter | ParcaeAdapter,
+        config: Q0Config,
     ) -> None:
         if not student.quantized or any(p.requires_grad for p in student.model.parameters()):
             raise ValueError("Q0 requires attached scale modules and a frozen model")
@@ -70,13 +74,24 @@ class Q0Trainer:
         self.optimizer.zero_grad(set_to_none=True)
         totals = dict(ce=0.0, kl=0.0, trajectory=0.0)
         for batch in batches:
-            result = self.student(batch.token_ids, batch.valid, config.loops)
+            initial_state = batch.initial_state
+            if isinstance(self.student, ParcaeAdapter):
+                if initial_state is None:
+                    initial_state = self.student.initialize_state(batch.token_ids)
+                result = self.student(batch.token_ids, batch.valid, config.loops, initial_state)
+            else:
+                result = self.student(batch.token_ids, batch.valid, config.loops)
             nll, count = next_token_nll(result.logits, batch.token_ids, batch.valid)
             loss = nll / targets
             totals["ce"] += float(loss.detach())
             if config.kl_weight or config.trajectory_weight:
                 with torch.no_grad():
-                    teacher = self.teacher(batch.token_ids, batch.valid, config.loops)
+                    if isinstance(self.teacher, ParcaeAdapter):
+                        teacher = self.teacher(
+                            batch.token_ids, batch.valid, config.loops, initial_state
+                        )
+                    else:
+                        teacher = self.teacher(batch.token_ids, batch.valid, config.loops)
                 mask = batch.valid[:, :-1] & batch.valid[:, 1:]
                 if config.kl_weight:
                     temperature = config.temperature

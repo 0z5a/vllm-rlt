@@ -10,17 +10,30 @@ from vllm_rlt.models.hrm_text import HrmTextConfig, HrmTextForCausalLM
 from vllm_rlt.models.loopformer import LoopFormerConfig, LoopFormerForCausalLM
 from vllm_rlt.models.nanbeige import NanbeigeConfig, NanbeigeForCausalLM
 from vllm_rlt.models.ouro import OuroConfig, OuroForCausalLM
+from vllm_rlt.models.parcae import ParcaeConfig, ParcaeForCausalLM
 
 from .int4_backend import NativeInt4Linear
 from .native_export import _digest
 from .quantizers import int4_pack
 
-Int4Model = OuroForCausalLM | NanbeigeForCausalLM | HrmTextForCausalLM | LoopFormerForCausalLM
+Int4Model = (
+    OuroForCausalLM
+    | NanbeigeForCausalLM
+    | HrmTextForCausalLM
+    | LoopFormerForCausalLM
+    | ParcaeForCausalLM
+)
 
 
 def core_projections(model: Int4Model) -> dict[str, nn.Linear]:
     """Physical shared matrices; clocks, gates, embeddings and heads stay protected."""
-    if isinstance(model, LoopFormerForCausalLM):
+    if isinstance(model, ParcaeForCausalLM):
+        names = [
+            f"transformer.core_block.{index}.{suffix}"
+            for index in range(model.config.n_layers_in_recurrent_block)
+            for suffix in ("attn.c_q", "attn.c_k", "attn.c_v", "attn.c_proj", "mlp.fc", "mlp.proj")
+        ]
+    elif isinstance(model, LoopFormerForCausalLM):
         names = [
             f"gpt.transformer.h.blocks.{index}.{suffix}"
             for index in range(model.config.n_layer)
@@ -91,13 +104,21 @@ def export_int4_model(
             torch.isfinite(scales[name]).all() & (scales[name] > 0).all()
         ):
             raise ValueError(f"invalid codes or native BF16 scales for {name}")
+    aliases = (
+        {"lm_head.weight": "transformer.wte.weight"} if isinstance(model, ParcaeForCausalLM) else {}
+    )
+    if aliases and model.lm_head.weight is not model.transformer.wte.weight:
+        raise ValueError("Parcae requires a tied embedding/head")
     protected = {
         name: value.detach().cpu()
         for name, value in model.state_dict().items()
-        if name not in {key + ".weight" for key in projections}
+        if name not in {key + ".weight" for key in projections} and name not in aliases
     }
-    if any(value.dtype != torch.bfloat16 for value in protected.values()):
-        raise ValueError("protected weights must already be BF16")
+    if any(
+        value.dtype != (torch.float32 if name == "freqs_cis" else torch.bfloat16)
+        for name, value in protected.items()
+    ):
+        raise ValueError("protected tensors require BF16 weights and FP32 rotary buffers")
     folder.mkdir(parents=True, exist_ok=False)
     payload = folder / "tensors.pt"
     torch.save(dict(codes=codes, scales=scales, protected=protected), payload)
@@ -112,6 +133,7 @@ def export_int4_model(
         packed_weight_matrices=len(codes),
         packed_weight_copies=1,
         packed_weight_bytes=sum(value.numel() for value in codes.values()),
+        protected_aliases=aliases,
         group_scale_dtype="bfloat16",
         activation_dtype="bfloat16",
         state_dtype="bfloat16",
@@ -142,6 +164,8 @@ def load_int4_model(folder: Path, device: torch.device) -> Int4Model:
             model = HrmTextForCausalLM(HrmTextConfig.from_dict(config))
         elif config["model_type"] == "loopformer":
             model = LoopFormerForCausalLM(LoopFormerConfig.from_dict(config))
+        elif config["model_type"] == "parcae":
+            model = ParcaeForCausalLM(ParcaeConfig.from_dict(config))
         else:
             raise ValueError("unsupported INT4 model family")
     projections = core_projections(model)
@@ -151,17 +175,28 @@ def load_int4_model(folder: Path, device: torch.device) -> Int4Model:
     ):
         raise ValueError("artifact omitted or added a core projection")
     expected = model.state_dict()
-    protected = expected.keys() - {name + ".weight" for name in projections}
+    aliases = (
+        {"lm_head.weight": "transformer.wte.weight"} if isinstance(model, ParcaeForCausalLM) else {}
+    )
+    if aliases and manifest["protected_aliases"] != aliases:
+        raise ValueError("artifact changed the tied Parcae readout")
+    protected = expected.keys() - {name + ".weight" for name in projections} - aliases.keys()
     if protected != tensors["protected"].keys():
         raise ValueError("artifact changed the protected parameter set")
     for name in protected:
         value = tensors["protected"][name]
-        if value.shape != expected[name].shape or value.dtype != torch.bfloat16:
-            raise ValueError(f"protected BF16 parameter mismatch: {name}")
-        parent, field = name.rsplit(".", 1)
-        model.get_submodule(parent).register_parameter(
-            field, nn.Parameter(value.to(device), requires_grad=False)
-        )
+        dtype = torch.float32 if name == "freqs_cis" else torch.bfloat16
+        if value.shape != expected[name].shape or value.dtype != dtype:
+            raise ValueError(f"protected tensor mismatch: {name}")
+        if name == "freqs_cis":
+            model.register_buffer(name, value.to(device), persistent=True)
+        else:
+            parent, field = name.rsplit(".", 1)
+            model.get_submodule(parent).register_parameter(
+                field, nn.Parameter(value.to(device), requires_grad=False)
+            )
+    if isinstance(model, ParcaeForCausalLM):
+        model.lm_head.weight = model.transformer.wte.weight
     for name, layer in projections.items():
         parent, field = name.rsplit(".", 1)
         model.get_submodule(parent).add_module(
@@ -173,6 +208,6 @@ def load_int4_model(folder: Path, device: torch.device) -> Int4Model:
                 manifest["group_size"],
             ),
         )
-    if not isinstance(model, LoopFormerForCausalLM):
+    if not isinstance(model, (LoopFormerForCausalLM, ParcaeForCausalLM)):
         model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device=device)
     return model.eval()

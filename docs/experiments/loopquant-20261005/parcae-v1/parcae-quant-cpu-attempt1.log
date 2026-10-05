@@ -1,0 +1,59 @@
+..FF......................                                               [100%]
+=================================== FAILURES ===================================
+_________ test_parcae_adapter_matches_independent_equations[dtype1-2] __________
+
+length = 2, dtype = torch.bfloat16
+
+    @pytest.mark.parametrize("length", [2, 5])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+    def test_parcae_adapter_matches_independent_equations(length, dtype):
+        torch.manual_seed(41)
+        model = ParcaeForCausalLM(tiny_config()).to(dtype).eval()
+        adapter = ParcaeAdapter(model)
+        tokens = torch.tensor([[257, 511, 9, 768, 1023][:length]])
+        initial = (
+            torch.linspace(-0.1, 0.1, length * model.config.n_embd).reshape(1, length, -1).to(dtype)
+        )
+        states, logits, _ = dense_parcae_reference(model, tokens[0], initial[0])
+        result = adapter(tokens, torch.ones_like(tokens, dtype=torch.bool), 3, initial)
+        atol, rtol = (3e-5, 3e-5) if dtype == torch.float32 else (0.03, 0.02)
+        for expected, actual in zip(states, result.states, strict=True):
+            torch.testing.assert_close(actual[0], expected, atol=atol, rtol=rtol)
+>       torch.testing.assert_close(result.logits[0], logits, atol=atol, rtol=rtol)
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 230 / 2048 (11.2%)
+E       Greatest absolute difference: 0.232421875 at index (1, 57) (up to 0.03 allowed)
+E       Greatest relative difference: 11.210526466369629 at index (1, 628) (up to 0.02 allowed)
+
+tests/test_loopquant_parcae.py:29: AssertionError
+_________ test_parcae_adapter_matches_independent_equations[dtype1-5] __________
+
+length = 5, dtype = torch.bfloat16
+
+    @pytest.mark.parametrize("length", [2, 5])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+    def test_parcae_adapter_matches_independent_equations(length, dtype):
+        torch.manual_seed(41)
+        model = ParcaeForCausalLM(tiny_config()).to(dtype).eval()
+        adapter = ParcaeAdapter(model)
+        tokens = torch.tensor([[257, 511, 9, 768, 1023][:length]])
+        initial = (
+            torch.linspace(-0.1, 0.1, length * model.config.n_embd).reshape(1, length, -1).to(dtype)
+        )
+        states, logits, _ = dense_parcae_reference(model, tokens[0], initial[0])
+        result = adapter(tokens, torch.ones_like(tokens, dtype=torch.bool), 3, initial)
+        atol, rtol = (3e-5, 3e-5) if dtype == torch.float32 else (0.03, 0.02)
+        for expected, actual in zip(states, result.states, strict=True):
+>           torch.testing.assert_close(actual[0], expected, atol=atol, rtol=rtol)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 2 / 160 (1.2%)
+E           Greatest absolute difference: 0.05078125 at index (3, 15) (up to 0.03 allowed)
+E           Greatest relative difference: 0.25390625 at index (3, 30) (up to 0.02 allowed)
+
+tests/test_loopquant_parcae.py:28: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_loopquant_parcae.py::test_parcae_adapter_matches_independent_equations[dtype1-2]
+FAILED tests/test_loopquant_parcae.py::test_parcae_adapter_matches_independent_equations[dtype1-5]
+2 failed, 24 passed in 2.69s

@@ -1,0 +1,13 @@
+{
+  "source_commit": "1e1f0858151a00b2fc003fc9b32a165ee15270b8",
+  "scope": "Four tiny Parcae native INT4 cases: Graph off/on and native/compact KV; encoded reload, tied readout, FP32 RoPE, fixed full recurrence, high token IDs, repeated request IDs and KV drain",
+  "cases": 4,
+  "full_model": false,
+  "performance": false,
+  "locks": "original GPU lock in child; finite IO; no same outer GPU lock",
+  "files": {
+    "probe.py": "7d5d66b70ceeca458dba4aa0261e97528e7ed38ad6d7ae4eb49fbfdfb4327d41",
+    "run.py": "3b665ad6489429244fccf09231b625ef64931d061a52374166916ae9a899fb96",
+    "source.tar.gz": "e8c9b7add7664095c4ed0d1d18789f30dfe9fb15d5edb388c9b4ac4cad80abb1"
+  }
+}
