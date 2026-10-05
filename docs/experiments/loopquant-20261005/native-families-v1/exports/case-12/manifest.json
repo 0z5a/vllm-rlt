@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "format": "fused_rowwise_fp8_e4m3fn",
+  "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model_config": {
+    "model_type": "ouro",
+    "architectures": [
+      "OuroForCausalLM"
+    ],
+    "vocab_size": 64,
+    "hidden_size": 64,
+    "intermediate_size": 128,
+    "num_hidden_layers": 2,
+    "num_attention_heads": 4,
+    "num_key_value_heads": 2,
+    "head_dim": 32,
+    "hidden_act": "silu",
+    "max_position_embeddings": 128,
+    "initializer_range": 0.02,
+    "rms_norm_eps": 1e-06,
+    "rope_theta": 1000000.0,
+    "total_ut_steps": 4,
+    "early_exit_threshold": 1.0,
+    "bos_token_id": 0,
+    "eos_token_id": 0,
+    "pad_token_id": null,
+    "tie_word_embeddings": false,
+    "attention_dropout": 0.0,
+    "rope_scaling": null,
+    "use_sliding_window": false,
+    "sliding_window": null,
+    "layer_types": null
+  },
+  "layout": {
+    "max_loops": 4,
+    "boundaries": [
+      1,
+      2,
+      3
+    ]
+  },
+  "mode": "static",
+  "fused_norm": false,
+  "packed_weight_matrices": 14,
+  "packed_weight_copies": 1,
+  "packed_weight_bytes": 98304,
+  "state_dtype": "bfloat16",
+  "kv_dtype": "bfloat16",
+  "native_quality": "not_run",
+  "tensor_sha256": "ddb110d66b9e8e257d72d3e93e23f9f650871ce3790736af70c19796b1f301ae"
+}

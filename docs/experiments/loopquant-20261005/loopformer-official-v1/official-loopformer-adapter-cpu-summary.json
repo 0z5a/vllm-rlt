@@ -1,0 +1,23 @@
+{
+  "status": "pass",
+  "scope": "official BF16 CPU dense adapter vs unchanged author; B1 and ragged right-padded B2, R8; no native cache or performance claim",
+  "cases": 48,
+  "batch1_cases": 32,
+  "batch2_cases": 16,
+  "recurrent_state_tensors": 384,
+  "logit_tensors": 48,
+  "all_valid_states_logits_bitwise": true,
+  "all_clocks_exact": true,
+  "unique_input_tokens": 1724,
+  "evaluated_valid_token_positions": 3448,
+  "raw_sha256": "ca7bf70626782d92343199c4146b442c9cf2723c3e4ec6e913ce3ea8255c23d5",
+  "elapsed_seconds": 512.179053068161,
+  "controller_returncode": 0,
+  "controller_pid": 82298,
+  "child_pid": 82303,
+  "pids_absent": true,
+  "weight_readers_absent": true,
+  "short_reader_hold_released": true,
+  "weight_owner_future_hold_retained": true,
+  "timestamp": 1791185219.0220952
+}

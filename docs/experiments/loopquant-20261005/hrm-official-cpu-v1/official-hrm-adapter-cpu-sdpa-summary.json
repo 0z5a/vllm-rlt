@@ -1,0 +1,29 @@
+{
+  "status": "pass",
+  "time_unix": 1791224350.581883,
+  "scope": "BF16 CPU dense author recurrence with explicit FlashAttention-to-SDPA dependency shim; not unchanged author attention, CUDA, native KV, quantized quality or E2E",
+  "official_weights": true,
+  "model_revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+  "author_revision": "aaa948ea674fd84b7bc455c9cfb455ecfefdf914",
+  "source_commit": "edc3eb0f21fa2635f28557964474466b1133d6ea",
+  "runner_sha256": "b0ec6240654441b7fb27d239e4dea2babe7616401d7a10e74b81fd1261b8bd10",
+  "raw_sha256": "80be7cb6c23d5b3eea6651a2c98ed1b74e67b0e4831df3610899dfc9daee6d9f",
+  "raw_log_sha256": "f65e2629eae9ef913ce95d8882db6bb7ac58911948191f3b5ad348b3791eaa2c",
+  "requests": 32,
+  "input_tokens": 1728,
+  "evaluated_tokens": 6912,
+  "cases": 112,
+  "outer_state_tensors": 224,
+  "final_logit_tensors": 112,
+  "all_states_logits_bitwise": true,
+  "natural_returncode": 0,
+  "own_pids_absent": [
+    16791,
+    16796
+  ],
+  "model_readers_at_observation": "",
+  "own_short_reader_hold": "released after natural completion; peer future hold retains weights",
+  "full_native_gpu_g0": "not_run",
+  "quantized_quality": "not_run",
+  "e2e": "not_run"
+}

@@ -1,0 +1,53 @@
+{
+  "family": "hrm_text",
+  "model": "sapientinc/HRM-Text-1B",
+  "model_revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+  "source_commit": "edc3eb0f21fa2635f28557964474466b1133d6ea",
+  "source_archive_sha256": "2a2c26d13f5d789e49e257010ab09fefdee4809ba92f1bbe4c2afa0970fc4fa9",
+  "prelude": "embedding times embedding_scale; low state starts from protected z_L_init",
+  "core": "two physical H/L modules; each outer H cycle applies L three times then H once",
+  "loop_id": "explicit outer H cycle 0..1; shared L scales receive three calls per outer cycle",
+  "physical_hidden_width": 1536,
+  "resident_state_width": 3072,
+  "max_context_tokens": 4096,
+  "quantized_physical_sites": [
+    "attn.gqkv_proj",
+    "attn.o_proj",
+    "mlp.gate_up_proj",
+    "mlp.down_proj"
+  ],
+  "protected": "embedding, initial low state, untied head, norms, sigmoid attention gate and split-half FP32 rotary arithmetic",
+  "attention": "bidirectional prefix and causal continuation with explicit per-row prefix lengths; padding excluded from keys",
+  "ce_kl_targets": "first continuation token through last valid token; no prompt or padding loss",
+  "input_budget": "all valid input tokens, including prefix; supervised targets reported separately",
+  "gradient": "all H/L applications differentiated; does not reproduce author truncated-backprop training schedule",
+  "cpu_validation": {
+    "focused_passed": 15,
+    "full_passed": 666,
+    "skipped": 29,
+    "gpu_deselected": 233,
+    "subtests_passed": 36,
+    "exit_code": 0
+  },
+  "full_checkpoint_adapter": "not_run",
+  "full_q0": "not_run",
+  "native_fp8": "not_implemented",
+  "files": {
+    "hrm-adapter-cpu-attempt1.log": {
+      "sha256": "8e61b078ff826026469aefcc44302fc91c52e9ee287f7864ac6100bde952aa09",
+      "bytes": 99
+    },
+    "hrm-adapter-cpu-attempt1.xml": {
+      "sha256": "c0429ee9c73ef4f8144a5f8f238db7d39ffaded5f248ee3bcc12100a22f36828",
+      "bytes": 2390
+    },
+    "full-cpu-hrm-adapter-attempt1.log": {
+      "sha256": "6ccd8fef5466b3cf4fdc747423dab8065479190d6debc7b551fcb9e0004cd4d9",
+      "bytes": 905
+    },
+    "full-cpu-hrm-adapter-attempt1.xml": {
+      "sha256": "d8b9312de0ae6ae2f5e6a5ec7aa90f2014f2f97ef6bb975f6347d965cfd01fa4",
+      "bytes": 95748
+    }
+  }
+}

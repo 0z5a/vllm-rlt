@@ -1,0 +1,33 @@
+{
+  "source_commit": "edc3eb0f21fa2635f28557964474466b1133d6ea",
+  "source_archive_sha256": "2a2c26d13f5d789e49e257010ab09fefdee4809ba92f1bbe4c2afa0970fc4fa9",
+  "author_revision": "aaa948ea674fd84b7bc455c9cfb455ecfefdf914",
+  "cases": 112,
+  "requests": 32,
+  "batch_sizes": [
+    1,
+    2
+  ],
+  "single_row_boundaries": [
+    "first",
+    "half",
+    "all"
+  ],
+  "ragged_pair_boundary": "half",
+  "loops": 2,
+  "low_applications_per_loop": 3,
+  "input_tokens": 1728,
+  "atol": 0.03,
+  "rtol": 0.02,
+  "scope": "Official BF16 CPU weights; original H/L recurrence, projections, RMSNorm, RoPE, embedding and readout; explicit SDPA dependency shim replaces author FlashAttention. Not original attention, native cache, quantized quality or E2E.",
+  "files": {
+    "run.py": "b0ec6240654441b7fb27d239e4dea2babe7616401d7a10e74b81fd1261b8bd10",
+    "controller.py": "7427c716691528cd6f1132fb078042f86aa685ed23d1585f0fde9404aa664827",
+    "requests.json": "9a2fe774ec927189a25f9619ddcff750196053edd666dde17fdccc720cae2b2c",
+    "author/models/common.py": "c6d83b6f4dffb69facd8fc81a3ec2a7fa58a0f388017ae1926e86fbefa7745b1",
+    "author/models/transformer.py": "edce8d31ccb34a06b87b749a925bb94e6be7c9a7e5c6ad2125eb89015c956022",
+    "author/models/lm_head.py": "5c9deaac7a890f26340ebd97aa1342bb6fdbe761ebe1a47fe55ec65a91716e64",
+    "author/models/layers.py": "e3eea88822469fdac32f02e046f21bc4df31fcce81a88e61e282bf5484100a54",
+    "author/models/baselines/hrm_nocarry_bp_warmup.py": "caef1da17e7428565f7dac9af908b82645bc4e44126ec82d7e1cb988d9b68398"
+  }
+}

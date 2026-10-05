@@ -1,0 +1,186 @@
+{
+  "h20-native-families-v1-exports/hrm/case-00/manifest.json": {
+    "size": 1184,
+    "sha256": "077f29c65118fc1190817e826871fb036090fab1f6a3940f9909281bf2b8632a"
+  },
+  "h20-native-families-v1-exports/hrm/case-01/manifest.json": {
+    "size": 1184,
+    "sha256": "077f29c65118fc1190817e826871fb036090fab1f6a3940f9909281bf2b8632a"
+  },
+  "h20-native-families-v1-exports/hrm/case-02/manifest.json": {
+    "size": 1184,
+    "sha256": "077f29c65118fc1190817e826871fb036090fab1f6a3940f9909281bf2b8632a"
+  },
+  "h20-native-families-v1-exports/hrm/case-03/manifest.json": {
+    "size": 1184,
+    "sha256": "077f29c65118fc1190817e826871fb036090fab1f6a3940f9909281bf2b8632a"
+  },
+  "h20-native-families-v1-exports/hrm/case-04/manifest.json": {
+    "size": 1183,
+    "sha256": "4dc17b70f942c055db0e020c0e04518117ad55bdc4797f2cc318b25f965f3450"
+  },
+  "h20-native-families-v1-exports/hrm/case-05/manifest.json": {
+    "size": 1183,
+    "sha256": "4dc17b70f942c055db0e020c0e04518117ad55bdc4797f2cc318b25f965f3450"
+  },
+  "h20-native-families-v1-exports/hrm/case-06/manifest.json": {
+    "size": 1183,
+    "sha256": "4dc17b70f942c055db0e020c0e04518117ad55bdc4797f2cc318b25f965f3450"
+  },
+  "h20-native-families-v1-exports/hrm/case-07/manifest.json": {
+    "size": 1183,
+    "sha256": "4dc17b70f942c055db0e020c0e04518117ad55bdc4797f2cc318b25f965f3450"
+  },
+  "h20-native-families-v1-exports/hrm/case-08/manifest.json": {
+    "size": 1196,
+    "sha256": "93dae354773c232da74e67536a1f9491af5768ac9cd0ddcc98023cee07764ee5"
+  },
+  "h20-native-families-v1-exports/hrm/case-09/manifest.json": {
+    "size": 1196,
+    "sha256": "93dae354773c232da74e67536a1f9491af5768ac9cd0ddcc98023cee07764ee5"
+  },
+  "h20-native-families-v1-exports/hrm/case-10/manifest.json": {
+    "size": 1196,
+    "sha256": "93dae354773c232da74e67536a1f9491af5768ac9cd0ddcc98023cee07764ee5"
+  },
+  "h20-native-families-v1-exports/hrm/case-11/manifest.json": {
+    "size": 1196,
+    "sha256": "93dae354773c232da74e67536a1f9491af5768ac9cd0ddcc98023cee07764ee5"
+  },
+  "h20-native-families-v1-exports/hrm/case-12/manifest.json": {
+    "size": 1196,
+    "sha256": "93dae354773c232da74e67536a1f9491af5768ac9cd0ddcc98023cee07764ee5"
+  },
+  "h20-native-families-v1-exports/hrm/case-13/manifest.json": {
+    "size": 1196,
+    "sha256": "93dae354773c232da74e67536a1f9491af5768ac9cd0ddcc98023cee07764ee5"
+  },
+  "h20-native-families-v1-exports/hrm/case-14/manifest.json": {
+    "size": 1196,
+    "sha256": "93dae354773c232da74e67536a1f9491af5768ac9cd0ddcc98023cee07764ee5"
+  },
+  "h20-native-families-v1-exports/hrm/case-15/manifest.json": {
+    "size": 1196,
+    "sha256": "93dae354773c232da74e67536a1f9491af5768ac9cd0ddcc98023cee07764ee5"
+  },
+  "h20-native-families-v1-exports/huginn/case-00/manifest.json": {
+    "size": 1224,
+    "sha256": "faae098b2c9bb7206bc86fbe057a95ec648abbd51dd992597ca13e93ebf1c337"
+  },
+  "h20-native-families-v1-exports/huginn/case-00/tensors.pt": {
+    "size": 303995,
+    "sha256": "1b7c69dc9d09379f0566b64514c733562317a4f67b701f5d9af971220c38eadd"
+  },
+  "h20-native-families-v1-exports/loopformer/case-00/manifest.json": {
+    "size": 913,
+    "sha256": "a3311d1fe27f80ff0848484470a3bacf310666bbbc8a9566465ae636a233c163"
+  },
+  "h20-native-families-v1-exports/loopformer/case-01/manifest.json": {
+    "size": 913,
+    "sha256": "a3311d1fe27f80ff0848484470a3bacf310666bbbc8a9566465ae636a233c163"
+  },
+  "h20-native-families-v1-exports/loopformer/case-02/manifest.json": {
+    "size": 913,
+    "sha256": "a3311d1fe27f80ff0848484470a3bacf310666bbbc8a9566465ae636a233c163"
+  },
+  "h20-native-families-v1-exports/loopformer/case-03/manifest.json": {
+    "size": 913,
+    "sha256": "a3311d1fe27f80ff0848484470a3bacf310666bbbc8a9566465ae636a233c163"
+  },
+  "h20-native-families-v1-exports/loopformer/case-04/manifest.json": {
+    "size": 912,
+    "sha256": "1fbd3e9705cc75ebdd0b9c48e38ae077dd7500eef4058529cfa12a7feb3f4efd"
+  },
+  "h20-native-families-v1-exports/loopformer/case-05/manifest.json": {
+    "size": 912,
+    "sha256": "1fbd3e9705cc75ebdd0b9c48e38ae077dd7500eef4058529cfa12a7feb3f4efd"
+  },
+  "h20-native-families-v1-exports/loopformer/case-06/manifest.json": {
+    "size": 912,
+    "sha256": "1fbd3e9705cc75ebdd0b9c48e38ae077dd7500eef4058529cfa12a7feb3f4efd"
+  },
+  "h20-native-families-v1-exports/loopformer/case-07/manifest.json": {
+    "size": 912,
+    "sha256": "1fbd3e9705cc75ebdd0b9c48e38ae077dd7500eef4058529cfa12a7feb3f4efd"
+  },
+  "h20-native-families-v1-exports/loopformer/case-08/manifest.json": {
+    "size": 925,
+    "sha256": "ab32b282c8082218f918d5e3c610460a8e5cbe12a5e745720eb2b89350b96f43"
+  },
+  "h20-native-families-v1-exports/loopformer/case-09/manifest.json": {
+    "size": 925,
+    "sha256": "ab32b282c8082218f918d5e3c610460a8e5cbe12a5e745720eb2b89350b96f43"
+  },
+  "h20-native-families-v1-exports/loopformer/case-10/manifest.json": {
+    "size": 925,
+    "sha256": "ab32b282c8082218f918d5e3c610460a8e5cbe12a5e745720eb2b89350b96f43"
+  },
+  "h20-native-families-v1-exports/loopformer/case-11/manifest.json": {
+    "size": 925,
+    "sha256": "ab32b282c8082218f918d5e3c610460a8e5cbe12a5e745720eb2b89350b96f43"
+  },
+  "h20-native-families-v1-exports/loopformer/case-12/manifest.json": {
+    "size": 979,
+    "sha256": "8bc5951f9888f4025b22e2b45bee5f0d189d8e7f968ed6103d64952513a532ba"
+  },
+  "h20-native-families-v1-exports/loopformer/case-13/manifest.json": {
+    "size": 979,
+    "sha256": "8bc5951f9888f4025b22e2b45bee5f0d189d8e7f968ed6103d64952513a532ba"
+  },
+  "h20-native-families-v1-exports/loopformer/case-14/manifest.json": {
+    "size": 979,
+    "sha256": "8bc5951f9888f4025b22e2b45bee5f0d189d8e7f968ed6103d64952513a532ba"
+  },
+  "h20-native-families-v1-exports/loopformer/case-15/manifest.json": {
+    "size": 979,
+    "sha256": "8bc5951f9888f4025b22e2b45bee5f0d189d8e7f968ed6103d64952513a532ba"
+  },
+  "h20-native-families-v1-exports/parcae/case-00/manifest.json": {
+    "size": 1050,
+    "sha256": "ce60d8fc072199b099d57f05f7de3dfe1850e311b410c27ed9d1c71fce161718"
+  },
+  "h20-native-families-v1-exports/parcae/case-00/tensors.pt": {
+    "size": 443363,
+    "sha256": "32b8117b02e8a661066579324f689c7c39d76c75c4fc6ed7714791f303c0e067"
+  },
+  "h20-native-families-v1-hrm.json": {
+    "size": 37084,
+    "sha256": "662ae84652f2a9296a30bfdd72038da1fa22134bed8cfea82f2ba176a4603161"
+  },
+  "h20-native-families-v1-hrm.log": {
+    "size": 1642,
+    "sha256": "127c75f6059d27b829da8dbe438fec78099b7fb55635df0a83d70e02456115bb"
+  },
+  "h20-native-families-v1-huginn.log": {
+    "size": 3401,
+    "sha256": "efec1323de1f7276ff3842b9f5ce3917b1daa9aad12953758a40f70c6eb23f9c"
+  },
+  "h20-native-families-v1-loopformer.json": {
+    "size": 26828,
+    "sha256": "465c352453efd300c7599fb593e25cb2e72a8120c2eb4bbadaae9b4fc019a6b2"
+  },
+  "h20-native-families-v1-loopformer.log": {
+    "size": 1754,
+    "sha256": "d5b7f7d2da27f0c119b11ba3ec8829658518ae3468fe8b84fd0c36ae13e5885d"
+  },
+  "h20-native-families-v1-parcae.log": {
+    "size": 3760,
+    "sha256": "b6d53486fcabe9489257b9d427785f65303aed52857a19a1bd89e7716198722d"
+  },
+  "h20-native-families-v1-process-complete.json": {
+    "size": 492,
+    "sha256": "9a8b79438ea5229191e4ed9df648acc3dc5e370b6f280aeb4b8437ef4eec6aa0"
+  },
+  "h20-native-families-v1-progress.json": {
+    "size": 2566,
+    "sha256": "5b2a023a2258494339ba8963fc838bad475a1860875a36574f7a70ce0938559b"
+  },
+  "h20-native-families-v1-receipt.json": {
+    "size": 2619,
+    "sha256": "8cbb1fbe8823209426cefd6537388560ef80363e6385f90d5e086e7682e52c01"
+  },
+  "h20-native-families-v1-running.json": {
+    "size": 2507,
+    "sha256": "d897bb2ec8e4904c6bbd3ab26f338fd4420eacaf510af9667d2c570d566e8d19"
+  }
+}

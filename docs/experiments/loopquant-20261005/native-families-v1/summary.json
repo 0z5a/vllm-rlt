@@ -1,0 +1,44 @@
+{
+  "status": "pass",
+  "source_commit": "18cd202b689a275fad7bd956e0917607373a2e83",
+  "cases": 64,
+  "repeated_requests": 384,
+  "groups": [
+    {
+      "format": "fp8",
+      "family": "nanbeige",
+      "cases": 32
+    },
+    {
+      "format": "fp8",
+      "family": "ouro",
+      "cases": 16
+    },
+    {
+      "format": "int4",
+      "family": "hrm_text",
+      "cases": 4
+    },
+    {
+      "format": "int4",
+      "family": "loopformer",
+      "cases": 4
+    },
+    {
+      "format": "int4",
+      "family": "nanbeige",
+      "cases": 4
+    },
+    {
+      "format": "int4",
+      "family": "ouro",
+      "cases": 4
+    }
+  ],
+  "graph_captures": 70,
+  "graph_replays": 576,
+  "all_export_roundtrip": true,
+  "temporary_payloads_removed": 64,
+  "scope": "64 tiny native cases; no full model or performance claim",
+  "receipt_sha256": "d397cad831599001a1170856645ab21256cc9b3196aa575c28c092d2b117cebb"
+}

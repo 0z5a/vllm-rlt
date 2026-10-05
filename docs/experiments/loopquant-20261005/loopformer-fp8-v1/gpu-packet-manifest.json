@@ -1,0 +1,13 @@
+{
+  "source_commit": "9cdc7977f5f848d88cb4ca12def6af72342b8418",
+  "scope": "16 tiny LoopFormer FP8 cases: DYN/SH1/ST2/LOOP x Graph off/on x native/compact KV; async scheduling, encoded reload, BF16 time/AdaLN/clock, R8 generated sequences, decoded-reference native NLL, request-ID reuse and KV drain",
+  "cases": 16,
+  "full_model": false,
+  "performance": false,
+  "locks": "original GPU lock in child; finite IO; no same outer GPU lock",
+  "files": {
+    "probe.py": "ff44fee60ad77560ae737216695688d016bebf5dd8a479984384ffbb5074a6c8",
+    "run.py": "25be01a96aaec8343ca79b8c7da9a78e571b49865c70156280d2d79226c214da",
+    "source.tar.gz": "bdf3753e4e76a6950801e422471fb319c7beea82032fe27a7937cba07ca87afd"
+  }
+}
