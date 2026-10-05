@@ -10107,5 +10107,15 @@
   "official_weight_ablation_status": "complete: 64 arms, 1696 requests, 27136 output tokens; all objects and work exact against prior golden runs",
   "h20_status": "complete: 192 tiny BF16 CUDA generation arms plus 18 FP32 prefill cases; all objects/work/hidden/used-KV comparisons exact; seven children and controller natural zero exits",
   "official_weight_ablation_report": "batched-prefill-official-cpu.json",
-  "h20_report": "batched-prefill-h20.json"
+  "h20_report": "batched-prefill-h20.json",
+  "official_h20_e2e": {
+    "report": "h20-thinking-prefill-e2e.json",
+    "status": "complete: 147 generation arms, 4018 requests, 257152 output tokens; all objects and work exact",
+    "scope": "official Thinking BF16 fixed-R4 engine E2E screening, one resident model process",
+    "paired_speed_change_percent_range": [
+      -1.36531098498065,
+      0.5925357969552625
+    ],
+    "all_six_bootstrap_intervals_include_zero": true
+  }
 }

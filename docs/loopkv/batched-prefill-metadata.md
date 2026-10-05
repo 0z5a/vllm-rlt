@@ -1,6 +1,6 @@
 # Batched prefill metadata
 
-The opt-in eager path prepares one metadata set for all recurrent prefill depths. With 32 prompt rows and eight depths, native/alias constructs 6,784 metadata bytes instead of 11,264, and compact constructs 7,936 instead of 13,312. Both call the staging helper twice instead of sixteen times. The same construction counts were observed on CPU and NVIDIA H20. These are metadata source bytes, not measured H2D/HBM traffic; E2E speed remains unmeasured. The H20 diagnostic shows a small increase in peak allocated memory.
+The opt-in eager path prepares one metadata set for all recurrent prefill depths. With 32 prompt rows and eight depths, native/alias constructs 6,784 metadata bytes instead of 11,264, and compact constructs 7,936 instead of 13,312. Both call the staging helper twice instead of sixteen times. The same construction counts were observed on CPU and NVIDIA H20. These are metadata source bytes, not measured H2D/HBM traffic; Official H20 E2E screening results are now available in the linked report. The H20 diagnostic shows a small increase in peak allocated memory.
 
 Frozen implementation: `aa60941d6238072e05a9a571615f1e2726907670`. Results and artifact hashes: [batched-prefill-metadata.json](evidence/batched-prefill-metadata.json).
 
@@ -49,7 +49,7 @@ The initial instrumentation assertion failed because it included CPU reference-r
 
 | Speed / memory comparison | Baseline | Candidate | Improvement |
 |---|---|---|---|
-| CUDA engine E2E throughput | Pending | Pending | Not established |
+| H20 official Thinking engine E2E | [Per-case results](h20-thinking-prefill-e2e.md) | Six balanced pairs per case | -1.37% to +0.59% |
 | HTTP E2E throughput / latency | Pending | Pending | Not established |
 | H20 peak allocated bytes, tiny B32 | See below | See below | Slight increase |
 | H20 peak reserved bytes, tiny B32 | 36 or 54 MiB by family | Unchanged | 0% |
@@ -65,4 +65,8 @@ The initial instrumentation assertion failed because it included CPU reference-r
 
 These allocation samples come from one ordered, traced correctness run per arm, with peak statistics reset after engine construction. They are allocation diagnostics rather than repeated performance trials or whole-process VRAM measurements. At B32, alias has the same allocation delta as native, and credits has the same delta as compact. Reserved bytes remain unchanged within each pair. Keeping all depths live explains the tradeoff: constructed metadata bytes fall while peak allocated bytes rise by 2,048–25,088 bytes in these tiny fixtures.
 
-The H20 packet has completed, its raw archive is verified offbox, its six temporary weight payloads have been removed, and the shared GPU/IO window has been returned. The prepared environment and evidence remain. Performance follow-up requires matched official weights and scheduling, repeated balanced baseline/candidate runs, realized batch sizes, profiler traffic and peak-allocation measurements before considering default enablement.
+The H20 packet has completed, its raw archive is verified offbox, its six temporary weight payloads have been removed, and the shared GPU/IO window has been returned. The prepared environment and evidence remain. The first official H20 E2E follow-up below measures paired throughput and allocated memory. Broader contexts and models, fresh-process confirmation and profiler traffic remain necessary before considering default enablement.
+
+## Official H20 E2E follow-up
+
+[Official Thinking results](h20-thinking-prefill-e2e.md) record all 147 complete generation arms, exact outputs/work, paired throughput and observed allocated memory. The six paired medians range from -1.37% to +0.59%; 6/6 descriptive intervals include no change. This is fixed-R4 engine E2E screening in one resident model process. The broader official-model matrix, adaptive-depth serving, fresh-process confirmation and HTTP measurements remain unfinished.

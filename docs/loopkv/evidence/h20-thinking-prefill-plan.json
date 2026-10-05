@@ -1,0 +1,62 @@
+{
+  "source": "/root/autodl-tmp/0z5a/loopkv-h20-20261006/thinking-e2e-v1/source",
+  "source_sha": "aa60941d6238072e05a9a571615f1e2726907670",
+  "device": "cuda",
+  "model": "/root/autodl-tmp/0z5a/flashrlt-h20-20261006/model-stage-v2/models",
+  "checkpoint_manifest": "/root/autodl-tmp/0z5a/loopkv-h20-20261006/thinking-e2e-v1/checkpoint.json",
+  "prompts": "/root/autodl-tmp/0z5a/loopkv-h20-20261006/thinking-e2e-v1/prompts.json",
+  "prompts_sha256": "4431561d4bae1a611ef0b7a249ddedebc2b50bf2bd9641e3356ad478e32720a0",
+  "prompt_length": 128,
+  "outputs": 64,
+  "loops": 4,
+  "cases": [
+    {
+      "name": "b1-c2-p128-d64-r4",
+      "batch": 1,
+      "requests": 2,
+      "blocks": 48
+    },
+    {
+      "name": "b8-c16-p128-d64-r4",
+      "batch": 8,
+      "requests": 16,
+      "blocks": 384
+    },
+    {
+      "name": "b32-c64-p128-d64-r4",
+      "batch": 32,
+      "requests": 64,
+      "blocks": 1536
+    }
+  ],
+  "storage": [
+    "native",
+    "compact"
+  ],
+  "orders": [
+    [
+      false,
+      true
+    ],
+    [
+      true,
+      false
+    ],
+    [
+      false,
+      true
+    ],
+    [
+      true,
+      false
+    ],
+    [
+      false,
+      true
+    ],
+    [
+      true,
+      false
+    ]
+  ]
+}
