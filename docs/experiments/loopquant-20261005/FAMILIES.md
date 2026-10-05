@@ -52,6 +52,19 @@ clocks, fixed depth and gradients from final logits through all eight applicatio
 of the shared projection. Two tiny scale updates preserve all frozen parameters.
 Full LoopFormer QAT and native FP8 deployment remain pending.
 
+The unchanged pinned author and dense adapter also agree **bitwise on all48
+official-checkpoint BF16 CPU cases**:32 single inputs and16 right-padded pairs,
+all at eight steps. All384 recurrent state tensors and48 logit tensors match
+on valid rows; clocks are exact at every boundary. The32 independent prompts
+contain1724 tokens, with3448 valid positions evaluated across both batch sizes.
+The author and adapter share the same loaded parameter storage.
+[Raw comparisons](loopformer-official-v1/official-loopformer-adapter-cpu-attempt1.json),
+[verified summary](loopformer-official-v1/official-loopformer-adapter-cpu-summary.json),
+[frozen runner](loopformer-official-v1/run.py), [manifest and inputs](loopformer-official-v1/manifest.json).
+Both processes exited naturally0. The short-term read lease is released; the
+owner retains the existing weights for later tests. This dense comparison does
+not qualify native cached arithmetic, quantized quality or serving performance.
+
 
 Native quality evaluation now accepts an explicit prefix/continuation boundary.
 HRM admits the complete bidirectional prompt atomically, then scores each next

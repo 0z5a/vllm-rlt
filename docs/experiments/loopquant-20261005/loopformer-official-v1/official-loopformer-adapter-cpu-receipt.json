@@ -1,0 +1,15 @@
+{
+  "controller_pid": 82298,
+  "start_unix": 1791184621.273538,
+  "child_pid": 82303,
+  "command": [
+    "/Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/bin/python",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/snapshots/loopformer-official-cpu-v1/run.py",
+    "--root",
+    "/Users/0z5a/Documents/infra/loopquant-20261005",
+    "--requests",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/snapshots/loopformer-official-cpu-v1/requests.json"
+  ],
+  "returncode": 0,
+  "end_unix": 1791185145.894412
+}
