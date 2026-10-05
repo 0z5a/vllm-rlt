@@ -1,0 +1,6 @@
+{
+  "tokens_depths_metadata_exact": true,
+  "max_score_absolute_error": 0.0,
+  "scores_exact": true,
+  "scores_within_frozen_bound": true
+}
