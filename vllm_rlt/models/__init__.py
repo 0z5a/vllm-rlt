@@ -13,14 +13,22 @@ from .huginn import HuginnConfig, HuginnForCausalLM
 from .loopformer import LoopFormerConfig, LoopFormerForCausalLM
 from .nanbeige import NanbeigeConfig, NanbeigeForCausalLM
 from .ouro import OuroConfig, OuroForCausalLM
+from .parcae import ParcaeConfig, ParcaeForCausalLM
 
 MODEL_MAPPING = {
+    "parcae": ParcaeForCausalLM,
     "loopformer": LoopFormerForCausalLM,
     "hrm_text": HrmTextForCausalLM,
     "ouro": OuroForCausalLM,
     "nanbeige": NanbeigeForCausalLM,
     "huginn_raven": HuginnForCausalLM,
 }
+
+
+def model_type_from_config(config: dict) -> str:
+    if config.get("_class_name") == "ParcaeConfig":
+        return "parcae"
+    return config.get("model_type", "").lower()
 
 
 def resolve_model_source(path_or_repo: str | Path) -> str:
@@ -48,7 +56,7 @@ def resolve_local_model_path(path_or_repo: str | Path, revision=None) -> Path | 
         names = set(json.loads(index.read_text())["weight_map"].values())
         if names and all((folder / name).is_file() for name in names):
             return folder
-    elif (folder / "model.safetensors").is_file():
+    elif (folder / "model.safetensors").is_file() or (folder / "pytorch_model.bin").is_file():
         return folder
     return None
 
@@ -79,7 +87,7 @@ def resolve_model_config(path_or_repo, *, revision=None):
         _confirm_download(source)
         config_path = Path(hf_hub_download(source, "config.json", revision=revision))
     config = json.loads(config_path.read_text())
-    model_type = config.get("model_type", "").lower()
+    model_type = model_type_from_config(config)
     if model_type not in MODEL_MAPPING:
         raise ValueError(f"Unsupported model_type {model_type!r} for {path_or_repo}")
     # Use the same resolved snapshot for weights and the default tokenizer.
@@ -93,6 +101,7 @@ def resolve_model_config(path_or_repo, *, revision=None):
                 allow_patterns=[
                     "*.json",
                     "*.safetensors",
+                    "pytorch_model.bin",
                     "*.model",
                     "tokenizer.tiktoken",
                     "vocab.txt",
@@ -132,7 +141,7 @@ class AutoModelForCausalLM:
         device: torch.device | str = "cpu",
         dtype: torch.dtype = torch.bfloat16,
     ):
-        model_type = config_data.get("model_type", "").lower()
+        model_type = model_type_from_config(config_data)
         model_cls = MODEL_MAPPING.get(model_type)
         if model_cls is None:
             supported = sorted(MODEL_MAPPING.keys())
@@ -160,6 +169,8 @@ class AutoModelForCausalLM:
 
 
 __all__ = [
+    "ParcaeConfig",
+    "ParcaeForCausalLM",
     "LoopFormerConfig",
     "LoopFormerForCausalLM",
     "HrmTextConfig",

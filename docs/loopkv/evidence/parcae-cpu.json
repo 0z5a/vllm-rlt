@@ -1,0 +1,546 @@
+{
+  "author_comparison": {
+    "scope": "tiny author forward, copied weights and FP32 RoPE; not official checkpoint",
+    "source_revision": "69284c13746e849104f738d6d1a347b1f457df76",
+    "generation_source_sha256": "14363edd0b425f6d264517ae6d8f941a394313899425e97aaff596efddb2b382",
+    "cases": [
+      {
+        "dtype": "torch.float32",
+        "tokens": 1,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 0.0,
+        "native_close": true,
+        "dense_close": true,
+        "greedy_exact": true
+      },
+      {
+        "dtype": "torch.float32",
+        "tokens": 3,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 4.291534423828125e-06,
+        "dense_max_abs_logit_error": 4.291534423828125e-06,
+        "native_close": true,
+        "dense_close": true,
+        "greedy_exact": true
+      },
+      {
+        "dtype": "torch.float32",
+        "tokens": 7,
+        "atol": 3e-06,
+        "rtol": 3e-05,
+        "native_max_abs_logit_error": 6.67572021484375e-06,
+        "dense_max_abs_logit_error": 5.7220458984375e-06,
+        "native_close": true,
+        "dense_close": true,
+        "greedy_exact": true
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 1,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.0,
+        "dense_max_abs_logit_error": 0.0,
+        "native_close": true,
+        "dense_close": true,
+        "greedy_exact": true
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 3,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.1484375,
+        "dense_max_abs_logit_error": 0.40625,
+        "native_close": false,
+        "dense_close": false,
+        "greedy_exact": true
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "tokens": 7,
+        "atol": 0.03,
+        "rtol": 0.02,
+        "native_max_abs_logit_error": 0.1875,
+        "dense_max_abs_logit_error": 0.3984375,
+        "native_close": false,
+        "dense_close": false,
+        "greedy_exact": true
+      }
+    ]
+  },
+  "constructor": {
+    "scope": "official_config_author_constructor_vs_native_meta_shapes_not_checkpoint_header_or_weights",
+    "source_revision": "69284c13746e849104f738d6d1a347b1f457df76",
+    "tensor_shapes": {
+      "freqs_cis": [
+        1,
+        2048,
+        1,
+        64,
+        2
+      ],
+      "transformer.wte.weight": [
+        32768,
+        1024
+      ],
+      "transformer.prelude.0.norm_1.weight": [
+        1024
+      ],
+      "transformer.prelude.0.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.0.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.0.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.0.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.0.norm_2.weight": [
+        1024
+      ],
+      "transformer.prelude.0.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.prelude.0.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.prelude.1.norm_1.weight": [
+        1024
+      ],
+      "transformer.prelude.1.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.1.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.1.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.1.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.1.attn.ve_gate.weight": [
+        8,
+        32
+      ],
+      "transformer.prelude.1.norm_2.weight": [
+        1024
+      ],
+      "transformer.prelude.1.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.prelude.1.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.prelude.2.norm_1.weight": [
+        1024
+      ],
+      "transformer.prelude.2.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.2.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.2.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.2.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.2.norm_2.weight": [
+        1024
+      ],
+      "transformer.prelude.2.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.prelude.2.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.prelude.3.norm_1.weight": [
+        1024
+      ],
+      "transformer.prelude.3.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.3.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.3.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.3.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.prelude.3.attn.ve_gate.weight": [
+        8,
+        32
+      ],
+      "transformer.prelude.3.norm_2.weight": [
+        1024
+      ],
+      "transformer.prelude.3.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.prelude.3.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.adapter.A_log": [
+        1024
+      ],
+      "transformer.adapter.dt_bias": [
+        1024
+      ],
+      "transformer.adapter.B": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.0.norm_1.weight": [
+        1024
+      ],
+      "transformer.core_block.0.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.0.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.0.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.0.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.0.norm_2.weight": [
+        1024
+      ],
+      "transformer.core_block.0.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.core_block.0.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.core_block.1.norm_1.weight": [
+        1024
+      ],
+      "transformer.core_block.1.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.1.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.1.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.1.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.1.attn.ve_gate.weight": [
+        8,
+        32
+      ],
+      "transformer.core_block.1.norm_2.weight": [
+        1024
+      ],
+      "transformer.core_block.1.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.core_block.1.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.core_block.2.norm_1.weight": [
+        1024
+      ],
+      "transformer.core_block.2.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.2.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.2.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.2.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.2.norm_2.weight": [
+        1024
+      ],
+      "transformer.core_block.2.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.core_block.2.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.core_block.3.norm_1.weight": [
+        1024
+      ],
+      "transformer.core_block.3.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.3.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.3.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.3.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.core_block.3.attn.ve_gate.weight": [
+        8,
+        32
+      ],
+      "transformer.core_block.3.norm_2.weight": [
+        1024
+      ],
+      "transformer.core_block.3.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.core_block.3.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.C.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.0.norm_1.weight": [
+        1024
+      ],
+      "transformer.coda.0.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.0.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.0.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.0.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.0.norm_2.weight": [
+        1024
+      ],
+      "transformer.coda.0.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.coda.0.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.coda.1.norm_1.weight": [
+        1024
+      ],
+      "transformer.coda.1.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.1.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.1.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.1.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.1.attn.ve_gate.weight": [
+        8,
+        32
+      ],
+      "transformer.coda.1.norm_2.weight": [
+        1024
+      ],
+      "transformer.coda.1.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.coda.1.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.coda.2.norm_1.weight": [
+        1024
+      ],
+      "transformer.coda.2.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.2.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.2.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.2.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.2.norm_2.weight": [
+        1024
+      ],
+      "transformer.coda.2.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.coda.2.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.coda.3.norm_1.weight": [
+        1024
+      ],
+      "transformer.coda.3.attn.c_q.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.3.attn.c_k.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.3.attn.c_v.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.3.attn.c_proj.weight": [
+        1024,
+        1024
+      ],
+      "transformer.coda.3.attn.ve_gate.weight": [
+        8,
+        32
+      ],
+      "transformer.coda.3.norm_2.weight": [
+        1024
+      ],
+      "transformer.coda.3.mlp.fc.weight": [
+        4096,
+        1024
+      ],
+      "transformer.coda.3.mlp.proj.weight": [
+        1024,
+        4096
+      ],
+      "transformer.ln_f.weight": [
+        1024
+      ],
+      "transformer.ln_prelude.weight": [
+        1024
+      ],
+      "value_embeds.1.weight": [
+        32768,
+        1024
+      ],
+      "value_embeds.3.weight": [
+        32768,
+        1024
+      ],
+      "value_embeds.5.weight": [
+        32768,
+        1024
+      ],
+      "value_embeds.7.weight": [
+        32768,
+        1024
+      ],
+      "value_embeds.9.weight": [
+        32768,
+        1024
+      ],
+      "value_embeds.11.weight": [
+        32768,
+        1024
+      ],
+      "lm_head.weight": [
+        32768,
+        1024
+      ]
+    },
+    "checkpoint_keys": 117,
+    "parameters": 388003328,
+    "native_hidden_width": 2050,
+    "recurrent_layers": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "recurrent_steps": 8,
+    "emb_scale": 1.0,
+    "logit_scale": 1.0,
+    "initializer_std": 0.01976423537605237,
+    "relu2_factor": 0.5,
+    "relu2_source_sha256": "b2b38a8ab0fe6754c41634969d3fa52a6d1aab1a63e3757a63da69dc73ba63cc"
+  },
+  "cpu_validation": {
+    "passed": 227,
+    "deselected_gpu": 5,
+    "subtests_passed": 36,
+    "command": "python -m pytest -q tests/test_huginn.py tests/test_auto_model.py tests/test_engine.py tests/loopkv -m \"not gpu\" --tb=short"
+  },
+  "author_check_returncode": 1
+}

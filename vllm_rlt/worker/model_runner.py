@@ -13,6 +13,7 @@ from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.models.hrm_text import HrmTextForCausalLM
 from vllm_rlt.models.huginn import HuginnForCausalLM
+from vllm_rlt.models.parcae import ParcaeForCausalLM
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace
 from vllm_rlt.worker.cuda_graph import RecurrentGraphs
@@ -309,7 +310,7 @@ class ModelRunner:
                 if bank
                 else torch.tensor(tokens, device=self.device, dtype=torch.long)
             )
-            if isinstance(self.model, HuginnForCausalLM):
+            if isinstance(self.model, (HuginnForCausalLM, ParcaeForCausalLM)):
                 boundary = cache._prepare_batch(ids, [0] * len(ids), positions, packed_prefill=True)
                 hidden = self.model.prelude_prepared(tensor, boundary, cache)
             else:
@@ -325,7 +326,7 @@ class ModelRunner:
                 hidden, _ = self.model.recurrent_prepared(
                     hidden, metadata, cache, compute_gate=False
                 )
-            if isinstance(self.model, HuginnForCausalLM):
+            if isinstance(self.model, (HuginnForCausalLM, ParcaeForCausalLM)):
                 self.model.coda_prepared(hidden, boundary, cache)
             if bank:
                 bank.release()
@@ -338,7 +339,7 @@ class ModelRunner:
             else torch.tensor(tokens, device=self.device, dtype=torch.long)
         )
         boundary = None
-        if isinstance(self.model, HuginnForCausalLM):
+        if isinstance(self.model, (HuginnForCausalLM, ParcaeForCausalLM)):
             boundary = cache._prepare_batch(ids, [0] * len(ids), positions)
             hidden = self.model.prelude_prepared(tensor[: len(ids)], boundary, cache)
         else:
@@ -414,7 +415,7 @@ class ModelRunner:
                     if workspace
                     else torch.tensor(ids, device=self.device, dtype=torch.long)
                 )
-            if isinstance(self.model, HuginnForCausalLM):
+            if isinstance(self.model, (HuginnForCausalLM, ParcaeForCausalLM)):
                 boundary = self.cache_manager._prepare_batch(
                     [r.request_id for r in requests],
                     [0] * len(requests),
@@ -463,7 +464,7 @@ class ModelRunner:
                     logits = self.lookahead_head(hidden).squeeze(-1)
                 result = logits[: len(requests)].float().sigmoid() if logits is not None else None
             elif batch.stage == Stage.CODA:
-                if isinstance(self.model, HuginnForCausalLM):
+                if isinstance(self.model, (HuginnForCausalLM, ParcaeForCausalLM)):
                     boundary = self.cache_manager._prepare_batch(
                         [r.request_id for r in requests],
                         [0] * len(requests),

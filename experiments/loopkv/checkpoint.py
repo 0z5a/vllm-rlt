@@ -20,6 +20,8 @@ from vllm_rlt.models import (
     NanbeigeForCausalLM,
     OuroConfig,
     OuroForCausalLM,
+    ParcaeForCausalLM,
+    model_type_from_config,
 )
 
 
@@ -31,9 +33,12 @@ def load_model(
     | HuginnForCausalLM
     | HrmTextForCausalLM
     | LoopFormerForCausalLM
+    | ParcaeForCausalLM
 ):
     """Construct a native recurrent model without optional Hub dependencies."""
     config = json.loads((folder / "config.json").read_text())
+    if model_type_from_config(config) == "parcae":
+        return ParcaeForCausalLM.from_pretrained(folder, device=device, dtype=dtype)
     with torch.device("meta"):
         if config["model_type"] == "loopformer":
             model = LoopFormerForCausalLM(LoopFormerConfig.from_dict(config))
