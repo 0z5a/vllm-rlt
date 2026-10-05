@@ -118,6 +118,13 @@ fixtures; it does not qualify the unchanged author backend. The independent dens
 oracle still fails at P7/P33, so that diagnostic also retains return code 1.
 No budget was widened.
 
+An additional [cached CPU diagnostic](parcae-cached-diagnostic.md) covers the
+released weights with two forced decode steps. A writable-property cache subclass
+preserves the pinned author's cache methods on the existing runtime. Shared
+attention makes all six official cases bitwise exact for logits, recurrent states
+and KV; author attention still fails the original complete-check budgets. The
+unmodified cache constructor failure remains recorded.
+
 ```bash
 python -m experiments.loopkv.parcae_author_gate \
   --author-repo /path/to/pinned-parcae \

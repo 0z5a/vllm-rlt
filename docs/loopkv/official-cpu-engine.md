@@ -66,6 +66,12 @@ Earlier author prefill comparisons did not instantiate this cache and therefore
 do not establish cached-generation compatibility. No environment or author
 source was changed.
 
+A separate opt-in [cache API diagnostic](parcae-cached-diagnostic.md) now exercises
+the author's inherited cache algorithm through writable dictionary properties.
+Official cached logits, states and KV match bitwise after attention arithmetic
+is shared. Keeping author attention retains numerical failures. This does not
+change the original constructor failure or qualify the unchanged author runtime.
+
 To reproduce an engine screen, use the recorded model/prompt hashes and plan:
 
 ```bash
