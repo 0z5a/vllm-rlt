@@ -1,0 +1,214 @@
+{
+  "native-models-v2-receipt.json": {
+    "bytes": 254,
+    "sha256": "6e89f417f41a9996356d5821164ab3ad9dfba28564f215a2dcf38e873550e069"
+  },
+  "native-models-v2-ouro-attempt1.json": {
+    "bytes": 31077,
+    "sha256": "691b30e90d76982fba122edc1d3043d1ef5e467b13b977583ccd7cc2f27db9ff"
+  },
+  "native-models-v2-ouro-attempt1.log": {
+    "bytes": 4380,
+    "sha256": "561e5ca3f679f2ab08ead572485d7f1e506314cec829534cbc7d301ab34761ec"
+  },
+  "native-models-v2-nanbeige-attempt1.json": {
+    "bytes": 61809,
+    "sha256": "156697f12f5a9f3dd843f8e8482c9c94d3f6f859a732d424bd70ac31e6af0704"
+  },
+  "native-models-v2-nanbeige-attempt1.log": {
+    "bytes": 8872,
+    "sha256": "6239c456debe0a5ac2e3cc189893a28e90cf50738f348ead197263e27b3e37aa"
+  },
+  "native-models-v2-exports/nanbeige-DYN-False-False-False/manifest.json": {
+    "bytes": 1247,
+    "sha256": "0353f5025d9d08e8ff1080e26c863628e5ec0be8a16026b5641c413c4967d2fc"
+  },
+  "native-models-v2-exports/nanbeige-DYN-False-False-True/manifest.json": {
+    "bytes": 1246,
+    "sha256": "ed97d32000fbfb30ae74a988cd450ebabdaeb0aad4ab62c88cebff03d58638cb"
+  },
+  "native-models-v2-exports/nanbeige-DYN-False-True-False/manifest.json": {
+    "bytes": 1246,
+    "sha256": "26776785fbec0601bc30c2b88101a51414a5a51530ff7139ef6761a5b738b1a2"
+  },
+  "native-models-v2-exports/nanbeige-DYN-False-True-True/manifest.json": {
+    "bytes": 1245,
+    "sha256": "c6a9a7f447f7dd9e06e65a784e672d9f450f0a385db31228805ae2d49ee189bd"
+  },
+  "native-models-v2-exports/nanbeige-DYN-True-False-False/manifest.json": {
+    "bytes": 1247,
+    "sha256": "0353f5025d9d08e8ff1080e26c863628e5ec0be8a16026b5641c413c4967d2fc"
+  },
+  "native-models-v2-exports/nanbeige-DYN-True-False-True/manifest.json": {
+    "bytes": 1246,
+    "sha256": "ed97d32000fbfb30ae74a988cd450ebabdaeb0aad4ab62c88cebff03d58638cb"
+  },
+  "native-models-v2-exports/nanbeige-DYN-True-True-False/manifest.json": {
+    "bytes": 1246,
+    "sha256": "26776785fbec0601bc30c2b88101a51414a5a51530ff7139ef6761a5b738b1a2"
+  },
+  "native-models-v2-exports/nanbeige-DYN-True-True-True/manifest.json": {
+    "bytes": 1245,
+    "sha256": "c6a9a7f447f7dd9e06e65a784e672d9f450f0a385db31228805ae2d49ee189bd"
+  },
+  "native-models-v2-exports/nanbeige-LOOP-False-False-False/manifest.json": {
+    "bytes": 1259,
+    "sha256": "37367cc67affc7ce189cef9ebc99c6363c915adec7287d3e3da4651995f796a7"
+  },
+  "native-models-v2-exports/nanbeige-LOOP-False-False-True/manifest.json": {
+    "bytes": 1258,
+    "sha256": "b65193fc368910b0f7ff48965182605cf4a2563bcab0484e6dd9a7d2a6b5e044"
+  },
+  "native-models-v2-exports/nanbeige-LOOP-False-True-False/manifest.json": {
+    "bytes": 1258,
+    "sha256": "85214db067f470592adb87e72d115f38675ec5bdfdf6244d20ced7e4e516c963"
+  },
+  "native-models-v2-exports/nanbeige-LOOP-False-True-True/manifest.json": {
+    "bytes": 1257,
+    "sha256": "0083c64864cea29d0bfd2bb8d8a40cd3c4649530988cbe1d80972150c214f630"
+  },
+  "native-models-v2-exports/nanbeige-LOOP-True-False-False/manifest.json": {
+    "bytes": 1259,
+    "sha256": "37367cc67affc7ce189cef9ebc99c6363c915adec7287d3e3da4651995f796a7"
+  },
+  "native-models-v2-exports/nanbeige-LOOP-True-False-True/manifest.json": {
+    "bytes": 1258,
+    "sha256": "b65193fc368910b0f7ff48965182605cf4a2563bcab0484e6dd9a7d2a6b5e044"
+  },
+  "native-models-v2-exports/nanbeige-LOOP-True-True-False/manifest.json": {
+    "bytes": 1258,
+    "sha256": "85214db067f470592adb87e72d115f38675ec5bdfdf6244d20ced7e4e516c963"
+  },
+  "native-models-v2-exports/nanbeige-LOOP-True-True-True/manifest.json": {
+    "bytes": 1257,
+    "sha256": "0083c64864cea29d0bfd2bb8d8a40cd3c4649530988cbe1d80972150c214f630"
+  },
+  "native-models-v2-exports/nanbeige-SH1-False-False-False/manifest.json": {
+    "bytes": 1246,
+    "sha256": "84aebfc75d9facc64d79e3265efb3836e5892ddb5402622e8d406d7ef2f18cf7"
+  },
+  "native-models-v2-exports/nanbeige-SH1-False-False-True/manifest.json": {
+    "bytes": 1245,
+    "sha256": "c20eb34ef9d94dea152b58eb030b66c3084d171772cf3d89f7b6fd3ec5bfc6b4"
+  },
+  "native-models-v2-exports/nanbeige-SH1-False-True-False/manifest.json": {
+    "bytes": 1245,
+    "sha256": "f8e2aed54ea158d576f9ac4d64ba5a5f276f18f86cea57483d7398ca2df969f7"
+  },
+  "native-models-v2-exports/nanbeige-SH1-False-True-True/manifest.json": {
+    "bytes": 1244,
+    "sha256": "7842d9fd17195a6d6e9ac2e22f8b8dfa628581d8f1e314eac72aed77f230b6a0"
+  },
+  "native-models-v2-exports/nanbeige-SH1-True-False-False/manifest.json": {
+    "bytes": 1246,
+    "sha256": "84aebfc75d9facc64d79e3265efb3836e5892ddb5402622e8d406d7ef2f18cf7"
+  },
+  "native-models-v2-exports/nanbeige-SH1-True-False-True/manifest.json": {
+    "bytes": 1245,
+    "sha256": "c20eb34ef9d94dea152b58eb030b66c3084d171772cf3d89f7b6fd3ec5bfc6b4"
+  },
+  "native-models-v2-exports/nanbeige-SH1-True-True-False/manifest.json": {
+    "bytes": 1245,
+    "sha256": "f8e2aed54ea158d576f9ac4d64ba5a5f276f18f86cea57483d7398ca2df969f7"
+  },
+  "native-models-v2-exports/nanbeige-SH1-True-True-True/manifest.json": {
+    "bytes": 1244,
+    "sha256": "7842d9fd17195a6d6e9ac2e22f8b8dfa628581d8f1e314eac72aed77f230b6a0"
+  },
+  "native-models-v2-exports/nanbeige-ST2-False-False-False/manifest.json": {
+    "bytes": 1259,
+    "sha256": "37367cc67affc7ce189cef9ebc99c6363c915adec7287d3e3da4651995f796a7"
+  },
+  "native-models-v2-exports/nanbeige-ST2-False-False-True/manifest.json": {
+    "bytes": 1258,
+    "sha256": "b65193fc368910b0f7ff48965182605cf4a2563bcab0484e6dd9a7d2a6b5e044"
+  },
+  "native-models-v2-exports/nanbeige-ST2-False-True-False/manifest.json": {
+    "bytes": 1258,
+    "sha256": "85214db067f470592adb87e72d115f38675ec5bdfdf6244d20ced7e4e516c963"
+  },
+  "native-models-v2-exports/nanbeige-ST2-False-True-True/manifest.json": {
+    "bytes": 1257,
+    "sha256": "0083c64864cea29d0bfd2bb8d8a40cd3c4649530988cbe1d80972150c214f630"
+  },
+  "native-models-v2-exports/nanbeige-ST2-True-False-False/manifest.json": {
+    "bytes": 1259,
+    "sha256": "37367cc67affc7ce189cef9ebc99c6363c915adec7287d3e3da4651995f796a7"
+  },
+  "native-models-v2-exports/nanbeige-ST2-True-False-True/manifest.json": {
+    "bytes": 1258,
+    "sha256": "b65193fc368910b0f7ff48965182605cf4a2563bcab0484e6dd9a7d2a6b5e044"
+  },
+  "native-models-v2-exports/nanbeige-ST2-True-True-False/manifest.json": {
+    "bytes": 1258,
+    "sha256": "85214db067f470592adb87e72d115f38675ec5bdfdf6244d20ced7e4e516c963"
+  },
+  "native-models-v2-exports/nanbeige-ST2-True-True-True/manifest.json": {
+    "bytes": 1257,
+    "sha256": "0083c64864cea29d0bfd2bb8d8a40cd3c4649530988cbe1d80972150c214f630"
+  },
+  "native-models-v2-exports/ouro-DYN-False-False-False/manifest.json": {
+    "bytes": 1242,
+    "sha256": "e6f7be4119928395bd109eefccf507da0cf4c30d58184cf44ead279fcf12d49f"
+  },
+  "native-models-v2-exports/ouro-DYN-False-True-False/manifest.json": {
+    "bytes": 1241,
+    "sha256": "1eb1a3d389547f5fb0c559da4fd9a1125fc87bffc48a891eef6d971ad05b918b"
+  },
+  "native-models-v2-exports/ouro-DYN-True-False-False/manifest.json": {
+    "bytes": 1242,
+    "sha256": "e6f7be4119928395bd109eefccf507da0cf4c30d58184cf44ead279fcf12d49f"
+  },
+  "native-models-v2-exports/ouro-DYN-True-True-False/manifest.json": {
+    "bytes": 1241,
+    "sha256": "1eb1a3d389547f5fb0c559da4fd9a1125fc87bffc48a891eef6d971ad05b918b"
+  },
+  "native-models-v2-exports/ouro-LOOP-False-False-False/manifest.json": {
+    "bytes": 1272,
+    "sha256": "1ba4b70b8232bb3806f026e611799153f4a7f3d35fbaefb0626ce5bfc7021868"
+  },
+  "native-models-v2-exports/ouro-LOOP-False-True-False/manifest.json": {
+    "bytes": 1271,
+    "sha256": "934f2faa84b6ea27591a3483acdbcdaf85fe72044d77b835ce497ad76f273473"
+  },
+  "native-models-v2-exports/ouro-LOOP-True-False-False/manifest.json": {
+    "bytes": 1272,
+    "sha256": "1ba4b70b8232bb3806f026e611799153f4a7f3d35fbaefb0626ce5bfc7021868"
+  },
+  "native-models-v2-exports/ouro-LOOP-True-True-False/manifest.json": {
+    "bytes": 1271,
+    "sha256": "934f2faa84b6ea27591a3483acdbcdaf85fe72044d77b835ce497ad76f273473"
+  },
+  "native-models-v2-exports/ouro-SH1-False-False-False/manifest.json": {
+    "bytes": 1241,
+    "sha256": "806ad18edd2b636c65c950c5e98d9063840d8a99538a6969f3b1aa20dfc88d6b"
+  },
+  "native-models-v2-exports/ouro-SH1-False-True-False/manifest.json": {
+    "bytes": 1240,
+    "sha256": "85f6af98d802a5a3bb61174f451efc1ba781526839fb588264d90ba03156fb66"
+  },
+  "native-models-v2-exports/ouro-SH1-True-False-False/manifest.json": {
+    "bytes": 1241,
+    "sha256": "806ad18edd2b636c65c950c5e98d9063840d8a99538a6969f3b1aa20dfc88d6b"
+  },
+  "native-models-v2-exports/ouro-SH1-True-True-False/manifest.json": {
+    "bytes": 1240,
+    "sha256": "85f6af98d802a5a3bb61174f451efc1ba781526839fb588264d90ba03156fb66"
+  },
+  "native-models-v2-exports/ouro-ST2-False-False-False/manifest.json": {
+    "bytes": 1254,
+    "sha256": "a095d11394c1aff8ed4660b266dcba37452f85232f48c9e3be2f39d2fcdd5860"
+  },
+  "native-models-v2-exports/ouro-ST2-False-True-False/manifest.json": {
+    "bytes": 1253,
+    "sha256": "73ee60f4ed00c0b426e6724e0921e1287c51638793d370bdd8a8bc18dc8800bd"
+  },
+  "native-models-v2-exports/ouro-ST2-True-False-False/manifest.json": {
+    "bytes": 1254,
+    "sha256": "a095d11394c1aff8ed4660b266dcba37452f85232f48c9e3be2f39d2fcdd5860"
+  },
+  "native-models-v2-exports/ouro-ST2-True-True-False/manifest.json": {
+    "bytes": 1253,
+    "sha256": "73ee60f4ed00c0b426e6724e0921e1287c51638793d370bdd8a8bc18dc8800bd"
+  }
+}

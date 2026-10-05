@@ -476,3 +476,26 @@ first/all/matched GPTQ matrices share this path. Two CPU model fixtures verify
 codes, shapes and protected weights; four mixed-depth/Graph native model cases
 are prepared but not run. Latest full CPU regression:494 passed,29 skipped,
 200 GPU cases deselected. [Log](full-cpu-int4-export-attempt1.log).
+
+## Native model qualification and initial dev quality
+
+The updated Ouro repeat passes16/16 tiny GPU cases, and Nanbeige passes32/32
+across all four FP8 policies, Graph, norm fusion and both loop-final-norm
+settings. Exported state bytes, mixed-depth token/depth output, repeated
+request IDs, packed storage identities and full KV drain agree. All48 tiny
+export tensors were removed after success; [manifests and raw results](native-models-v2/native-models-v2-file-manifest.json)
+remain. Native INT4 model artifacts also pass all four Ouro/Nanbeige ×
+Graph-on/off cases, each with six repeated-ID requests and exact reload state.
+Their four temporary payloads were removed after successful validation.
+[INT4 records](quant-quality-v1/native-int4-models-v1.json).
+
+The five full Ouro1.4B [native dev quality arms](DEV_QUALITY.md) completed
+128 windows each. These are initial-policy dev results, not locked G2.
+
+| Policy | Dev PPL | PPL ratio vs BF16 | PPL change | One-sided 95% upper ratio |
+|---|---:|---:|---:|---:|
+| BF16 | 11.559050 | 1.000000 | +0.000% | 1.000000 |
+| DYN | 11.649150 | 1.007795 | +0.779% | 1.009332 |
+| SH1 | 11.640786 | 1.007071 | +0.707% | 1.008543 |
+| ST2 | 11.650949 | 1.007950 | +0.795% | 1.009565 |
+| LOOP | 11.652965 | 1.008125 | +0.812% | 1.009776 |

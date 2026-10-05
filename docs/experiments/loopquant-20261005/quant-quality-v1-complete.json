@@ -1,0 +1,36 @@
+{
+  "status": "complete",
+  "scope": "four INT4 tiny cases and three128-window static FP8 dev arms; no locked G2 claim",
+  "package_manifest_sha256": "660140eec289a63eb029a3671c447aa8bc64e23a98317cebe446c199c1f216cd",
+  "controller_pid": 25387,
+  "child_pids": [
+    25394,
+    25406,
+    25478,
+    25550
+  ],
+  "child_returncodes": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "controller_ssh_returncode": 0,
+  "archived_files": 19,
+  "file_manifest_sha256": "ace2f20ab89560f018c0485952eaba7d2cd1f251df8817b97e8057b7b7a2be81",
+  "local_archive_sha256": "63fd8c50832907722d9d1e3d67058b87c2ce43bf26b3341dc075073c209c7c28",
+  "retained_exports": [
+    "evidence/ouro-static-dev-v1-sh1/export",
+    "evidence/ouro-static-dev-v1-st2/export",
+    "evidence/ouro-static-dev-v1-loop/export"
+  ],
+  "tiny_test_payloads_removed": 4,
+  "own_readers": [],
+  "compute_apps": "",
+  "original_locks_take_release": {
+    "gpu0-perf.lock": 12895501670,
+    "heavy-io.lock": 12895501666
+  },
+  "timestamp": 1791171972.6701305,
+  "local_verification": "19 per-file hashes and dev-pair aggregation completed with local exit0"
+}

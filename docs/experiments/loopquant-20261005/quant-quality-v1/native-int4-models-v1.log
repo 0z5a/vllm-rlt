@@ -1,0 +1,4 @@
+{"model_family": "ouro", "graphs": false, "repeated_requests": 6, "physical_packed_weights": 14, "export_roundtrip": true, "captures": 0, "replays": 0, "test_payload_removed": true}
+{"model_family": "ouro", "graphs": true, "repeated_requests": 6, "physical_packed_weights": 14, "export_roundtrip": true, "captures": 3, "replays": 24, "test_payload_removed": true}
+{"model_family": "nanbeige", "graphs": false, "repeated_requests": 6, "physical_packed_weights": 14, "export_roundtrip": true, "captures": 0, "replays": 0, "test_payload_removed": true}
+{"model_family": "nanbeige", "graphs": true, "repeated_requests": 6, "physical_packed_weights": 14, "export_roundtrip": true, "captures": 2, "replays": 12, "test_payload_removed": true}
