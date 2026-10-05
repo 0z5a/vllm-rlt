@@ -30,8 +30,7 @@ engine error after admission.
 The initial integration had missing compact loop labels and failed tests.
 Its process26568 remains idle in its pre-fix HTTP wait; it has not been signalled,
 terminated or counted as a passing run. The complete passing suite ran from a
-separate immutable source snapshot. The final feature snapshot18cd202b passes [644 CPU tests and36 subtests](native-families-full-cpu-attempt4.log), with29 skipped and217 CUDA cases deselected. Native GPU INT4 reload/Graph/compact checks
-for these new families are queued. Full checkpoints, quality gates and paired
+separate immutable source snapshot. The final feature snapshot18cd202b passes [644 CPU tests and36 subtests](native-families-full-cpu-attempt4.log), with29 skipped and217 CUDA cases deselected. Native GPU INT4 reload/Graph/compact checks for these new families now pass in the64-case matrix below. Full checkpoints, quality gates and paired
 high-concurrency/multiple-batch E2E remain required.
 
 | Model | BF16 tok/s | Native INT4 tok/s | Paired speedup | Speed change |
@@ -68,3 +67,16 @@ The LoopFormer adapter snapshot also passes the
 29 skipped and217 GPU cases deselected.
 
 The final continuation-quality snapshot `a513200` passes [658 CPU tests and36 subtests](native-families-full-cpu-attempt6.log), with29 skipped and217 GPU cases deselected. Frozen GPU64-case qualification still uses source18cd202b; no result is inferred from the CPU suite.
+
+## Complete four-family tiny GPU qualification
+
+[All64 cases](native-families-v1/native-families-v1.json) pass on RTX5090 with the frozen source18cd202b: 16Ouro+32Nanbeige FP8 regressions and16INT4 cases across Ouro/Nanbeige/HRM/LoopFormer, Graph off/on and native/compact KV. INT4 checks match complete generated token/exit-depth sequences against decoded packed-weight references across two request lifetimes, verify identical native reloads, distinct stable physical packed pointers, unchanged protected parameter sets and empty KV after drain. This is tiny deployment qualification, not full-checkpoint accuracy or speed.
+
+| Family | FP8 cases | INT4 cases | Result | Full model speedup |
+|---|---:|---:|---|---|
+| Ouro | 16 | 4 | Pass | Not measured here |
+| Nanbeige | 32 | 4 | Pass | Not measured |
+| HRM-Text | — | 4 | Pass | Not measured |
+| LoopFormer | — | 4 | Pass | Not measured |
+
+The controller and child exited naturally0; all67 archived file sizes/hashes passed independent offbox verification. All64 temporary tensor payloads were removed after their cases passed; manifests and results remain. [Summary](native-families-v1/summary.json), [completion/cleanup](native-families-v1/complete.json). The later continuation scoring/differentiable adapter changes remain covered by658 CPU tests; this frozen GPU run does not add full-model quality evidence.
