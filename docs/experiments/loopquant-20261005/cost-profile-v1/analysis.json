@@ -1,0 +1,434 @@
+{
+  "scope": "instrumented cost only, not speedup or removable critical-path time",
+  "policies": [
+    {
+      "policy": "BF16",
+      "nvtx_label": "engine-BF16-C32-B512",
+      "nvtx_range_ns": 6816620751,
+      "kernel_calls": 703116,
+      "kernel_sum_ns": 3687713087,
+      "kernel_union_ns": 3679906332,
+      "groups": {
+        "other_kernels": {
+          "calls": 529886,
+          "sum_ns": 866053771,
+          "union_ns": 865033371,
+          "mean_ns": 1634.415272341598
+        },
+        "other_reductions": {
+          "calls": 49578,
+          "sum_ns": 177636219,
+          "union_ns": 177388445,
+          "mean_ns": 3582.9646012344183
+        },
+        "other_gemm_and_epilogue": {
+          "calls": 111892,
+          "sum_ns": 1826594880,
+          "union_ns": 1826590176,
+          "mean_ns": 16324.62445930004
+        },
+        "paged_attention": {
+          "calls": 11760,
+          "sum_ns": 817428217,
+          "union_ns": 817428217,
+          "mean_ns": 69509.20212585034
+        }
+      },
+      "producer_csv": [],
+      "cuda_api_top": [
+        {
+          "Time (%)": "39.3",
+          "Total Time (ns)": "1022346960",
+          "Num Calls": "2461",
+          "Avg (ns)": "415419.3",
+          "Med (ns)": "1648.0",
+          "Min (ns)": "640",
+          "Max (ns)": "10911168",
+          "StdDev (ns)": "1197755.2",
+          "Name": "cudaEventSynchronize"
+        },
+        {
+          "Time (%)": "27.4",
+          "Total Time (ns)": "712747034",
+          "Num Calls": "362",
+          "Avg (ns)": "1968914.5",
+          "Med (ns)": "1744916.0",
+          "Min (ns)": "1577748",
+          "Max (ns)": "6542346",
+          "StdDev (ns)": "649568.7",
+          "Name": "cudaGraphLaunch_v10000"
+        },
+        {
+          "Time (%)": "25.4",
+          "Total Time (ns)": "659912182",
+          "Num Calls": "153439",
+          "Avg (ns)": "4300.8",
+          "Med (ns)": "4036.0",
+          "Min (ns)": "3356",
+          "Max (ns)": "1716616",
+          "StdDev (ns)": "4606.4",
+          "Name": "cudaLaunchKernel"
+        },
+        {
+          "Time (%)": "3.2",
+          "Total Time (ns)": "83498935",
+          "Num Calls": "21796",
+          "Avg (ns)": "3830.9",
+          "Med (ns)": "3601.0",
+          "Min (ns)": "3033",
+          "Max (ns)": "58815",
+          "StdDev (ns)": "1172.4",
+          "Name": "cuLaunchKernel"
+        },
+        {
+          "Time (%)": "1.3",
+          "Total Time (ns)": "34724648",
+          "Num Calls": "4478",
+          "Avg (ns)": "7754.5",
+          "Med (ns)": "5636.0",
+          "Min (ns)": "2857",
+          "Max (ns)": "524332",
+          "StdDev (ns)": "10963.1",
+          "Name": "cudaMemcpyAsync"
+        },
+        {
+          "Time (%)": "1.3",
+          "Total Time (ns)": "34658824",
+          "Num Calls": "5921",
+          "Avg (ns)": "5853.5",
+          "Med (ns)": "4736.0",
+          "Min (ns)": "3599",
+          "Max (ns)": "1894209",
+          "StdDev (ns)": "24837.0",
+          "Name": "cuLaunchKernelEx"
+        },
+        {
+          "Time (%)": "0.4",
+          "Total Time (ns)": "10921301",
+          "Num Calls": "153439",
+          "Avg (ns)": "71.2",
+          "Med (ns)": "62.0",
+          "Min (ns)": "52",
+          "Max (ns)": "8260",
+          "StdDev (ns)": "62.9",
+          "Name": "cuKernelGetName"
+        },
+        {
+          "Time (%)": "0.3",
+          "Total Time (ns)": "8007976",
+          "Num Calls": "3403",
+          "Avg (ns)": "2353.2",
+          "Med (ns)": "752.0",
+          "Min (ns)": "378",
+          "Max (ns)": "748937",
+          "StdDev (ns)": "30656.5",
+          "Name": "cudaEventCreateWithFlags"
+        }
+      ],
+      "csv_sha256": "daa8c50da9f3350e05caa0caff22371cd2e93815e6b04c617772b940159e1936",
+      "sql_scope": "kernel intervals inside engine NVTX range; sum verified against nsys stats; category unions can overlap"
+    },
+    {
+      "policy": "DYN",
+      "nvtx_label": "engine-DYN-C32-B512",
+      "nvtx_range_ns": 7114365727,
+      "kernel_calls": 532718,
+      "kernel_sum_ns": 3387669255,
+      "kernel_union_ns": 3380336204,
+      "groups": {
+        "other_kernels": {
+          "calls": 365248,
+          "sum_ns": 624092383,
+          "union_ns": 623641930,
+          "mean_ns": 1708.6811782679165
+        },
+        "fused_fp8_producer": {
+          "calls": 47040,
+          "sum_ns": 140594396,
+          "union_ns": 140594396,
+          "mean_ns": 2988.8264455782314
+        },
+        "fp8_gemm": {
+          "calls": 82320,
+          "sum_ns": 1669094343,
+          "union_ns": 1669094343,
+          "mean_ns": 20275.68443877551
+        },
+        "paged_attention": {
+          "calls": 11760,
+          "sum_ns": 816650392,
+          "union_ns": 816650392,
+          "mean_ns": 69443.06054421769
+        },
+        "other_reductions": {
+          "calls": 26058,
+          "sum_ns": 101027555,
+          "union_ns": 100964643,
+          "mean_ns": 3877.0264410161944
+        },
+        "other_gemm_and_epilogue": {
+          "calls": 292,
+          "sum_ns": 36210186,
+          "union_ns": 36210186,
+          "mean_ns": 124007.48630136986
+        }
+      },
+      "producer_csv": [
+        {
+          "Time (%)": "4.2",
+          "Total Time (ns)": "140594396",
+          "Instances": "47040",
+          "Avg (ns)": "2988.8",
+          "Med (ns)": "2976.0",
+          "Min (ns)": "1215",
+          "Max (ns)": "5088",
+          "StdDev (ns)": "876.6",
+          "Name": "quantize_rows"
+        }
+      ],
+      "cuda_api_top": [
+        {
+          "Time (%)": "47.3",
+          "Total Time (ns)": "1258624741",
+          "Num Calls": "2474",
+          "Avg (ns)": "508740.8",
+          "Med (ns)": "1683.5",
+          "Min (ns)": "607",
+          "Max (ns)": "11210023",
+          "StdDev (ns)": "1407781.4",
+          "Name": "cudaEventSynchronize"
+        },
+        {
+          "Time (%)": "23.8",
+          "Total Time (ns)": "634545678",
+          "Num Calls": "362",
+          "Avg (ns)": "1752888.6",
+          "Med (ns)": "1545719.0",
+          "Min (ns)": "1477828",
+          "Max (ns)": "7932518",
+          "StdDev (ns)": "649887.3",
+          "Name": "cudaGraphLaunch_v10000"
+        },
+        {
+          "Time (%)": "22.1",
+          "Total Time (ns)": "588770949",
+          "Num Calls": "125791",
+          "Avg (ns)": "4680.5",
+          "Med (ns)": "4204.0",
+          "Min (ns)": "3235",
+          "Max (ns)": "2868108",
+          "StdDev (ns)": "8424.7",
+          "Name": "cudaLaunchKernel"
+        },
+        {
+          "Time (%)": "3.1",
+          "Total Time (ns)": "82341369",
+          "Num Calls": "18209",
+          "Avg (ns)": "4522.0",
+          "Med (ns)": "4076.0",
+          "Min (ns)": "3237",
+          "Max (ns)": "93717",
+          "StdDev (ns)": "2030.1",
+          "Name": "cuLaunchKernelEx"
+        },
+        {
+          "Time (%)": "1.2",
+          "Total Time (ns)": "33073277",
+          "Num Calls": "4478",
+          "Avg (ns)": "7385.7",
+          "Med (ns)": "5639.0",
+          "Min (ns)": "2795",
+          "Max (ns)": "432936",
+          "StdDev (ns)": "8903.3",
+          "Name": "cudaMemcpyAsync"
+        },
+        {
+          "Time (%)": "0.5",
+          "Total Time (ns)": "14513647",
+          "Num Calls": "64512",
+          "Avg (ns)": "225.0",
+          "Med (ns)": "195.0",
+          "Min (ns)": "180",
+          "Max (ns)": "7513",
+          "StdDev (ns)": "88.0",
+          "Name": "cudaGetDriverEntryPointByVersion_v12050"
+        },
+        {
+          "Time (%)": "0.4",
+          "Total Time (ns)": "9791322",
+          "Num Calls": "64512",
+          "Avg (ns)": "151.8",
+          "Med (ns)": "131.0",
+          "Min (ns)": "106",
+          "Max (ns)": "20683",
+          "StdDev (ns)": "127.5",
+          "Name": "cuTensorMapEncodeTiled"
+        },
+        {
+          "Time (%)": "0.3",
+          "Total Time (ns)": "9221682",
+          "Num Calls": "125791",
+          "Avg (ns)": "73.3",
+          "Med (ns)": "65.0",
+          "Min (ns)": "49",
+          "Max (ns)": "25351",
+          "StdDev (ns)": "98.9",
+          "Name": "cuKernelGetName"
+        }
+      ],
+      "csv_sha256": "e7aa46d6f8d10cdd33075fce98f15721b22cb53c16e011955f8a3df6c1e14e68",
+      "sql_scope": "kernel intervals inside engine NVTX range; sum verified against nsys stats; category unions can overlap"
+    },
+    {
+      "policy": "SH1",
+      "nvtx_label": "engine-SH1-C32-B512",
+      "nvtx_range_ns": 6965300893,
+      "kernel_calls": 531481,
+      "kernel_sum_ns": 3382809798,
+      "kernel_union_ns": 3375461231,
+      "groups": {
+        "other_kernels": {
+          "calls": 364366,
+          "sum_ns": 625150405,
+          "union_ns": 624722636,
+          "mean_ns": 1715.7210195243244
+        },
+        "fused_fp8_producer": {
+          "calls": 46944,
+          "sum_ns": 133661732,
+          "union_ns": 133661732,
+          "mean_ns": 2847.25911724608
+        },
+        "fp8_gemm": {
+          "calls": 82152,
+          "sum_ns": 1670396565,
+          "union_ns": 1670396565,
+          "mean_ns": 20332.999379199533
+        },
+        "paged_attention": {
+          "calls": 11736,
+          "sum_ns": 818612860,
+          "union_ns": 818612860,
+          "mean_ns": 69752.28868438992
+        },
+        "other_reductions": {
+          "calls": 26009,
+          "sum_ns": 101002886,
+          "union_ns": 100939079,
+          "mean_ns": 3883.3821369525936
+        },
+        "other_gemm_and_epilogue": {
+          "calls": 274,
+          "sum_ns": 33985350,
+          "union_ns": 33985350,
+          "mean_ns": 124034.12408759125
+        }
+      },
+      "producer_csv": [
+        {
+          "Time (%)": "4.0",
+          "Total Time (ns)": "133661732",
+          "Instances": "46944",
+          "Avg (ns)": "2847.3",
+          "Med (ns)": "2720.0",
+          "Min (ns)": "1216",
+          "Max (ns)": "4736",
+          "StdDev (ns)": "878.1",
+          "Name": "quantize_rows"
+        }
+      ],
+      "cuda_api_top": [
+        {
+          "Time (%)": "47.4",
+          "Total Time (ns)": "1238453862",
+          "Num Calls": "2399",
+          "Avg (ns)": "516237.5",
+          "Med (ns)": "1664.0",
+          "Min (ns)": "638",
+          "Max (ns)": "11256941",
+          "StdDev (ns)": "1405731.4",
+          "Name": "cudaEventSynchronize"
+        },
+        {
+          "Time (%)": "23.4",
+          "Total Time (ns)": "612498028",
+          "Num Calls": "361",
+          "Avg (ns)": "1696670.4",
+          "Med (ns)": "1541022.0",
+          "Min (ns)": "1473806",
+          "Max (ns)": "7101057",
+          "StdDev (ns)": "488438.4",
+          "Name": "cudaGraphLaunch_v10000"
+        },
+        {
+          "Time (%)": "22.4",
+          "Total Time (ns)": "585932079",
+          "Num Calls": "125753",
+          "Avg (ns)": "4659.4",
+          "Med (ns)": "4246.0",
+          "Min (ns)": "3281",
+          "Max (ns)": "1377555",
+          "StdDev (ns)": "5661.2",
+          "Name": "cudaLaunchKernel"
+        },
+        {
+          "Time (%)": "3.1",
+          "Total Time (ns)": "80937640",
+          "Num Calls": "18101",
+          "Avg (ns)": "4471.4",
+          "Med (ns)": "4096.0",
+          "Min (ns)": "3302",
+          "Max (ns)": "80857",
+          "StdDev (ns)": "1436.1",
+          "Name": "cuLaunchKernelEx"
+        },
+        {
+          "Time (%)": "1.2",
+          "Total Time (ns)": "31447789",
+          "Num Calls": "4451",
+          "Avg (ns)": "7065.3",
+          "Med (ns)": "5612.0",
+          "Min (ns)": "2868",
+          "Max (ns)": "86555",
+          "StdDev (ns)": "3552.2",
+          "Name": "cudaMemcpyAsync"
+        },
+        {
+          "Time (%)": "0.6",
+          "Total Time (ns)": "14520878",
+          "Num Calls": "64512",
+          "Avg (ns)": "225.1",
+          "Med (ns)": "195.0",
+          "Min (ns)": "175",
+          "Max (ns)": "2120",
+          "StdDev (ns)": "66.7",
+          "Name": "cudaGetDriverEntryPointByVersion_v12050"
+        },
+        {
+          "Time (%)": "0.4",
+          "Total Time (ns)": "10218195",
+          "Num Calls": "64512",
+          "Avg (ns)": "158.4",
+          "Med (ns)": "137.0",
+          "Min (ns)": "109",
+          "Max (ns)": "13344",
+          "StdDev (ns)": "102.1",
+          "Name": "cuTensorMapEncodeTiled"
+        },
+        {
+          "Time (%)": "0.3",
+          "Total Time (ns)": "8590642",
+          "Num Calls": "125753",
+          "Avg (ns)": "68.3",
+          "Med (ns)": "60.0",
+          "Min (ns)": "49",
+          "Max (ns)": "10270",
+          "StdDev (ns)": "58.3",
+          "Name": "cuKernelGetName"
+        }
+      ],
+      "csv_sha256": "47ef9a60c2f1691e1f8bce3a50616c5ba9f4a86dee1ca2a271b077f38a20466b",
+      "sql_scope": "kernel intervals inside engine NVTX range; sum verified against nsys stats; category unions can overlap"
+    }
+  ]
+}

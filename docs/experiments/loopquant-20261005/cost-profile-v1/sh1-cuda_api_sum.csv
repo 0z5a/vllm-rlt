@@ -1,0 +1,28 @@
+
+NOTICE: Existing SQLite export found: /root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.sqlite
+        It is assumed file was previously exported from: /root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.nsys-rep
+        Consider using --force-export=true if needed.
+
+Processing [/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.sqlite] with [/opt/nvidia/nsight-compute/2025.3.1/host/target-linux-x64/reports/cuda_api_sum.py]... 
+Time (%),Total Time (ns),Num Calls,Avg (ns),Med (ns),Min (ns),Max (ns),StdDev (ns),Name
+47.4,1238453862,2399,516237.5,1664.0,638,11256941,1405731.4,cudaEventSynchronize
+23.4,612498028,361,1696670.4,1541022.0,1473806,7101057,488438.4,cudaGraphLaunch_v10000
+22.4,585932079,125753,4659.4,4246.0,3281,1377555,5661.2,cudaLaunchKernel
+3.1,80937640,18101,4471.4,4096.0,3302,80857,1436.1,cuLaunchKernelEx
+1.2,31447789,4451,7065.3,5612.0,2868,86555,3552.2,cudaMemcpyAsync
+0.6,14520878,64512,225.1,195.0,175,2120,66.7,cudaGetDriverEntryPointByVersion_v12050
+0.4,10218195,64512,158.4,137.0,109,13344,102.1,cuTensorMapEncodeTiled
+0.3,8590642,125753,68.3,60.0,49,10270,58.3,cuKernelGetName
+0.3,7274945,13264,548.5,411.0,362,5069,375.0,cudaStreamWaitEvent
+0.2,4481398,18126,247.2,212.0,181,9427,124.3,cudaStreamIsCapturing_v10000
+0.2,4443324,3358,1323.2,1059.0,474,121573,2396.1,cudaEventRecordWithFlags_v11010
+0.1,3873951,4767,812.7,639.0,346,32477,740.9,cudaEventQuery
+0.1,3840614,3294,1165.9,699.0,368,383719,9948.8,cudaEventCreateWithFlags
+0.1,3579530,3294,1086.7,597.0,258,696736,15755.2,cudaEventDestroy
+0.1,1473063,274,5376.1,5198.5,4720,9302,638.8,cuLaunchKernel
+0.0,1048097,5,209619.4,148529.0,130000,388278,107927.6,cudaMalloc
+0.0,332826,274,1214.7,1167.0,970,10505,581.3,cuKernelGetFunction
+0.0,123552,1,123552.0,123552.0,123552,123552,0.0,cudaDeviceSynchronize
+0.0,20144,3,6714.7,890.0,689,18565,10263.2,cudaStreamSynchronize
+0.0,2688,1,2688.0,2688.0,2688,2688,0.0,cuProfilerStart
+
