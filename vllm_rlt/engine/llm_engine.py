@@ -11,6 +11,7 @@ from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS
 from vllm_rlt.models.hrm_text import HrmTextForCausalLM
 from vllm_rlt.models.huginn import HuginnForCausalLM
 from vllm_rlt.models.loopformer import LoopFormerForCausalLM
+from vllm_rlt.models.parcae import ParcaeForCausalLM
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
@@ -38,19 +39,19 @@ class LLMEngine:
         scheduler_config = scheduler_config or SchedulerConfig()
         parameter = next(model.parameters())
         config = model.config
-        if isinstance(model, HuginnForCausalLM):
+        if isinstance(model, (HuginnForCausalLM, ParcaeForCausalLM)):
             if cache_config.layout != "last_exited":
-                raise ValueError("Huginn requires last_exited KV")
+                raise ValueError("Huginn/Parcae require last_exited KV")
             if cache_config.enable_prefix_caching:
-                raise ValueError("Huginn prefix caching is not yet supported")
+                raise ValueError("Huginn/Parcae prefix caching is not yet supported")
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
-        if isinstance(model, HuginnForCausalLM):
+        if isinstance(model, (HuginnForCausalLM, ParcaeForCausalLM)):
             if self.execution_config.async_scheduling or self.execution_config.prefill_uva:
-                raise ValueError("Huginn requires synchronous scheduling without prefill UVA")
+                raise ValueError("Huginn/Parcae require synchronous scheduling without prefill UVA")
             if speculative_config is not None:
-                raise ValueError("Huginn speculative decoding is not yet supported")
-        if isinstance(model, (HrmTextForCausalLM, LoopFormerForCausalLM)):
+                raise ValueError("Huginn/Parcae speculative decoding is not yet supported")
+        if isinstance(model, (HrmTextForCausalLM, LoopFormerForCausalLM, ParcaeForCausalLM)):
             if (
                 cache_config.layout != "last_exited"
                 or cache_config.enable_prefix_caching
@@ -61,7 +62,7 @@ class LLMEngine:
                 or self.exit_config.mode not in ("ouro", "ouro_delayed")
             ):
                 raise ValueError(
-                    "HRM/LoopFormer require full-depth LAST_EXITED and torch/Triton "
+                    "HRM/LoopFormer/Parcae require full-depth LAST_EXITED and torch/Triton "
                     "without prefix reuse, preemption or speculation"
                 )
         self.speculative_config = speculative_config
@@ -142,7 +143,7 @@ class LLMEngine:
                 else {}
             ),
             recurrent_layers=model.recurrent_kv_layers
-            if isinstance(model, HuginnForCausalLM)
+            if isinstance(model, (HuginnForCausalLM, ParcaeForCausalLM))
             else None,
         )
         if self.execution_config.prefill_uva and (
@@ -205,6 +206,10 @@ class LLMEngine:
             max_loops != 8 or params.exit_threshold != 1.0
         ):
             raise ValueError("LoopFormer requires eight steps and exit_threshold=1")
+        if isinstance(self.model, ParcaeForCausalLM) and (
+            max_loops != config.total_ut_steps or params.exit_threshold != 1.0
+        ):
+            raise ValueError("Parcae requires full recurrence and exit_threshold=1")
         if isinstance(self.model, HrmTextForCausalLM):
             if len(prompt_token_ids) > self.scheduler.config.max_num_batched_tokens:
                 raise ValueError("HRM atomic prompt exceeds max_num_batched_tokens")

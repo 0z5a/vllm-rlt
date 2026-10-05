@@ -29,7 +29,7 @@ the whole alias stack and does not isolate the prefix increment.
 | Resident async/Graph | Rectangular and compact metadata ownership; all84 compact routing and24 replay arms exact | Natural Graph equivalence and broader contexts |
 | Admission credits | Sudden full-depth completion; fixed6GiB residency32→38 | Same-budget goodput, work/quality attribution and broader stress |
 | HTTP load | 24 real TCP arms /1,392 requests /72,384 tokens complete | Frozen SLO/open-loop curves and full formal cohorts |
-| HRM prefix-LM | Native adapter,131 official tensor shapes,214 affected CPU checks,72 tiny CUDA arms | Official high-concurrency inference and quality |
+| HRM prefix-LM | Native adapter,214 affected CPU checks,72 tiny CUDA arms;32 official sync arms exact through B512/C1024 (actual resident117) | Official async/Graph, quality and formal service performance |
 
 The HTTP experiment reports zero non-Graph candidate token/exit differences.
 Natural Graph totals are7 token /116 exit-different requests for alias and3 token
@@ -42,14 +42,15 @@ Natural Graph totals are7 token /116 exit-different requests for alias and3 toke
 | Ouro-1.4B-Thinking | 21 official synchronous arms at B1–128/C2B exact; formal speed/quality pending |
 | Ouro-2.6B | 24 official arms at B1–128/C2B; alias/compact exact, credits exit/work differences retained |
 | Ouro-2.6B-Thinking | Release pinned; execution pending |
-| Nanbeige4.2-3B | Tiny CUDA qualified; official shared assets prepared, full execution pending |
+| Nanbeige4.2-3B | 32 official sync arms /8,104 requests /1,037,312 tokens exact through actual B512 residency; async/Graph, quality and formal service pending |
 | Huginn-0125 | Tiny CUDA qualified; official asset readers and full execution pending |
-| HRM-Text-1B | All four assets verified; CPU and tiny CUDA/Graph qualified; official execution pending |
-| LoopFormer / Parcae | Public pinned config/source/card audit only; adapters and weights pending |
+| HRM-Text-1B | 32 official synchronous arms /8,104 requests /1,037,312 tokens exact; B512/C1024 caps at117 residents; broader matrix pending |
+| LoopFormer | Native adapter, actual author-forward check and 72 tiny CUDA arms; official weights pending |
+| Parcae | Native CPU adapter and FP32 author checks; BF16 P3/P7 logit checks fail; CUDA/official weights pending |
 
-[Model evidence](models.md), [Ouro-2.6B](ouro-2.6b.md), [HRM contract](hrm-text.md),
+[Model evidence](models.md), [Ouro-2.6B](ouro-2.6b.md), [Nanbeige](nanbeige.md), [HRM contract](hrm-text.md),
 [quality](quality.md), [delayed quality](delayed-quality.md),
-[profiling](profile.md), [compact CUDA](compact-resident-cuda.md).
+[profiling](profile.md), [compact CUDA](compact-resident-cuda.md), [Parcae](parcae.md).
 All negative results remain part of the evidence. Model files are retained while
 required tests or registered readers remain; no family is declared complete from
 a tiny-model check or one finite diagnostic.
