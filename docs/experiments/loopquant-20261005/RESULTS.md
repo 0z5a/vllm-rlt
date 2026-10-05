@@ -13,10 +13,10 @@ have not run; the earlier two 128-token gradient audits remain a separate result
 |---|---:|---:|---:|---:|---:|---|
 | Ouro-1.4B | — | — | — | — | — | G0 incomplete |
 | Ouro-2.6B | — | — | — | — | — | Official CPU exact; GPU/E2E pending |
-| Huginn-3.5B | — | — | — | — | — | Full official CPU96/96 exact; cached GPU pending |
+| Huginn-3.5B | — | — | — | — | — | Official CPU96/96 exact; tiny INT4 passes, FP8 mixed; full native G0 pending |
 | Nanbeige4.2-3B | — | — | — | — | — | Official CPU64/64 exact; full native GPU pending |
 | LoopFormer3×8 | — | — | — | — | — | Tiny INT4 and H20 FP8 pass; full quantized serving pending |
-| Parcae370M | — | — | — | — | — | Official dense CPU96/96 exact; quantized GPU pending |
+| Parcae370M | — | — | — | — | — | Official CPU96/96 exact; tiny FP8 passes, INT4 mixed; full native G0 pending |
 | HRM-Text-1B | — | — | — | — | — | Tiny INT4 and H20 FP8 pass; full quantized serving pending |
 
 ## Native FP8 correctness
