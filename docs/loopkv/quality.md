@@ -66,3 +66,10 @@ their elapsed seconds are not used as performance evidence.
 [corrected parity](evidence/quality-v1/compact-after-parity.json) preserve both
 outcomes. Multiple prompt lengths, more benchmarks, delayed policy and the other
 registered checkpoints remain outstanding.
+
+Resident diagnostic support now accepts the same verified byte-stop table for
+async and Graph execution. Four CPU cancellation/reuse cases cover native/alias
+routing with immediate/held coda delivery, including a stop split across token
+boundaries. The affected stop, alias-lifetime and counter suite passes11 tests.
+A finite CUDA stop/reuse gate and official delayed-policy GSM8K100 cohort are
+prepared; neither has executed yet. Existing quality scores above are unchanged.

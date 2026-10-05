@@ -107,8 +107,8 @@ def main():
     manifest = json.loads((args.model / "verified-manifest.json").read_text())
     stop_spec = None
     if args.quality_stops is not None:
-        if args.measure or args.profile_range or args.async_scheduling:
-            raise ValueError("quality text stops currently require synchronous diagnostic mode")
+        if args.measure or args.profile_range:
+            raise ValueError("quality text stops require diagnostic mode")
         stop_spec = json.loads(args.quality_stops.read_text())
         if (
             hashlib.sha256((args.model / "tokenizer.json").read_bytes()).hexdigest()
