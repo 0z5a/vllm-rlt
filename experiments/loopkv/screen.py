@@ -27,6 +27,9 @@ def main():
     parser.add_argument("--load-lock", type=Path, required=True)
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text())
+    device = torch.device(plan.get("device", "cuda"))
+    cuda = device.type == "cuda"
+    backend = plan.get("attention_backend", "triton" if cuda else "torch")
     source = Path(__file__).resolve().parents[2]
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
     assert sha == plan["source_sha"]
@@ -51,7 +54,9 @@ def main():
             "driver_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "pid": os.getpid(),
             "torch": torch.__version__,
-            "gpu": torch.cuda.get_device_name(),
+            "device": str(device),
+            "attention_backend": backend,
+            "gpu": torch.cuda.get_device_name(device) if cuda else None,
             "quality_stops_sha256": hashlib.sha256(stops_path.read_bytes()).hexdigest()
             if stops_path
             else None,
@@ -60,21 +65,22 @@ def main():
             else "official_weight_diagnostic_not_performance_or_quality",
         },
     )
-    torch.set_num_threads(4)
+    torch.set_num_threads(plan.get("cpu_threads", 4))
     torch.manual_seed(17)
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
     with args.load_lock.open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        model = load_model(model_path, torch.device("cuda"), torch.bfloat16)
-        torch.cuda.synchronize()
+        model = load_model(model_path, device, torch.bfloat16)
+        if cuda:
+            torch.cuda.synchronize(device)
     dump(args.out / "MODEL_LOADED.json", {"unix": time.time(), "pid": os.getpid()})
     for case in plan["cases"]:
         baselines = {}
         for arm in plan["arms"]:
             engine = LLMEngine(
                 model,
-                attention_backend="triton",
+                attention_backend=backend,
                 exit_config=ExitConfig(plan["policy"]),
                 cache_config=CacheConfig(
                     case["blocks"],
@@ -92,7 +98,8 @@ def main():
                     cuda_graphs=arm["graphs"],
                 ),
             )
-            torch.cuda.reset_peak_memory_stats()
+            if cuda:
+                torch.cuda.reset_peak_memory_stats(device)
             counters = WorkCounters()
             # Match stochastic recurrent initialization across storage arms.
             torch.manual_seed(plan.get("state_seed", 17))
@@ -134,8 +141,8 @@ def main():
                     for rid, row in completed.items()
                 ),
                 "exact_request_objects": completed == baseline,
-                "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
-                "peak_reserved_bytes": torch.cuda.max_memory_reserved(),
+                "peak_allocated_bytes": torch.cuda.max_memory_allocated(device) if cuda else None,
+                "peak_reserved_bytes": torch.cuda.max_memory_reserved(device) if cuda else None,
                 "free_blocks_after_drain": engine.cache_manager.num_free_blocks,
                 **counters.summary(),
             }
@@ -163,7 +170,8 @@ def main():
             engine.close()
             del engine
             gc.collect()
-            torch.cuda.empty_cache()
+            if cuda:
+                torch.cuda.empty_cache()
     dump(args.out / "DONE.json", {"returncode": 0, "end_unix": time.time()})
 
 

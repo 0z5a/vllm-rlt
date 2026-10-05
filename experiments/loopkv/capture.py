@@ -46,7 +46,8 @@ def drive(engine, prompts, params, *, trace, stop_spec=None, counters=None):
 
         pieces = tuple(bytes.fromhex(value) for value in stop_spec["token_bytes_hex"])
         matchers = {str(i): ByteStops(pieces, stop_spec["stops"]) for i in range(len(prompts))}
-    torch.cuda.synchronize()
+    if engine.model_runner.device.type == "cuda":
+        torch.cuda.synchronize(engine.model_runner.device)
     start = time.perf_counter()
     for index, prompt in enumerate(prompts):
         engine.add_request(str(index), prompt, params)
@@ -76,7 +77,8 @@ def drive(engine, prompts, params, *, trace, stop_spec=None, counters=None):
                     }
                 )
     engine.model_runner.synchronize()
-    torch.cuda.synchronize()
+    if engine.model_runner.device.type == "cuda":
+        torch.cuda.synchronize(engine.model_runner.device)
     elapsed = time.perf_counter() - start
     serialized = {rid: asdict(output) for rid, output in completed.items()}
     for rid, (text, offset) in matches.items():
