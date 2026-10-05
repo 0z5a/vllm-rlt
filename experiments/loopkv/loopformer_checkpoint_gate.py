@@ -5,13 +5,16 @@ import hashlib
 import importlib.util
 import json
 import sys
+from contextlib import ExitStack
 from pathlib import Path
+from unittest.mock import patch
 
 import torch
 
 from experiments.loopkv.checkpoint import load_model
 from tests.reference.loopformer import dense_loopformer_reference
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
+from vllm_rlt.kernels.paged_attention import torch_paged_attention
 from vllm_rlt.models import LoopFormerForCausalLM
 
 
@@ -49,6 +52,27 @@ def greedy_difference(reference, actual):
     }
 
 
+def conditioning_errors(native, original, rows, dtype):
+    """Observe B1 versus flattened-row conditioning, without changing either path."""
+    embedding_error = modulation_error = 0.0
+    for depth in range(8):
+        time = torch.tensor([depth / 8], dtype=dtype)
+        step = torch.full_like(time, 1 / 8)
+        expected = original.time_embedder(time) + original.dt_embedder(step)
+        observed = native.gpt.time_embedder(time.expand(rows)) + native.gpt.dt_embedder(
+            step.expand(rows)
+        )
+        embedding_error = max(embedding_error, float((observed - expected).abs().max()))
+        for left, right in zip(original.transformer.h.blocks, native.gpt.transformer.h.blocks):
+            difference = right.adaLN_modulation(observed) - left.adaLN_modulation(expected)
+            modulation_error = max(modulation_error, float(difference.abs().max()))
+    return {
+        "rows": rows,
+        "embedding_max_abs": embedding_error,
+        "modulation_max_abs": modulation_error,
+    }
+
+
 @torch.inference_mode()
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -57,7 +81,10 @@ def main():
     parser.add_argument("--prompts", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--prefill-only", action="store_true")
+    parser.add_argument("--shared-attention-diagnostic", action="store_true")
+    parser.add_argument("--matched-conditioning-diagnostic", action="store_true")
     args = parser.parse_args()
+    assert not args.matched_conditioning_diagnostic or args.prefill_only
     source_hash = hashlib.sha256(args.author_source.read_bytes()).hexdigest()
     assert source_hash == "a4fdd1330a88a859f5f726a15fdce5b6c37d523fd7f04b9c9765d6c58133e665"
     manifest = json.loads((args.model / "verified-manifest.json").read_text())
@@ -89,6 +116,25 @@ def main():
     weights["lm_head.weight"] = weights["transformer.wte.weight"]
     original.load_state_dict(weights, strict=True, assign=True)
     del weights
+    attention_calls = 0
+    conditioning_calls = 0
+
+    def shared_attention(q, k, v, attn_mask=None, dropout_p=0, is_causal=False):
+        nonlocal attention_calls
+        attention_calls += 1
+        assert is_causal and attn_mask is None and dropout_p == 0 and q.shape == k.shape == v.shape
+        batch, heads, length, width = q.shape
+        tables = torch.arange(batch).repeat_interleave(length)[:, None]
+        lengths = torch.arange(1, length + 1).repeat(batch)
+        output = torch_paged_attention(
+            q.transpose(1, 2).reshape(-1, heads, width),
+            k.transpose(1, 2),
+            v.transpose(1, 2),
+            tables,
+            lengths,
+        )
+        return output.reshape(batch, length, heads, width).transpose(1, 2)
+
     rows = []
     for dtype, atol, rtol in ((torch.float32, 3e-6, 3e-5), (torch.bfloat16, 0.03, 0.02)):
         native.to(dtype)
@@ -96,7 +142,13 @@ def main():
         for count in (1, 7, 33):
             tokens = torch.tensor(prompt[: count + 2])
             captured = [[] for _ in range(cfg.n_layer)]
+            author_states = []
             handles = []
+            handles.append(
+                original.transformer.h.register_forward_hook(
+                    lambda _module, _inputs, output: author_states.append(output[0].clone())
+                )
+            )
             for layer, block in enumerate(original.transformer.h.blocks):
 
                 def capture(_module, _inputs, output, layer=layer):
@@ -108,7 +160,25 @@ def main():
                     )
 
                 handles.append(block.attn.c_attn.register_forward_hook(capture))
-            author_logits, _ = original(tokens[None])
+            with ExitStack() as stack:
+                if args.shared_attention_diagnostic:
+                    stack.enter_context(
+                        patch.object(author.F, "scaled_dot_product_attention", shared_attention)
+                    )
+                if args.matched_conditioning_diagnostic:
+                    modules = [original.time_embedder, original.dt_embedder] + [
+                        block.adaLN_modulation for block in original.transformer.h.blocks
+                    ]
+                    for module in modules:
+
+                        def expanded(value, forward=module.forward):
+                            nonlocal conditioning_calls
+                            conditioning_calls += 1
+                            assert value.shape[0] == 1
+                            return forward(value.expand(len(tokens), *value.shape[1:]))[:1]
+
+                        stack.enter_context(patch.object(module, "forward", expanded))
+                author_logits, _ = original(tokens[None])
             for handle in handles:
                 handle.remove()
             states, dense_logits, dense_kv = dense_loopformer_reference(native, tokens)
@@ -118,6 +188,8 @@ def main():
             assert cache.allocate("checkpoint", len(tokens))
             native_logits = []
             state_checks = []
+            author_state_checks = []
+            author_states_exact = author_kv_exact = True
             chunks = (
                 [list(range(len(tokens)))]
                 if args.prefill_only
@@ -140,9 +212,15 @@ def main():
                             positions=positions,
                         )
                     )
+                    wanted = author_states[depth][positions]
+                    actual = hidden[:, : cfg.n_embd]
+                    author_state_checks.append(error(wanted, actual, atol, rtol))
+                    author_states_exact &= torch.equal(
+                        wanted.contiguous().view(torch.uint8), actual.contiguous().view(torch.uint8)
+                    )
                 native_logits.append(native.coda(hidden))
             native_logits = torch.cat(native_logits)
-            author_kv, native_kv = [], []
+            author_kv, native_kv, native_author_kv = [], [], []
             for (depth, layer), wanted in dense_kv.items():
                 assert len(captured[layer]) == 8
                 for reference, observed, cached in zip(
@@ -155,6 +233,11 @@ def main():
                     )
                     native_kv.append(
                         dict(error(reference, cached, atol, rtol), depth=depth, layer=layer)
+                    )
+                    native_author_kv.append(error(observed, cached, atol, rtol))
+                    author_kv_exact &= torch.equal(
+                        observed.contiguous().view(torch.uint8),
+                        cached.contiguous().view(torch.uint8),
                     )
             cache.free("checkpoint")
 
@@ -175,6 +258,19 @@ def main():
                 "rtol": rtol,
                 "author_logits": error(dense_logits, author_logits[0], atol, rtol),
                 "native_logits": error(dense_logits, native_logits, atol, rtol),
+                "native_author_logits": error(author_logits[0], native_logits, atol, rtol),
+                "native_author_bitwise_equal": torch.equal(
+                    author_logits[0].contiguous().view(torch.uint8),
+                    native_logits.contiguous().view(torch.uint8),
+                ),
+                "native_author_kv": aggregate(native_author_kv),
+                "native_author_kv_bitwise_equal": author_kv_exact,
+                "native_author_states": aggregate(author_state_checks),
+                "native_author_states_bitwise_equal": author_states_exact,
+                "conditioning": [
+                    conditioning_errors(native, original, size, dtype)
+                    for size in sorted({len(positions) for positions in chunks})
+                ],
                 "author_kv": aggregate(author_kv),
                 "native_kv": aggregate(native_kv),
                 "native_states": aggregate(state_checks),
@@ -192,7 +288,14 @@ def main():
             args.out.write_text(
                 json.dumps(
                     {
-                        "scope": "official weights; CPU teacher forcing, not task quality or speed",
+                        "scope": (
+                            "author arithmetic diagnostic; not unchanged author qualification"
+                            if args.shared_attention_diagnostic
+                            or args.matched_conditioning_diagnostic
+                            else "official weights; CPU teacher forcing, not task quality or speed"
+                        ),
+                        "substituted_attention_calls": attention_calls,
+                        "expanded_conditioning_calls": conditioning_calls,
                         "source_sha256": source_hash,
                         "checkpoint": manifest,
                         "torch": torch.__version__,

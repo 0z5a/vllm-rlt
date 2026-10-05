@@ -91,8 +91,8 @@ All author argmax IDs match the dense oracle. For BF16 P33, the native path firs
 differs at absolute position 30: the oracle/author selects token 257 and native
 selects 4572, with a 0.0625 top-two logit margin in each path. The same divergence
 and BF16 error counts occur in the full-prefill diagnostic. Therefore incremental
-decode alone does not explain this discrepancy. The actual reduction/conditioning
-source has not yet been isolated; tolerances have not been widened.
+decode alone does not explain this discrepancy. The arithmetic diagnostics below isolate attention and conditioning-row effects
+on these fixtures. Tolerances have not been widened.
 
 The cached run's maximum all-KV errors are 1.11e-4 in FP32 and 0.25 in BF16;
 the author-vs-dense maxima are 3.24e-5 and 0.703125 respectively. The raw report
@@ -115,3 +115,40 @@ install packages. CPU PyTorch 2.13.0 was used.
 [Official checkpoint raw results and source hashes](evidence/loopformer-official-cpu.json).
 These findings leave author-equivalence and GPU/quality qualification open;
 they do not establish a zero-copy storage regression or an end-to-end speedup.
+
+
+## Attention and conditioning arithmetic isolation
+
+Four diagnostic settings each run the complete official weights on CPU with
+all P+2 inputs in one prefill. In addition to logits, the harness now compares
+every layer/depth K and V and every recurrent hidden state directly with the
+author forward. Exactness is checked through tensor bytes, including signed zero.
+The unmodified author setting reproduces all earlier full-prefill measurements.
+
+The attention substitution runs the author's Q/K/V through native CPU paged
+arithmetic. The conditioning diagnostic evaluates the author's time/dt and
+AdaLN modules with the same repeated row count as native, then selects the first
+identical row for the author's broadcast. Neither diagnostic changes the pinned
+source file or the production adapter; the changes exist only inside the test
+context. The conditioning option requires `--prefill-only`.
+
+| Author diagnostic | Attention substitutions | Conditioning-row expansions | FP32 logits + all KV + states byte-exact | BF16 logits + all KV + states byte-exact | Max FP32 / BF16 native-author logit error | Speedup |
+|---|---:|---:|---|---|---|---|
+| Unmodified | 0 | 0 | 0/3 | 0/3 | 6.866455e-05 / 0.5351562 | Not measured |
+| Native attention only | 144 | 0 | 0/3 | 3/3 | 6.67572e-05 / 0 | Not measured |
+| Matched conditioning rows only | 0 | 240 | 0/3 | 0/3 | 4.1008e-05 / 0.5351562 | Not measured |
+| Both substitutions | 144 | 240 | 3/3 | 3/3 | 0 / 0 | Not measured |
+
+The original B1-versus-flattened-row FP32 conditioning check observes a maximum
+embedding difference of 4.00543e-5 and modulation difference of 3.43323e-5. BF16
+conditioning differences are zero for these shapes. Attention alone therefore
+reconciles BF16; both substitutions reconcile FP32 as well. This supports an
+arithmetic explanation for the observed official-weight differences on these
+fixtures, not an original-backend equivalence claim for other inputs or devices.
+
+Reproduce with the official command above plus `--prefill-only`; add
+`--shared-attention-diagnostic`, `--matched-conditioning-diagnostic`, or both for
+the respective row. The independent dense-oracle budgets remain unchanged and
+still fail, so all four processes naturally return one after recording all six
+cases. Diagnostic agreement does not turn those original gate failures into passes.
+[All four settings, tensor-byte checks and process receipts](evidence/loopformer-arithmetic-isolation.json).
