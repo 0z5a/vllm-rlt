@@ -111,7 +111,14 @@ class CompactKVCacheManager(AliasKVCacheManager):
         return records
 
     def _prepare_batches(
-        self, request_ids, depth_sets, positions, *, for_write=True, packed_prefill=False
+        self,
+        request_ids,
+        depth_sets,
+        positions,
+        *,
+        for_write=True,
+        packed_prefill=False,
+        read_lengths=None,
     ):
         if packed_prefill:
             raise ValueError("compact packed prefill is not implemented")
@@ -120,6 +127,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
         batches = []
         for depths in depth_sets:
             rows = tuple(self._validate_rows(request_ids, depths, positions))
+            explicit_lengths = self._validate_read_lengths(rows, read_lengths)
             records = self._reserve_records(rows, for_write=for_write)
             n = len(rows)
             wide = self._stage(
@@ -133,7 +141,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
             narrow = self._stage(
                 [a.max_tokens for a, _, _ in rows]
                 + [depth for _, depth, _ in rows]
-                + [p + 1 for _, _, p in rows],
+                + (list(explicit_lengths) if explicit_lengths else [p + 1 for _, _, p in rows]),
                 torch.int32,
             )
             pointers, position_ids, record_ids = wide[:n], wide[n : 2 * n], wide[2 * n : 3 * n]
@@ -157,6 +165,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
                     block_tables=torch.empty((len(rows), 0), dtype=torch.int32, device=self.device),
                     context_lengths=narrow[2 * n : 3 * n],
                     writable=for_write,
+                    read_lengths=explicit_lengths,
                     query_depths=query_depths,
                     record_map_pointers=pointers,
                     record_map_widths=widths,
@@ -194,8 +203,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
         self._validate_layer(layer)
         self._require_live_batch(batch)
         self._validate_tensor(q, len(batch.position_ids), "q", query=True)
-        for allocation, depth, position in batch.rows:
-            self._require_prefix(allocation, layer, depth, position + 1)
+        self._require_readable_batch(layer, batch)
         from vllm_rlt.kernels.triton_attention import paged_attention
 
         return paged_attention(
