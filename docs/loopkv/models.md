@@ -71,3 +71,7 @@ using tiny generated weights, not official checkpoint qualification.
 |---|---|---|---|
 | Tiny Nanbeige | B1–128 / C2B | Exact tokens/exits; all credits returned | Not measured |
 | Tiny Huginn | B1–128 / C2B | Exact tokens/exits; all credits returned | Not measured |
+
+## Ouro 2.6B official checkpoint
+
+[All24 synchronous original-policy cache diagnostics](ouro-2.6b.md) completed with exact output tokens at B1–128/C2B. Alias/compact request objects match native; credits at B128 raise residency64→75 and change252/256 exit sequences. This is correctness/capacity evidence, not timing or quality.
