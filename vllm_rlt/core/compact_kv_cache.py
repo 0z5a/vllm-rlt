@@ -135,7 +135,8 @@ class CompactKVCacheManager(AliasKVCacheManager):
                 + [p for _, _, p in rows]
                 + records
                 + [record // self.block_size for record in records]
-                + [record % self.block_size for record in records],
+                + [record % self.block_size for record in records]
+                + [depth for _, depth, _ in rows],
                 torch.int64,
             )
             narrow = self._stage(
@@ -160,6 +161,7 @@ class CompactKVCacheManager(AliasKVCacheManager):
                     rows=rows,
                     allocations=tuple(dict(zip(request_ids, (a for a, _, _ in rows))).items()),
                     position_ids=position_ids,
+                    loop_ids=wide[5 * n : 6 * n],
                     write_blocks=wide[3 * n : 4 * n],
                     write_offsets=wide[4 * n : 5 * n],
                     block_tables=torch.empty((len(rows), 0), dtype=torch.int32, device=self.device),
