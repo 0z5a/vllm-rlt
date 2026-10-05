@@ -1,0 +1,14 @@
+{
+  "source_commit": "7d6e08edf6327797337f361421245539ac0283e8",
+  "manifest_sha256": "277f924b3b509b1691786e45bc75828dd961a526d9d6c8bf544cc275df93df04",
+  "python": "3.12.3",
+  "python_executable": "/root/miniconda3/bin/python",
+  "torch": "2.12.1+cu130",
+  "torch_cuda": "13.0",
+  "device": "NVIDIA GeForce RTX 5090",
+  "total_device_bytes": 33668988928,
+  "torch_allocator_limit_bytes": 12884901888,
+  "limit_excludes_cuda_context_and_non_torch_allocators": true,
+  "score_atol": 0.02,
+  "timing_scope": "overlapped qualification; not performance"
+}
