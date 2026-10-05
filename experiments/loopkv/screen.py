@@ -34,6 +34,13 @@ def main():
     args.out.mkdir(parents=True, exist_ok=False)
     model_path, prompt_path = Path(plan["model"]), Path(plan["prompts"])
     prompts = json.loads(prompt_path.read_text())
+    stops_path = Path(plan["quality_stops"]) if plan.get("quality_stops") else None
+    stop_spec = json.loads(stops_path.read_text()) if stops_path else None
+    if stop_spec:
+        assert (
+            hashlib.sha256((model_path / "tokenizer.json").read_bytes()).hexdigest()
+            == stop_spec["tokenizer_sha256"]
+        )
     dump(
         args.out / "plan.json",
         {
@@ -45,7 +52,12 @@ def main():
             "pid": os.getpid(),
             "torch": torch.__version__,
             "gpu": torch.cuda.get_device_name(),
-            "scope": "official_weight_diagnostic_not_performance_or_quality",
+            "quality_stops_sha256": hashlib.sha256(stops_path.read_bytes()).hexdigest()
+            if stops_path
+            else None,
+            "scope": "quality_generation_not_performance"
+            if stop_spec
+            else "official_weight_diagnostic_not_performance_or_quality",
         },
     )
     torch.set_num_threads(4)
@@ -91,10 +103,11 @@ def main():
                     max_loops=plan["max_loops"],
                     exit_threshold=plan["threshold"],
                     seed=17,
-                    ignore_eos=True,
+                    ignore_eos=stop_spec is None,
                 ),
                 trace=True,
                 counters=counters,
+                stop_spec=stop_spec,
             )
             folder = args.out / f"{case['name']}-{arm['name']}"
             folder.mkdir()
