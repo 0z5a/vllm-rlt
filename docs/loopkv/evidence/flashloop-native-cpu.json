@@ -1,0 +1,79 @@
+{
+  "scope": "tiny adapted FlashLoop dense control; no packed codec, official model or speed qualification",
+  "source_pin": "aeaadee10d75b7aa8c4a42a809f15c75d6d3bdc6",
+  "cases": [
+    {
+      "dtype": "torch.float32",
+      "prompt": 1,
+      "decode": 2,
+      "max_logit": 5.438923835754395e-07,
+      "max_kv": 6.854534149169922e-07,
+      "logit_failed_elements": 0,
+      "kv_failed_elements": 0,
+      "greedy_exact": true,
+      "atol": 3e-06,
+      "rtol": 3e-05
+    },
+    {
+      "dtype": "torch.float32",
+      "prompt": 7,
+      "decode": 2,
+      "max_logit": 2.0191073417663574e-06,
+      "max_kv": 3.4868717193603516e-06,
+      "logit_failed_elements": 0,
+      "kv_failed_elements": 0,
+      "greedy_exact": true,
+      "atol": 3e-06,
+      "rtol": 3e-05
+    },
+    {
+      "dtype": "torch.float32",
+      "prompt": 65,
+      "decode": 2,
+      "max_logit": 1.578591763973236e-06,
+      "max_kv": 4.246830940246582e-06,
+      "logit_failed_elements": 0,
+      "kv_failed_elements": 0,
+      "greedy_exact": true,
+      "atol": 3e-06,
+      "rtol": 3e-05
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "prompt": 1,
+      "decode": 2,
+      "max_logit": 0.0,
+      "max_kv": 0.0,
+      "logit_failed_elements": 0,
+      "kv_failed_elements": 0,
+      "greedy_exact": true,
+      "atol": 0.03,
+      "rtol": 0.02
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "prompt": 7,
+      "decode": 2,
+      "max_logit": 0.0390625,
+      "max_kv": 0.0439453125,
+      "logit_failed_elements": 1,
+      "kv_failed_elements": 209,
+      "greedy_exact": true,
+      "atol": 0.03,
+      "rtol": 0.02
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "prompt": 65,
+      "decode": 2,
+      "max_logit": 0.022705078125,
+      "max_kv": 0.0546875,
+      "logit_failed_elements": 0,
+      "kv_failed_elements": 2130,
+      "greedy_exact": true,
+      "atol": 0.03,
+      "rtol": 0.02
+    }
+  ],
+  "bridge_sha256": "dd4c2057316587a12d7a01b64053c86fafbd483d644c6e6a297550d723edd708"
+}
