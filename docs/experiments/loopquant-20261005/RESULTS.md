@@ -533,3 +533,29 @@ The [fixed-global fused producer](F2_PREFLIGHT.md) and64-case native/Graph probe
 [All64 tiny GPU cases](native-families-v1/summary.json) pass in the separately integrated [family adapter draft](https://github.com/0z5a/vllm-rlt/pull/23):48 updated Ouro/Nanbeige FP8 regressions plus16 INT4 cases across Ouro/Nanbeige/HRM/LoopFormer, Graph off/on and native/compact KV.67 files were verified offbox and64 temporary weight payloads cleaned. Full family checkpoint quality and performance remain pending.
 
 Latest H20 boundary repair verification: Parcae FP8 16/16 and Huginn INT4 2/2 pass. Huginn FP8 DYN 4/4 pass but first SH1 sequence comparison fails; Parcae INT4 native eager passes but compact/static synchronous construction fails. See [mixed result and raw evidence](ASSOCIATIVE_IO.md#h20-boundary-repair-verification). Full-checkpoint E2E and memory savings remain unmeasured for these families.
+
+
+## Ouro SDPA reference control on tiny CPU weights
+
+The native-cache diagnostic now reproduces a numerical mismatch locally at the
+unchanged `atol=0.02, rtol=0.02` budget. Seed17, tiny BF16 weights, token inputs,
+R1/2/3/4 states/readout, full/incremental execution and native Torch cache are
+fixed. Only reference SDPA selection changes between the two arms.
+
+| Reference SDPA | Cache cases | Failed state comparisons | Failed logit comparisons | State max absolute error | Argmax / prior KV |
+|---|---:|---:|---:|---:|---|
+| Automatic | 4 | 6 | 0 | 0.0390625 | All exact |
+| Explicit math | 4 | 0 | 0 | 0 | All exact |
+
+This isolates the tiny-model difference to reference attention arithmetic;
+no production kernel, tolerance or cache policy changes. The automatic arm
+naturally exits1; the math arm naturally exits0. The earlier import failure is
+also retained. These are CPU diagnostics with synthetic weights, not complete
+Ouro weights, a GPU G0 pass, a speedup or permission to begin hyperparameter
+search. Both reference choices need separate full-checkpoint GPU evidence.
+
+[Raw summary](ouro-sdpa-control-v1/ouro-g0-sdpa-control-summary.json),
+[automatic arm](ouro-sdpa-control-v1/tiny-ouro-h20-g0-attempt2.json),
+[math arm](ouro-sdpa-control-v1/tiny-ouro-h20-g0-math-attempt1.json),
+[runner](ouro-sdpa-control-v1/probe.py). Earlier full-checkpoint GPU failures
+remain unchanged and unresolved.

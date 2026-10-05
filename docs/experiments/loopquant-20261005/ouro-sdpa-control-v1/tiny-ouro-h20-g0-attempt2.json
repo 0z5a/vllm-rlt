@@ -1,0 +1,624 @@
+{
+  "status": "inconclusive",
+  "records": [
+    {
+      "request_id": "tiny-5",
+      "tokens": 5,
+      "incremental": false,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": false,
+          "exact": false,
+          "max_abs": 0.0390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.004150390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-5",
+      "tokens": 5,
+      "incremental": true,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.017578125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0166015625
+        },
+        {
+          "within_budget": false,
+          "exact": false,
+          "max_abs": 0.0390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.004150390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.001953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.003662109375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-7",
+      "tokens": 7,
+      "incremental": false,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": false,
+          "exact": false,
+          "max_abs": 0.0390625
+        },
+        {
+          "within_budget": false,
+          "exact": false,
+          "max_abs": 0.0279541015625
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0048828125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0048828125
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-7",
+      "tokens": 7,
+      "incremental": true,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.017578125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0166015625
+        },
+        {
+          "within_budget": false,
+          "exact": false,
+          "max_abs": 0.0390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.03125
+        },
+        {
+          "within_budget": false,
+          "exact": false,
+          "max_abs": 0.0279541015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0234375
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.004150390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.001953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.003662109375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00244140625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0048828125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0048828125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0029296875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    }
+  ],
+  "full_checkpoint": false,
+  "atol": 0.02,
+  "rtol": 0.02,
+  "loops": 4,
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "backend": "torch",
+  "torch_version": "2.13.0",
+  "start_unix": 1791223777.93328,
+  "end_unix": 1791223777.989116,
+  "runner_sha256": "b900b0cb6a76811fea13a24b8d9f919a7bcad0e584410b05507ba4231ef2c63c",
+  "scope": "Native BF16 vs dense SDPA adapter, R1/2/3/4 state and readout, full/incremental cache. No PTQ/QAT search, quality or timing; separate from UNKNOWN old5090 INT4 job."
+}

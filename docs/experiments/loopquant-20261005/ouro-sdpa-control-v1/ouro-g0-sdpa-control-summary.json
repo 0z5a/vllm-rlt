@@ -1,0 +1,27 @@
+{
+  "scope": "Tiny CPU diagnostic only. Same seed17, weights, token inputs and native cache; default SDPA versus explicitly selected math SDPA reference. Unchanged atol=.02/rtol=.02. Original default failures retained; no full-checkpoint/GPU G0 or production change.",
+  "results": [
+    {
+      "label": "tiny-ouro-h20-g0-attempt2",
+      "status": "inconclusive",
+      "cases": 4,
+      "state_failures": 6,
+      "logit_failures": 0,
+      "state_max_abs": 0.0390625,
+      "all_argmax_exact": true,
+      "all_prior_kv_exact": true,
+      "raw_sha256": "23ccbecdbacf848e2b0bf8a4df28a2366195ede4eb2573cbf14683b247bc1377"
+    },
+    {
+      "label": "tiny-ouro-h20-g0-math-attempt1",
+      "status": "pass",
+      "cases": 4,
+      "state_failures": 0,
+      "logit_failures": 0,
+      "state_max_abs": 0.0,
+      "all_argmax_exact": true,
+      "all_prior_kv_exact": true,
+      "raw_sha256": "2697f83eaed21b607ed1e52ab9d2a13f4cb16633770cf719b88779ea337225e7"
+    }
+  ]
+}
