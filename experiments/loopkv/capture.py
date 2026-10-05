@@ -105,6 +105,7 @@ def main():
     parser.add_argument("--checkpoint-reader", choices=("native", "torch"), default="native")
     parser.add_argument("--async-scheduling", action="store_true")
     parser.add_argument("--graphs", action="store_true")
+    parser.add_argument("--prefill-batch-metadata", action="store_true")
     parser.add_argument("--measure", action="store_true")
     parser.add_argument("--profile-range", action="store_true")
     parser.add_argument("--quality-stops", type=Path)
@@ -147,6 +148,7 @@ def main():
     )
     execution = ExecutionConfig(
         async_scheduling=args.async_scheduling,
+        prefill_batch_metadata=args.prefill_batch_metadata,
         static_buffers=args.graphs,
         cuda_graphs=args.graphs,
     )

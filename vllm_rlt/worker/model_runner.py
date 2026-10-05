@@ -279,6 +279,8 @@ class ModelRunner:
             self._save(item.request, hidden[offset - 1])
 
     def _prefill_tokens(self, ids, positions, tokens):
+        if self.execution_config.prefill_batch_metadata:
+            return self._prefill_batched_metadata(ids, positions, tokens)
         cache = self.cache_manager
         if isinstance(self.model, HrmTextForCausalLM):
             lengths_by_id = dict(zip(ids, (p + 1 for p in positions)))
@@ -353,6 +355,40 @@ class ModelRunner:
                 workspace.release()
         if boundary is not None:
             self.model.coda_prepared(hidden, boundary, cache)
+        return hidden
+
+    def _prefill_batched_metadata(self, ids, positions, tokens):
+        """Keep depth-independent fields within one full-depth prefill traversal."""
+        cache = self.cache_manager
+        tensor = torch.tensor(tokens, device=self.device, dtype=torch.long)
+        boundary = None
+        if isinstance(self.model, (HuginnForCausalLM, ParcaeForCausalLM)):
+            boundary = cache._prepare_batch(ids, [0] * len(ids), positions)
+            hidden = self.model.prelude_prepared(tensor, boundary, cache)
+        else:
+            hidden = self.model.prelude(tensor)
+        read_lengths = None
+        if isinstance(self.model, HrmTextForCausalLM) and self.model.config.prefix_lm:
+            ends = dict(zip(ids, (position + 1 for position in positions)))
+            read_lengths = [ends[rid] for rid in ids]
+        batches = cache._prepare_batches(
+            ids,
+            [[depth] * len(ids) for depth in range(self.model.config.total_ut_steps)],
+            positions,
+            read_lengths=read_lengths,
+        )
+        compute_gate = not isinstance(self.model, HrmTextForCausalLM) and self.exit_config.mode in (
+            "ouro",
+            "ouro_delayed",
+        )
+        for metadata in batches:
+            hidden, _ = self.model.recurrent_prepared(
+                hidden, metadata, cache, compute_gate=compute_gate
+            )
+        if boundary is not None:
+            self.model.coda_prepared(hidden, boundary, cache)
+        if not isinstance(self.model, HrmTextForCausalLM):
+            self._size(len(tokens))
         return hidden
 
     def prepare(self, batch):

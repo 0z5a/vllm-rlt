@@ -83,7 +83,8 @@ def test_prefix_and_incremental_logits_kv_match_dense(model, kind):
 
 @pytest.mark.parametrize("storage", ["native", "alias", "compact", "credits"])
 @pytest.mark.parametrize("asynchronous", [False, True])
-def test_atomic_ragged_prefill_engine_and_id_reuse(model, storage, asynchronous):
+@pytest.mark.parametrize("batched", [False, True])
+def test_atomic_ragged_prefill_engine_and_id_reuse(model, storage, asynchronous, batched):
     prompts = [[3, 2, 7, 6, 4], [8, 3], [7, 4, 2, 9]]
     expected = []
     for prompt in prompts:
@@ -104,7 +105,9 @@ def test_atomic_ragged_prefill_engine_and_id_reuse(model, storage, asynchronous)
         scheduler_config=SchedulerConfig(
             max_num_seqs=3, max_num_batched_tokens=6, prefill_chunk_size=1
         ),
-        execution_config=ExecutionConfig(async_scheduling=asynchronous),
+        execution_config=ExecutionConfig(
+            async_scheduling=asynchronous, prefill_batch_metadata=batched
+        ),
         exit_config=ExitConfig(mode="ouro_delayed" if asynchronous else "ouro"),
     )
     rounds = []

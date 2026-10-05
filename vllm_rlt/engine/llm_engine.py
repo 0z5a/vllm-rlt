@@ -46,6 +46,10 @@ class LLMEngine:
                 raise ValueError("Huginn/Parcae prefix caching is not yet supported")
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
+        if self.execution_config.prefill_batch_metadata and (
+            cache_config.layout != "last_exited" or attention_backend not in ("torch", "triton")
+        ):
+            raise ValueError("batched prefill metadata requires LAST_EXITED with torch or Triton")
         if isinstance(model, (HuginnForCausalLM, ParcaeForCausalLM)):
             if self.execution_config.async_scheduling or self.execution_config.prefill_uva:
                 raise ValueError("Huginn/Parcae require synchronous scheduling without prefill UVA")

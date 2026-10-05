@@ -127,8 +127,15 @@ class ExecutionConfig:
     cuda_graph_max_graphs: int = 16
     cuda_graph_memory_reserve_bytes: int = 1024**3
     prefill_uva: bool = False
+    prefill_batch_metadata: bool = False
 
     def __post_init__(self):
+        if type(self.prefill_batch_metadata) is not bool:
+            raise ValueError("prefill_batch_metadata must be a boolean")
+        if self.prefill_batch_metadata and (
+            self.static_buffers or self.cuda_graphs or self.prefill_uva
+        ):
+            raise ValueError("batched prefill metadata requires eager execution without UVA")
         for name in (
             "prefill_uva",
             "async_scheduling",

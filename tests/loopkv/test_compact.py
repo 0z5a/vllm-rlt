@@ -72,18 +72,85 @@ def test_compact_cuda_payload_and_reuse():
     compact_payload_check("cuda")
 
 
+@pytest.mark.parametrize("device", ["cpu", pytest.param("cuda", marks=pytest.mark.gpu)])
+@pytest.mark.parametrize("prefix_lm", [False, True])
+def test_batched_depth_metadata_matches_separate_preparation(monkeypatch, device, prefix_lm):
+    candidate, reference = [make_cache(CompactKVCacheManager, device) for _ in range(2)]
+    for cache in (candidate, reference):
+        assert cache.allocate("a", 5) and cache.allocate("b", 3)
+    ids, positions = ["a"] * 3 + ["b"] * 2, [0, 1, 2, 0, 1]
+    read_lengths = [3, 3, 3, 2, 2] if prefix_lm else None
+    staged = []
+    stage = candidate._stage
+
+    def record(values, dtype):
+        staged.append(len(values) * torch.empty((), dtype=dtype).element_size())
+        return stage(values, dtype)
+
+    monkeypatch.setattr(candidate, "_stage", record)
+    batches = candidate._prepare_batches(
+        ids, [[depth] * 5 for depth in range(4)], positions, read_lengths=read_lengths
+    )
+    assert staged == [5 * (2 + 3 * 4) * 8, 5 * (2 + 4) * 4]
+    common = batches[0]
+    generator = torch.Generator().manual_seed(613)
+    for depth, batch in enumerate(batches):
+        single = reference._prepare_batch(ids, [depth] * 5, positions, read_lengths=read_lengths)
+        assert batch.position_ids.data_ptr() == common.position_ids.data_ptr()
+        assert batch.context_lengths.data_ptr() == common.context_lengths.data_ptr()
+        assert batch.record_map_pointers.data_ptr() == common.record_map_pointers.data_ptr()
+        assert batch.record_map_widths.data_ptr() == common.record_map_widths.data_ptr()
+        assert torch.equal(batch.write_blocks, single.write_blocks)
+        assert torch.equal(batch.write_offsets, single.write_offsets)
+        for layer in range(2):
+            keys, values, query = [
+                torch.randn(5, heads, 32, generator=generator).to(device, candidate.dtype)
+                for heads in (2, 2, 4)
+            ]
+            observed = []
+            for cache, metadata in ((candidate, batch), (reference, single)):
+                cache._write_prepared(layer, metadata, keys, values)
+                observed.append(cache._attend_prepared(layer, metadata, query))
+            torch.testing.assert_close(observed[0], observed[1], atol=0, rtol=0)
+    for cache in (candidate, reference):
+        for rid in ("a", "b"):
+            cache.free(rid)
+        assert cache.live_records == cache._reserved_records == 0
+    assert candidate.allocate("a", 5)
+    with pytest.raises(RuntimeError, match="stale"):
+        candidate._attend_prepared(0, batches[-1], query)
+    candidate.free("a")
+
+
+def test_batched_prefill_rejects_unqualified_execution():
+    for options in ({"static_buffers": True}, {"cuda_graphs": True}, {"prefill_uva": True}):
+        with pytest.raises(ValueError, match="eager execution"):
+            ExecutionConfig(prefill_batch_metadata=True, **options)
+    with pytest.raises(ValueError, match="boolean"):
+        ExecutionConfig(prefill_batch_metadata=1)
+    for layout, backend in (("shared", "torch"), ("last_exited", "fa4")):
+        with pytest.raises(ValueError, match="batched prefill metadata requires"):
+            LLM(
+                OuroForCausalLM(tiny_ouro_config()),
+                cache_config=CacheConfig(128, 2, layout=layout),
+                execution_config=ExecutionConfig(prefill_batch_metadata=True),
+                attention_backend=backend,
+            )
+
+
 @pytest.mark.parametrize("batch", [1, 4, 16])
 def test_compact_full_engine_and_conservative_admission(batch):
     torch.manual_seed(27)
     model = OuroForCausalLM(tiny_ouro_config()).eval()
     outputs = []
-    for compact in (False, True):
+    for compact, batched in ((False, False), (False, True), (True, False), (True, True)):
         llm = LLM(
             model,
             cache_config=CacheConfig(128, 2, compact_last_exited=compact),
             scheduler_config=SchedulerConfig(
                 max_num_seqs=batch, max_num_batched_tokens=max(batch, 8)
             ),
+            execution_config=ExecutionConfig(prefill_batch_metadata=batched),
         )
         prompts = [[2, 3, 4][: 1 + i % 3] for i in range(batch * 2)]
         params = [
@@ -94,9 +161,8 @@ def test_compact_full_engine_and_conservative_admission(batch):
         assert llm.engine.cache_manager.num_free_blocks == 128
         if compact:
             assert llm.engine.cache_manager.live_records == 0
-    assert [(o.token_ids, o.exit_depths) for o in outputs[0]] == [
-        (o.token_ids, o.exit_depths) for o in outputs[1]
-    ]
+    reference = [(o.token_ids, o.exit_depths) for o in outputs[0]]
+    assert all([(o.token_ids, o.exit_depths) for o in result] == reference for result in outputs)
 
 
 def test_compact_reserves_future_before_admitting():

@@ -1,0 +1,5036 @@
+{
+  "scope": "official BF16 CPU prefill metadata ablation; not CUDA, performance, or author qualification",
+  "source_revision": "aa60941d6238072e05a9a571615f1e2726907670",
+  "models": {
+    "loopformer": {
+      "audit": {
+        "scope": "official_BF16_CPU_prefill_metadata_ablation_P8D16_R8_not_GPU_or_quality_or_performance",
+        "source_sha": "aa60941d6238072e05a9a571615f1e2726907670",
+        "plan_sha256": "84d03e9a17f2ea683f04399dede1bd71613851d32cc10cf9b5d4e7c46fbee692",
+        "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
+        "checkpoint": {
+          "repo": "armenjeddi/LoopFormer-3block-8iterations",
+          "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 296,
+              "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
+            },
+            {
+              "path": "generation_config.json",
+              "bytes": 69,
+              "sha256": "52e8c2bef1d50a9aa99ce1da2a586ec40f524c1eded9c9ece289f3146b909ded"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 456318,
+              "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 556342528,
+              "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 131,
+              "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 3557680,
+              "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 507,
+              "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 798156,
+              "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
+            }
+          ],
+          "source": "pinned Hub metadata with verified bounded HTTP ranges"
+        },
+        "arms": 32,
+        "requests": 848,
+        "output_tokens": 13568,
+        "all_exact_request_objects": true,
+        "token_different_requests": 0,
+        "exit_different_requests": 0,
+        "raw_work_traces_reconciled": true,
+        "results": [
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 6.799377916147932,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 6.440239832969382,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 4.927005999954417,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 6.625474083004519,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 8.002478791866452,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 11.146384249906987,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 7.059328207978979,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 7.468246916076168,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 32.40304441610351,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 25.28060012497008,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 41.72376091708429,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 34.06980450008996,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 24.83096854086034,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 32.666547040920705,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 25.85544095793739,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 22.083323291968554,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 94.80671275011264,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 86.9269174169749,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 92.14463704195805,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 95.42838674993254,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 98.15412087505683,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 121.92949437489733,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 208.26834162510931,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 171.35785370785743,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 551.3617431251332,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 605.7441333748866,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 296.55369495786726,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 204.22223895904608,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 220.76860420801677,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 223.05149658303708,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 196.74652204220183,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 184.68603991693817,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "plan": {
+          "source_sha": "aa60941d6238072e05a9a571615f1e2726907670",
+          "model": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu",
+          "prompts": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/loopformer-cpu-engine-p8-v1-prompts.json",
+          "policy": "ouro",
+          "min_loops": 8,
+          "max_loops": 8,
+          "threshold": 1.0,
+          "arms": [
+            {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            }
+          ],
+          "cases": [
+            {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            }
+          ],
+          "scope": "official_BF16_CPU_prefill_metadata_ablation_P8D16_R8_not_GPU_or_quality_or_performance",
+          "payload_arena_ceiling_bytes": 419430400,
+          "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
+          "device": "cpu",
+          "attention_backend": "torch",
+          "cpu_threads": 2,
+          "state_seed": 83
+        },
+        "plan_sha256": "84d03e9a17f2ea683f04399dede1bd71613851d32cc10cf9b5d4e7c46fbee692",
+        "checkpoint": {
+          "repo": "armenjeddi/LoopFormer-3block-8iterations",
+          "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 296,
+              "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
+            },
+            {
+              "path": "generation_config.json",
+              "bytes": 69,
+              "sha256": "52e8c2bef1d50a9aa99ce1da2a586ec40f524c1eded9c9ece289f3146b909ded"
+            },
+            {
+              "path": "merges.txt",
+              "bytes": 456318,
+              "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+            },
+            {
+              "path": "model.safetensors",
+              "bytes": 556342528,
+              "sha256": "077fae449dd3af29d0313412ef50036e1d9a37fb8b11d447fbb41da0462d9185"
+            },
+            {
+              "path": "special_tokens_map.json",
+              "bytes": 131,
+              "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
+            },
+            {
+              "path": "tokenizer.json",
+              "bytes": 3557680,
+              "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
+            },
+            {
+              "path": "tokenizer_config.json",
+              "bytes": 507,
+              "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
+            },
+            {
+              "path": "vocab.json",
+              "bytes": 798156,
+              "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
+            }
+          ],
+          "source": "pinned Hub metadata with verified bounded HTTP ranges"
+        },
+        "prompts_sha256": "64906f5ff0462b5bbfb48721c6572f97858a3d7aa402010a36d4c14f331a4dfe",
+        "driver_sha256": "83113c1a17988f8be0765edb200c802fe1d4f047e558194b4e561aaffbcd3453",
+        "pid": 28650,
+        "torch": "2.13.0",
+        "device": "cpu",
+        "attention_backend": "torch",
+        "gpu": null,
+        "quality_stops_sha256": null,
+        "scope": "official_weight_diagnostic_not_performance_or_quality"
+      },
+      "files": [
+        {
+          "path": "DONE.json",
+          "bytes": 56,
+          "sha256": "abf4bb641c0407de73b90e04687f85f71ba61a3b3ce971f9be89cae8ad7e2f0f"
+        },
+        {
+          "path": "MODEL_LOADED.json",
+          "bytes": 49,
+          "sha256": "4e13573410edddf6d52e4d982206db4198ced7a975433844b3a7cf5b395ef945"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/summary.json",
+          "bytes": 1102,
+          "sha256": "c31de3d2430a31ff5c90fe99c5480fca1ae151e267c3e21c3006e9710dfe7063"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias-batchmeta/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias-batchmeta/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias-batchmeta/summary.json",
+          "bytes": 1111,
+          "sha256": "cb5631d38d14e2c1a5c5b89c035fb55380945316f4c3608dea2d3b532339c9f0"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/summary.json",
+          "bytes": 1260,
+          "sha256": "3828879cecfbfbe61f139ce7100f23dfe05dad2146504c39356fcbf0996ee424"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact-batchmeta/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact-batchmeta/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact-batchmeta/summary.json",
+          "bytes": 1270,
+          "sha256": "ba640a521d4f6d84ee05c8fc3f0e0ad296b5ddfde7e94f2b3473d4578d5fbbe3"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/summary.json",
+          "bytes": 1259,
+          "sha256": "d00e2ddffb2014cc52d08987762bb06cb5db6665d32dbaa9af2343febf6ee124"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits-batchmeta/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits-batchmeta/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits-batchmeta/summary.json",
+          "bytes": 1268,
+          "sha256": "9c4d9fd8522b23005d833e17394645d0f22e82b01c37416d1ccd13da52fe5b4d"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/summary.json",
+          "bytes": 1104,
+          "sha256": "f6c7768ed875a0be5ac0c6fb427b09d9fc482900db6cca2b7ac5b3679c845722"
+        },
+        {
+          "path": "b1-c2-p8-d16-native-batchmeta/requests.json",
+          "bytes": 1218,
+          "sha256": "b0ca00cce119214ce057940b8499b08b3804a32ea97429051ee68bbe6730ec5d"
+        },
+        {
+          "path": "b1-c2-p8-d16-native-batchmeta/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-native-batchmeta/summary.json",
+          "bytes": 1113,
+          "sha256": "ddcbb6469e883a76f15f75ee37c2d7469f4d79e2fc0ce25f4f3796ed0ab836eb"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/summary.json",
+          "bytes": 1126,
+          "sha256": "93787399673c567489215b049243be356eaad6c0737546938bcf35ef2f0442fc"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias-batchmeta/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias-batchmeta/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias-batchmeta/summary.json",
+          "bytes": 1135,
+          "sha256": "b95a759d6a422de7f0e44e9bab6b78ca5c4e0f6a51f44ceaeb802cfad05b53fc"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/summary.json",
+          "bytes": 1286,
+          "sha256": "836bd0bd5fbcaa1853e58c6a4c09477294ac08e3da9c02dc9635fa88adb6dfc4"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact-batchmeta/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact-batchmeta/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact-batchmeta/summary.json",
+          "bytes": 1296,
+          "sha256": "8a261321d41b42fd66ba7c129822a11cd9578edf7ba9fa2c0f7cce5613fb34c3"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/summary.json",
+          "bytes": 1286,
+          "sha256": "ed5b2e438db200d0bbd61730086e7a8025aa6b9cadd06721a8465f4773855d2d"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits-batchmeta/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits-batchmeta/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits-batchmeta/summary.json",
+          "bytes": 1295,
+          "sha256": "b2815910b87eb94dbb93c7f8f0c2a167606744b07fea8fc7685d6b1569c2980f"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/summary.json",
+          "bytes": 1128,
+          "sha256": "5fd712db2a4500e9229fcc96612f1bb134b9e323f02bce14a3c963daaece5b67"
+        },
+        {
+          "path": "b16-c32-p8-d16-native-batchmeta/requests.json",
+          "bytes": 19471,
+          "sha256": "969082bc56fb994b6f1dffe08d6a9c2f9d9865f61c80370007d01da54610ef11"
+        },
+        {
+          "path": "b16-c32-p8-d16-native-batchmeta/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-native-batchmeta/summary.json",
+          "bytes": 1136,
+          "sha256": "10a70d5f2629fc706df8abca3e92d2faf835b0737571450314d77deec25a70a5"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/summary.json",
+          "bytes": 1154,
+          "sha256": "ea931dfb578d1283610b3102977c551eb6e075a4a71e1cdbda660e57584eb536"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias-batchmeta/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias-batchmeta/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias-batchmeta/summary.json",
+          "bytes": 1163,
+          "sha256": "44454cf23924e81710c7292d8dc0b4540e663015900acde53d238c0c97dfab13"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/summary.json",
+          "bytes": 1314,
+          "sha256": "819d00471a8452e389acda2c0509188f75fc27662a69e7d4cbd8bad3dd8f364f"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact-batchmeta/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact-batchmeta/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact-batchmeta/summary.json",
+          "bytes": 1323,
+          "sha256": "5dffb9264fa26a523d9b4b2d7564eb46aba1febeb02f61ed5a87e742968bdf22"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/summary.json",
+          "bytes": 1313,
+          "sha256": "0cae83760fd7264df42de2d36f3dd1eb8170ceae5990a69f265901e13d985546"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits-batchmeta/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits-batchmeta/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits-batchmeta/summary.json",
+          "bytes": 1322,
+          "sha256": "9205d99f5dddb68cc3d5b20fb77044490c871631e52ce334d64a84cb50629f78"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/summary.json",
+          "bytes": 1155,
+          "sha256": "d89f7af8235a12b83b6aec0f988c6d8f1db03839cadd2978b3a8e573b3e693ad"
+        },
+        {
+          "path": "b32-c64-p8-d16-native-batchmeta/requests.json",
+          "bytes": 38959,
+          "sha256": "7defebbdc668d4a6bdbb99c5a23835f66861d7637cf8341417ea7f05222b3bb6"
+        },
+        {
+          "path": "b32-c64-p8-d16-native-batchmeta/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-native-batchmeta/summary.json",
+          "bytes": 1164,
+          "sha256": "c4b0a28fbcdbb2294d8357ea331b748d040df8241069028b31a8293e56691edf"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/summary.json",
+          "bytes": 1111,
+          "sha256": "3da1cb39f39e3cf369487ae5e08f35d950374080b07bee0da078448d80fcd17e"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias-batchmeta/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias-batchmeta/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias-batchmeta/summary.json",
+          "bytes": 1120,
+          "sha256": "f8ddf6bef40c7036ed9bdd8e6543e20ecb425243a27d4db0c1f5250b11443fd1"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/summary.json",
+          "bytes": 1269,
+          "sha256": "32cfcd9e4e5c3b594dee2ea0284aa55fab0bbb5c4a73f902c9553ef47576b014"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact-batchmeta/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact-batchmeta/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact-batchmeta/summary.json",
+          "bytes": 1279,
+          "sha256": "32fd47638a1273813e5ac4c210ae39070bc8d273555089687b3ffd309339f7ad"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/summary.json",
+          "bytes": 1268,
+          "sha256": "8eff9741fc376e28ca9c080f0e30bc8aa4c33115e6f7202ca9fb0638e6ace795"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits-batchmeta/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits-batchmeta/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits-batchmeta/summary.json",
+          "bytes": 1278,
+          "sha256": "3bdb11851e1e887f4fc553e3e126a86a2cbdd92efba2cdc03b9ca5a6978d6821"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/summary.json",
+          "bytes": 1113,
+          "sha256": "dc982bf58a44d776aba9dc287c0938b4801cf30a3dfd53fcb2bbcc3cbbaffa18"
+        },
+        {
+          "path": "b4-c8-p8-d16-native-batchmeta/requests.json",
+          "bytes": 4859,
+          "sha256": "d5e5459817fd85669e164ce0bff4f246d24d72f9c711c52c280d12e28c9fdaba"
+        },
+        {
+          "path": "b4-c8-p8-d16-native-batchmeta/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-native-batchmeta/summary.json",
+          "bytes": 1122,
+          "sha256": "a8a53dc77efc4a1e95903a9960759bd7ca55c46fe0968411341bdc4e5b527939"
+        },
+        {
+          "path": "plan.json",
+          "bytes": 5415,
+          "sha256": "b3c31df52335cfe7d702db386ca07ad6a2fc5c6fe0e7d74d834ea175d1284151"
+        }
+      ],
+      "earlier_golden_directory": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/loopformer-cpu-engine-v1",
+      "all_request_objects_and_work_match_earlier_golden": true
+    },
+    "parcae": {
+      "audit": {
+        "scope": "official_BF16_CPU_prefill_metadata_ablation_P8D16_R8_not_GPU_or_quality_or_performance",
+        "source_sha": "aa60941d6238072e05a9a571615f1e2726907670",
+        "plan_sha256": "39688e321ab2c0cb95f2e9e1b362523444bc9887d930a971e0e121f664a2889f",
+        "prompts_sha256": "d66e8bbafbe339ae0ef028b3723535d1418612f7f2b038b02c096f33f1d8724f",
+        "checkpoint": {
+          "repo": "SandyResearch/parcae-370m",
+          "revision": "439284464ee4999bd1f762da7d044613a4828efe",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 1745,
+              "sha256": "0ed6862c495bfb670fc72eba955c555c472a5dcdf33bed6852608135ead6666e"
+            },
+            {
+              "path": "pytorch_model.bin",
+              "bytes": 1553099635,
+              "sha256": "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2"
+            }
+          ],
+          "source": "pinned Hub metadata with verified bounded HTTP ranges"
+        },
+        "arms": 32,
+        "requests": 848,
+        "output_tokens": 13568,
+        "all_exact_request_objects": true,
+        "token_different_requests": 0,
+        "exit_different_requests": 0,
+        "raw_work_traces_reconciled": true,
+        "results": [
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 3.0745435000862926,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 2.488305749837309,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 2.773520209128037,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 2.7274344170000404,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 3.088760041864589,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 3.607963874936104,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 3.3989270839374512,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            "arm": {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 2.676812957972288,
+            "output_tokens": 32,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 16,
+            "recurrent_batch_histogram": {
+              "1": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 30,
+              "2": 30,
+              "3": 30,
+              "4": 30,
+              "5": 30,
+              "6": 30,
+              "7": 30,
+              "8": 30
+            },
+            "submitted_recurrent_rows": 240,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 1.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 1,
+              "p50": 1,
+              "p90": 1
+            },
+            "submitted_prefill_tokens": 16,
+            "observed_peak_residents_after_step": 1,
+            "compact": {
+              "peak_live_records": 184,
+              "peak_metadata_bytes": 1852,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 6.593770833918825,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 13.263041875092313,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 13.46810295805335,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 13.284010207979009,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 6.601684709079564,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 12.45755441696383,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 13.845605917042121,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            "arm": {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 11.140170708065853,
+            "output_tokens": 128,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 64,
+            "recurrent_batch_histogram": {
+              "4": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 120,
+              "2": 120,
+              "3": 120,
+              "4": 120,
+              "5": 120,
+              "6": 120,
+              "7": 120,
+              "8": 120
+            },
+            "submitted_recurrent_rows": 960,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 4.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 4,
+              "p50": 4,
+              "p90": 4
+            },
+            "submitted_prefill_tokens": 64,
+            "observed_peak_residents_after_step": 4,
+            "compact": {
+              "peak_live_records": 736,
+              "peak_metadata_bytes": 7408,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 32.256046041846275,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 50.342306083999574,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 42.078014500206336,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 45.12305266712792,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 43.22567862505093,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 40.46829820796847,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 46.567748290952295,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            "arm": {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 51.799824292073026,
+            "output_tokens": 512,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 256,
+            "recurrent_batch_histogram": {
+              "16": 240
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 480,
+              "2": 480,
+              "3": 480,
+              "4": 480,
+              "5": 480,
+              "6": 480,
+              "7": 480,
+              "8": 480
+            },
+            "submitted_recurrent_rows": 3840,
+            "recurrent_calls": 240,
+            "effective_batch_mean": 16.0,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 16,
+              "p50": 16,
+              "p90": 16
+            },
+            "submitted_prefill_tokens": 256,
+            "observed_peak_residents_after_step": 16,
+            "compact": {
+              "peak_live_records": 2944,
+              "peak_metadata_bytes": 29632,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 92.05119808320887,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 115.558939791983,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 126.86815029196441,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 109.118485749932,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 108.11926762503572,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 94.74133041594177,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 86.771258499939,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          },
+          {
+            "case": {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            },
+            "arm": {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            "state_seed": 83,
+            "seconds_not_performance": 77.70217529195361,
+            "output_tokens": 1024,
+            "token_different_requests": 0,
+            "exit_different_requests": 0,
+            "exact_request_objects": true,
+            "peak_allocated_bytes": null,
+            "peak_reserved_bytes": null,
+            "free_blocks_after_drain": 512,
+            "recurrent_batch_histogram": {
+              "16": 2,
+              "32": 239
+            },
+            "submitted_recurrent_depth_rows": {
+              "1": 960,
+              "2": 960,
+              "3": 960,
+              "4": 960,
+              "5": 960,
+              "6": 960,
+              "7": 960,
+              "8": 960
+            },
+            "submitted_recurrent_rows": 7680,
+            "recurrent_calls": 241,
+            "effective_batch_mean": 31.86721991701245,
+            "effective_batch_nearest_rank_quantiles": {
+              "p10": 32,
+              "p50": 32,
+              "p90": 32
+            },
+            "submitted_prefill_tokens": 512,
+            "observed_peak_residents_after_step": 32,
+            "compact": {
+              "peak_live_records": 5872,
+              "peak_metadata_bytes": 59264,
+              "live_records_after_drain": 0,
+              "reserved_records_after_drain": 0
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "plan": {
+          "source_sha": "aa60941d6238072e05a9a571615f1e2726907670",
+          "model": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/parcae-370m-cpu",
+          "prompts": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/parcae-cpu-engine-p8-v1-prompts.json",
+          "policy": "ouro",
+          "min_loops": 8,
+          "max_loops": 8,
+          "threshold": 1.0,
+          "arms": [
+            {
+              "name": "native",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            {
+              "name": "native-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            {
+              "name": "alias",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            {
+              "name": "alias-batchmeta",
+              "execution": "sync",
+              "alias": true,
+              "compact": false,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            {
+              "name": "compact",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            {
+              "name": "compact-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": false,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            },
+            {
+              "name": "credits",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": false
+            },
+            {
+              "name": "credits-batchmeta",
+              "execution": "sync",
+              "alias": false,
+              "compact": true,
+              "reclaim": true,
+              "async": false,
+              "graphs": false,
+              "prefill_batch_metadata": true
+            }
+          ],
+          "cases": [
+            {
+              "name": "b1-c2-p8-d16",
+              "batch": 1,
+              "requests": 2,
+              "outputs": 16,
+              "blocks": 16,
+              "worst_future_resident_limit": 1
+            },
+            {
+              "name": "b4-c8-p8-d16",
+              "batch": 4,
+              "requests": 8,
+              "outputs": 16,
+              "blocks": 64,
+              "worst_future_resident_limit": 4
+            },
+            {
+              "name": "b16-c32-p8-d16",
+              "batch": 16,
+              "requests": 32,
+              "outputs": 16,
+              "blocks": 256,
+              "worst_future_resident_limit": 16
+            },
+            {
+              "name": "b32-c64-p8-d16",
+              "batch": 32,
+              "requests": 64,
+              "outputs": 16,
+              "blocks": 512,
+              "worst_future_resident_limit": 32
+            }
+          ],
+          "scope": "official_BF16_CPU_prefill_metadata_ablation_P8D16_R8_not_GPU_or_quality_or_performance",
+          "payload_arena_ceiling_bytes": 419430400,
+          "prompts_sha256": "d66e8bbafbe339ae0ef028b3723535d1418612f7f2b038b02c096f33f1d8724f",
+          "state_seed": 83,
+          "device": "cpu",
+          "attention_backend": "torch",
+          "cpu_threads": 2
+        },
+        "plan_sha256": "39688e321ab2c0cb95f2e9e1b362523444bc9887d930a971e0e121f664a2889f",
+        "checkpoint": {
+          "repo": "SandyResearch/parcae-370m",
+          "revision": "439284464ee4999bd1f762da7d044613a4828efe",
+          "files": [
+            {
+              "path": "config.json",
+              "bytes": 1745,
+              "sha256": "0ed6862c495bfb670fc72eba955c555c472a5dcdf33bed6852608135ead6666e"
+            },
+            {
+              "path": "pytorch_model.bin",
+              "bytes": 1553099635,
+              "sha256": "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2"
+            }
+          ],
+          "source": "pinned Hub metadata with verified bounded HTTP ranges"
+        },
+        "prompts_sha256": "d66e8bbafbe339ae0ef028b3723535d1418612f7f2b038b02c096f33f1d8724f",
+        "driver_sha256": "83113c1a17988f8be0765edb200c802fe1d4f047e558194b4e561aaffbcd3453",
+        "pid": 41802,
+        "torch": "2.13.0",
+        "device": "cpu",
+        "attention_backend": "torch",
+        "gpu": null,
+        "quality_stops_sha256": null,
+        "scope": "official_weight_diagnostic_not_performance_or_quality"
+      },
+      "files": [
+        {
+          "path": "DONE.json",
+          "bytes": 54,
+          "sha256": "19b3de76d6dcb2c09ed30a14f193b573cc399a77613c4f03a5220b74e1c476d5"
+        },
+        {
+          "path": "MODEL_LOADED.json",
+          "bytes": 48,
+          "sha256": "f7d565b4514e52f7e948ca0f81cb4fbaa131080807232894cf31a524626f62c9"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias/summary.json",
+          "bytes": 1102,
+          "sha256": "334bf0d127e9ab89831011e589e6cd3d7ea3218607d86e459595cc5e1a0b51be"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias-batchmeta/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias-batchmeta/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-alias-batchmeta/summary.json",
+          "bytes": 1112,
+          "sha256": "d8f529f24694ca5f11d15a608ab3eae9ef6f8c5585a3f4153feb429ccd1b6951"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact/summary.json",
+          "bytes": 1260,
+          "sha256": "bc4912a11604972bd05bc2869c33f3332351c87270f8acab3b1b861d1f3c5451"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact-batchmeta/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact-batchmeta/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-compact-batchmeta/summary.json",
+          "bytes": 1269,
+          "sha256": "0809a4772271167e4c385cf3c9ef8cec39b9188aa57b81a9e5b8b49b9137feca"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits/summary.json",
+          "bytes": 1260,
+          "sha256": "be40ed1d5e320cdc3419994eeef9a2ba2b5c658523854a4651009ce2b4dd43f2"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits-batchmeta/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits-batchmeta/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-credits-batchmeta/summary.json",
+          "bytes": 1268,
+          "sha256": "10f90c290a9c3c858087602a47a261c5ba196aba5ddd1531c2117d6be9040cf0"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-native/summary.json",
+          "bytes": 1105,
+          "sha256": "f6b0419103f0491e2f67bb7dd7af0f5f1c3a6f68ea3b04439614dd96fd9eb514"
+        },
+        {
+          "path": "b1-c2-p8-d16-native-batchmeta/requests.json",
+          "bytes": 1221,
+          "sha256": "2491d0849b646b8de56059c4556ef2b13ee29fdd2e24a43c3cb5718f6d2dc482"
+        },
+        {
+          "path": "b1-c2-p8-d16-native-batchmeta/steps.json",
+          "bytes": 41427,
+          "sha256": "16687500fe71dc810547e6b27ec41bbc6f9fde21e74957abe91dba88c237be09"
+        },
+        {
+          "path": "b1-c2-p8-d16-native-batchmeta/summary.json",
+          "bytes": 1113,
+          "sha256": "c27e68fae95e60c757c8cc518d35178c1d0b59f7188c66a9131ec16d4c7dd801"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias/summary.json",
+          "bytes": 1127,
+          "sha256": "4b018971254e1c50c649c639942b93935431d999aa79c13c1431a606a8c0e97a"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias-batchmeta/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias-batchmeta/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-alias-batchmeta/summary.json",
+          "bytes": 1135,
+          "sha256": "c2111dec9a76adacf6359fec66f7684c7da3720ca7895628e77976957e66dd25"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact/summary.json",
+          "bytes": 1286,
+          "sha256": "90fb4fb6fb7f7937746f1879b3c25e63fe6000094736b1186a3acf25d8e62f94"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact-batchmeta/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact-batchmeta/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-compact-batchmeta/summary.json",
+          "bytes": 1295,
+          "sha256": "038296ef3e436396b00a7d29a353995cf8efe83af21d1ae89199911517009cb1"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits/summary.json",
+          "bytes": 1286,
+          "sha256": "7bec7ea6cf31408fe0ecb9b02f7b41d5166709d596a5cd64fe9a1b12a4a346f8"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits-batchmeta/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits-batchmeta/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-credits-batchmeta/summary.json",
+          "bytes": 1295,
+          "sha256": "48fd545fcd400523a68b915a1e369e70a8d02077ef649266f5b86d3d4e5c01da"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-native/summary.json",
+          "bytes": 1129,
+          "sha256": "c61e1afd894a92024b3dd3aa2986ed9fd8937ad1fd891f592dc7c9ea3e53e3e5"
+        },
+        {
+          "path": "b16-c32-p8-d16-native-batchmeta/requests.json",
+          "bytes": 19527,
+          "sha256": "e19d2fdd9aefee7a59dc021c051d404cf2c053b7f4e717ec053f0797b47f1916"
+        },
+        {
+          "path": "b16-c32-p8-d16-native-batchmeta/steps.json",
+          "bytes": 95845,
+          "sha256": "3252c2bba58f30cd798f43957abe3a3c5e74eb5351d6d227a5b0cad37364a9b5"
+        },
+        {
+          "path": "b16-c32-p8-d16-native-batchmeta/summary.json",
+          "bytes": 1138,
+          "sha256": "632ae765d60ce70280ca02e710fc85f8577e17317a1106f1cbf363a348312b04"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias/summary.json",
+          "bytes": 1154,
+          "sha256": "5e3f0ff1a55a598df5df7b3a6f108ee5f68bc8a8e6f827fe7a092d18a963d365"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias-batchmeta/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias-batchmeta/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-alias-batchmeta/summary.json",
+          "bytes": 1161,
+          "sha256": "0ddd53918e27694aa8b437adf4ef03a1542cf9d3ec1f0b61f017f154f08cfa21"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact/summary.json",
+          "bytes": 1314,
+          "sha256": "207f03c07c08fc22087f249a3db2b67c8c0657b5e1e007b77c9c26945c50a2a5"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact-batchmeta/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact-batchmeta/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-compact-batchmeta/summary.json",
+          "bytes": 1322,
+          "sha256": "623d52702346cc15832847e1fbb2520019e0774b09acc00dde00a21f0aa115b2"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits/summary.json",
+          "bytes": 1310,
+          "sha256": "474df95c2d301df839c789ba4ee9390b6e227524d95060b4e20afb5eb1f553e6"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits-batchmeta/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits-batchmeta/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-credits-batchmeta/summary.json",
+          "bytes": 1321,
+          "sha256": "478cd785d1b59b995057a3ddf22d1a3bfd18d7ee9b45dc169598495dfe79dd03"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-native/summary.json",
+          "bytes": 1155,
+          "sha256": "27c7c4f6cc9d4dff37bf519e1bd10934cbf7cd1ae7156f2cac872f94426d2ae6"
+        },
+        {
+          "path": "b32-c64-p8-d16-native-batchmeta/requests.json",
+          "bytes": 39071,
+          "sha256": "d073331337c182ff7351c476d1808865e6ebed66ccfb2692f71f93ce79c6102f"
+        },
+        {
+          "path": "b32-c64-p8-d16-native-batchmeta/steps.json",
+          "bytes": 162379,
+          "sha256": "88fe517b40bebc8761cbd53014da22b7d52c7a808d33fb0acf7f4578e9582408"
+        },
+        {
+          "path": "b32-c64-p8-d16-native-batchmeta/summary.json",
+          "bytes": 1163,
+          "sha256": "56ad988d5cf96e45b50924b7de7c0eae2332e4a3bbee7649c9c7067bb965bc9f"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias/summary.json",
+          "bytes": 1111,
+          "sha256": "bc023a0c0dff5671a09e6d830cdf9b8eb24be5791c2fce10cd7e22ec92f92b33"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias-batchmeta/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias-batchmeta/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-alias-batchmeta/summary.json",
+          "bytes": 1121,
+          "sha256": "f2786a99b6fa7d784425a42883c2c7402d661fff3a6904bd5c6635ba659968a3"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact/summary.json",
+          "bytes": 1269,
+          "sha256": "600c93a4987180456221b77d5a859fdc3fe6b0b2dc83e40618622b09a555ebc9"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact-batchmeta/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact-batchmeta/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-compact-batchmeta/summary.json",
+          "bytes": 1278,
+          "sha256": "4314e9791bb57d70ed12f55c5c275d3f69db2ee7769fd5ef6facc5fff29e157e"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits/summary.json",
+          "bytes": 1269,
+          "sha256": "769d0e07acfc23a536bc2ca9934a8e23542e17b03e6698d016d984ed642fdcc8"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits-batchmeta/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits-batchmeta/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-credits-batchmeta/summary.json",
+          "bytes": 1278,
+          "sha256": "1b2e349418782b0cfb71a48d2f8feb057d7483635f0f3e40adba1b031dc8ca08"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-native/summary.json",
+          "bytes": 1113,
+          "sha256": "8104638b496490a84640089cda43e75527020ce45d11b0b610470311d718ef19"
+        },
+        {
+          "path": "b4-c8-p8-d16-native-batchmeta/requests.json",
+          "bytes": 4873,
+          "sha256": "1d295b45b37cd6200416eb2a975d0773ddee8eb7af46104e56826070e9cfa9a5"
+        },
+        {
+          "path": "b4-c8-p8-d16-native-batchmeta/steps.json",
+          "bytes": 51463,
+          "sha256": "942c918db0724b57c4f5c4d893dac9f1fc0a26e41aa9d2016010000a3b56c053"
+        },
+        {
+          "path": "b4-c8-p8-d16-native-batchmeta/summary.json",
+          "bytes": 1123,
+          "sha256": "d31668a16ca201cf4e2de5a384e5851c955fba1a654acee72c6d3f5a20f0bce2"
+        },
+        {
+          "path": "plan.json",
+          "bytes": 4407,
+          "sha256": "3a46be28fa4e149e680268516ec48b98b109fd9f6c2efc2b6c018540dc2dcf55"
+        }
+      ],
+      "earlier_golden_directory": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/parcae-cpu-engine-v2",
+      "all_request_objects_and_work_match_earlier_golden": true
+    }
+  },
+  "controller_receipt": [
+    {
+      "family": "loopformer",
+      "controller_pid": 28644,
+      "child_pid": 28650,
+      "command": [
+        "/Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/bin/python",
+        "-m",
+        "experiments.loopkv.screen",
+        "--plan",
+        "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/loopformer-batched-prefill-cpu-v1-plan.json",
+        "--out",
+        "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/loopformer-batched-prefill-cpu-v1",
+        "--load-lock",
+        "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/cpu-model-load.lock"
+      ],
+      "plan_sha256": "84d03e9a17f2ea683f04399dede1bd71613851d32cc10cf9b5d4e7c46fbee692",
+      "started": 1791216870.2382479,
+      "finished": 1791220652.827738,
+      "returncode": 0
+    },
+    {
+      "family": "parcae",
+      "controller_pid": 28644,
+      "child_pid": 41802,
+      "command": [
+        "/Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/bin/python",
+        "-m",
+        "experiments.loopkv.screen",
+        "--plan",
+        "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/parcae-batched-prefill-cpu-v1-plan.json",
+        "--out",
+        "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/parcae-batched-prefill-cpu-v1",
+        "--load-lock",
+        "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/evidence/cpu-model-load.lock"
+      ],
+      "plan_sha256": "39688e321ab2c0cb95f2e9e1b362523444bc9887d930a971e0e121f664a2889f",
+      "started": 1791220653.9517992,
+      "finished": 1791221991.580208,
+      "returncode": 0
+    }
+  ],
+  "arms": 64,
+  "requests": 1696,
+  "output_tokens": 27136,
+  "all_request_objects_and_work_match_native_and_earlier_golden": true
+}
