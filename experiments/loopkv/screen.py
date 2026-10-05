@@ -94,6 +94,8 @@ def main():
             )
             torch.cuda.reset_peak_memory_stats()
             counters = WorkCounters()
+            # Match stochastic recurrent initialization across storage arms.
+            torch.manual_seed(plan.get("state_seed", 17))
             completed, steps, elapsed = drive(
                 engine,
                 [prompts[i % len(prompts)] for i in range(case["requests"])],
@@ -121,6 +123,7 @@ def main():
             summary = {
                 "case": case,
                 "arm": arm,
+                "state_seed": plan.get("state_seed", 17),
                 "seconds_not_performance": elapsed,
                 "output_tokens": sum(len(row["token_ids"]) for row in completed.values()),
                 "token_different_requests": sum(

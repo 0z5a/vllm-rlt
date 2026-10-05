@@ -12,6 +12,9 @@ injection. Initialization preserves the author's random-normal draw followed by
 truncated-normal initialization; it does not replace stochastic states with zero.
 This uses the worker RNG and depends on batch ordering. Tests reset the RNG for
 matched cohorts; request-independent stochastic initialization is not implemented.
+The official screening driver resets the frozen `state_seed` before each storage
+arm and records it in every summary. Different batch schedules still receive
+different random draw assignments and must be reported separately.
 
 | Published 370m configuration | Value |
 |---|---:|
