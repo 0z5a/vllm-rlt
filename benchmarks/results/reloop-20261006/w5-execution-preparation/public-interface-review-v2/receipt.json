@@ -1,0 +1,29 @@
+{
+  "status": "PASS_FORMATTED_PUBLIC_CLI_AND_TEMPLATE_REJECTION_ONLY",
+  "checked_unix": 1791266975.267431,
+  "checks": [
+    {
+      "source": "resolve_w5_prompts.py",
+      "check": "--help",
+      "actual_returncode": 0
+    },
+    {
+      "source": "run_w5_cost_arm.py",
+      "check": "--help",
+      "actual_returncode": 0
+    },
+    {
+      "check": "formatted-driver-actual-template-rejection-before-GPU-import",
+      "actual_returncode": 1,
+      "output_dir_absent": true
+    }
+  ],
+  "public_sources": {
+    "prepare_w5_workloads.py": "c04400c1b3e344ac5afa06ae83200706c91b08a0e1d13daad18b850e5967603f",
+    "resolve_w5_prompts.py": "b31fec25f95589af1141540b3e6b968ab7ad0af6d31f8d8ab246157faa8d5035",
+    "run_w5_cost_arm.py": "081f63d9aa1bef69920cfbac0ce850acd95e110f1bdcf82b43ae9159a84dd2d3"
+  },
+  "actual_tokenization": "NOT_RUN",
+  "actual_GPU": "NOT_RUN",
+  "model_starts": 0
+}

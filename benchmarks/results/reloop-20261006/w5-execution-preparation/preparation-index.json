@@ -1,0 +1,95 @@
+{
+  "status": "W5_EXECUTION_PREPARATION_CANONICAL_TOKENIZATION_AND_NATIVE_NOT_RUN",
+  "production_source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "original_sources": {
+    "prepare_w5_workloads.py": "55a88ced4e87bf8c779d4882bd932e92b9e17901364322c21be54773eb231409",
+    "resolve_w5_prompts.py": "48164e2c52b8da74018f98f745254745255e4cba737a4f51bc4d90df5b0b35b4",
+    "run_w5_cost_arm.py": "08b062e7126167e687f013985fdf3806d88a600e69d9ac238d50b45b42c083a7"
+  },
+  "public_changes": "Import ordering/literal-string wrapping only; non-import AST and import bindings preserved",
+  "frozen_observer": {
+    "archive": "../cost-c32-full.tar.gz",
+    "entry": "scripts/fp32_candidate_cost_trial.py",
+    "sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9",
+    "verified_archive_bytes_match_original": true
+  },
+  "files": {
+    "README.md": {
+      "bytes": 3433,
+      "sha256": "8187938f5ab9100006d6cf7b8f143335bd01d847e93448e46dd4807d27e90e4b"
+    },
+    "__pycache__/prepare_w5_workloads.cpython-312.pyc": {
+      "bytes": 11592,
+      "sha256": "5578704f171f11410d6ef4da22d3f39de72a41613bed4b397ccdb31ec8f7b14c"
+    },
+    "format-only-source-review.json": {
+      "bytes": 1875,
+      "sha256": "2a31f13feda083810686eefb530027531ca07f1b7f8346e3b09ba026b81dc4e4"
+    },
+    "independent-source-review.json": {
+      "bytes": 3628,
+      "sha256": "9e5a3679617f45406a6b8d3a7ae7a52155c085a4103cb0596204c724a10d983e"
+    },
+    "original-interface-review/receipt.json": {
+      "bytes": 1240,
+      "sha256": "5517cf58ba8903a50e37970f36839f40aed44becd068872347a5a6f07293fd64"
+    },
+    "original-interface-review/resolve_w5_prompts.py.help.txt": {
+      "bytes": 512,
+      "sha256": "470e5aaf721dca5396f5e43b72c503a263b363178985b75d380b21b333ae1604"
+    },
+    "original-interface-review/run_w5_cost_arm.py.help.txt": {
+      "bytes": 704,
+      "sha256": "4af151e20da9fcb30232605ba1b3c6f630c293b8b779db8e448e5eba778005dd"
+    },
+    "original-interface-review/unresolved-template-rejection.stderr.txt": {
+      "bytes": 388,
+      "sha256": "d38192e0edaa8af88694e80635c40adec550f038b8cf1db13354b088fe67fa97"
+    },
+    "original-interface-review/unresolved-template-rejection.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepare_w5_workloads.py": {
+      "bytes": 8325,
+      "sha256": "c04400c1b3e344ac5afa06ae83200706c91b08a0e1d13daad18b850e5967603f"
+    },
+    "public-interface-review-v2/receipt.json": {
+      "bytes": 894,
+      "sha256": "58fa1529b9a6e080ac86c085f3096da28ee3966f235c43531e3d5aa9a86d7308"
+    },
+    "public-interface-review-v2/resolve_w5_prompts.py.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "public-interface-review-v2/resolve_w5_prompts.py.stdout": {
+      "bytes": 512,
+      "sha256": "470e5aaf721dca5396f5e43b72c503a263b363178985b75d380b21b333ae1604"
+    },
+    "public-interface-review-v2/run_w5_cost_arm.py.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "public-interface-review-v2/run_w5_cost_arm.py.stdout": {
+      "bytes": 704,
+      "sha256": "4af151e20da9fcb30232605ba1b3c6f630c293b8b779db8e448e5eba778005dd"
+    },
+    "public-interface-review-v2/unresolved-template-rejection.stderr": {
+      "bytes": 488,
+      "sha256": "bca7c0bff11d919fdda0a916ca057a1d5ea10be10c354c3d2e843fb4270c4634"
+    },
+    "public-interface-review-v2/unresolved-template-rejection.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "resolve_w5_prompts.py": {
+      "bytes": 5445,
+      "sha256": "b31fec25f95589af1141540b3e6b968ab7ad0af6d31f8d8ab246157faa8d5035"
+    },
+    "run_w5_cost_arm.py": {
+      "bytes": 10001,
+      "sha256": "081f63d9aa1bef69920cfbac0ce850acd95e110f1bdcf82b43ae9159a84dd2d3"
+    }
+  },
+  "formatted_public_interface_receipt_sha256": "58fa1529b9a6e080ac86c085f3096da28ee3966f235c43531e3d5aa9a86d7308"
+}

@@ -212,3 +212,6 @@ The reproduction support directory is `reproduction/public-entry`.
 Historical FP8 pilots, Thinking metadata timing, D4 Graph timing and14 exposed
 code arms have their separate source/dtype/data boundaries. They do not supply
 this FP32 candidate's fixed-work or independent quality result.
+
+
+The seven-point W5 input resolver and single-arm native driver are available in [execution preparation](../benchmarks/results/reloop-20261006/w5-execution-preparation/README.md). They retain all820 IDs,4C refill,the three selected arms,two fresh rounds and the original byte-identical observer. Original CLI/unresolved-template rejection receipts and an independent source review are included. Canonical tokenization,native numerical qualification and all seven device runs remain NOT_RUN; these interfaces add no quality,A/S,refill,speed or VRAM result.

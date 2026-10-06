@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/0z5a/Documents/infra/loopquant-20261005/reloop-code-scoring/run_w5_cost_arm.py", line 298, in <module>
+    main()
+  File "/Users/0z5a/Documents/infra/loopquant-20261005/reloop-code-scoring/run_w5_cost_arm.py", line 121, in main
+    raise ValueError(
+ValueError: cost requires actual canonical frozen prompts; templates are not admissible
