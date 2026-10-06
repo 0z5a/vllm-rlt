@@ -28,3 +28,9 @@ Extract [the existing C32 archive](../cost-c32-full.tar.gz) into a new directory
 Q64 keeps all256 queued requests when the first-B target exceeds the pool;actual residency must be measured. A32_large requires102GiB of KV alone at FP32 and remains preflight-rejected at64GiB. It requires a larger declared pool/device in a newly frozen protocol. Neither is an observed OOM. Expected CUDA OOM is recorded as failure;no signals or forced termination are used.
 
 The three public preparation scripts differ from their retained originals only by import ordering and literal-string line wrapping. Import bindings and non-import AST match exactly. The index records old/new SHA and initial failed checks. No production source,mathematics,tolerance,scorer,selected candidate or frozen quality denominator changes. The CLI and negative-path checks do not establish native correctness,quality,speed,Graph or HTTP E2E.
+
+The current driver compares the actual hashed numerical gate GPU UUID with
+both admitted UUID fields. Earlier format-only reviews remain historical;
+the current two-line semantic binding change is recorded in
+[actual-gate-uuid-binding-review.json](actual-gate-uuid-binding-review.json).
+The complete positive native job still awaits the new device gate and real output.

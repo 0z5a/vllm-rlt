@@ -85,6 +85,7 @@ class Admission(TypedDict):
 
 
 class Gate(TypedDict):
+    gpu_uuid: str
     status: str
     offbox_verified: bool
     source_sha: str
@@ -152,7 +153,11 @@ def main() -> None:
         gate["dtype"] == protocol["dtype"]
         and gate["attention_backend"] == protocol["attention_backend"]
     )
-    assert admission["numerical_gate_gpu_uuid"] == admission["gpu_uuid"]
+    assert (
+        gate["gpu_uuid"]
+        == admission["numerical_gate_gpu_uuid"]
+        == admission["gpu_uuid"]
+    )
     assert os.environ["CUDA_VISIBLE_DEVICES"] == admission["gpu_uuid"]
     # The owning whole-window controller verifies boot/locks/UUID/emptycompute,
     # the complete clean checkout and checkpoint bytes before admitting this job.
