@@ -114,6 +114,15 @@ are still unverified. See the unchanged [preflight table](../benchmarks/results/
 and [raw page bounds](../benchmarks/results/reloop-20261006/w5-fp32-capacity-preflight-v1.json).
 The initial totalC cost trace does not qualify the original default4C refill.
 
+The complete [W5 input preparation](../benchmarks/results/reloop-20261006/w5-workload-preparation/W5_WORKLOAD_PREPARATION-v1.md)
+now retains all7 targets and820 unique request templates with original4C
+closed-loop replacement, explicit length ordering/scheduler fields, three
+selected arms and two fresh rounds. [Exact five-file hashes](../benchmarks/results/reloop-20261006/w5-workload-preparation/scientific-files.json)
+bind the CPU builder, workload manifest, trace templates and review. These
+inputs are not canonical-tokenized, capacity-admitted or GPU-run; no actual
+A/S, refill, quality or speed is inferred. A new device requires a fresh
+matching numerical gate, local baselines and a complete operational protocol.
+
 ## Complete fixed-work cost and frozen confirmation
 
 The complete P512/output128 case runs true D4 off, matched D3 off and D3 guided
