@@ -137,6 +137,14 @@ InitialC/totalC has no refill; it does not qualify the plan's default4C trace.
 | P4D3 off | 167.121 | 10934.280 | 59.380 | 69.385046 | 1.159342x | 1.158870–1.159814x |
 | P4D3 guided | 164.701 | 11076.655 | 60.521 | 69.385168 | 1.142596x | 1.140710–1.144482x |
 
+P4D3 keeps four prefill passes and uses three decode passes. All speed ratios
+here compare against the same vllm-rlt D4-off arm. Complete matched FlashLoop
+or other external-system E2E comparisons are not available in this evidence
+set; these results establish no external-system or state-of-the-art win.
+The [baseline scope table](../benchmarks/results/reloop-20261006/BASELINE_SCOPE.md)
+also retains the slower guided natural-stop development result and unchanged
+formal confirmation protocol.
+
 The same 30 measured raw trials also provide the following descriptive tails.
 All values were independently recomputed from the byte-identical request traces.
 
