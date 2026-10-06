@@ -162,6 +162,26 @@ executor retains20M opcodes/5 seconds per call. With148 zero-discordance code
 pairs, the interval is still about±3.371pp. Sample size, gate and time guard
 remain unchanged if resources expire before a new window.
 
+The actual frozen package passes an independent review of653 unique IDs,
+exact505 mathematics ranking/all148 code ordering, seen/development exclusion,
+11 input hashes and the complete scorer/cache/budget bindings. The unchanged
+[confirmation inputs](../benchmarks/results/reloop-20261006/confirmation-fp32-frozen-inputs.tar.gz)
+and [receipt](../benchmarks/results/reloop-20261006/confirmation-fp32-frozen-inputs.json)
+record this declaration before outputs. [The review](../benchmarks/results/reloop-20261006/W4_FROZEN_PACKET_REVIEW-v1.md)
+qualifies pretokenization inputs only; no final CUDA execution or accuracy is
+claimed. Runtime must bind actual canonical tokenization/per-task capacity and
+the final global protocol before generating any new output.
+
+At the H20 admission review, only872 seconds remained before the frozen
+evidence deadline. The1800-second admission/600-second finite drain could
+not fit; the complete mathematics extrapolation alone is about1456 seconds,
+with code runtime still unknown. The confirmation request was withdrawn
+before staging or tokenization. All1959 planned arm/question completions,
+mathematics scoring and code execution remain NOT_RUN; no zero scores,
+synthetic outputs or reduced denominators are substituted. The frozen inputs
+remain unchanged for a separately declared future run. See [the admission
+record](../benchmarks/results/reloop-20261006/confirmation-not-run.json).
+
 ## Evidence and reproduction
 
 [Scientific archive](../benchmarks/results/reloop-20261006/w3-fp32-v2.tar.gz)

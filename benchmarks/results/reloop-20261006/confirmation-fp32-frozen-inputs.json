@@ -1,0 +1,22 @@
+{
+  "paper_title": "Re:Loop",
+  "status": "FROZEN_BEFORE_OUTPUTS_INPUTS_ONLY_NOT_GENERATED",
+  "science_archive": "confirmation-fp32-frozen-inputs.tar.gz",
+  "science_archive_bytes": 158223,
+  "science_archive_sha256": "ab322499605c4ac55f3293d83aa21e28122e3320a91a946ec9c9cd0fd8a55582",
+  "manifest_sha256": "209e79435ca2c60b73d7b8d84c6a7490e24cf279bfcd944a2a81b36fcf6ef95d",
+  "scientific_files": 12,
+  "original_packet_sha256": "5c26172e2e76d6b9a92b44cf0998664bab377f6cff01e699df6fbf52719ac259",
+  "original_packet_bytes": 155942,
+  "selected_sha256": "b26137cad4d719340287c505a13c73af2ecece1296c94a461de86bf0ad73cac1",
+  "frozen_plan_sha256": "6677d34e3739999335aecbdfd83c00ea662b30f6f73ad276e36df3ea57ee54be",
+  "frozen_data_sha256": "0fd5eaca62e594d42785db878902eacf46d9edfd0c4da978d5672dfe14ff0689",
+  "independent_review_sha256": "ff6837448c0d9ff7b70652a95555e5d249162390c09d2c33ce937ba6e23fb61e",
+  "final_n_by_task": {
+    "gsm8k": 505,
+    "humanevalplus": 148
+  },
+  "family_comparisons": 2,
+  "model_outputs": "NOT_RUN",
+  "scope": "Unchanged pretokenization science inputs and frozen drivers; runtime ready/cloud grant controls omitted. Canonical tokenization, per-taskcapacity, a new hardware window and global hash are prerequisites. Original exact H20 offboxdeadline and full denominators preserved; reproduction on another host requires explicit new operational protocol."
+}

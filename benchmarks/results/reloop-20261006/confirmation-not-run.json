@@ -1,0 +1,29 @@
+{
+  "paper_title": "Re:Loop",
+  "status": "NOT_RUN_DEADLINE_ADMISSION_REQUEST_WITHDRAWN",
+  "reviewed_unix": 1791245728.0295238,
+  "offbox_deadline_unix": 1791246600.0,
+  "remaining_to_offbox_seconds": 871.9704761505127,
+  "frozen_gpu_admission_seconds": 1800,
+  "frozen_finite_batch_drain_seconds": 600,
+  "final_n_by_task": {
+    "gsm8k": 505,
+    "humanevalplus": 148
+  },
+  "arms": [
+    "A_P4D4_off",
+    "D_P4D3_on",
+    "C_P4D3_off"
+  ],
+  "family_comparisons": 2,
+  "required_completions": 1959,
+  "actual_model_completions": 0,
+  "canonical_final_tokenization": "NOT_RUN",
+  "actual_global_protocol_sha256": null,
+  "gpu_generation": "NOT_RUN",
+  "math_scoring": "NOT_RUN",
+  "code_export_and_scoring": "NOT_RUN",
+  "frozen_inputs": "Unchanged actual selection/protocol/653IDs/scorers/budgets retained; no synthetic missing model output records or zero scores created",
+  "scientific_conclusion": "Development UNCERTAIN and fixed-work speed14.2596%; independent confirmation has no result. Goal is incomplete.",
+  "original_admission_review_sha256": "4566db6b83df61102fedc805f280848d1d6126b1ea087352693a4c27017160fa"
+}
