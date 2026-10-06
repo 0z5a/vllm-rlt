@@ -114,5 +114,8 @@
   ],
   "actual_ssh_exit_code": 0,
   "actual_cpu_compile_exit_code": 0,
-  "ptx_offbox_sha_verified": 6
+  "ptx_offbox_sha_verified": 6,
+  "executed_compile_source": "compile_bf16.executed.py",
+  "executed_compile_source_sha256": "ab2dd11c28e21a294d08f88e0ddf3c00411c64cf41e718e6b0170f72fe744ac7",
+  "project_source_sha256": "e38fd2dd8a21c680d6cb15a5e0b6f71d29f8b22312ebfdad53a1424551fe70b8"
 }

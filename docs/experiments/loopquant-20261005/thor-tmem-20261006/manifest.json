@@ -8,8 +8,12 @@
     "bytes": 2394
   },
   "offline-bf16-result.json": {
-    "sha256": "0c8fb6a73ee2c3f9ea81ffdd8bbb92a2d5a1b46507b58a112f2578ffcaed8851",
-    "bytes": 2743
+    "sha256": "37384b575a7c1198da3e2cc5592db30aba182b76dc75592b053cd1ac39dc1658",
+    "bytes": 2999
+  },
+  "compile_bf16.executed.py": {
+    "sha256": "ab2dd11c28e21a294d08f88e0ddf3c00411c64cf41e718e6b0170f72fe744ac7",
+    "bytes": 1614
   },
   "tmem_gemm.py": {
     "sha256": "e38fd2dd8a21c680d6cb15a5e0b6f71d29f8b22312ebfdad53a1424551fe70b8",
