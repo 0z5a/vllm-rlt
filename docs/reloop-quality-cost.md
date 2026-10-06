@@ -3,8 +3,8 @@
 Re:Loop tests whether guided readout recovers quality after reducing decode
 loops, and whether that recovery lowers measured generation cost. Prompt
 prefill retains all four KV planes. The completed public-checkpoint development
-screen makes P4D3 guided the provisional cost candidate; independent quality
-and matched fixed-work cost are still pending.
+screen and two-fresh fixed-work case select P4D3 guided for independent
+confirmation. Final quality remains unmeasured.
 
 This increment depends on [upstream #86](https://github.com/ThinkFlowLab/vllm-rlt/pull/86).
 The fork comparison targets `feature/loopcd-ouro-task0` at
@@ -50,8 +50,8 @@ all106 payload hashes and every prompt/ID/depth/stop trace were verified.
 Timing covers native submission through synchronized drain, including CPU
 text-stop decoding; model load and serialization are excluded. Output lengths
 vary. Two D3-guided truncations remain in the result and produce long tails.
-These ratios describe the development run; fixed-work, fresh-process and HTTP
-performance require their own measurements.
+These ratios describe variable-length development generation. The separate
+two-fresh fixed-work measurement is below; HTTP remains unmeasured.
 
 | Exploratory comparison | Wins / losses | Difference pp | Conservative interval pp | Status |
 |---|---:|---:|---|---|
@@ -92,38 +92,75 @@ P4 prefix planes. Peak allocated memory rounds to69.4261GiB in every arm;
 guided reference peak is131072 bytes. Off's capability-gated work counters do
 not measure actual body work.
 
-## Next frozen work
+The original W5 capacity targets remain separate from the P512 candidate-cost
+recipe. CPU bounds round each P+128−1 computed span to16-token R4 groups:
 
-D3 guided is `PROVISIONAL_FOR_COST`. Its point count matches D4 and gains one
-answer over D3 off; the intervals remain uncertain. The pre-read policy permits
-at most one candidate. A separate fixed128-output, P512 C32/C64 protocol uses
-two fresh starts, reversed arm order, five warmups and five measurements for
-true D4 off, matched D3 off and D3 guided. Each trial submits and completes C
-requests; it does not use the plan's default4C refill trace. Only the first
-full-D4 C32 calibration has completed; the complete cost gate is pending.
+| Target | B / C | Target A | Input tokens | FP32 R4 KV GiB | Static status | Exact native E2E |
+|---|---|---:|---|---:|---|---|
+| L1 | 1 /1 | 1 | 512 | 0.938 | KV bound fits | NOT_RUN |
+| T32 | 32 /32 | 32 | 512 | 30.000 | KV bound fits | NOT_RUN |
+| Q64 example | 32 /64 | 32 | 512/2048 mixed | 66.000 | First32 target exceeds pool | NOT_RUN |
+| T64_short | 64 /64 | 64 | 256 | 36.000 | KV bound fits | NOT_RUN |
+| C8_long | 8 /8 | 8 | 2048 | 25.500 | KV bound fits | NOT_RUN |
+| C4_longer | 4 /4 | 4 | 8192 | 48.750 | KV bound fits | NOT_RUN |
+| A32_large | 32 /32 | 32 | 2048 | 102.000 | PLANNED_CAPACITY_EXCEEDED | NOT_RUN |
 
-| Fixed-work arm | B / total C | Observed A / S | Tokens/s | TTFT mean ms | TPOT mean ms | Peak allocated GiB | Candidate speed |
-|---|---|---|---:|---:|---:|---:|---|
-| D4 off, fresh0 | 16 /32 | 16 /16 | 143.872 | 11980.360 | 74.652 | 69.385 | Baseline only |
-| D3 off / D3 guided | 16 /32 | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+These bounds exclude weights, activations, scratch, Graph buffers and actual
+free memory. All positions fit the model's65536 limit. Q64 uses an example
+alternating mix's first32 residents; the64-request queue is unmeasured, and the
+final mix/arrival rule remains unfrozen. A32/P2048 exceeds the64GiB pool before
+execution; it is not an observed OOM. Actual A/S and long-context compatibility
+are still unverified. See the unchanged [preflight table](../benchmarks/results/reloop-20261006/W5_CAPACITY_PREFLIGHT-v1.md)
+and [raw page bounds](../benchmarks/results/reloop-20261006/w5-fp32-capacity-preflight-v1.json).
+The initial totalC cost trace does not qualify the original default4C refill.
 
-The first process completed10 trials,320 requests and40960 outputs, with five
-warmups and five measurements at the common64GiB R4 FP32 pool. The table
-averages measured trials. All29 original payload hashes and per-request
-timing, token, depth and drain records were verified; the child took295.832
-seconds and exited naturally. Neutral core/head observers are identical across
-arms and preserve the capability-off path. Status is
-`PARTIAL_CASE_RAW_PASS_NO_COST_GATE`; one baseline process cannot establish
-candidate speed or the two-fresh C32/C64 matrix. The unchanged21-file
-[scientific archive](../benchmarks/results/reloop-20261006/cost-c32-first-a.tar.gz)
-and [receipt](../benchmarks/results/reloop-20261006/cost-c32-first-a.json)
-retain this partial result separately.
+## Complete fixed-work cost and frozen confirmation
 
-Independent505-question mathematics and148-task HumanEval+ confirmation,
-family M2, is prepared with148 verified canonical code references. Final
-selection and final IDs require actual fixed-work evidence before any final
-outputs. With148 zero-discordance code pairs, the interval is still about
-±3.371pp. Numerical qualification alone cannot certify independent quality.
+The complete P512/output128 case runs true D4 off, matched D3 off and D3 guided
+at B16/totalC32, observed A=S16 and common64GiB R4 FP32 KV. Each of the six fresh
+processes completes five warmups and five measurements. Order is A–B–C / C–B–A;
+all60 trials,1920 requests and245760 tokens passed the frozen raw auditor.
+InitialC/totalC has no refill; it does not qualify the plan's default4C trace.
+
+| Arm | Mean tokens/s | Mean TTFT ms | Mean TPOT ms | Peak allocated GiB | Mean matched speed vs D4 off | Two-fresh mean ratio range |
+|---|---:|---:|---:|---:|---:|---|
+| P4D4 off | 144.177 | 11945.174 | 74.588 | 69.385046 | 1.000000x | baseline |
+| P4D3 off | 167.121 | 10934.280 | 59.380 | 69.385046 | 1.159342x | 1.158870–1.159814x |
+| P4D3 guided | 164.701 | 11076.655 | 60.521 | 69.385168 | 1.142596x | 1.140710–1.144482x |
+
+The10 matched measured ratios are baseline elapsed/candidate elapsed.
+Guidance versus D3off gives a mean speed ratio0.985644x; independently averaged
+elapsed overhead is1.475311%. The means of reciprocal ratios are not exact
+reciprocals. Guided allocation adds128KiB and reserved memory adds2MiB;
+retaining the common R4 pool provides no KV or peak memory reduction.
+Neutral core/head observers apply the same wrappers to every arm.
+
+The guided mean is below the predeclared1.15x reference. The execution plan
+and pre-read policy define it as a continuation reference rather than a hard
+acceptance gate. Both fresh rounds show about14% fixed-work improvement,
+so one D3-guided candidate is selected for independent confirmation. The
+80/128 versus79/128 development recovery remains UNCERTAIN; selection is not
+noninferiority or evidence that guidance creates the depth-reduction speedup.
+
+All99 original payload hashes and outer2407222-byte archive SHA
+`06d960ebb83e97eb1dee8af3a98b5c3cc956815eb558c7cdabccc37077ec5cb4`
+were verified. The unchanged scientific subset, complete per-request
+traces and frozen audit scripts are in [the C32 archive](../benchmarks/results/reloop-20261006/cost-c32-full.tar.gz)
+and [its receipt](../benchmarks/results/reloop-20261006/cost-c32-full.json).
+The earlier first-process [partial archive](../benchmarks/results/reloop-20261006/cost-c32-first-a.tar.gz)
+is retained separately. B32/C64 and the seven-target native/long-context matrix
+remain NOT_RUN; fixed-work cost does not establish HTTP or async serving.
+
+The final protocol freezes505 unseen mathematics and148 unseen HumanEval+
+IDs, three arms and M2 before any final outputs. It binds actual SELECTED
+receipt, the FP32/Triton numerical gate, exact scoring/cache/source hashes,
+1024-token natural-stop maximum,2,006,016-token generation budget,1800-second
+admission and600-second finite natural drain. The packet is LOCAL_READY_NOT_GRANTED;
+no final outputs have been generated. Code reference preparation is complete
+for all148 tasks under its separate trusted-reference budget; the candidate
+executor retains20M opcodes/5 seconds per call. With148 zero-discordance code
+pairs, the interval is still about±3.371pp. Sample size, gate and time guard
+remain unchanged if resources expire before a new window.
 
 ## Evidence and reproduction
 
