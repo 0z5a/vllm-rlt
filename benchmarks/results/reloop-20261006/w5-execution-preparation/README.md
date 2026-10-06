@@ -1,5 +1,13 @@
 # W5 execution preparation
 
+`audit_w5_native_trials.py` checks each complete job's frozen configuration,
+all request traces, distributions and repeat parity. `summarize_w5_raw_matrix.py`
+retains the original seven cases and compares only ten matching measurements
+after all six fresh jobs for a case are present. Their interface and configuration
+review is in [native-auditor-interface-review](native-auditor-interface-review/receipt.json),
+with source bindings in [native-auditor-source-review.json](native-auditor-source-review.json).
+These are prepared interfaces: all seven new native cases remain NOT_RUN.
+
 The resolver freezes all original seven request traces. The arm driver reads those inputs and uses the original native cost observer. Canonical tokenization and all seven GPU points remain **NOT_RUN**.
 
 | Step | Available evidence | Execution status |

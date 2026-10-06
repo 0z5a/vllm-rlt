@@ -1,0 +1,133 @@
+{
+  "status": "INCOMPLETE",
+  "source_sha256": "57f9dc51cf81836de14f06f14182b5aae3857149da7eabefcd7d772f17704e23",
+  "case_rows": [
+    {
+      "case_id": "L1",
+      "B": 1,
+      "C": 1,
+      "expected_requests_per_trial": 4,
+      "jobs_verified": 0,
+      "required_jobs": 6,
+      "status": "NOT_RUN",
+      "missing_jobs": [
+        "L1-fresh0-A_P4D4_off",
+        "L1-fresh0-C_P4D3_off",
+        "L1-fresh0-D_P4D3_on",
+        "L1-fresh1-A_P4D4_off",
+        "L1-fresh1-C_P4D3_off",
+        "L1-fresh1-D_P4D3_on"
+      ]
+    },
+    {
+      "case_id": "T32",
+      "B": 32,
+      "C": 32,
+      "expected_requests_per_trial": 128,
+      "jobs_verified": 0,
+      "required_jobs": 6,
+      "status": "NOT_RUN",
+      "missing_jobs": [
+        "T32-fresh0-A_P4D4_off",
+        "T32-fresh0-C_P4D3_off",
+        "T32-fresh0-D_P4D3_on",
+        "T32-fresh1-A_P4D4_off",
+        "T32-fresh1-C_P4D3_off",
+        "T32-fresh1-D_P4D3_on"
+      ]
+    },
+    {
+      "case_id": "Q64",
+      "B": 32,
+      "C": 64,
+      "expected_requests_per_trial": 256,
+      "jobs_verified": 0,
+      "required_jobs": 6,
+      "status": "NOT_RUN",
+      "missing_jobs": [
+        "Q64-fresh0-A_P4D4_off",
+        "Q64-fresh0-C_P4D3_off",
+        "Q64-fresh0-D_P4D3_on",
+        "Q64-fresh1-A_P4D4_off",
+        "Q64-fresh1-C_P4D3_off",
+        "Q64-fresh1-D_P4D3_on"
+      ]
+    },
+    {
+      "case_id": "T64_short",
+      "B": 64,
+      "C": 64,
+      "expected_requests_per_trial": 256,
+      "jobs_verified": 0,
+      "required_jobs": 6,
+      "status": "NOT_RUN",
+      "missing_jobs": [
+        "T64_short-fresh0-A_P4D4_off",
+        "T64_short-fresh0-C_P4D3_off",
+        "T64_short-fresh0-D_P4D3_on",
+        "T64_short-fresh1-A_P4D4_off",
+        "T64_short-fresh1-C_P4D3_off",
+        "T64_short-fresh1-D_P4D3_on"
+      ]
+    },
+    {
+      "case_id": "C8_long",
+      "B": 8,
+      "C": 8,
+      "expected_requests_per_trial": 32,
+      "jobs_verified": 0,
+      "required_jobs": 6,
+      "status": "NOT_RUN",
+      "missing_jobs": [
+        "C8_long-fresh0-A_P4D4_off",
+        "C8_long-fresh0-C_P4D3_off",
+        "C8_long-fresh0-D_P4D3_on",
+        "C8_long-fresh1-A_P4D4_off",
+        "C8_long-fresh1-C_P4D3_off",
+        "C8_long-fresh1-D_P4D3_on"
+      ]
+    },
+    {
+      "case_id": "C4_longer",
+      "B": 4,
+      "C": 4,
+      "expected_requests_per_trial": 16,
+      "jobs_verified": 0,
+      "required_jobs": 6,
+      "status": "NOT_RUN",
+      "missing_jobs": [
+        "C4_longer-fresh0-A_P4D4_off",
+        "C4_longer-fresh0-C_P4D3_off",
+        "C4_longer-fresh0-D_P4D3_on",
+        "C4_longer-fresh1-A_P4D4_off",
+        "C4_longer-fresh1-C_P4D3_off",
+        "C4_longer-fresh1-D_P4D3_on"
+      ]
+    },
+    {
+      "case_id": "A32_large",
+      "B": 32,
+      "C": 32,
+      "expected_requests_per_trial": 128,
+      "jobs_verified": 0,
+      "required_jobs": 6,
+      "status": "NOT_RUN",
+      "missing_jobs": [
+        "A32_large-fresh0-A_P4D4_off",
+        "A32_large-fresh0-C_P4D3_off",
+        "A32_large-fresh0-D_P4D3_on",
+        "A32_large-fresh1-A_P4D4_off",
+        "A32_large-fresh1-C_P4D3_off",
+        "A32_large-fresh1-D_P4D3_on"
+      ]
+    }
+  ],
+  "required_cases": 7,
+  "required_fresh_jobs": 42,
+  "required_trials_including_warmup": 420,
+  "jobs_verified": 0,
+  "audit_provenance": [],
+  "arrival": "4C closed-loop; matched workloads with reversed configuration blocks",
+  "resource_model_source_gate_and_same_GPU": "Must be independently proven by the actual owning controller and offbox archives; raw status alone is insufficient",
+  "quality_or_goal_completion": "NOT_PROVEN"
+}

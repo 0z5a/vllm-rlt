@@ -4,7 +4,9 @@
   "original_sources": {
     "prepare_w5_workloads.py": "55a88ced4e87bf8c779d4882bd932e92b9e17901364322c21be54773eb231409",
     "resolve_w5_prompts.py": "48164e2c52b8da74018f98f745254745255e4cba737a4f51bc4d90df5b0b35b4",
-    "run_w5_cost_arm.py": "08b062e7126167e687f013985fdf3806d88a600e69d9ac238d50b45b42c083a7"
+    "run_w5_cost_arm.py": "08b062e7126167e687f013985fdf3806d88a600e69d9ac238d50b45b42c083a7",
+    "audit_w5_native_trials.py": "35b94e8cdd1d69d700feeeafee7ed714d674727ae39f606ae63872fe6827d5d6",
+    "summarize_w5_raw_matrix.py": "16c10b46fab4a8b3f68528bbc860c53cbe1db51e33036a7aac020da3e973b58f"
   },
   "public_changes": "Import ordering/literal-string wrapping only; non-import AST and import bindings preserved",
   "frozen_observer": {
@@ -15,12 +17,12 @@
   },
   "files": {
     "README.md": {
-      "bytes": 3433,
-      "sha256": "8187938f5ab9100006d6cf7b8f143335bd01d847e93448e46dd4807d27e90e4b"
+      "bytes": 4017,
+      "sha256": "4d023c101454a01b8c0cda11e6dd012431510aeea280faad931688c04c7febd9"
     },
-    "__pycache__/prepare_w5_workloads.cpython-312.pyc": {
-      "bytes": 11592,
-      "sha256": "5578704f171f11410d6ef4da22d3f39de72a41613bed4b397ccdb31ec8f7b14c"
+    "audit_w5_native_trials.py": {
+      "bytes": 13028,
+      "sha256": "35b94e8cdd1d69d700feeeafee7ed714d674727ae39f606ae63872fe6827d5d6"
     },
     "format-only-source-review.json": {
       "bytes": 1875,
@@ -29,6 +31,54 @@
     "independent-source-review.json": {
       "bytes": 3628,
       "sha256": "9e5a3679617f45406a6b8d3a7ae7a52155c085a4103cb0596204c724a10d983e"
+    },
+    "native-auditor-interface-review/audit_w5_native_trials.py.help.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-auditor-interface-review/audit_w5_native_trials.py.help.stdout.txt": {
+      "bytes": 382,
+      "sha256": "ebc310e545c785c55f4bf1aace02bc38ed3d024f92786452e9b78d321ee0d4fc"
+    },
+    "native-auditor-interface-review/matrix-empty/RESULTS.md": {
+      "bytes": 979,
+      "sha256": "f0772e477db7fc60746d1e78fad6afa3c850057d2def8a10493ecb49d02d820d"
+    },
+    "native-auditor-interface-review/matrix-empty/matrix.json": {
+      "bytes": 3616,
+      "sha256": "e79cea2f8e191f22ed5e152cf10496fa546a2109259cef217b5ab608fa583821"
+    },
+    "native-auditor-interface-review/matrix.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-auditor-interface-review/matrix.stdout.txt": {
+      "bytes": 142,
+      "sha256": "51e3c355e5d020cb24fa40195f8933066c80dc2d93c212202ef9b35bf65cc94a"
+    },
+    "native-auditor-interface-review/receipt.json": {
+      "bytes": 1011,
+      "sha256": "e294c26b096d30fc1400e5e54eef383d04c3166a881c11f31322b65ce3ba952b"
+    },
+    "native-auditor-interface-review/ruff.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-auditor-interface-review/ruff.stdout.txt": {
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "native-auditor-interface-review/summarize_w5_raw_matrix.py.help.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "native-auditor-interface-review/summarize_w5_raw_matrix.py.help.stdout.txt": {
+      "bytes": 244,
+      "sha256": "994a718377392144abcbf5a28522cc6ca76a81278b90e7e274e6214ffe99dec6"
+    },
+    "native-auditor-source-review.json": {
+      "bytes": 1905,
+      "sha256": "765fd81be558becdebc5c1dbca22eec3599269b094737ecd38367b33002403aa"
     },
     "original-interface-review/receipt.json": {
       "bytes": 1240,
@@ -89,7 +139,13 @@
     "run_w5_cost_arm.py": {
       "bytes": 10001,
       "sha256": "081f63d9aa1bef69920cfbac0ce850acd95e110f1bdcf82b43ae9159a84dd2d3"
+    },
+    "summarize_w5_raw_matrix.py": {
+      "bytes": 8786,
+      "sha256": "57f9dc51cf81836de14f06f14182b5aae3857149da7eabefcd7d772f17704e23"
     }
   },
-  "formatted_public_interface_receipt_sha256": "58fa1529b9a6e080ac86c085f3096da28ee3966f235c43531e3d5aa9a86d7308"
+  "formatted_public_interface_receipt_sha256": "58fa1529b9a6e080ac86c085f3096da28ee3966f235c43531e3d5aa9a86d7308",
+  "auditor_public_interface_receipt_sha256": "e294c26b096d30fc1400e5e54eef383d04c3166a881c11f31322b65ce3ba952b",
+  "file_scope": "Published regular artifacts only; generated Python bytecode excluded"
 }

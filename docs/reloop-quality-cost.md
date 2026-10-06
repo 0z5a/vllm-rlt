@@ -137,6 +137,20 @@ InitialC/totalC has no refill; it does not qualify the plan's default4C trace.
 | P4D3 off | 167.121 | 10934.280 | 59.380 | 69.385046 | 1.159342x | 1.158870–1.159814x |
 | P4D3 guided | 164.701 | 11076.655 | 60.521 | 69.385168 | 1.142596x | 1.140710–1.144482x |
 
+The same 30 measured raw trials also provide the following descriptive tails.
+All values were independently recomputed from the byte-identical request traces.
+
+| Metric | P4D4 off | P4D3 off | P4D3 guided |
+|---|---:|---:|---:|
+| P95 ITL ms | 72.130 | 56.332 | 57.699 |
+| P99 native request latency ms | 29402.655 | 25055.404 | 25066.075 |
+
+These are pooled nearest-rank quantiles over 320 measured requests and 40,640
+token intervals per arm. Only two fresh environment repeats exist. TTFT includes
+queue/admission waiting, and native latency runs from submission through final
+delivery. The [latency table and portable raw provenance](../benchmarks/results/reloop-20261006/cost-c32-latency/RESULTS.md)
+refer to the same earlier physical H20 and initial-C policy.
+
 The10 matched measured ratios are baseline elapsed/candidate elapsed.
 Guidance versus D3off gives a mean speed ratio0.985644x; independently averaged
 elapsed overhead is1.475311%. The means of reciprocal ratios are not exact
@@ -215,3 +229,11 @@ this FP32 candidate's fixed-work or independent quality result.
 
 
 The seven-point W5 input resolver and single-arm native driver are available in [execution preparation](../benchmarks/results/reloop-20261006/w5-execution-preparation/README.md). They retain all820 IDs,4C refill,the three selected arms,two fresh rounds and the original byte-identical observer. Original CLI/unresolved-template rejection receipts and an independent source review are included. Canonical tokenization,native numerical qualification and all seven device runs remain NOT_RUN; these interfaces add no quality,A/S,refill,speed or VRAM result.
+
+The same preparation now includes a per-job raw auditor and the original
+seven-case matrix summary. The auditor verifies sampling, guidance, cache and
+scheduler configuration before checking every request and raw distribution.
+Public-interface checks accept all six actual earlier configurations and keep
+all seven cases and 42 missing jobs in an empty matrix. Complete new 4C job
+integration awaits actual output; numerical qualification, owning processes,
+resource identity and complete offbox archives remain separate requirements.

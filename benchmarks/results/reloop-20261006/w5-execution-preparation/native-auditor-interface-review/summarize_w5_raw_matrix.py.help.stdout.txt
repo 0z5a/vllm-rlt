@@ -1,0 +1,8 @@
+usage: summarize_w5_raw_matrix.py [-h] --audits AUDITS --output OUTPUT
+
+Keep every original W5 case and pair only complete same-protocol raw jobs.
+
+options:
+  -h, --help       show this help message and exit
+  --audits AUDITS
+  --output OUTPUT
