@@ -12,7 +12,7 @@ import time
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--socket", type=Path, required=True)
 args = parser.parse_args()
-root = Path("PRIVATE_PATH")
+root = Path("/Users/0z5a/Documents/infra/loopquant-20261005")
 label = "h20-loopformer-native-g0-v3"
 packet = root / "snapshots" / label
 authorization = json.loads((packet / "peer-authorization.json").read_text())
@@ -60,13 +60,13 @@ with (root / f"evidence/{label}-foreground.log").open("x") as log:
             "-S",
             str(args.socket),
             "-p",
-            "PRIVATE_PORT",
+            "33885",
             "-o",
             "BatchMode=yes",
             "-o",
             "ProxyCommand=false",
-            "<private-account>@<private-host>",
-            f"PRIVATE_PATH PRIVATE_PATH",
+            "root@region-42.seetacloud.com",
+            f"/root/miniconda3/bin/python /root/autodl-tmp/0z5a/loopquant-h20-20261006/{label}/launch.py",
         ],
         stdin=tar.stdout,
         stdout=log,

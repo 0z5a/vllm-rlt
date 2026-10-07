@@ -2,6 +2,7 @@
   "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
   "scope": "three warmed native Nsight cost captures BF16/DYN/SH1 C32 B512 P256D32 R4;32warmup64capturedrequests each;diagnostic times not E2E comparisons",
   "nsys_version": "2025.3.1.0",
+  "locks": "parent holds original GPU0,GPU1,heavyIO across captures and stats; probe has no lock acquisition",
   "termination": "kill=none,capture-range-end=stop,wait=all; no duration limit or signals",
   "reports": [
     "cuda_gpu_kern_sum",

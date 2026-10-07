@@ -1,3 +1,6 @@
 {
-  "start_unix": 1791226717.3668993
+  "launcher_pid": 71524,
+  "launcher_start_ticks": 2500013814,
+  "start_unix": 1791226717.3668993,
+  "controller_pid": 71525
 }

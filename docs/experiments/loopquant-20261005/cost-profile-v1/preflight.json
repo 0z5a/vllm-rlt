@@ -1,6 +1,13 @@
 {
   "status": "pass",
   "timestamp": 1791174822.6958694,
+  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+  "compute_apps": "",
+  "original_inodes": [
+    12895501670,
+    12895501695,
+    12895501666
+  ],
   "gpu_memory_used_mib": [
     0,
     0

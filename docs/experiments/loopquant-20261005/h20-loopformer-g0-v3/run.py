@@ -11,12 +11,12 @@ import time
 
 from materialize_verified_tar import TransferFile, materialize
 
-root = Path("PRIVATE_PATH")
+root = Path("/root/autodl-tmp/0z5a/loopquant-h20-20261006")
 label = "h20-loopformer-native-g0-v3"
 window = root / label
 source = root / ("source-" + label)
 model = root / "models/loopformer-3block-8iterations"
-locks = Path("PRIVATE_PATH")
+locks = Path("/root/autodl-tmp/0z5a-coordination/h20")
 manifest = json.loads((window / "manifest.json").read_text())
 assert (
     Path("/proc/sys/kernel/random/boot_id").read_text().strip() == manifest["boot_id"]

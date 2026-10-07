@@ -1,39 +1,39 @@
 Traceback (most recent call last):
-  File "PRIVATE_PATH", line 159, in <module>
+  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-loopformer-native-g0-v2/download.py", line 159, in <module>
     main()
-  File "PRIVATE_PATH", line 66, in main
+  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-loopformer-native-g0-v2/download.py", line 66, in main
     with urllib.request.urlopen(url, timeout=60) as response:
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 215, in urlopen
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 215, in urlopen
     return opener.open(url, data, timeout)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 521, in open
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 521, in open
     response = meth(req, response)
                ^^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 630, in http_response
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 630, in http_response
     response = self.parent.error(
                ^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 553, in error
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 553, in error
     result = self._call_chain(*args)
              ^^^^^^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 492, in _call_chain
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 492, in _call_chain
     result = func(*args)
              ^^^^^^^^^^^
-  File "PRIVATE_PATH", line 745, in http_error_302
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 745, in http_error_302
     return self.parent.open(new, timeout=req.timeout)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 521, in open
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 521, in open
     response = meth(req, response)
                ^^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 630, in http_response
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 630, in http_response
     response = self.parent.error(
                ^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 559, in error
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 559, in error
     return self._call_chain(*args)
            ^^^^^^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 492, in _call_chain
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 492, in _call_chain
     result = func(*args)
              ^^^^^^^^^^^
-  File "PRIVATE_PATH", line 639, in http_error_default
+  File "/root/miniconda3/lib/python3.12/urllib/request.py", line 639, in http_error_default
     raise HTTPError(req.full_url, code, msg, hdrs, fp)
 urllib.error.HTTPError: HTTP Error 403: Forbidden

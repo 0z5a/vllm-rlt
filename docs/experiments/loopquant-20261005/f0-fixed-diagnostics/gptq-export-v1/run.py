@@ -13,7 +13,7 @@ import time
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--gpu-index", type=int, choices=[0, 1], required=True)
 gpu = parser.parse_args().gpu_index
-root = Path("PRIVATE_PATH")
+root = Path("/root/autodl-tmp/0z5a/loopquant-20261005")
 window, source = root / "gptq-export-v1", root / "source-gptq-export-v1"
 with (root.parent / "heavy-io.lock").open("a") as io:
     fcntl.flock(io, fcntl.LOCK_EX)

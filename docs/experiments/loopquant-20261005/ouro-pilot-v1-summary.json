@@ -2,6 +2,7 @@
   "scope": "single-trial64-request smoke E2E pilot; not formal G3; no quality gate claim",
   "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
   "package_manifest_sha256": "888923adf1ed51e7290c40ff08f46648c616cefa871bb6b3ff31eeecc6dbdd02",
+  "controller_pid": 23720,
   "cases": [
     {
       "policy": "BF16",
@@ -26,6 +27,7 @@
       "steady_output_tokens_s": null,
       "steady_request_goodput_s": null,
       "peak_allocated_bytes": 24488176640,
+      "pid": 23721,
       "vs_bf16": 1.0,
       "vs_dyn": 1.0794661381108783
     },
@@ -52,6 +54,7 @@
       "steady_output_tokens_s": null,
       "steady_request_goodput_s": null,
       "peak_allocated_bytes": 23311102464,
+      "pid": 23757,
       "vs_bf16": 0.9263838528089929,
       "vs_dyn": 1.0
     },
@@ -78,6 +81,7 @@
       "steady_output_tokens_s": null,
       "steady_request_goodput_s": null,
       "peak_allocated_bytes": 23311188480,
+      "pid": 23873,
       "vs_bf16": 0.9200450134022797,
       "vs_dyn": 0.9931574375055302
     },
@@ -104,6 +108,7 @@
       "steady_output_tokens_s": null,
       "steady_request_goodput_s": null,
       "peak_allocated_bytes": 23311188480,
+      "pid": 23989,
       "vs_bf16": 0.9300096776019413,
       "vs_dyn": 1.0039139550867107
     },
@@ -130,6 +135,7 @@
       "steady_output_tokens_s": null,
       "steady_request_goodput_s": null,
       "peak_allocated_bytes": 23410234880,
+      "pid": 24105,
       "vs_bf16": 0.9298512978642194,
       "vs_dyn": 0.9903552382781415
     },
@@ -156,6 +162,7 @@
       "steady_output_tokens_s": null,
       "steady_request_goodput_s": null,
       "peak_allocated_bytes": 23410234880,
+      "pid": 24131,
       "vs_bf16": 0.9340519291377263,
       "vs_dyn": 0.9948291979266874
     },
@@ -182,6 +189,7 @@
       "steady_output_tokens_s": null,
       "steady_request_goodput_s": null,
       "peak_allocated_bytes": 23410148864,
+      "pid": 24155,
       "vs_bf16": 0.9389068305236452,
       "vs_dyn": 1.0
     },
@@ -208,6 +216,7 @@
       "steady_output_tokens_s": null,
       "steady_request_goodput_s": null,
       "peak_allocated_bytes": 24565919232,
+      "pid": 24179,
       "vs_bf16": 1.0,
       "vs_dyn": 1.065068404542634
     }

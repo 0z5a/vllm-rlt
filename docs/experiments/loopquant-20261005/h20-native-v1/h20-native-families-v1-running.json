@@ -1,27 +1,81 @@
 {
+  "controller_pid": 22114,
+  "controller_start_ticks": 2499216226,
   "start_unix": 1791218740.7901912,
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
   "children": [
     {
       "family": "hrm",
+      "child_pid": 22129,
+      "child_start_ticks": 2499216253,
       "start_unix": 1791218740.790927,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-native-families-v1/probe.py",
+        "--family",
+        "hrm",
+        "--output",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-native-families-v1-hrm.json"
+      ],
       "returncode": 0,
       "end_unix": 1791218755.4832525
     },
     {
       "family": "loopformer",
+      "child_pid": 22317,
+      "child_start_ticks": 2499217723,
       "start_unix": 1791218755.4842937,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-native-families-v1/probe.py",
+        "--family",
+        "loopformer",
+        "--output",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-native-families-v1-loopformer.json"
+      ],
       "returncode": 0,
       "end_unix": 1791218766.8113136
     },
     {
       "family": "huginn",
+      "child_pid": 22457,
+      "child_start_ticks": 2499218855,
       "start_unix": 1791218766.8130817,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-native-families-v1/probe.py",
+        "--family",
+        "huginn",
+        "--output",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-native-families-v1-huginn.json"
+      ],
       "returncode": 1,
       "end_unix": 1791218771.3858683
     },
     {
       "family": "parcae",
-      "start_unix": 1791218771.3870206
+      "child_pid": 22510,
+      "child_start_ticks": 2499219313,
+      "start_unix": 1791218771.3870206,
+      "command": [
+        "/root/miniconda3/bin/python",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-native-families-v1/probe.py",
+        "--family",
+        "parcae",
+        "--output",
+        "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-native-families-v1-parcae.json"
+      ]
     }
   ],
   "manifest_sha256": "6e592588c0d0993b873972213143600c5f9d3779eadd1c527b548b5b854358ad"

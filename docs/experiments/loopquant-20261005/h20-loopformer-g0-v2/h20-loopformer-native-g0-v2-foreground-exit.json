@@ -1,5 +1,8 @@
 {
+  "launcher_pid": 71524,
+  "launcher_start_ticks": 2500013814,
   "start_unix": 1791226717.3668993,
+  "controller_pid": 71525,
   "returncode": 1,
   "end_unix": 1791226718.5839086
 }

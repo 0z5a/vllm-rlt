@@ -6,7 +6,7 @@ The latest H20 attempt and prepared replacements are recorded below.
 ## LoopFormer download attempt and replacement
 
 The admitted fixed LoopFormer G0v2 packet stops during its first configuration request:
-the public mirror redirects then returns HTTP403. Download <private-process>, <private-process>
+the public mirror redirects then returns HTTP403. Download child71532, controller71525
 and launcher71524 finish naturally1; SSH80692 returns1. No checkpoint file is written,
 and all64 full-checkpoint cache cases remain **NOT_RUN**.
 
@@ -83,7 +83,7 @@ No tiny diagnostic is a full-checkpoint CUDA G0.
 The latest directly verified shared-resource priority places ready FlashNS/LoopCD work first.
 All Quant retry/follow-up packets wait for later separate grants. Original locked quality,
 all-model high-concurrency/multi-batch paired E2E, RTN/GPTQ, QAT and NVFP4 remain incomplete;
-old5090 INT4 <private-process> remains UNKNOWN and is never duplicated or killed.
+old5090 INT4 child31380 remains UNKNOWN and is never duplicated or killed.
 
 To reconstruct the reviewed packet mirrors, place the shared `fixed-loop-g0-v2/probe.py`
 inside each v2 child directory and regenerate `source.tar.gz` with

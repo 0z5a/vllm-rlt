@@ -4,12 +4,12 @@
   "timestamp": 1791176200.3609128,
   "files_removed": [
     {
-      "path": "PRIVATE_PATH",
+      "path": "/Users/0z5a/Documents/infra/loopquant-20261005/models/nanbeige-4.2-3b/model-00001-of-00002.safetensors",
       "bytes": 4973547960,
       "sha256": "09d265d5ec837bc64462796b7f8c110be9a135a55ed7a6eb5d07e0e90c976a94"
     },
     {
-      "path": "PRIVATE_PATH",
+      "path": "/Users/0z5a/Documents/infra/loopquant-20261005/models/nanbeige-4.2-3b/model-00002-of-00002.safetensors",
       "bytes": 3366076760,
       "sha256": "31019e7870a044f44bc3f7e981f8c5ecd42d341e5ca6cfdbfd07fb95d95be389"
     }

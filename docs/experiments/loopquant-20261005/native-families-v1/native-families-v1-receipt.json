@@ -1,5 +1,17 @@
 {
+  "controller_pid": 29910,
   "start_unix": 1791178078.1819925,
+  "child_pid": 29913,
+  "command": [
+    "/root/miniconda3/bin/python",
+    "/root/autodl-tmp/0z5a/loopquant-20261005/native-families-v1/probe.py",
+    "--gpu-index",
+    "1",
+    "--locks",
+    "/root/autodl-tmp/0z5a",
+    "--output",
+    "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/native-families-v1.json"
+  ],
   "returncode": 0,
   "end_unix": 1791178095.5667806
 }

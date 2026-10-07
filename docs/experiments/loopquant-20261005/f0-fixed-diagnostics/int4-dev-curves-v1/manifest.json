@@ -3,6 +3,7 @@
   "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
   "scope": "fixed BF16/INT4 RTN group128 dev curves at R1/R2/R3/R4;128 windows each, no search, locked G2 or timing claim",
   "export": "one physical packed W per projection, BF16 scales; byte-exact native reload",
+  "locks": "child GPU lock across each policy; original IO across model read/export; no same enclosing lock",
   "files": {
     "dev.jsonl": "325f23166ecec45f22a8a8254dc5edc7bf465b1d456beff801b58c7a07770c1c",
     "probe.py": "0603e4ac6a2d64773d9cd8a3bd9e66905c6d1a059a6599d39982e8a5887d3bcf",

@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 
-root = Path("PRIVATE_PATH")
+root = Path("/root/autodl-tmp/0z5a/loopquant-h20-20261006")
 label = "h20-loopformer-native-g0-v3"
 started = time.time()
 receipt = dict(

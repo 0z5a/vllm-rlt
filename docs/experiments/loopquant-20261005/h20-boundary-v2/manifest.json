@@ -4,6 +4,18 @@
     9,
     0
   ],
+  "target_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
   "sources": {
     "huginn": "cd80141757a5b58f241b419c9abecea2a3fde789",
     "parcae": "bf2a5208a15fe82da9e3a0586f3b574432ba3974"

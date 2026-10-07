@@ -43,7 +43,8 @@
   ],
   "start_unix": 1791140762.871442,
   "end_unix": 1791140763.9922075,
-  "device_census": "index, uuid, memory.used [MiB], utilization.gpu [%]\n0, <private-id>, 0 MiB, 0 %\n1, <private-id>, 0 MiB, 0 %\n",
+  "pid": 2554,
+  "device_census": "index, uuid, memory.used [MiB], utilization.gpu [%]\n0, GPU-209bed64-f11a-c1f3-fe87-8a69538d8d79, 0 MiB, 0 %\n1, GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d, 0 MiB, 0 %\n",
   "source_sha256": "8edd45b6c82dea9e84f6671079a8c4fa1bfb152f6c2951e86465f494aa604657",
   "packed_weight_bytes": 2048
 }

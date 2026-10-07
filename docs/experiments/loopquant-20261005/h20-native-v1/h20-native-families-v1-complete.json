@@ -24,5 +24,15 @@
     }
   ],
   "node_idle_at_observation": true,
-  "foreign_compute_apps": ""
+  "foreign_compute_apps": "",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  }
 }

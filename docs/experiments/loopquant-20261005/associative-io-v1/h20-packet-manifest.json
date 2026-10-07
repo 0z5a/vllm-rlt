@@ -5,6 +5,8 @@
     9,
     0
   ],
+  "target_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
   "scope": "72 fused FP8 producer/represented-GEMM cases over12 physical shapes plus3 Graph replay updates, separate from any5090 qualification. No performance or full-model claim.",
   "cases": 72,
   "physical_shapes": 12,
@@ -49,5 +51,15 @@
     "run.py": "9a5c75ef4a22998a0b2a43e74bfa314aef49869d6e762c68ab439e94ba7da241",
     "source.tar.gz": "3c3f91e3b8136b92bdea2b6f55f564b64e35a4e8713246eda705281f510df4e6",
     "probe.py": "cde9559337092fde9f44841292e0a3094ff2edce020505f21865cb2b3441e182"
+  },
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
   }
 }

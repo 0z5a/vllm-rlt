@@ -3,6 +3,11 @@
   "scope": "BF16/DYN each128 devwindows; no locked G2 or performance claim",
   "source_commit": "72b8634e0d4029fc8106335c2c7861e40eb6c193",
   "package_manifest_sha256": "ab967188678a6864ce1b2f009ff3a8a0be20ea1e3c7f70ff8ebc042a0620d61b",
+  "controller_pid": 24765,
+  "child_pids": [
+    24768,
+    24797
+  ],
   "child_returncodes": [
     0,
     0
@@ -13,5 +18,10 @@
   "local_archive_sha256": "eaee080c2d2239f3f54c63a4979497212e3f7d222911c5058981c043111c1943",
   "retained_export": "evidence/ouro-dev-v1-dyn/export",
   "own_readers": [],
+  "compute_apps": "",
+  "original_locks_take_release": {
+    "gpu0-perf.lock": 12895501670,
+    "heavy-io.lock": 12895501666
+  },
   "timestamp": 1791171352.4629886
 }

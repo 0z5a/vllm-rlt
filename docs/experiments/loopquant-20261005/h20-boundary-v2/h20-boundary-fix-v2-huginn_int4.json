@@ -4,6 +4,7 @@
   "device": "NVIDIA H20",
   "torch_version": "2.12.1+cu130",
   "cuda_version": "13.0",
+  "pid": 47489,
   "start_unix": 1791221316.1936607,
   "end_unix": 1791221318.344267,
   "records": [

@@ -37,7 +37,12 @@
   "active_children": [],
   "own_model_readers": [],
   "gpu1_compute": "",
+  "locks_taken_released": [
+    "gpu1-perf.lock",
+    "heavy-io.lock"
+  ],
   "lock_check_unix": 1791152210.613117,
+  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
   "bundle_sha256": "ebb89a156d4780c58a131419d3244a630e471535db83b58f9a1fb96a1697e723",
   "local_hash_verification": "14 files verified by receiver"
 }

@@ -1,5 +1,6 @@
 {
   "status": "TINY_DIAGNOSTIC_COMPLETE",
+  "controller_pid": 70483,
   "start_unix": 1791226174.308991,
   "end_unix": 1791226174.855295,
   "runner_sha256": "bafcdfa1a9d05c45664eacfc46f9d5b7417a7083294c8415d298fc1b0d397440",

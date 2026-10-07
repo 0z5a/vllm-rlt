@@ -1,3 +1,9 @@
+
+NOTICE: Existing SQLite export found: /root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.sqlite
+        It is assumed file was previously exported from: /root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.nsys-rep
+        Consider using --force-export=true if needed.
+
+Processing [/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.sqlite] with [/opt/nvidia/nsight-compute/2025.3.1/host/target-linux-x64/reports/cuda_api_sum.py]... 
 Time (%),Total Time (ns),Num Calls,Avg (ns),Med (ns),Min (ns),Max (ns),StdDev (ns),Name
 47.4,1238453862,2399,516237.5,1664.0,638,11256941,1405731.4,cudaEventSynchronize
 23.4,612498028,361,1696670.4,1541022.0,1473806,7101057,488438.4,cudaGraphLaunch_v10000
@@ -19,3 +25,4 @@ Time (%),Total Time (ns),Num Calls,Avg (ns),Med (ns),Min (ns),Max (ns),StdDev (n
 0.0,123552,1,123552.0,123552.0,123552,123552,0.0,cudaDeviceSynchronize
 0.0,20144,3,6714.7,890.0,689,18565,10263.2,cudaStreamSynchronize
 0.0,2688,1,2688.0,2688.0,2688,2688,0.0,cuProfilerStart
+

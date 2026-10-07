@@ -2,21 +2,52 @@
   "status": "VERIFIED_REUSE_INDEX",
   "source_head": "55b4f22e2bcc9a4c0f2df3c66f62991d4d940522",
   "native_files": {
-    "PRIVATE_PATH": "43a148ad0772c3763a8e1b895afec3d81b1561165f664c2ddf50f48b8bb794bd"
+    "/Users/0z5a/Documents/infra/loopquant-20261005/source/loopquant/fp8_kernels.py": "39c58dade9c79e4e7e3fb67f259a64fa051208d77dd74730df60d6b98d0aa93e",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/source/loopquant/fused_fp8.py": "7135a5636e0b90c4ced7157af3014c2c36b122537f9c3b2e2e4255707cbe0e2e",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/source/loopquant/serving.py": "7bfc14fc71b69b5dcbee4439c7da179d15ae3f896ab8931d64519b2921154f22",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/source/loopquant/native_export.py": "ba9b6cb63109cab8b93b2a17430910d72f8e81f1de26938054a539176898dd70",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/source/loopquant/checkpoint.py": "11ead649de48e6b2bd3ab69cdf64366db84c64bbe5a994e3590e5c6b1018d07d",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/source/loopquant/int4_backend.py": "b420824e2c95bc705a3a07c62e7b577f1ce91f75965bd95eb947970d0f067aaa",
+    "/Users/0z5a/Documents/infra/loopquant-20261005/source/loopquant/int4_export.py": "43a148ad0772c3763a8e1b895afec3d81b1561165f664c2ddf50f48b8bb794bd"
   },
   "verified_completed_summaries": {
-    "PRIVATE_PATH": {
+    "/Users/0z5a/Documents/infra/loopquant-20261005/evidence/h20-fp8-primitives-v1-complete.json": {
+      "bytes": 1109,
+      "sha256": "97391f6b5ea72e1848dfbd750b0d096b34b666f13ea6d42a011a28456e93b042"
+    },
+    "/Users/0z5a/Documents/infra/loopquant-20261005/evidence/h20-native-families-v1-complete.json": {
+      "bytes": 975,
+      "sha256": "a31acf6856213d6190b02df649d4a624ff841d6b84ebc26f316be8e6c989eedb"
+    },
+    "/Users/0z5a/Documents/infra/loopquant-20261005/evidence/h20-boundary-fix-v2-complete.json": {
+      "bytes": 978,
+      "sha256": "03b6819c9c8d91438be7941d1e7bdabc01a818e81cb22d1b06e5430bbe717f65"
+    },
+    "/Users/0z5a/Documents/infra/loopquant-20261005/evidence/h20-loopformer-native-g0-v2-complete.json": {
+      "bytes": 957,
+      "sha256": "1a915648e2187f100544ab6bde4039cbe25d182c9cf4124fae89bdff85cecb42"
+    },
+    "/Users/0z5a/Documents/infra/loopquant-20261005/evidence/ouro-pilot-v1-summary.json": {
+      "bytes": 7176,
+      "sha256": "4a8980aafa3a8079066f3789c9a89e28787ebdd674e848b0b9b39ae7c9f9d11f"
+    },
+    "/Users/0z5a/Documents/infra/loopquant-20261005/evidence/ouro-native-dev-v1-summary.json": {
+      "bytes": 1185,
+      "sha256": "d6148d1a1cd9d9e87ce55803cf60a319c840796c7a9eb11ae4516c3e26561128"
+    },
+    "/Users/0z5a/Documents/infra/loopquant-20261005/evidence/cost-profile-v1-complete.json": {
       "bytes": 1211,
       "sha256": "f2cfb2debbd1bde98bd9010a018b84102a12949e061a1e5fb784331ee75a2622"
     }
   },
-  "inventory": "PRIVATE_PATH",
+  "quant_h20_active_pids": [],
+  "inventory": "/Users/0z5a/Documents/infra/loopquant-20261005/evidence/h20-deadline-quant-readonly-inventory.json",
   "deadline_archive_cst": "2026-10-06 08:30:00",
   "deadline_shutdown_cst": "2026-10-06 08:44:10",
   "deadline_authority": {
-    "thread": "<private-id>",
-    "human_message": "<private-id>"
+    "thread": "01a10834-5cc0-71a1-a13e-a76cbf8931a7",
+    "human_message": "01a10d98-59cc-7712-8fd9-b4db54d3dcfd"
   },
-  "old5090_int4_<private-process>": "UNKNOWN",
+  "old5090_int4_child31380": "UNKNOWN",
   "peer_lf_transfer_reader_active": false
 }

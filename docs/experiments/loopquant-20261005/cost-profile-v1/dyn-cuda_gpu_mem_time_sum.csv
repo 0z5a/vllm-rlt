@@ -1,4 +1,11 @@
+
+NOTICE: Existing SQLite export found: /root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.sqlite
+        It is assumed file was previously exported from: /root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.nsys-rep
+        Consider using --force-export=true if needed.
+
+Processing [/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.sqlite] with [/opt/nvidia/nsight-compute/2025.3.1/host/target-linux-x64/reports/cuda_gpu_mem_time_sum.py]... 
 Time (%),Total Time (ns),Count,Avg (ns),Med (ns),Min (ns),Max (ns),StdDev (ns),Operation
 69.5,99944746,864,115676.8,384.0,255,871277,276681.8,[CUDA memcpy Host-to-Device]
 30.3,43589787,63776,683.5,672.0,608,5439,120.7,[CUDA memcpy Device-to-Device]
 0.2,313689,654,479.6,512.0,319,992,145.6,[CUDA memcpy Device-to-Host]
+

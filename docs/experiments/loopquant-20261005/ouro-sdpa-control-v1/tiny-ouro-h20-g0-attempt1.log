@@ -1,9 +1,9 @@
 Traceback (most recent call last):
-  File "PRIVATE_PATH", line 218, in <module>
+  File "/Users/0z5a/Documents/infra/loopquant-20261005/probe_ouro_h20_g0.py", line 218, in <module>
     main()
-  File "PRIVATE_PATH", line 124, in decorate_context
+  File "/Users/0z5a/Documents/infra/looped-grpo-integration-20261003/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
     return func(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "PRIVATE_PATH", line 41, in main
+  File "/Users/0z5a/Documents/infra/loopquant-20261005/probe_ouro_h20_g0.py", line 41, in main
     from tests.loopquant_int4_checks import int4_reference_model
-ImportError: cannot import name 'int4_reference_model' from 'tests.loopquant_int4_checks' (PRIVATE_PATH
+ImportError: cannot import name 'int4_reference_model' from 'tests.loopquant_int4_checks' (/Users/0z5a/Documents/infra/loopquant-20261005/source/tests/loopquant_int4_checks.py)

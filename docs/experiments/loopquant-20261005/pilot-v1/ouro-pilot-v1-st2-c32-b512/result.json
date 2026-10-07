@@ -88,6 +88,7 @@
   "cuda_peak_reserved_bytes": 23465033728,
   "kv_blocks": 6826,
   "kv_bytes_per_block": 3145728,
+  "pid": 24105,
   "start_unix": 1791169751.606679,
   "measured_start_unix": 1791169759.0663154,
   "end_unix": 1791169764.7601633

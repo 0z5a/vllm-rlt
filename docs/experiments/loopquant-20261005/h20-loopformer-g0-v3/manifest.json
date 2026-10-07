@@ -4,6 +4,18 @@
     9,
     0
   ],
+  "target_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
   "source_commit": "8045c32f49a86cfc3fc103195f52057444ec2c59",
   "model": "armenjeddi/LoopFormer-3block-8iterations",
   "model_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
@@ -15,7 +27,7 @@
   "atol": 0.03,
   "rtol": 0.02,
   "resource_status": "local_only_not_registered",
-  "scope": "Same64 full checkpoint BF16 R8 cache/state/logit checks as failedv2, same source/requests/budgets. One authorized read-only stream of8 exact peer files, no mirror/environment change. NEW independent grant and fresh originalGPU0→IO admission required; LOCALONLY_UNSUBMITTED.",
+  "scope": "Same64 full checkpoint BF16 R8 cache/state/logit checks as failedv2, same source/requests/budgets. One authorized read-only stream of8 exact peer files, no mirror/environment change. NEW independent grant and fresh originalGPU0\u2192IO admission required; LOCALONLY_UNSUBMITTED.",
   "files": {
     "launch.py": "7eda45f97ea77594f2770c4a9be1c710f5100a7b18edf46efb53c7f968208046",
     "materialize_verified_tar.py": "527044dfa5405dad3dd54da9039d3f18272f361896208296d609688f115d49a7",
@@ -32,6 +44,6 @@
   "model_download": false,
   "model_transfer_bytes": 561155685,
   "model_transfer_files": 8,
-  "peer_model_directory": "PRIVATE_PATH",
+  "peer_model_directory": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu",
   "peer_manifest_sha256": "6fa133807d60d2191add3e37330e6e2d8f68036e33bcdbf7b7ece85d770f9a84"
 }

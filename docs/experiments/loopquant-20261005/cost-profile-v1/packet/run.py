@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-root = Path("PRIVATE_PATH")
+root = Path("/root/autodl-tmp/0z5a/loopquant-20261005")
 window, source = root / "cost-profile-v1", root / "source-cost-profile-v1"
 manifest = json.loads((window / "manifest.json").read_text())
 output = root / "evidence/cost-profile-v1"
@@ -41,7 +41,7 @@ with (
     for policy in ["BF16", "DYN", "SH1"]:
         prefix = output / policy.lower()
         command = [
-            "PRIVATE_PATH",
+            "/usr/local/bin/nsys",
             "profile",
             "--sample=none",
             "--cpuctxsw=none",
@@ -81,7 +81,7 @@ with (
                 "cublas_api_sum",
             ]:
                 command = [
-                    "PRIVATE_PATH",
+                    "/usr/local/bin/nsys",
                     "stats",
                     "-r",
                     report,
