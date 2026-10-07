@@ -1,7 +1,6 @@
 {
   "status": "pass",
   "timestamp": 1791177989.8604858,
-  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
   "predecessor_marker_sha256": "83312dbdea04c5863bddb7bfdce28d878a1062807fac9813be444fe0650dcf7e",
   "predecessor_pids_absent": [
     29152,
@@ -9,10 +8,5 @@
     29164,
     29178
   ],
-  "original_locks_take_release": {
-    "gpu1-perf.lock": 12895501695,
-    "heavy-io.lock": 12895501666
-  },
-  "gpu1_uuid": "GPU-84c4d7e9-b1c7-5d12-e7c2-6ec2a136044d",
   "gpu1_memory_mib": 0
 }

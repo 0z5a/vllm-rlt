@@ -4,7 +4,6 @@
   "format": "E2M1 packed low-nibble, block16 E4M3 SWIZZLE_32_4_4, positive fixedFP32global; optional shared fixed block scales",
   "backend": "installed torch.nn.functional.scaled_mm",
   "criteria": "packed codes and all padded scale slots byte exact; decoded-operand native GEMM combinedatol/rtol0.02; pointers stable across3 replays",
-  "locks": "child originalGPU wholejob, originalIO for finalJSON; no same enclosinglock",
   "files": {
     "probe.py": "401ed5af945956f4f7f3ef4dbbc807af56dfd95170d182512eb49ad1d96017ae",
     "run.py": "8cc76e6a279a8d8a8e882b852c330f9931676b469e9f26dd77ae1c4f63264d69",

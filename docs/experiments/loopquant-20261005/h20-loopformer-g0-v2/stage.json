@@ -1,1 +1,7 @@
-{"status": "STAGE_PASS", "unix": 1791226717.01908, "pid": 71515, "manifest_sha256": "6a9d29f69bb2666f908da8c1483eec8c887168473061de648bfd1e7f4fb305c7", "files": 6, "bytes": 4259818, "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2", "original_locks": {"gpu0.lock": {"inode": 12920245107, "device": 64528}, "io.lock": {"inode": 12920245108, "device": 64528}}}
+{
+  "status": "STAGE_PASS",
+  "unix": 1791226717.01908,
+  "manifest_sha256": "6a9d29f69bb2666f908da8c1483eec8c887168473061de648bfd1e7f4fb305c7",
+  "files": 6,
+  "bytes": 4259818
+}

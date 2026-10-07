@@ -1,8 +1,8 @@
 
-NOTICE: Existing SQLite export found: /root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.sqlite
-        It is assumed file was previously exported from: /root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.nsys-rep
+NOTICE: Existing SQLite export found: PRIVATE_PATH
+        It is assumed file was previously exported from: PRIVATE_PATH
         Consider using --force-export=true if needed.
 
-Processing [/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.sqlite] with [cublas_api_sum]... 
+Processing [PRIVATE_PATH with [cublas_api_sum]...
 ERROR: Report 'cublas_api_sum' could not be found.
 

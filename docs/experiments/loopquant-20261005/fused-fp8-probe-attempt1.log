@@ -1,5 +1,5 @@
 {"rows": 1, "columns": 64, "outputs": 32, "policy": "DYN", "fused_norm": false, "packed_equal": true, "max_abs": 0.0}
-/root/autodl-tmp/0z5a/loopquant-20261005/gpu-window-v2/probe_fused_fp8.py:123: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+PRIVATE_PATH UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
 Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
   error = float((actual.float() - independent.float()).abs().max())
 {"rows": 1, "columns": 64, "outputs": 32, "policy": "DYN", "fused_norm": true, "packed_equal": true, "max_abs": 0.0}
@@ -8,9 +8,9 @@ Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/cs
 {"rows": 1, "columns": 64, "outputs": 32, "policy": "ST2", "fused_norm": false, "packed_equal": true, "max_abs": 0.0}
 {"rows": 1, "columns": 64, "outputs": 32, "policy": "ST2", "fused_norm": true, "packed_equal": true, "max_abs": 0.0}
 Traceback (most recent call last):
-  File "/root/autodl-tmp/0z5a/loopquant-20261005/gpu-window-v2/probe_fused_fp8.py", line 106, in <module>
+  File "PRIVATE_PATH", line 106, in <module>
     torch.testing.assert_close(
-  File "/root/miniconda3/lib/python3.12/site-packages/torch/testing/_comparison.py", line 1631, in assert_close
+  File "PRIVATE_PATH", line 1631, in assert_close
     raise error_metas[0].to_error(msg)
 AssertionError: Tensor-likes are not equal!
 

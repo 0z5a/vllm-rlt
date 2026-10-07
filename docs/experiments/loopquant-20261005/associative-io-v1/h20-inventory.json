@@ -1,15 +1,10 @@
 {
-  "host": "region-42.seetacloud.com",
-  "port": 33885,
-  "hostname": "autodl-container-e9b742b627-ceba7253",
-  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
   "gpu_name": "NVIDIA H20",
-  "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
   "gpu_count": 1,
   "memory_total_mib": 97871,
   "memory_used_mib_at_observation": 0,
   "driver": "580.105.08",
-  "python": "/root/miniconda3/bin/python",
+  "python": "PRIVATE_PATH",
   "torch": "2.12.1+cu130",
   "cuda": "13.0",
   "triton": "3.7.1",
@@ -18,7 +13,7 @@
     0
   ],
   "scratch_filesystem": "xfs",
-  "scratch_path": "/root/autodl-tmp",
+  "scratch_path": "PRIVATE_PATH",
   "compute_started": false,
   "environment_modified": false
 }

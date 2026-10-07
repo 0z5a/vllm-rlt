@@ -31,9 +31,9 @@
 {"request_id": "smoke-7", "loops": 2, "tokens": 26, "native_max_abs": 1.52587890625e-05, "adapter_max_abs": 3.6716461181640625e-05}
 {"request_id": "smoke-7", "loops": 3, "tokens": 26, "native_max_abs": 7.784366607666016e-05, "adapter_max_abs": 9.298324584960938e-05}
 Traceback (most recent call last):
-  File "/root/autodl-tmp/0z5a/loopquant-20261005/source-g0-v2/../run_ouro_g0_v2.py", line 60, in <module>
+  File "PRIVATE_PATH", line 60, in <module>
     torch.testing.assert_close(actual.logits[0], expected[loop][2], atol=3e-4, rtol=3e-4)
-  File "/root/miniconda3/lib/python3.12/site-packages/torch/testing/_comparison.py", line 1631, in assert_close
+  File "PRIVATE_PATH", line 1631, in assert_close
     raise error_metas[0].to_error(msg)
 AssertionError: Tensor-likes are not close!
 

@@ -18,8 +18,9 @@
         "tcgen05.ld": 1,
         "tcgen05.dealloc": 1
       },
-      "ptx_sha256": "25c1cb73d49303df238c91054d6b9c94a34cc131f33197f8ac1e6397462bd39c",
-      "name": "m1-n2048-k2048.ptx"
+      "name": "m1-n2048-k2048.ptx",
+      "original_ptx_sha256": "25c1cb73d49303df238c91054d6b9c94a34cc131f33197f8ac1e6397462bd39c",
+      "public_ptx_sha256": "2d0601d13101fe3d34b2e21f51ba56140b2ee97b854adb80cc3c9f1e7448328d"
     },
     {
       "shape": [
@@ -36,8 +37,9 @@
         "tcgen05.ld": 1,
         "tcgen05.dealloc": 1
       },
-      "ptx_sha256": "2d69ecdc7ed89be107b4e0e30b97b0577237c713e52d3ee0f2399e18c720d75f",
-      "name": "m32-n2048-k2048.ptx"
+      "name": "m32-n2048-k2048.ptx",
+      "original_ptx_sha256": "2d69ecdc7ed89be107b4e0e30b97b0577237c713e52d3ee0f2399e18c720d75f",
+      "public_ptx_sha256": "3100711ce438db22f97cdb81e74d7512c492995319baf111db73615e98031132"
     },
     {
       "shape": [
@@ -54,8 +56,9 @@
         "tcgen05.ld": 1,
         "tcgen05.dealloc": 1
       },
-      "ptx_sha256": "44e924963702f4d109ab5b3bfd88e0934607171ebaa066ce462e98a690ed87ea",
-      "name": "m64-n2048-k2048.ptx"
+      "name": "m64-n2048-k2048.ptx",
+      "original_ptx_sha256": "44e924963702f4d109ab5b3bfd88e0934607171ebaa066ce462e98a690ed87ea",
+      "public_ptx_sha256": "b98d74dfbfc00efe2da074c37b4dbab46c25fe264e2de47a1e9eb0b1ab8f1f2e"
     },
     {
       "shape": [
@@ -72,8 +75,9 @@
         "tcgen05.ld": 1,
         "tcgen05.dealloc": 1
       },
-      "ptx_sha256": "728eae31be18d688ba1dc71a010aec63899fb6899b17cbb75dba98a0a58520fb",
-      "name": "m512-n2048-k2048.ptx"
+      "name": "m512-n2048-k2048.ptx",
+      "original_ptx_sha256": "728eae31be18d688ba1dc71a010aec63899fb6899b17cbb75dba98a0a58520fb",
+      "public_ptx_sha256": "eb0e9f6c809bc1d02d7faddad0fa32d0893c37639f5b21eefde702afa3b61371"
     },
     {
       "shape": [
@@ -90,8 +94,9 @@
         "tcgen05.ld": 1,
         "tcgen05.dealloc": 1
       },
-      "ptx_sha256": "10d741abef0022f1e94a73196e8260d283f39f05a3c4ff367a0a47f26ab7ea03",
-      "name": "m32-n5632-k2048.ptx"
+      "name": "m32-n5632-k2048.ptx",
+      "original_ptx_sha256": "10d741abef0022f1e94a73196e8260d283f39f05a3c4ff367a0a47f26ab7ea03",
+      "public_ptx_sha256": "b1654c282e6a9e8d2215cb9d26d6f0f0131541108fe04383b14cfafa82b6216e"
     },
     {
       "shape": [
@@ -108,14 +113,15 @@
         "tcgen05.ld": 1,
         "tcgen05.dealloc": 1
       },
-      "ptx_sha256": "4795413c8dd4c1ae96fd3f3f95e8a7faf2def16d31544208480ca800cda6f81e",
-      "name": "m32-n2048-k5632.ptx"
+      "name": "m32-n2048-k5632.ptx",
+      "original_ptx_sha256": "4795413c8dd4c1ae96fd3f3f95e8a7faf2def16d31544208480ca800cda6f81e",
+      "public_ptx_sha256": "c4c8e795f15b4b42100e2b6ccb8da503fde959f24221a88a716753dbb62cd9b6"
     }
   ],
-  "actual_ssh_exit_code": 0,
   "actual_cpu_compile_exit_code": 0,
   "ptx_offbox_sha_verified": 6,
   "executed_compile_source": "compile_bf16.executed.py",
   "executed_compile_source_sha256": "ab2dd11c28e21a294d08f88e0ddf3c00411c64cf41e718e6b0170f72fe744ac7",
-  "project_source_sha256": "e38fd2dd8a21c680d6cb15a5e0b6f71d29f8b22312ebfdad53a1424551fe70b8"
+  "project_source_sha256": "e38fd2dd8a21c680d6cb15a5e0b6f71d29f8b22312ebfdad53a1424551fe70b8",
+  "published_artifact_kind": "redacted_copy; original PTX hashes refer to private originals"
 }

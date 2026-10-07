@@ -37,7 +37,6 @@
   "rtol": 0.0003,
   "start_unix": 1791141331.3039143,
   "end_unix": 1791141336.3691976,
-  "pid": 3182,
   "source_sha256": "2063a9cb6b86efa989b760420857d4abce4892e8d3aaa16d746be5dc385b1032",
   "bf16_incremental_and_quality": "not_run"
 }

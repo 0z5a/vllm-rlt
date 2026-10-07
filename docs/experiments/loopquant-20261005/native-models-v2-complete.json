@@ -3,12 +3,7 @@
   "scope": "16 Ouro and32 Nanbeige tiny native FP8 qualification cases; no model E2E claim",
   "source_commit": "b70e8551afcfe8dc02bc6b9aea8b4418b5ef9bf8",
   "package_manifest_sha256": "3fade2758e2220c141fc1fb877a1cee54d7a4d98a8ecef150b21d3f72538aa99",
-  "controller_pid": null,
   "controller_pid_note": "not recorded by frozen controller; natural SSH exit0 and fresh controller-path reader check",
-  "child_pids": [
-    24477,
-    24493
-  ],
   "child_returncodes": [
     0,
     0
@@ -19,10 +14,5 @@
   "local_archive_sha256": "de333fa4e6a6caba605677064b21816c503487bd1a25ae4218495204854b3ebf",
   "tiny_test_payloads_removed": 48,
   "own_readers": [],
-  "compute_apps": "",
-  "original_locks_take_release": {
-    "gpu0-perf.lock": 12895501670,
-    "heavy-io.lock": 12895501666
-  },
   "timestamp": 1791170462.3567052
 }

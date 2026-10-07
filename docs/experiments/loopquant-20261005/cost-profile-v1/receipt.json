@@ -1,276 +1,80 @@
 {
-  "controller_pid": 27270,
   "start_unix": 1791174874.2955525,
   "records": [
     {
       "policy": "BF16",
-      "command": [
-        "/usr/local/bin/nsys",
-        "profile",
-        "--sample=none",
-        "--cpuctxsw=none",
-        "--trace=cuda,nvtx,cublas",
-        "--cuda-graph-trace=node",
-        "--capture-range=cudaProfilerApi",
-        "--capture-range-end=stop",
-        "--kill=none",
-        "--wait=all",
-        "--output",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/bf16",
-        "/root/miniconda3/bin/python",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/cost-profile-v1/probe.py",
-        "--case",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/cost-profile-v1/bf16.json",
-        "--output",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/bf16.json"
-      ],
       "returncode": 0,
       "reports": [
         {
           "name": "cuda_gpu_kern_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_gpu_kern_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/bf16.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_api_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_api_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/bf16.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_gpu_mem_time_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_gpu_mem_time_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/bf16.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_kern_exec_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_kern_exec_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/bf16.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cublas_api_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cublas_api_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/bf16.nsys-rep"
-          ],
           "returncode": 0
         }
       ]
     },
     {
       "policy": "DYN",
-      "command": [
-        "/usr/local/bin/nsys",
-        "profile",
-        "--sample=none",
-        "--cpuctxsw=none",
-        "--trace=cuda,nvtx,cublas",
-        "--cuda-graph-trace=node",
-        "--capture-range=cudaProfilerApi",
-        "--capture-range-end=stop",
-        "--kill=none",
-        "--wait=all",
-        "--output",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn",
-        "/root/miniconda3/bin/python",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/cost-profile-v1/probe.py",
-        "--case",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/cost-profile-v1/dyn.json",
-        "--output",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.json"
-      ],
       "returncode": 0,
       "reports": [
         {
           "name": "cuda_gpu_kern_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_gpu_kern_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_api_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_api_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_gpu_mem_time_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_gpu_mem_time_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_kern_exec_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_kern_exec_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cublas_api_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cublas_api_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/dyn.nsys-rep"
-          ],
           "returncode": 0
         }
       ]
     },
     {
       "policy": "SH1",
-      "command": [
-        "/usr/local/bin/nsys",
-        "profile",
-        "--sample=none",
-        "--cpuctxsw=none",
-        "--trace=cuda,nvtx,cublas",
-        "--cuda-graph-trace=node",
-        "--capture-range=cudaProfilerApi",
-        "--capture-range-end=stop",
-        "--kill=none",
-        "--wait=all",
-        "--output",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1",
-        "/root/miniconda3/bin/python",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/cost-profile-v1/probe.py",
-        "--case",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/cost-profile-v1/sh1.json",
-        "--output",
-        "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.json"
-      ],
       "returncode": 0,
       "reports": [
         {
           "name": "cuda_gpu_kern_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_gpu_kern_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_api_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_api_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_gpu_mem_time_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_gpu_mem_time_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cuda_kern_exec_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cuda_kern_exec_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.nsys-rep"
-          ],
           "returncode": 0
         },
         {
           "name": "cublas_api_sum",
-          "command": [
-            "/usr/local/bin/nsys",
-            "stats",
-            "-r",
-            "cublas_api_sum",
-            "--format",
-            "csv",
-            "/root/autodl-tmp/0z5a/loopquant-20261005/evidence/cost-profile-v1/sh1.nsys-rep"
-          ],
           "returncode": 0
         }
       ]

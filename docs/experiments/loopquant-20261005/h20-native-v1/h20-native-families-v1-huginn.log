@@ -1,46 +1,46 @@
 Traceback (most recent call last):
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-native-families-v1/probe.py", line 40, in <module>
+  File "PRIVATE_PATH", line 40, in <module>
     row = check(folder, policy, graphs, option)
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/miniconda3/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+  File "PRIVATE_PATH", line 124, in decorate_context
     return func(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/tests/loopquant_huginn_fp8_checks.py", line 136, in check_huginn_fp8
+  File "PRIVATE_PATH", line 136, in check_huginn_fp8
     for output in engine.step():
                   ^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/vllm_rlt/engine/llm_engine.py", line 223, in step
+  File "PRIVATE_PATH", line 223, in step
     return self._step()
            ^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/vllm_rlt/engine/llm_engine.py", line 257, in _step
+  File "PRIVATE_PATH", line 257, in _step
     result = self.model_runner.execute(batch)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/vllm_rlt/worker/model_runner.py", line 470, in execute
+  File "PRIVATE_PATH", line 470, in execute
     result = self._execute(batch)
              ^^^^^^^^^^^^^^^^^^^^
-  File "/root/miniconda3/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+  File "PRIVATE_PATH", line 124, in decorate_context
     return func(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/vllm_rlt/worker/model_runner.py", line 368, in _execute
+  File "PRIVATE_PATH", line 368, in _execute
     self._prefill(batch)
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/vllm_rlt/worker/model_runner.py", line 268, in _prefill
+  File "PRIVATE_PATH", line 268, in _prefill
     hidden = self._prefill_tokens(ids, positions, tokens)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/vllm_rlt/worker/model_runner.py", line 330, in _prefill_tokens
+  File "PRIVATE_PATH", line 330, in _prefill_tokens
     hidden, _ = self._core(hidden, ids, [depth] * len(ids), positions, workspace, size)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/vllm_rlt/worker/model_runner.py", line 242, in _core
+  File "PRIVATE_PATH", line 242, in _core
     return self.model.recurrent_prepared(
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/vllm_rlt/models/huginn.py", line 267, in recurrent_prepared
+  File "PRIVATE_PATH", line 267, in recurrent_prepared
     state = block(state, freqs, batch, cache)
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/miniconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+  File "PRIVATE_PATH", line 1778, in _wrapped_call_impl
     return self._call_impl(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/miniconda3/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+  File "PRIVATE_PATH", line 1789, in _call_impl
     return forward_call(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-native-families-v1-huginn/loopquant/huginn_fp8.py", line 96, in forward
+  File "PRIVATE_PATH", line 96, in forward
     real = pair[..., 0] * cos - pair[..., 1] * sin
            ~~~~~~~~~~~~~^~~~~
 RuntimeError: The size of tensor a (6) must match the size of tensor b (8) at non-singleton dimension 1

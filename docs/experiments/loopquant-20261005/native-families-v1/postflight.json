@@ -6,10 +6,5 @@
     29913
   ],
   "own_readers": [],
-  "gpu1_compute_apps": "",
-  "original_locks_take_release": {
-    "gpu1-perf.lock": 12895501695,
-    "heavy-io.lock": 12895501666
-  },
-  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7"
+  "gpu1_compute_apps": ""
 }

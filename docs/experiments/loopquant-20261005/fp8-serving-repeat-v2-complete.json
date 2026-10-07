@@ -5,9 +5,6 @@
   "child_returncode": 0,
   "controller_ssh_returncode": 0,
   "files_independently_archived": 3,
-  "child_pids": [],
   "gpu0_compute_empty": true,
-  "original_locks_take_release": true,
-  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
   "completed_unix": 1791161934.1939569
 }

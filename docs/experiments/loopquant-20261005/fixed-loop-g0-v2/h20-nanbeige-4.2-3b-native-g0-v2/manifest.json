@@ -4,24 +4,12 @@
     9,
     0
   ],
-  "target_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
-  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
-  "original_locks": {
-    "gpu0.lock": {
-      "inode": 12920245107,
-      "device": 64528
-    },
-    "io.lock": {
-      "inode": 12920245108,
-      "device": 64528
-    }
-  },
   "source_commit": "0a73ba23f4441cdac50b181e4841fba296b61218",
   "model": "Nanbeige/Nanbeige4.2-3B",
   "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
   "model_download": true,
   "model_download_bytes": 8361039496,
-  "model_directory": "/root/autodl-tmp/0z5a/loopquant-h20-20261006/models/nanbeige-4.2-3b",
+  "model_directory": "PRIVATE_PATH",
   "requests": 32,
   "input_tokens": 1756,
   "loops": [

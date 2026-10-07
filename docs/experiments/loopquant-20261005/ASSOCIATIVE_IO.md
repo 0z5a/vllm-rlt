@@ -109,7 +109,7 @@ The repaired packet completed with a mixed outcome at unchanged criteria.
 | Parcae INT4 | 1 | 1 | 2 | Native eager passed; compact with synchronous static buffers rejected by runtime |
 | Separate Graph row-depth controls | 0 | 0 | 2 | Not reached after Huginn FP8 assertion |
 
-The controller and all four children finished naturally (controller 1; children
+The controller and all four children finished naturally (<private-process>; children
 1/0/0/1). The SH1 assertion and unsupported compact configuration remain failures;
 no tolerances or sequence equality checks were relaxed. Successful checks cover
 tiny native request lifecycles and encoded reload, not full-checkpoint quality

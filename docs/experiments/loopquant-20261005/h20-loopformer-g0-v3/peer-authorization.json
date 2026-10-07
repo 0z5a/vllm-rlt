@@ -1,9 +1,9 @@
 {
   "status": "authorized_future_read_only_transfer",
   "checked_unix": 1791227004.915856,
-  "holder_thread": "01a10839-8042-7072-b744-1e54b8421800",
-  "model_path": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu",
-  "manifest_path": "/Users/0z5a/Documents/infra/loopkv-zero-copy-20261005/models/loopformer-3block-8iterations-cpu/verified-manifest.json",
+  "holder_thread": "<private-id>",
+  "model_path": "PRIVATE_PATH",
+  "manifest_path": "PRIVATE_PATH",
   "manifest_sha256": "6fa133807d60d2191add3e37330e6e2d8f68036e33bcdbf7b7ece85d770f9a84",
   "revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
   "verified_files": [

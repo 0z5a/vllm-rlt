@@ -2,7 +2,6 @@
   "source_commit": "18cd202b689a275fad7bd956e0917607373a2e83",
   "integration_base": "b836c1eb79412669f8cb6f07605b08be4e149f6b",
   "scope": "48 FP8 Ouro/Nano regressions +16 INT4 four-family Graph/native/compact cases; tiny weights only; non-timing",
-  "locks": "child original GPU lock; original heavy IO only across each tiny case; no enclosing same lock",
   "files": {
     "probe.py": "9e7a81c85286333cb431e1a77fa31dea1f340ed96dbc3fece01efec161417acb",
     "run.py": "d3bb42bc463b5746b7fff549cb02bbc4abb3e3f88568f7222fc90dc043bc1aa5",

@@ -1,1 +1,5 @@
-{"status": "ADMISSION_PASS", "observer_pid": 71130, "unix": 1791226623.4552164, "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2", "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff", "original_locks": {"gpu0.lock": {"inode": 12920245107, "device": 64528}, "io.lock": {"inode": 12920245108, "device": 64528}}, "compute_apps": "", "filesystem": "xfs", "free_bytes": 100066955264, "staging_present": false}
+{
+  "status": "ADMISSION_PASS",
+  "unix": 1791226623.4552164,
+  "staging_present": false
+}

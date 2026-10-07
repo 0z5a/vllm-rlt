@@ -9,12 +9,12 @@ import subprocess
 import sys
 import time
 
-root = Path("/root/autodl-tmp/0z5a/loopquant-h20-20261006")
+root = Path("PRIVATE_PATH")
 label = "h20-ouro-2.6b-native-g0-v1"
 window = root / label
 source = root / ("source-" + label)
 model = root / "models/ouro-2.6b"
-locks = Path("/root/autodl-tmp/0z5a-coordination/h20")
+locks = Path("PRIVATE_PATH")
 manifest = json.loads((window / "manifest.json").read_text())
 assert (
     Path("/proc/sys/kernel/random/boot_id").read_text().strip() == manifest["boot_id"]

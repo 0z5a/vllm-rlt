@@ -13,7 +13,7 @@ import time
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--gpu-index", type=int, choices=[0, 1], required=True)
 gpu = parser.parse_args().gpu_index
-root = Path("/root/autodl-tmp/0z5a/loopquant-20261005")
+root = Path("PRIVATE_PATH")
 packet, source = root / "int4-dev-curves-v1", root / "source-int4-dev-curves-v1"
 with (root.parent / "heavy-io.lock").open("a") as lock:
     fcntl.flock(lock, fcntl.LOCK_EX)

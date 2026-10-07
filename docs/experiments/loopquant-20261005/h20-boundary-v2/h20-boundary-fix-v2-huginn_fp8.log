@@ -3,13 +3,13 @@
 {"event": "case_pass", "family": "huginn_fp8", "index": 2, "case": ["DYN", true, false]}
 {"event": "case_pass", "family": "huginn_fp8", "index": 3, "case": ["DYN", true, true]}
 Traceback (most recent call last):
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-boundary-fix-v2/probe.py", line 46, in <module>
+  File "PRIVATE_PATH", line 46, in <module>
     row = check(folder, *case)
           ^^^^^^^^^^^^^^^^^^^^
-  File "/root/miniconda3/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+  File "PRIVATE_PATH", line 124, in decorate_context
     return func(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-boundary-fix-v2-huginn/tests/loopquant_huginn_fp8_checks.py", line 144, in check_huginn_fp8
+  File "PRIVATE_PATH", line 144, in check_huginn_fp8
     assert results[0] == results[1]
            ^^^^^^^^^^^^^^^^^^^^^^^^
 AssertionError

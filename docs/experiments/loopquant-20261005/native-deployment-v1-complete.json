@@ -3,11 +3,6 @@
   "scope": "16 tiny native FP8 export/serving cases and 20 native INT4 shapes; no model E2E speed claim",
   "source_commit": "72b8634e0d4029fc8106335c2c7861e40eb6c193",
   "package_manifest_sha256": "e564919f0f90f7c4233e9ad8d867a9d6310c353680c015b3077a9b518df418ca",
-  "controller_pid": 21844,
-  "child_pids": [
-    21847,
-    21878
-  ],
   "child_returncodes": [
     0,
     0
@@ -20,10 +15,5 @@
   "int4_cases_passed": 20,
   "tiny_test_payloads_removed": 16,
   "own_readers": [],
-  "compute_apps": "",
-  "original_locks_take_release": {
-    "gpu0-perf.lock": 12895501670,
-    "heavy-io.lock": 12895501666
-  },
   "timestamp": 1791166608.5825284
 }

@@ -1004,7 +1004,6 @@
       "test_payload_removed": true
     }
   ],
-  "pid": 24477,
   "start_unix": 1791170254.8310385,
   "end_unix": 1791170260.6170194,
   "torch_version": "2.12.1+cu130",

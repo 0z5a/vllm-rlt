@@ -15,7 +15,7 @@ quality or speed claim. The full original all-model execution goal remains activ
 | Huginn stack | `source-huginn` at `0b2926396bbea10520e3f5f88ba591e29b0f7424` | Boundary row-count repair and FP8/INT4; SH1 generated-output mismatch retained |
 | Parcae stack | `source-parcae` at `a8d79443ebf075aeaa37d6e22ed6608e56c6db16` | Depth-weighted logits, shared KV representation; compact/static rejection retained |
 
-All paths are under `/Users/0z5a/Documents/infra/loopquant-20261005`.
+All paths are under `PRIVATE_PATH`.
 Main source HEAD is `55b4f22e2bcc9a4c0f2df3c66f62991d4d940522`,
 [open fork Draft28](https://github.com/0z5a/vllm-rlt/pull/28).
 The [index](re-loop-reuse-index.json) records exact native-file and completed-summary SHA256s.
@@ -62,12 +62,12 @@ math-SDPA exactness is an internal control, not permission to replace the eager/
 
 ## Resource handoff
 
-Direct human deadline in LoopKV message`01a10d98-59cc-7712-8fd9-b4db54d3dcfd`:
+Direct human deadline in LoopKV message`<private-id>`:
 archive before **2026-10-06 08:30 Asia/Shanghai**, H20 shutdown/deletion at **08:44:10**.
-Only `region-42.seetacloud.com:33885`, GPU`GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff` is in that scope.
+Only `<private>:33885`, GPU`<private-id>` is in that scope.
 A fresh read-only node inventory confirms all prior Quant controller/children/finalizer PIDs absent.
 No Quant CUDA/model work is active, no original GPU/IO lock is held, and LF peer transfer reader is inactive.
 The transient own SSH master has a600-second idle expiry; no process is killed or signaled.
 Only separate, deadline-fitting future grants may admit queued work, behind the verified FlashNS/LoopCD priority.
-All originals remain preserved offbox; the old5090 INT4 child31380 staysUNKNOWN and is neither migrated nor restarted.
+All originals remain preserved offbox; the old5090 INT4 <private-process> staysUNKNOWN and is neither migrated nor restarted.
 Quant has no verified cloud instanceID/control-plane entry; only the verified SSH endpoint and GPU identity.

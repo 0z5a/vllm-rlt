@@ -187,7 +187,6 @@
   "tokens": 62361,
   "perplexity": 11.65094887672039,
   "kv_used_after_drain": 0,
-  "pid": 25478,
   "start_unix": 1791171641.566262,
   "end_unix": 1791171665.9467123,
   "windows_sha256": "325f23166ecec45f22a8a8254dc5edc7bf465b1d456beff801b58c7a07770c1c",

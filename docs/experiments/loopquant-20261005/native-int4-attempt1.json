@@ -164,7 +164,6 @@
       "padded_columns": 5376
     }
   ],
-  "pid": 21878,
   "start_unix": 1791166503.8438354,
   "end_unix": 1791166505.6804109,
   "torch_version": "2.12.1+cu130",

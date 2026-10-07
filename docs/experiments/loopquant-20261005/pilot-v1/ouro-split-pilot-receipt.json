@@ -1,6 +1,5 @@
 {
   "phase": "pilot",
-  "controller_pid": 23720,
   "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
   "manifest_sha256": "888923adf1ed51e7290c40ff08f46648c616cefa871bb6b3ff31eeecc6dbdd02",
   "records": [

@@ -2,12 +2,6 @@
   "status": "complete",
   "scope": "three instrumented Nsight profiles and15 stats; not E2E speedup",
   "package_manifest_sha256": "f3f4d319735e76f7b03b506a113092f4f20f617f43883a067f2347a359b1b732",
-  "controller_pid": 27270,
-  "child_pids": [
-    27294,
-    27612,
-    27929
-  ],
   "controller_ssh_returncode": 0,
   "offbox_ssh_returncode": 0,
   "archived_files": 28,
@@ -18,7 +12,6 @@
   "postflight": {
     "status": "pass",
     "timestamp": 1791176566.5790052,
-    "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
     "own_pids_absent": [
       27270,
       27294,
@@ -26,16 +19,10 @@
       27929
     ],
     "own_readers": [],
-    "compute_apps": "",
     "gpu_memory_used_mib": [
       0,
       0
-    ],
-    "original_locks_take_release": {
-      "gpu0-perf.lock": 12895501670,
-      "gpu1-perf.lock": 12895501695,
-      "heavy-io.lock": 12895501666
-    }
+    ]
   },
   "timestamp": 1791176601.379832
 }
