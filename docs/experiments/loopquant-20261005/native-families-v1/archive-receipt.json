@@ -1,0 +1,19 @@
+{
+  "status": "archived",
+  "files": 67,
+  "removed_payloads": 64,
+  "archive_bytes": 10157,
+  "archive_sha256": "b9004c2f138ee9efdc696cdcd1d4a995b6f563d59a3e5d52bce7257aec1abd1d",
+  "file_manifest_sha256": "f2fda9fd3ee5b32433a931d445522847564473f2d0cbda990c38cc30cbec6c0d",
+  "own_pids_absent": [
+    29910,
+    29913
+  ],
+  "gpu1_compute_apps": "",
+  "original_locks_take_release": {
+    "gpu1-perf.lock": 12895501695,
+    "heavy-io.lock": 12895501666
+  },
+  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+  "timestamp": 1791178194.7983272
+}

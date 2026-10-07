@@ -1,0 +1,21 @@
+{
+  "inputs": [
+    "smoke-9",
+    "smoke-18"
+  ],
+  "selection": "largest incremental logits differences in the previous full calibration smoke audit; not locked quality inputs",
+  "variants": [
+    {
+      "reduction": "fp32",
+      "linear": "batched"
+    },
+    {
+      "reduction": "fp32",
+      "linear": "per_token"
+    }
+  ],
+  "atol": 0.02,
+  "rtol": 0.02,
+  "purpose": "diagnostic only; not a serving performance baseline",
+  "source": "https://docs.pytorch.org/docs/2.12/notes/numerical_accuracy.html"
+}

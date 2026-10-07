@@ -1,0 +1,28 @@
+{
+  "controller_pid": 3759,
+  "controller_start_ticks": 2498991175,
+  "start_unix": 1791216490.1548865,
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "command": [
+    "/root/miniconda3/bin/python",
+    "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-fp8-primitives-v1/probe.py",
+    "--output",
+    "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-fp8-primitives-v1.json"
+  ],
+  "manifest_sha256": "b5b996d1e9ecd8e1eb0d1a85254dad2fb91320867e7b5d9568dacfd5c29daeee",
+  "child_pid": 3768,
+  "child_start_ticks": 2498991190,
+  "returncode": 0,
+  "end_unix": 1791216501.3718848
+}

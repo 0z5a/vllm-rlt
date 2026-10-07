@@ -1,0 +1,34 @@
+{
+  "model": "SandyResearch/parcae-370m",
+  "revision": "439284464ee4999bd1f762da7d044613a4828efe",
+  "files": [
+    {
+      "name": ".gitattributes",
+      "size": 1519,
+      "blob_id": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+      "lfs": null
+    },
+    {
+      "name": "README.md",
+      "size": 1823,
+      "blob_id": "64a81a4b1c8bbce14e422c9b8a9a815dd1823a36",
+      "lfs": null
+    },
+    {
+      "name": "config.json",
+      "size": 1745,
+      "blob_id": "5adf1a61ba183f6f47ebd451441c88dfb5e8da7c",
+      "lfs": null
+    },
+    {
+      "name": "pytorch_model.bin",
+      "size": 1553099635,
+      "blob_id": "cf7c9775e4cebf05fa0128b07fc2c099ace63793",
+      "lfs": {
+        "sha256": "603d9da4a1c1a112c8b6a98bc1e9aac288990ba0d7f5b432aaad9c53940bfcb2",
+        "size": 1553099635,
+        "pointerSize": 135
+      }
+    }
+  ]
+}

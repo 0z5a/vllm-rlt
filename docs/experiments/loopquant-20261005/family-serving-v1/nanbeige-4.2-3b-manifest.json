@@ -1,0 +1,114 @@
+{
+  "model": "nanbeige-4.2-3b",
+  "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "tokenizer_sha256": "1d858a0fc007f22af6ae18bfa1ae52d30e398aa9cd1ea06e7777176869346a3f",
+  "calibration_sha256": "366845627c8fb6fdd80d3169ca65adbda38600972c671d78e08f7b1cf7deb5bf",
+  "source": "concatenated calibration token bank; synthetic performance input only",
+  "quality_use": false,
+  "context_limit": 262144,
+  "prefill_loops": 2,
+  "prefix_reuse": false,
+  "prompt_seed": 17,
+  "mix_seed": 29,
+  "files": {
+    "smoke.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        256
+      ],
+      "output_lengths": [
+        32
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "bd56dab6a5c81cb28e21d9e7e0cfe8adca53de7edca5f61c78898a0d0c84f9a2"
+    },
+    "primary.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        1024
+      ],
+      "output_lengths": [
+        128
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "4fb40ef5cef55f64327d3f9c38c45e8b25b6ad30ad3c299c9313affa0a37542c"
+    },
+    "long.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        4096
+      ],
+      "output_lengths": [
+        128
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "cf32c5c3bf62d1a1064f6cf6d0bedb1ad227d429e77da2185f29f825357575e7"
+    },
+    "decode.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        512
+      ],
+      "output_lengths": [
+        512
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "1659fa8c2d38995c282f40898924c42428f998bb354c0e56db926a69fbbc8d4b"
+    },
+    "mixed-length.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        256,
+        512,
+        1024,
+        4096
+      ],
+      "output_lengths": [
+        32,
+        128,
+        512
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "ee8c5663da89d024aa6d82ec9fc00c9eb690902b524410240c2c7bed4220e226"
+    },
+    "mixed-depth.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        256,
+        512,
+        1024,
+        4096
+      ],
+      "output_lengths": [
+        32,
+        128,
+        512
+      ],
+      "decode_depths": [
+        1,
+        2
+      ],
+      "sha256": "39e1ac1c2686526ca5b12b51d751de42c51fea8b1e73bc9ee886def773c22cf0"
+    }
+  },
+  "mixed_depth_status": "prepared; runtime qualification pending",
+  "open_arrivals": {
+    "file": "unit-rate-arrivals.json",
+    "sha256": "0219f3c8113b46749af3bf1925d0f34379f6f9d2c08139cc72a22ff7c952d71c",
+    "seed": 37,
+    "protocol": "divide unit-rate times by a separately frozen offered req/s",
+    "rate_status": "not frozen; derive near-capacity points from independent BF16 only"
+  },
+  "formal_performance_status": "unrun; SLO, rates, candidate and paired-trial schedule still required",
+  "runner_sha256": "35ad6be5797440fe85416569cb66f885beca60bb996da6f195b0140435d67711"
+}

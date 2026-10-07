@@ -1,0 +1,348 @@
+{
+  "status": "pass",
+  "records": [
+    {
+      "request_id": "tiny-5",
+      "tokens": 5,
+      "incremental": false,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-5",
+      "tokens": 5,
+      "incremental": true,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01171875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00732421875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-7",
+      "tokens": 7,
+      "incremental": false,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-7",
+      "tokens": 7,
+      "incremental": true,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01953125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.01171875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.015625
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00732421875
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.00390625
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0068359375
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        },
+        {
+          "within_budget": true,
+          "exact": false,
+          "max_abs": 0.0078125
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    }
+  ],
+  "full_checkpoint": false,
+  "atol": 0.02,
+  "rtol": 0.02,
+  "loops": 2,
+  "family": "nanbeige",
+  "repository": "Nanbeige/Nanbeige4.2-3B",
+  "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "model_plan_sha256": null,
+  "backend": "torch",
+  "reference_sdpa": "auto",
+  "torch_version": "2.13.0",
+  "start_unix": 1791225628.394987,
+  "end_unix": 1791225628.5151732,
+  "runner_sha256": "26108192a02720340b3b94d0be9700b0c19007e3ee80158e6f7ce0f54661625e",
+  "scope": "Native BF16 vs CPU-qualified dense SDPA adapter, all registered loop states and readouts, full/incremental cache. Not original-author CUDA attention qualification. No PTQ/QAT search, quality or timing; separate from UNKNOWN old5090 INT4 job."
+}

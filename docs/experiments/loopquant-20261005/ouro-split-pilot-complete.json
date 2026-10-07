@@ -1,0 +1,39 @@
+{
+  "status": "complete",
+  "scope": "eight64-request Ouro1.4 engine pilots; no formal G3 or quality-qualified speedup",
+  "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
+  "package_manifest_sha256": "888923adf1ed51e7290c40ff08f46648c616cefa871bb6b3ff31eeecc6dbdd02",
+  "controller_pid": 23720,
+  "child_pids": [
+    23721,
+    23757,
+    23873,
+    23989,
+    24105,
+    24131,
+    24155,
+    24179
+  ],
+  "child_returncodes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "controller_ssh_returncode": 0,
+  "archived_files": 41,
+  "file_manifest_sha256": "67d023b63c9244d72812d5ca7c74c71c16e456fbe7ff285299570dd3a7928688",
+  "local_archive_sha256": "f877cfe457a0a48ea571be7c3fc51815ed756a6cd0227b7a2ae54b44671478dd",
+  "own_readers": [],
+  "compute_apps": "",
+  "original_locks_take_release": {
+    "gpu0-perf.lock": 12895501670,
+    "gpu1-perf.lock": 12895501695,
+    "heavy-io.lock": 12895501666
+  },
+  "timestamp": 1791170002.376878
+}

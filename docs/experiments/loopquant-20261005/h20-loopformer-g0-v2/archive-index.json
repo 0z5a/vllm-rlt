@@ -1,0 +1,56 @@
+{
+  "archive": "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-loopformer-native-g0-v2-results.tar.gz",
+  "bytes": 10577,
+  "sha256": "6389f3a3cafde246cf5d24bfc492fad4e3d7dd61a6022dcb02a96a65172d69dc",
+  "files": {
+    "evidence/h20-loopformer-native-g0-v2-controller.log": {
+      "bytes": 2175,
+      "sha256": "a16e90f926db6a5e17da5aaaf07fca1825894eca8afaa8151ef396d4844b8c22"
+    },
+    "evidence/h20-loopformer-native-g0-v2-download.log": {
+      "bytes": 2124,
+      "sha256": "3269d339bc5eae65c9cce086578b651930fcaafaf80b0c77d8cff31b3e1947fc"
+    },
+    "evidence/h20-loopformer-native-g0-v2-running.json": {
+      "bytes": 1186,
+      "sha256": "4073673320ab45a9fe9118ae538c3f63dddbeed4096d37ce1cab5b200987744d"
+    },
+    "evidence/h20-loopformer-native-g0-v2-receipt.json": {
+      "bytes": 1300,
+      "sha256": "93cb6f6b1397b3a79043eced9642e2f2974a2613acd65780e92d2997d688cfef"
+    },
+    "evidence/h20-loopformer-native-g0-v2-foreground-running.json": {
+      "bytes": 129,
+      "sha256": "adba128d1ba6688bbe7a68ea251b6d0d31a89a6ce2c69e71085ca7b4dcede280"
+    },
+    "evidence/h20-loopformer-native-g0-v2-foreground-exit.json": {
+      "bytes": 182,
+      "sha256": "4b7548624662ae23b3f3dd43bd670d3194ac16686b4ba82346691e0cae134582"
+    },
+    "h20-loopformer-native-g0-v2/download.py": {
+      "bytes": 6431,
+      "sha256": "c569e315ab4cd66778afbe996f37e8c3a9e1206723adf9d9fb6413b646cb43e0"
+    },
+    "h20-loopformer-native-g0-v2/manifest.json": {
+      "bytes": 1794,
+      "sha256": "6a9d29f69bb2666f908da8c1483eec8c887168473061de648bfd1e7f4fb305c7"
+    },
+    "h20-loopformer-native-g0-v2/model-metadata.json": {
+      "bytes": 570,
+      "sha256": "1d4bac972663100192f0aa0d0781af0a37953756bb93b82ae92dcbb24f82a1e5"
+    },
+    "h20-loopformer-native-g0-v2/probe.py": {
+      "bytes": 8156,
+      "sha256": "affca83eac9cb2e1daf2b5cee844adc1ea5578512c316480c9384756a37a0dac"
+    },
+    "h20-loopformer-native-g0-v2/requests.json": {
+      "bytes": 24369,
+      "sha256": "b06bfc5c7b1537d2071a381eb4528e963a6f46a603e8ac0a897cba59ad05b693"
+    },
+    "h20-loopformer-native-g0-v2/run.py": {
+      "bytes": 4314,
+      "sha256": "608ae036ded3feec05db4e43abb3c575afcbf5181fd5d48bc67ead09c02d9f4f"
+    }
+  },
+  "archive_attempt1": "pre-archive count assertion: expected13, observed12; no archive mutation"
+}

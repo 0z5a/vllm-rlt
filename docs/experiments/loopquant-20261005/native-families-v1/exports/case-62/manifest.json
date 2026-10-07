@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "format": "signed_int4_low_nibble_first",
+  "native_backend": "torch_tinygemm_bf16",
+  "method": "RTN",
+  "group_size": 128,
+  "model_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model_config": {
+    "model_type": "loopformer",
+    "architectures": [
+      "LoopFormerGPTForCausalLM"
+    ],
+    "block_size": 64,
+    "vocab_size": 32,
+    "n_layer": 2,
+    "n_head": 2,
+    "n_embd": 64,
+    "intermediate_dim": 128,
+    "bias": false,
+    "dropout": 0.0,
+    "bos_token_id": 1,
+    "eos_token_id": 2,
+    "pad_token_id": 0
+  },
+  "packed_weight_matrices": 8,
+  "packed_weight_copies": 1,
+  "packed_weight_bytes": 57344,
+  "group_scale_dtype": "bfloat16",
+  "activation_dtype": "bfloat16",
+  "state_dtype": "bfloat16",
+  "kv_dtype": "bfloat16",
+  "native_quality": "not_run",
+  "tensor_sha256": "506595665412cd61e3da8886ea992aa8fe18511f4f92669b88c507b0b4579283"
+}

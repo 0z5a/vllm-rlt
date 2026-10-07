@@ -1,0 +1,43 @@
+{
+  "status": "pass",
+  "scope": "official Ouro failing prompt FP64 reference diagnostic at R1/2/3/4",
+  "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "dtype": "float32",
+  "records": [
+    {
+      "request_id": "smoke-7",
+      "loops": 1,
+      "tokens": 26,
+      "native_max_abs": 1.5321598263895453e-05,
+      "adapter_max_abs": 1.5467818538894562e-05
+    },
+    {
+      "request_id": "smoke-7",
+      "loops": 2,
+      "tokens": 26,
+      "native_max_abs": 2.419557983612819e-05,
+      "adapter_max_abs": 1.7227820130472082e-05
+    },
+    {
+      "request_id": "smoke-7",
+      "loops": 3,
+      "tokens": 26,
+      "native_max_abs": 4.938858686376335e-05,
+      "adapter_max_abs": 2.1643263620418907e-05
+    },
+    {
+      "request_id": "smoke-7",
+      "loops": 4,
+      "tokens": 26,
+      "native_max_abs": 0.00012001683933959839,
+      "adapter_max_abs": 3.241398775344351e-05
+    }
+  ],
+  "atol": 0.0003,
+  "rtol": 0.0003,
+  "start_unix": 1791141331.3039143,
+  "end_unix": 1791141336.3691976,
+  "pid": 3182,
+  "source_sha256": "2063a9cb6b86efa989b760420857d4abce4892e8d3aaa16d746be5dc385b1032",
+  "bf16_incremental_and_quality": "not_run"
+}

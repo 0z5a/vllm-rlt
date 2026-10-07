@@ -1,0 +1,95 @@
+{
+  "model": "hrm-text-1b",
+  "model_revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+  "tokenizer_sha256": "ba520107dc9b27d25643e8f43fc1d9921038c86d3ada9dcaabf18526c5836d50",
+  "calibration_sha256": "43d8bdb520c578d77e3403ba78e4d161821a44ca7b4c8ebda2d0f235b137d6b1",
+  "source": "concatenated calibration token bank; synthetic performance input only",
+  "quality_use": false,
+  "context_limit": 4096,
+  "prefill_loops": 2,
+  "prefix_reuse": false,
+  "prompt_seed": 17,
+  "mix_seed": 29,
+  "files": {
+    "smoke.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        256
+      ],
+      "output_lengths": [
+        32
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "b89d65f3bb68c0f4b688edbcae8d3f40afa40457f605abad9253a961215e06c8"
+    },
+    "primary.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        1024
+      ],
+      "output_lengths": [
+        128
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "c3f3c37aec18545c4579a75fb06537e4ff277f05be8905622bcf5aa31dfcbd18"
+    },
+    "long.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        3968
+      ],
+      "output_lengths": [
+        128
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "27653c13938c29cc8f2a94ca8e5caa2c10faffc55bd79f6b4c1610f692143061"
+    },
+    "decode.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        512
+      ],
+      "output_lengths": [
+        512
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "2bc4dfe2c94aacd05e108e8c1a69b22cee9b89f10f113c26a6e31ffe26606fd2"
+    },
+    "mixed-length.json": {
+      "requests": 512,
+      "prompt_lengths": [
+        256,
+        512,
+        1024,
+        3968
+      ],
+      "output_lengths": [
+        32,
+        128,
+        512
+      ],
+      "decode_depths": [
+        2
+      ],
+      "sha256": "2dfebf5edb228942144723354e13a4485ff3b20e88497e8416d89117cfbc45a7"
+    }
+  },
+  "mixed_depth_status": "unsupported by the registered fixed-depth native path",
+  "open_arrivals": {
+    "file": "unit-rate-arrivals.json",
+    "sha256": "0219f3c8113b46749af3bf1925d0f34379f6f9d2c08139cc72a22ff7c952d71c",
+    "seed": 37,
+    "protocol": "divide unit-rate times by a separately frozen offered req/s",
+    "rate_status": "not frozen; derive near-capacity points from independent BF16 only"
+  },
+  "formal_performance_status": "unrun; SLO, rates, candidate and paired-trial schedule still required",
+  "runner_sha256": "35ad6be5797440fe85416569cb66f885beca60bb996da6f195b0140435d67711"
+}

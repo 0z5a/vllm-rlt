@@ -1,0 +1,57 @@
+{
+  "status": "pass",
+  "cases": 72,
+  "graph_replays": 3,
+  "receipt": {
+    "controller_pid": 3759,
+    "controller_start_ticks": 2498991175,
+    "start_unix": 1791216490.1548865,
+    "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+    "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+    "original_locks": {
+      "gpu0.lock": {
+        "inode": 12920245107,
+        "device": 64528
+      },
+      "io.lock": {
+        "inode": 12920245108,
+        "device": 64528
+      }
+    },
+    "command": [
+      "/root/miniconda3/bin/python",
+      "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-fp8-primitives-v1/probe.py",
+      "--output",
+      "/root/autodl-tmp/0z5a/loopquant-h20-20261006/evidence/h20-fp8-primitives-v1.json"
+    ],
+    "manifest_sha256": "b5b996d1e9ecd8e1eb0d1a85254dad2fb91320867e7b5d9568dacfd5c29daeee",
+    "child_pid": 3768,
+    "child_start_ticks": 2498991190,
+    "returncode": 0,
+    "end_unix": 1791216501.3718848
+  },
+  "files": {
+    "h20-fp8-primitives-v1-receipt.json": {
+      "bytes": 831,
+      "sha256": "dc8d0bb972cd48e3b651b2dd55b15bdccf3615bda9989eb24b79d773fc969cb9"
+    },
+    "h20-fp8-primitives-v1-running.json": {
+      "bytes": 778,
+      "sha256": "64a5edadd6a3a8536729eb40b7b3bddc5dfd5da2752ca9a1c123de90a71dc516"
+    },
+    "h20-fp8-primitives-v1.json": {
+      "bytes": 13260,
+      "sha256": "0aae9d06038fa61f9fc1dffd51d5bc926459206540095c1e2fc6b20b66677038"
+    },
+    "h20-fp8-primitives-v1.log": {
+      "bytes": 9145,
+      "sha256": "149411f826583a4063b7a3bb41395297a502f2a324026d2228232e1c4bbbd7a4"
+    },
+    "h20-fp8-primitives-v1.worst-case.pt": {
+      "bytes": 10881,
+      "sha256": "29b00e0b76fba75f1afd83f3a3f793aa030602f7bd22fbb66cff9de05010f104"
+    }
+  },
+  "archive_bytes": 5526,
+  "archive_sha256": "68aa7744027ca37d5eb94cd3f6c849db8fd6d3a096fb14a31fb95ab59fc60547"
+}

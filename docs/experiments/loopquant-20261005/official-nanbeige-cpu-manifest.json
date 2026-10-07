@@ -1,0 +1,9 @@
+{
+  "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
+  "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "files": {
+    "source.tar": "268e6a11d6f5445e7d820ec4eb3e251a194319728c6fb19f267d1ef611f9e672",
+    "run_official_nanbeige_cpu.py": "49afa99e476da8d0bcded6135bced3dab412c5f0201588699e2456032d80690e"
+  },
+  "scope": "full official BF16 eager CPU,32 texts,R1/R2; tokenizer uses pinned fast JSON; waits for active Huginn CPU to exit naturally"
+}

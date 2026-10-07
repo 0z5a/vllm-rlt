@@ -1,0 +1,40 @@
+{
+  "model": "nanbeige-4.2-3b",
+  "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "dataset_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+  "tokenizer_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "tokenizer_sha256": "1d858a0fc007f22af6ae18bfa1ae52d30e398aa9cd1ea06e7777176869346a3f",
+  "document_add_special_tokens": true,
+  "special_token_protocol": "encode each complete document before token-window slicing; no reinsertion at later windows",
+  "scoring": "causal next-token full window",
+  "window": 512,
+  "stride": 512,
+  "minimum_tokens": 128,
+  "seed": 17,
+  "document_overlap_between_splits": 0,
+  "splits": {
+    "calibration": {
+      "windows": 128,
+      "documents": 112,
+      "input_tokens": 63905,
+      "scored_targets": 63777,
+      "sha256": "366845627c8fb6fdd80d3169ca65adbda38600972c671d78e08f7b1cf7deb5bf"
+    },
+    "dev": {
+      "windows": 128,
+      "documents": 46,
+      "input_tokens": 64347,
+      "scored_targets": 64219,
+      "sha256": "1c4d25177ce9b5f81a7c4fc186787685e69c813fcb0c759a7bdb6ac52dbca34a"
+    },
+    "locked_test": {
+      "windows": 594,
+      "documents": 61,
+      "input_tokens": 295509,
+      "scored_targets": 294915,
+      "sha256": "10d6204c3b9b0fd4a2ae114e99d688d7e59a4813783d63a6fab89510a8548355"
+    }
+  },
+  "locked_test_opened_for_model_evaluation": false,
+  "runner_sha256": "14669a1563995d0f13b2207acd46a0ec1e50ec7b18d6f829b19d187e9067c6ab"
+}

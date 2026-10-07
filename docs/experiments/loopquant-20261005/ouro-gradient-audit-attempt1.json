@@ -1,0 +1,1230 @@
+{
+  "status": "pass",
+  "scope": "full checkpoint G0 gradient audit; not Q0 training",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "loops": 4,
+  "tokens_per_update": 128,
+  "updates": 2,
+  "records": [
+    {
+      "update": 1,
+      "input_tokens": 128,
+      "supervised_targets": 127,
+      "cumulative_tokens": 128,
+      "losses": {
+        "ce": 2.977158784866333,
+        "kl": 0.0,
+        "trajectory": 0.0
+      },
+      "gradient_norm": 0.044563598930835724,
+      "clipped": false,
+      "scale_gradient_norms": {
+        "model__layers__0__self_attn__q_proj.log_scale": 0.006910137832164764,
+        "model__layers__0__self_attn__k_proj.log_scale": 0.02436232753098011,
+        "model__layers__0__self_attn__v_proj.log_scale": 0.033739957958459854,
+        "model__layers__0__self_attn__o_proj.log_scale": 0.0016354796243831515,
+        "model__layers__0__mlp__gate_proj.log_scale": 0.0014844669494777918,
+        "model__layers__0__mlp__up_proj.log_scale": 0.0016938091721385717,
+        "model__layers__0__mlp__down_proj.log_scale": 0.0007923293742351234,
+        "model__layers__1__self_attn__q_proj.log_scale": 0.0005304754595272243,
+        "model__layers__1__self_attn__k_proj.log_scale": 0.0010896110907196999,
+        "model__layers__1__self_attn__v_proj.log_scale": 0.001436862861737609,
+        "model__layers__1__self_attn__o_proj.log_scale": 0.0025032118428498507,
+        "model__layers__1__mlp__gate_proj.log_scale": 0.0007269602501764894,
+        "model__layers__1__mlp__up_proj.log_scale": 0.0020973095670342445,
+        "model__layers__1__mlp__down_proj.log_scale": 0.0030887844040989876,
+        "model__layers__2__self_attn__q_proj.log_scale": 0.00012666123802773654,
+        "model__layers__2__self_attn__k_proj.log_scale": 0.0001490967842983082,
+        "model__layers__2__self_attn__v_proj.log_scale": 0.000655576994176954,
+        "model__layers__2__self_attn__o_proj.log_scale": 0.0014628949575126171,
+        "model__layers__2__mlp__gate_proj.log_scale": 0.0004240459529682994,
+        "model__layers__2__mlp__up_proj.log_scale": 0.0009046304621733725,
+        "model__layers__2__mlp__down_proj.log_scale": 0.005224055144935846,
+        "model__layers__3__self_attn__q_proj.log_scale": 0.0003267757419962436,
+        "model__layers__3__self_attn__k_proj.log_scale": 0.0002635525306686759,
+        "model__layers__3__self_attn__v_proj.log_scale": 0.0007143373368307948,
+        "model__layers__3__self_attn__o_proj.log_scale": 0.0008497758535668254,
+        "model__layers__3__mlp__gate_proj.log_scale": 0.0010675003286451101,
+        "model__layers__3__mlp__up_proj.log_scale": 0.0009231781587004662,
+        "model__layers__3__mlp__down_proj.log_scale": 0.0007673068321309984,
+        "model__layers__4__self_attn__q_proj.log_scale": 0.00035494446638040245,
+        "model__layers__4__self_attn__k_proj.log_scale": 0.00018234954040963203,
+        "model__layers__4__self_attn__v_proj.log_scale": 0.00029595629894174635,
+        "model__layers__4__self_attn__o_proj.log_scale": 0.0005261863116174936,
+        "model__layers__4__mlp__gate_proj.log_scale": 0.0002454075438436121,
+        "model__layers__4__mlp__up_proj.log_scale": 0.0009217917686328292,
+        "model__layers__4__mlp__down_proj.log_scale": 0.0009078102302737534,
+        "model__layers__5__self_attn__q_proj.log_scale": 0.00022010615793988109,
+        "model__layers__5__self_attn__k_proj.log_scale": 0.00031211748137138784,
+        "model__layers__5__self_attn__v_proj.log_scale": 0.00035174982622265816,
+        "model__layers__5__self_attn__o_proj.log_scale": 0.0004190033650957048,
+        "model__layers__5__mlp__gate_proj.log_scale": 0.0010044442024081945,
+        "model__layers__5__mlp__up_proj.log_scale": 0.000485492724692449,
+        "model__layers__5__mlp__down_proj.log_scale": 0.001502359751611948,
+        "model__layers__6__self_attn__q_proj.log_scale": 0.00018913288658950478,
+        "model__layers__6__self_attn__k_proj.log_scale": 0.00023971591144800186,
+        "model__layers__6__self_attn__v_proj.log_scale": 0.0004548175202216953,
+        "model__layers__6__self_attn__o_proj.log_scale": 0.0008494203793816268,
+        "model__layers__6__mlp__gate_proj.log_scale": 0.0006676628836430609,
+        "model__layers__6__mlp__up_proj.log_scale": 0.0008564137970097363,
+        "model__layers__6__mlp__down_proj.log_scale": 0.000725644058547914,
+        "model__layers__7__self_attn__q_proj.log_scale": 0.00027602349291555583,
+        "model__layers__7__self_attn__k_proj.log_scale": 0.0005325376987457275,
+        "model__layers__7__self_attn__v_proj.log_scale": 0.0003402954316698015,
+        "model__layers__7__self_attn__o_proj.log_scale": 0.0004623974091373384,
+        "model__layers__7__mlp__gate_proj.log_scale": 0.001891969470307231,
+        "model__layers__7__mlp__up_proj.log_scale": 0.002196438377723098,
+        "model__layers__7__mlp__down_proj.log_scale": 0.0005498901009559631,
+        "model__layers__8__self_attn__q_proj.log_scale": 0.0006472296081483364,
+        "model__layers__8__self_attn__k_proj.log_scale": 0.0003888001956511289,
+        "model__layers__8__self_attn__v_proj.log_scale": 0.0003697596548590809,
+        "model__layers__8__self_attn__o_proj.log_scale": 0.00031237691291607916,
+        "model__layers__8__mlp__gate_proj.log_scale": 0.0020506507717072964,
+        "model__layers__8__mlp__up_proj.log_scale": 0.0021414358634501696,
+        "model__layers__8__mlp__down_proj.log_scale": 0.0008335137972608209,
+        "model__layers__9__self_attn__q_proj.log_scale": 0.00023814066662453115,
+        "model__layers__9__self_attn__k_proj.log_scale": 0.0005885626305826008,
+        "model__layers__9__self_attn__v_proj.log_scale": 0.0003702823305502534,
+        "model__layers__9__self_attn__o_proj.log_scale": 0.0005001130630262196,
+        "model__layers__9__mlp__gate_proj.log_scale": 0.002884196350350976,
+        "model__layers__9__mlp__up_proj.log_scale": 0.002524393843486905,
+        "model__layers__9__mlp__down_proj.log_scale": 0.0013854526914656162,
+        "model__layers__10__self_attn__q_proj.log_scale": 0.0002853240293916315,
+        "model__layers__10__self_attn__k_proj.log_scale": 0.00048764346865937114,
+        "model__layers__10__self_attn__v_proj.log_scale": 0.00016507983673363924,
+        "model__layers__10__self_attn__o_proj.log_scale": 0.0005076244124211371,
+        "model__layers__10__mlp__gate_proj.log_scale": 0.0003239375364501029,
+        "model__layers__10__mlp__up_proj.log_scale": 0.0007177101215347648,
+        "model__layers__10__mlp__down_proj.log_scale": 0.001347121549770236,
+        "model__layers__11__self_attn__q_proj.log_scale": 0.0005032359040342271,
+        "model__layers__11__self_attn__k_proj.log_scale": 0.0005498864338733256,
+        "model__layers__11__self_attn__v_proj.log_scale": 0.0004683903243858367,
+        "model__layers__11__self_attn__o_proj.log_scale": 0.0003963894268963486,
+        "model__layers__11__mlp__gate_proj.log_scale": 0.0006166314706206322,
+        "model__layers__11__mlp__up_proj.log_scale": 0.0013814503327012062,
+        "model__layers__11__mlp__down_proj.log_scale": 0.0005739429616369307,
+        "model__layers__12__self_attn__q_proj.log_scale": 0.00023260079615283757,
+        "model__layers__12__self_attn__k_proj.log_scale": 0.00020768474496435374,
+        "model__layers__12__self_attn__v_proj.log_scale": 0.0004718136915471405,
+        "model__layers__12__self_attn__o_proj.log_scale": 0.00027781794779002666,
+        "model__layers__12__mlp__gate_proj.log_scale": 0.003334271488711238,
+        "model__layers__12__mlp__up_proj.log_scale": 0.001267497893422842,
+        "model__layers__12__mlp__down_proj.log_scale": 0.0013310796348378062,
+        "model__layers__13__self_attn__q_proj.log_scale": 0.00031591084552928805,
+        "model__layers__13__self_attn__k_proj.log_scale": 0.0005167386261746287,
+        "model__layers__13__self_attn__v_proj.log_scale": 0.0002923980064224452,
+        "model__layers__13__self_attn__o_proj.log_scale": 0.0007584988488815725,
+        "model__layers__13__mlp__gate_proj.log_scale": 0.0005684857605956495,
+        "model__layers__13__mlp__up_proj.log_scale": 0.0011618416756391525,
+        "model__layers__13__mlp__down_proj.log_scale": 0.0018922726158052683,
+        "model__layers__14__self_attn__q_proj.log_scale": 0.0002444678102619946,
+        "model__layers__14__self_attn__k_proj.log_scale": 0.000492632039822638,
+        "model__layers__14__self_attn__v_proj.log_scale": 0.0003899637667927891,
+        "model__layers__14__self_attn__o_proj.log_scale": 0.00034326378954574466,
+        "model__layers__14__mlp__gate_proj.log_scale": 0.0008141805883497,
+        "model__layers__14__mlp__up_proj.log_scale": 0.001169543364085257,
+        "model__layers__14__mlp__down_proj.log_scale": 0.0008957519312389195,
+        "model__layers__15__self_attn__q_proj.log_scale": 0.0004155327915214002,
+        "model__layers__15__self_attn__k_proj.log_scale": 0.0001652952196309343,
+        "model__layers__15__self_attn__v_proj.log_scale": 0.00025256286608055234,
+        "model__layers__15__self_attn__o_proj.log_scale": 0.000754266045987606,
+        "model__layers__15__mlp__gate_proj.log_scale": 0.0008174537215381861,
+        "model__layers__15__mlp__up_proj.log_scale": 0.0009055488626472652,
+        "model__layers__15__mlp__down_proj.log_scale": 0.0014092320343479514,
+        "model__layers__16__self_attn__q_proj.log_scale": 0.00040760706178843975,
+        "model__layers__16__self_attn__k_proj.log_scale": 0.000703772297129035,
+        "model__layers__16__self_attn__v_proj.log_scale": 0.0006658579804934561,
+        "model__layers__16__self_attn__o_proj.log_scale": 0.0008343849331140518,
+        "model__layers__16__mlp__gate_proj.log_scale": 0.0005082575953565538,
+        "model__layers__16__mlp__up_proj.log_scale": 0.00047461219946853817,
+        "model__layers__16__mlp__down_proj.log_scale": 0.0011452718172222376,
+        "model__layers__17__self_attn__q_proj.log_scale": 7.726952026132494e-05,
+        "model__layers__17__self_attn__k_proj.log_scale": 0.0004105003026779741,
+        "model__layers__17__self_attn__v_proj.log_scale": 0.0002378187928115949,
+        "model__layers__17__self_attn__o_proj.log_scale": 0.0004160835815127939,
+        "model__layers__17__mlp__gate_proj.log_scale": 0.0008928289753384888,
+        "model__layers__17__mlp__up_proj.log_scale": 0.0007528836140409112,
+        "model__layers__17__mlp__down_proj.log_scale": 0.0008764372323639691,
+        "model__layers__18__self_attn__q_proj.log_scale": 0.00030137074645608664,
+        "model__layers__18__self_attn__k_proj.log_scale": 0.00023497905931435525,
+        "model__layers__18__self_attn__v_proj.log_scale": 0.0004731508088298142,
+        "model__layers__18__self_attn__o_proj.log_scale": 0.0004003388457931578,
+        "model__layers__18__mlp__gate_proj.log_scale": 0.0007006297819316387,
+        "model__layers__18__mlp__up_proj.log_scale": 0.00045388060971163213,
+        "model__layers__18__mlp__down_proj.log_scale": 0.0017640262376517057,
+        "model__layers__19__self_attn__q_proj.log_scale": 0.0005363398813642561,
+        "model__layers__19__self_attn__k_proj.log_scale": 0.0003186264948453754,
+        "model__layers__19__self_attn__v_proj.log_scale": 0.0007811329560354352,
+        "model__layers__19__self_attn__o_proj.log_scale": 0.0008027834119275212,
+        "model__layers__19__mlp__gate_proj.log_scale": 0.0008628895157016814,
+        "model__layers__19__mlp__up_proj.log_scale": 0.00043966766679659486,
+        "model__layers__19__mlp__down_proj.log_scale": 0.0008210971718654037,
+        "model__layers__20__self_attn__q_proj.log_scale": 0.00023032937315292656,
+        "model__layers__20__self_attn__k_proj.log_scale": 0.0003443164750933647,
+        "model__layers__20__self_attn__v_proj.log_scale": 0.0005024764104746282,
+        "model__layers__20__self_attn__o_proj.log_scale": 0.000552930636331439,
+        "model__layers__20__mlp__gate_proj.log_scale": 0.0006700376397930086,
+        "model__layers__20__mlp__up_proj.log_scale": 0.0007906624232418835,
+        "model__layers__20__mlp__down_proj.log_scale": 0.0008006906718946993,
+        "model__layers__21__self_attn__q_proj.log_scale": 0.0005605992628261447,
+        "model__layers__21__self_attn__k_proj.log_scale": 0.00022550663561560214,
+        "model__layers__21__self_attn__v_proj.log_scale": 0.0006349397008307278,
+        "model__layers__21__self_attn__o_proj.log_scale": 0.0009241842781193554,
+        "model__layers__21__mlp__gate_proj.log_scale": 0.0005972441867925227,
+        "model__layers__21__mlp__up_proj.log_scale": 0.0005598872085101902,
+        "model__layers__21__mlp__down_proj.log_scale": 0.0013284791493788362,
+        "model__layers__22__self_attn__q_proj.log_scale": 0.0007171258912421763,
+        "model__layers__22__self_attn__k_proj.log_scale": 0.0004600129323080182,
+        "model__layers__22__self_attn__v_proj.log_scale": 0.0005457577644847333,
+        "model__layers__22__self_attn__o_proj.log_scale": 0.0004822264309041202,
+        "model__layers__22__mlp__gate_proj.log_scale": 0.0008410137379541993,
+        "model__layers__22__mlp__up_proj.log_scale": 0.0006742290570400655,
+        "model__layers__22__mlp__down_proj.log_scale": 0.0019975672475993633,
+        "model__layers__23__self_attn__q_proj.log_scale": 0.0004491167201194912,
+        "model__layers__23__self_attn__k_proj.log_scale": 0.0001868131512310356,
+        "model__layers__23__self_attn__v_proj.log_scale": 0.0005315818707458675,
+        "model__layers__23__self_attn__o_proj.log_scale": 0.0019395662238821387,
+        "model__layers__23__mlp__gate_proj.log_scale": 0.001985682174563408,
+        "model__layers__23__mlp__up_proj.log_scale": 0.003106227843090892,
+        "model__layers__23__mlp__down_proj.log_scale": 0.0035669011995196342
+      },
+      "scale_update_norms": {
+        "model__layers__0__self_attn__q_proj.log_scale": 0.00020003360987175256,
+        "model__layers__0__self_attn__k_proj.log_scale": 0.0002002716064453125,
+        "model__layers__0__self_attn__v_proj.log_scale": 0.0002002716064453125,
+        "model__layers__0__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__0__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__0__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__0__mlp__down_proj.log_scale": 0.00020015249901916832,
+        "model__layers__1__self_attn__q_proj.log_scale": 0.0002002716064453125,
+        "model__layers__1__self_attn__k_proj.log_scale": 0.0002002716064453125,
+        "model__layers__1__self_attn__v_proj.log_scale": 0.0002002716064453125,
+        "model__layers__1__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__1__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__1__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__1__mlp__down_proj.log_scale": 0.00020015249901916832,
+        "model__layers__2__self_attn__q_proj.log_scale": 0.00019991437147837132,
+        "model__layers__2__self_attn__k_proj.log_scale": 0.00020015249901916832,
+        "model__layers__2__self_attn__v_proj.log_scale": 0.00020015249901916832,
+        "model__layers__2__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__2__mlp__gate_proj.log_scale": 0.00020003360987175256,
+        "model__layers__2__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__2__mlp__down_proj.log_scale": 0.0001995601924136281,
+        "model__layers__3__self_attn__q_proj.log_scale": 0.0002002716064453125,
+        "model__layers__3__self_attn__k_proj.log_scale": 0.0002002716064453125,
+        "model__layers__3__self_attn__v_proj.log_scale": 0.0002002716064453125,
+        "model__layers__3__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__3__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__3__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__3__mlp__down_proj.log_scale": 0.00019967708794865757,
+        "model__layers__4__self_attn__q_proj.log_scale": 0.00020003360987175256,
+        "model__layers__4__self_attn__k_proj.log_scale": 0.0002002716064453125,
+        "model__layers__4__self_attn__v_proj.log_scale": 0.00020003360987175256,
+        "model__layers__4__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__4__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__4__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__4__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__5__self_attn__q_proj.log_scale": 0.0002002716064453125,
+        "model__layers__5__self_attn__k_proj.log_scale": 0.0002002716064453125,
+        "model__layers__5__self_attn__v_proj.log_scale": 0.0002002716064453125,
+        "model__layers__5__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__5__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__5__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__5__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__6__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__6__self_attn__k_proj.log_scale": 0.0001996756618609652,
+        "model__layers__6__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__6__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__6__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__6__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__6__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__7__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__7__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__7__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__7__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__7__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__7__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__7__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__8__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__8__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__8__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__8__self_attn__o_proj.log_scale": 0.00020003360987175256,
+        "model__layers__8__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__8__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__8__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__9__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__9__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__9__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__9__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__9__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__9__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__9__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__10__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__10__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__10__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__10__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__10__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__10__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__10__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__11__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__11__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__11__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__11__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__11__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__11__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__11__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__12__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__12__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__12__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__12__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__12__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__12__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__12__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__13__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__13__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__13__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__13__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__13__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__13__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__13__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__14__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__14__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__14__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__14__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__14__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__14__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__14__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__15__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__15__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__15__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__15__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__15__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__15__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__15__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__16__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__16__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__16__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__16__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__16__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__16__mlp__up_proj.log_scale": 0.00020003360987175256,
+        "model__layers__16__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__17__self_attn__q_proj.log_scale": 0.00019884794892277569,
+        "model__layers__17__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__17__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__17__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__17__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__17__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__17__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__18__self_attn__q_proj.log_scale": 0.00019991408044006675,
+        "model__layers__18__self_attn__k_proj.log_scale": 0.00019991408044006675,
+        "model__layers__18__self_attn__v_proj.log_scale": 0.00019991408044006675,
+        "model__layers__18__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__18__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__18__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__18__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__19__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__19__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__19__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__19__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__19__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__19__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__19__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__20__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__20__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__20__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__20__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__20__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__20__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__20__mlp__down_proj.log_scale": 0.00020015249901916832,
+        "model__layers__21__self_attn__q_proj.log_scale": 0.0002002716064453125,
+        "model__layers__21__self_attn__k_proj.log_scale": 0.0002002716064453125,
+        "model__layers__21__self_attn__v_proj.log_scale": 0.00020003360987175256,
+        "model__layers__21__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__21__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__21__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__21__mlp__down_proj.log_scale": 0.0002002716064453125,
+        "model__layers__22__self_attn__q_proj.log_scale": 0.00019991408044006675,
+        "model__layers__22__self_attn__k_proj.log_scale": 0.00019991408044006675,
+        "model__layers__22__self_attn__v_proj.log_scale": 0.00019991408044006675,
+        "model__layers__22__self_attn__o_proj.log_scale": 0.00020003360987175256,
+        "model__layers__22__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__22__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__22__mlp__down_proj.log_scale": 0.00020015249901916832,
+        "model__layers__23__self_attn__q_proj.log_scale": 0.00019979476928710938,
+        "model__layers__23__self_attn__k_proj.log_scale": 0.00019979476928710938,
+        "model__layers__23__self_attn__v_proj.log_scale": 0.00019979476928710938,
+        "model__layers__23__self_attn__o_proj.log_scale": 0.0002002716064453125,
+        "model__layers__23__mlp__gate_proj.log_scale": 0.0002002716064453125,
+        "model__layers__23__mlp__up_proj.log_scale": 0.0002002716064453125,
+        "model__layers__23__mlp__down_proj.log_scale": 0.00020003333338536322
+      }
+    },
+    {
+      "update": 2,
+      "input_tokens": 128,
+      "supervised_targets": 127,
+      "cumulative_tokens": 256,
+      "losses": {
+        "ce": 2.8397274017333984,
+        "kl": 0.0,
+        "trajectory": 0.0
+      },
+      "gradient_norm": 0.04997626319527626,
+      "clipped": false,
+      "scale_gradient_norms": {
+        "model__layers__0__self_attn__q_proj.log_scale": 0.0005074940854683518,
+        "model__layers__0__self_attn__k_proj.log_scale": 0.021702097728848457,
+        "model__layers__0__self_attn__v_proj.log_scale": 0.02109302580356598,
+        "model__layers__0__self_attn__o_proj.log_scale": 0.001095641520805657,
+        "model__layers__0__mlp__gate_proj.log_scale": 0.0010792487300932407,
+        "model__layers__0__mlp__up_proj.log_scale": 0.0015151116531342268,
+        "model__layers__0__mlp__down_proj.log_scale": 0.0005635416600853205,
+        "model__layers__1__self_attn__q_proj.log_scale": 0.001226437627337873,
+        "model__layers__1__self_attn__k_proj.log_scale": 0.0063600484281778336,
+        "model__layers__1__self_attn__v_proj.log_scale": 0.02235233783721924,
+        "model__layers__1__self_attn__o_proj.log_scale": 0.003281785175204277,
+        "model__layers__1__mlp__gate_proj.log_scale": 0.0020095729269087315,
+        "model__layers__1__mlp__up_proj.log_scale": 0.0019045403460040689,
+        "model__layers__1__mlp__down_proj.log_scale": 0.0017331201815977693,
+        "model__layers__2__self_attn__q_proj.log_scale": 0.0003909601364284754,
+        "model__layers__2__self_attn__k_proj.log_scale": 0.014225845225155354,
+        "model__layers__2__self_attn__v_proj.log_scale": 0.00052774598589167,
+        "model__layers__2__self_attn__o_proj.log_scale": 0.000989448861218989,
+        "model__layers__2__mlp__gate_proj.log_scale": 0.0012455059913918376,
+        "model__layers__2__mlp__up_proj.log_scale": 0.0017105551669374108,
+        "model__layers__2__mlp__down_proj.log_scale": 0.0020784479565918446,
+        "model__layers__3__self_attn__q_proj.log_scale": 0.0012174876173958182,
+        "model__layers__3__self_attn__k_proj.log_scale": 0.011040769517421722,
+        "model__layers__3__self_attn__v_proj.log_scale": 0.0005413490580394864,
+        "model__layers__3__self_attn__o_proj.log_scale": 0.0004600049287546426,
+        "model__layers__3__mlp__gate_proj.log_scale": 0.001485099084675312,
+        "model__layers__3__mlp__up_proj.log_scale": 0.0011535304365679622,
+        "model__layers__3__mlp__down_proj.log_scale": 0.0005527726607397199,
+        "model__layers__4__self_attn__q_proj.log_scale": 0.0003203913802281022,
+        "model__layers__4__self_attn__k_proj.log_scale": 0.0002231781545560807,
+        "model__layers__4__self_attn__v_proj.log_scale": 0.001114763435907662,
+        "model__layers__4__self_attn__o_proj.log_scale": 0.0004124310507904738,
+        "model__layers__4__mlp__gate_proj.log_scale": 0.0011026812717318535,
+        "model__layers__4__mlp__up_proj.log_scale": 0.008746177889406681,
+        "model__layers__4__mlp__down_proj.log_scale": 0.0012267448473721743,
+        "model__layers__5__self_attn__q_proj.log_scale": 0.0004141372337471694,
+        "model__layers__5__self_attn__k_proj.log_scale": 0.00037183333188295364,
+        "model__layers__5__self_attn__v_proj.log_scale": 0.0008334173471666873,
+        "model__layers__5__self_attn__o_proj.log_scale": 0.0006689344299957156,
+        "model__layers__5__mlp__gate_proj.log_scale": 0.0006065132329240441,
+        "model__layers__5__mlp__up_proj.log_scale": 0.0009633831214159727,
+        "model__layers__5__mlp__down_proj.log_scale": 0.0027457172982394695,
+        "model__layers__6__self_attn__q_proj.log_scale": 0.0024070434737950563,
+        "model__layers__6__self_attn__k_proj.log_scale": 0.0032182116992771626,
+        "model__layers__6__self_attn__v_proj.log_scale": 0.013392586261034012,
+        "model__layers__6__self_attn__o_proj.log_scale": 0.0005721019115298986,
+        "model__layers__6__mlp__gate_proj.log_scale": 0.001914809923619032,
+        "model__layers__6__mlp__up_proj.log_scale": 0.0013340524164959788,
+        "model__layers__6__mlp__down_proj.log_scale": 0.0012713351752609015,
+        "model__layers__7__self_attn__q_proj.log_scale": 0.0005691736587323248,
+        "model__layers__7__self_attn__k_proj.log_scale": 0.0005383076495490968,
+        "model__layers__7__self_attn__v_proj.log_scale": 0.0007599806995131075,
+        "model__layers__7__self_attn__o_proj.log_scale": 0.0005948209436610341,
+        "model__layers__7__mlp__gate_proj.log_scale": 0.0022701870184391737,
+        "model__layers__7__mlp__up_proj.log_scale": 0.0034741212148219347,
+        "model__layers__7__mlp__down_proj.log_scale": 0.001474629039876163,
+        "model__layers__8__self_attn__q_proj.log_scale": 0.00018708255083765835,
+        "model__layers__8__self_attn__k_proj.log_scale": 0.00035688182106241584,
+        "model__layers__8__self_attn__v_proj.log_scale": 0.000581689877435565,
+        "model__layers__8__self_attn__o_proj.log_scale": 0.000730659463442862,
+        "model__layers__8__mlp__gate_proj.log_scale": 0.0011040561366826296,
+        "model__layers__8__mlp__up_proj.log_scale": 0.002198094967752695,
+        "model__layers__8__mlp__down_proj.log_scale": 0.0015087572392076254,
+        "model__layers__9__self_attn__q_proj.log_scale": 0.0003505852073431015,
+        "model__layers__9__self_attn__k_proj.log_scale": 0.00017365520761813968,
+        "model__layers__9__self_attn__v_proj.log_scale": 0.0006668912246823311,
+        "model__layers__9__self_attn__o_proj.log_scale": 0.0006456848932430148,
+        "model__layers__9__mlp__gate_proj.log_scale": 0.0013952882727608085,
+        "model__layers__9__mlp__up_proj.log_scale": 0.003498905338346958,
+        "model__layers__9__mlp__down_proj.log_scale": 0.0017625635955482721,
+        "model__layers__10__self_attn__q_proj.log_scale": 0.0003948995436076075,
+        "model__layers__10__self_attn__k_proj.log_scale": 0.0003143594367429614,
+        "model__layers__10__self_attn__v_proj.log_scale": 0.0006909766234457493,
+        "model__layers__10__self_attn__o_proj.log_scale": 0.0005999697023071349,
+        "model__layers__10__mlp__gate_proj.log_scale": 0.0036360856611281633,
+        "model__layers__10__mlp__up_proj.log_scale": 0.0030185480136424303,
+        "model__layers__10__mlp__down_proj.log_scale": 0.0005978555418550968,
+        "model__layers__11__self_attn__q_proj.log_scale": 0.0002770735591184348,
+        "model__layers__11__self_attn__k_proj.log_scale": 0.0003038459981326014,
+        "model__layers__11__self_attn__v_proj.log_scale": 0.00022799900034442544,
+        "model__layers__11__self_attn__o_proj.log_scale": 0.00045304614468477666,
+        "model__layers__11__mlp__gate_proj.log_scale": 0.0008854982443153858,
+        "model__layers__11__mlp__up_proj.log_scale": 0.001225547748617828,
+        "model__layers__11__mlp__down_proj.log_scale": 0.000585918256547302,
+        "model__layers__12__self_attn__q_proj.log_scale": 9.680961375124753e-05,
+        "model__layers__12__self_attn__k_proj.log_scale": 0.0002671202237252146,
+        "model__layers__12__self_attn__v_proj.log_scale": 0.00031029540696181357,
+        "model__layers__12__self_attn__o_proj.log_scale": 0.0006084313499741256,
+        "model__layers__12__mlp__gate_proj.log_scale": 0.001827616011723876,
+        "model__layers__12__mlp__up_proj.log_scale": 0.00233600870706141,
+        "model__layers__12__mlp__down_proj.log_scale": 0.002715833019465208,
+        "model__layers__13__self_attn__q_proj.log_scale": 0.00043292850023135543,
+        "model__layers__13__self_attn__k_proj.log_scale": 0.000442128861322999,
+        "model__layers__13__self_attn__v_proj.log_scale": 0.0007463060319423676,
+        "model__layers__13__self_attn__o_proj.log_scale": 0.0005526655586436391,
+        "model__layers__13__mlp__gate_proj.log_scale": 0.003242732025682926,
+        "model__layers__13__mlp__up_proj.log_scale": 0.00131936464458704,
+        "model__layers__13__mlp__down_proj.log_scale": 0.0006769076571799815,
+        "model__layers__14__self_attn__q_proj.log_scale": 0.0005167819326743484,
+        "model__layers__14__self_attn__k_proj.log_scale": 0.00032837752951309085,
+        "model__layers__14__self_attn__v_proj.log_scale": 0.00039991989615373313,
+        "model__layers__14__self_attn__o_proj.log_scale": 0.00038720565498806536,
+        "model__layers__14__mlp__gate_proj.log_scale": 0.0006811142666265368,
+        "model__layers__14__mlp__up_proj.log_scale": 0.0009833567310124636,
+        "model__layers__14__mlp__down_proj.log_scale": 0.0011163613526150584,
+        "model__layers__15__self_attn__q_proj.log_scale": 0.0003172975848428905,
+        "model__layers__15__self_attn__k_proj.log_scale": 0.0003576876188162714,
+        "model__layers__15__self_attn__v_proj.log_scale": 0.000988607993349433,
+        "model__layers__15__self_attn__o_proj.log_scale": 0.000976742710918188,
+        "model__layers__15__mlp__gate_proj.log_scale": 0.0010637582745403051,
+        "model__layers__15__mlp__up_proj.log_scale": 0.0010633760830387473,
+        "model__layers__15__mlp__down_proj.log_scale": 0.0049162679351866245,
+        "model__layers__16__self_attn__q_proj.log_scale": 0.00014678762818221003,
+        "model__layers__16__self_attn__k_proj.log_scale": 0.0004542701644822955,
+        "model__layers__16__self_attn__v_proj.log_scale": 0.0002757863840088248,
+        "model__layers__16__self_attn__o_proj.log_scale": 0.000656749471090734,
+        "model__layers__16__mlp__gate_proj.log_scale": 0.001255018636584282,
+        "model__layers__16__mlp__up_proj.log_scale": 0.0005260738544166088,
+        "model__layers__16__mlp__down_proj.log_scale": 0.0008391540613956749,
+        "model__layers__17__self_attn__q_proj.log_scale": 0.0004574040067382157,
+        "model__layers__17__self_attn__k_proj.log_scale": 0.00018689289572648704,
+        "model__layers__17__self_attn__v_proj.log_scale": 0.00021425922750495374,
+        "model__layers__17__self_attn__o_proj.log_scale": 0.0013735926477238536,
+        "model__layers__17__mlp__gate_proj.log_scale": 0.0012652333825826645,
+        "model__layers__17__mlp__up_proj.log_scale": 0.0006815983797423542,
+        "model__layers__17__mlp__down_proj.log_scale": 0.0008089996408671141,
+        "model__layers__18__self_attn__q_proj.log_scale": 0.00028893817216157913,
+        "model__layers__18__self_attn__k_proj.log_scale": 0.0004919425118714571,
+        "model__layers__18__self_attn__v_proj.log_scale": 0.0003145442169625312,
+        "model__layers__18__self_attn__o_proj.log_scale": 0.0007214670768007636,
+        "model__layers__18__mlp__gate_proj.log_scale": 0.0009860256686806679,
+        "model__layers__18__mlp__up_proj.log_scale": 0.0007906191167421639,
+        "model__layers__18__mlp__down_proj.log_scale": 0.0019500565249472857,
+        "model__layers__19__self_attn__q_proj.log_scale": 0.00029846318648196757,
+        "model__layers__19__self_attn__k_proj.log_scale": 0.000771005405113101,
+        "model__layers__19__self_attn__v_proj.log_scale": 0.00038060301449149847,
+        "model__layers__19__self_attn__o_proj.log_scale": 0.0002550743811298162,
+        "model__layers__19__mlp__gate_proj.log_scale": 0.0007988243596628308,
+        "model__layers__19__mlp__up_proj.log_scale": 0.00029798311879858375,
+        "model__layers__19__mlp__down_proj.log_scale": 0.000952117086853832,
+        "model__layers__20__self_attn__q_proj.log_scale": 0.000297675549518317,
+        "model__layers__20__self_attn__k_proj.log_scale": 0.0004998404765501618,
+        "model__layers__20__self_attn__v_proj.log_scale": 0.00041802795021794736,
+        "model__layers__20__self_attn__o_proj.log_scale": 0.0007643137942068279,
+        "model__layers__20__mlp__gate_proj.log_scale": 0.000887374219018966,
+        "model__layers__20__mlp__up_proj.log_scale": 0.001551169785670936,
+        "model__layers__20__mlp__down_proj.log_scale": 0.0014404163230210543,
+        "model__layers__21__self_attn__q_proj.log_scale": 0.00045926758321002126,
+        "model__layers__21__self_attn__k_proj.log_scale": 0.0006864602328278124,
+        "model__layers__21__self_attn__v_proj.log_scale": 0.00109325279481709,
+        "model__layers__21__self_attn__o_proj.log_scale": 0.0002303819201188162,
+        "model__layers__21__mlp__gate_proj.log_scale": 0.0007814185810275376,
+        "model__layers__21__mlp__up_proj.log_scale": 0.0006181284552440047,
+        "model__layers__21__mlp__down_proj.log_scale": 0.0013150775339454412,
+        "model__layers__22__self_attn__q_proj.log_scale": 0.00033928410266526043,
+        "model__layers__22__self_attn__k_proj.log_scale": 0.0002864851849153638,
+        "model__layers__22__self_attn__v_proj.log_scale": 0.0006879976135678589,
+        "model__layers__22__self_attn__o_proj.log_scale": 0.000352464965544641,
+        "model__layers__22__mlp__gate_proj.log_scale": 0.0031287481542676687,
+        "model__layers__22__mlp__up_proj.log_scale": 0.0097489133477211,
+        "model__layers__22__mlp__down_proj.log_scale": 0.0029843405354768038,
+        "model__layers__23__self_attn__q_proj.log_scale": 0.0003581317432690412,
+        "model__layers__23__self_attn__k_proj.log_scale": 0.00019451101252343506,
+        "model__layers__23__self_attn__v_proj.log_scale": 0.000980347627773881,
+        "model__layers__23__self_attn__o_proj.log_scale": 0.0008454507915303111,
+        "model__layers__23__mlp__gate_proj.log_scale": 0.0025043978821486235,
+        "model__layers__23__mlp__up_proj.log_scale": 0.009381335228681564,
+        "model__layers__23__mlp__down_proj.log_scale": 0.001540799275971949
+      },
+      "scale_update_norms": {
+        "model__layers__0__self_attn__q_proj.log_scale": 0.00012183819490019232,
+        "model__layers__0__self_attn__k_proj.log_scale": 0.00014909455785527825,
+        "model__layers__0__self_attn__v_proj.log_scale": 0.00014912581536918879,
+        "model__layers__0__self_attn__o_proj.log_scale": 0.00014130238560028374,
+        "model__layers__0__mlp__gate_proj.log_scale": 9.625734674045816e-05,
+        "model__layers__0__mlp__up_proj.log_scale": 0.00013586596469394863,
+        "model__layers__0__mlp__down_proj.log_scale": 0.00012702766980510205,
+        "model__layers__1__self_attn__q_proj.log_scale": 0.00014465545245911926,
+        "model__layers__1__self_attn__k_proj.log_scale": 0.00014519515389110893,
+        "model__layers__1__self_attn__v_proj.log_scale": 0.00018334311607759446,
+        "model__layers__1__self_attn__o_proj.log_scale": 0.0001580159441800788,
+        "model__layers__1__mlp__gate_proj.log_scale": 0.00013152150495443493,
+        "model__layers__1__mlp__up_proj.log_scale": 0.0001430837291991338,
+        "model__layers__1__mlp__down_proj.log_scale": 5.750041236751713e-05,
+        "model__layers__2__self_attn__q_proj.log_scale": 0.00013611862959805876,
+        "model__layers__2__self_attn__k_proj.log_scale": 0.00012932576646562666,
+        "model__layers__2__self_attn__v_proj.log_scale": 0.00010722185106715187,
+        "model__layers__2__self_attn__o_proj.log_scale": 0.00015639241610188037,
+        "model__layers__2__mlp__gate_proj.log_scale": 0.00011826138506876305,
+        "model__layers__2__mlp__up_proj.log_scale": 0.00012130984396208078,
+        "model__layers__2__mlp__down_proj.log_scale": 0.0001000744741759263,
+        "model__layers__3__self_attn__q_proj.log_scale": 0.00017831541481427848,
+        "model__layers__3__self_attn__k_proj.log_scale": 0.00017722505435813218,
+        "model__layers__3__self_attn__v_proj.log_scale": 0.0001124314876506105,
+        "model__layers__3__self_attn__o_proj.log_scale": 0.00015713719767518342,
+        "model__layers__3__mlp__gate_proj.log_scale": 0.00017385864339303225,
+        "model__layers__3__mlp__up_proj.log_scale": 0.0001814351271605119,
+        "model__layers__3__mlp__down_proj.log_scale": 0.00011118999827886,
+        "model__layers__4__self_attn__q_proj.log_scale": 0.00011100068513769656,
+        "model__layers__4__self_attn__k_proj.log_scale": 0.0001463291991967708,
+        "model__layers__4__self_attn__v_proj.log_scale": 0.0001545879349578172,
+        "model__layers__4__self_attn__o_proj.log_scale": 8.851078746374696e-05,
+        "model__layers__4__mlp__gate_proj.log_scale": 0.00012327692820690572,
+        "model__layers__4__mlp__up_proj.log_scale": 0.00013387409853748977,
+        "model__layers__4__mlp__down_proj.log_scale": 0.00016569661966059357,
+        "model__layers__5__self_attn__q_proj.log_scale": 0.0001504940737504512,
+        "model__layers__5__self_attn__k_proj.log_scale": 0.000185492099262774,
+        "model__layers__5__self_attn__v_proj.log_scale": 0.0001373233099002391,
+        "model__layers__5__self_attn__o_proj.log_scale": 0.00017259331070818007,
+        "model__layers__5__mlp__gate_proj.log_scale": 0.0001897674083011225,
+        "model__layers__5__mlp__up_proj.log_scale": 0.00010913218284258619,
+        "model__layers__5__mlp__down_proj.log_scale": 0.00016681328997947276,
+        "model__layers__6__self_attn__q_proj.log_scale": 0.00015534630801994354,
+        "model__layers__6__self_attn__k_proj.log_scale": 0.00015069355140440166,
+        "model__layers__6__self_attn__v_proj.log_scale": 0.0001429225376341492,
+        "model__layers__6__self_attn__o_proj.log_scale": 0.00011728933895938098,
+        "model__layers__6__mlp__gate_proj.log_scale": 0.00013763837341684848,
+        "model__layers__6__mlp__up_proj.log_scale": 0.0001249185879714787,
+        "model__layers__6__mlp__down_proj.log_scale": 0.0001544466649647802,
+        "model__layers__7__self_attn__q_proj.log_scale": 0.00014151041978038847,
+        "model__layers__7__self_attn__k_proj.log_scale": 0.0001512034359620884,
+        "model__layers__7__self_attn__v_proj.log_scale": 0.00016704382142052054,
+        "model__layers__7__self_attn__o_proj.log_scale": 0.00016150918963830918,
+        "model__layers__7__mlp__gate_proj.log_scale": 0.00012505230552051216,
+        "model__layers__7__mlp__up_proj.log_scale": 0.00014071624900680035,
+        "model__layers__7__mlp__down_proj.log_scale": 0.00012849588529206812,
+        "model__layers__8__self_attn__q_proj.log_scale": 9.838139521889389e-05,
+        "model__layers__8__self_attn__k_proj.log_scale": 0.00011884108243975788,
+        "model__layers__8__self_attn__v_proj.log_scale": 0.0001600097748450935,
+        "model__layers__8__self_attn__o_proj.log_scale": 0.00018241685756947845,
+        "model__layers__8__mlp__gate_proj.log_scale": 0.00016570829029660672,
+        "model__layers__8__mlp__up_proj.log_scale": 0.00015010149218142033,
+        "model__layers__8__mlp__down_proj.log_scale": 0.00013535541074816138,
+        "model__layers__9__self_attn__q_proj.log_scale": 0.0001440646155970171,
+        "model__layers__9__self_attn__k_proj.log_scale": 0.00015305841225199401,
+        "model__layers__9__self_attn__v_proj.log_scale": 0.00011478338274173439,
+        "model__layers__9__self_attn__o_proj.log_scale": 0.00012507775682024658,
+        "model__layers__9__mlp__gate_proj.log_scale": 0.00011840741353807971,
+        "model__layers__9__mlp__up_proj.log_scale": 0.00016939065244514495,
+        "model__layers__9__mlp__down_proj.log_scale": 0.00015663284284528345,
+        "model__layers__10__self_attn__q_proj.log_scale": 0.00012334654456935823,
+        "model__layers__10__self_attn__k_proj.log_scale": 0.00011900001118192449,
+        "model__layers__10__self_attn__v_proj.log_scale": 0.00016010850958991796,
+        "model__layers__10__self_attn__o_proj.log_scale": 8.87263158801943e-05,
+        "model__layers__10__mlp__gate_proj.log_scale": 0.00015836306556593627,
+        "model__layers__10__mlp__up_proj.log_scale": 0.000170218845596537,
+        "model__layers__10__mlp__down_proj.log_scale": 0.00010893302533077076,
+        "model__layers__11__self_attn__q_proj.log_scale": 0.00014086038572713733,
+        "model__layers__11__self_attn__k_proj.log_scale": 0.00010704781743697822,
+        "model__layers__11__self_attn__v_proj.log_scale": 0.00012757265358231962,
+        "model__layers__11__self_attn__o_proj.log_scale": 0.00016236987721640617,
+        "model__layers__11__mlp__gate_proj.log_scale": 0.00014573207590728998,
+        "model__layers__11__mlp__up_proj.log_scale": 0.00013592117466032505,
+        "model__layers__11__mlp__down_proj.log_scale": 0.00010704011947382241,
+        "model__layers__12__self_attn__q_proj.log_scale": 0.00015413184883072972,
+        "model__layers__12__self_attn__k_proj.log_scale": 0.0001824780774768442,
+        "model__layers__12__self_attn__v_proj.log_scale": 0.0001573401823407039,
+        "model__layers__12__self_attn__o_proj.log_scale": 0.0001707210176391527,
+        "model__layers__12__mlp__gate_proj.log_scale": 0.00013640042743645608,
+        "model__layers__12__mlp__up_proj.log_scale": 0.00014968130562920123,
+        "model__layers__12__mlp__down_proj.log_scale": 0.00016535802569705993,
+        "model__layers__13__self_attn__q_proj.log_scale": 0.00015424318553414196,
+        "model__layers__13__self_attn__k_proj.log_scale": 3.875677066389471e-05,
+        "model__layers__13__self_attn__v_proj.log_scale": 0.0001580564130563289,
+        "model__layers__13__self_attn__o_proj.log_scale": 0.0001548465806990862,
+        "model__layers__13__mlp__gate_proj.log_scale": 0.00012704824621323496,
+        "model__layers__13__mlp__up_proj.log_scale": 0.00015218577755149454,
+        "model__layers__13__mlp__down_proj.log_scale": 0.00013726948236580938,
+        "model__layers__14__self_attn__q_proj.log_scale": 0.0001342065806966275,
+        "model__layers__14__self_attn__k_proj.log_scale": 0.00010480063065188006,
+        "model__layers__14__self_attn__v_proj.log_scale": 0.00014423043467104435,
+        "model__layers__14__self_attn__o_proj.log_scale": 0.00017723595374263823,
+        "model__layers__14__mlp__gate_proj.log_scale": 0.00016348423378076404,
+        "model__layers__14__mlp__up_proj.log_scale": 0.00011610862566158175,
+        "model__layers__14__mlp__down_proj.log_scale": 0.00010776308772619814,
+        "model__layers__15__self_attn__q_proj.log_scale": 0.00015238585183396935,
+        "model__layers__15__self_attn__k_proj.log_scale": 0.00012690096627920866,
+        "model__layers__15__self_attn__v_proj.log_scale": 0.00016574344772379845,
+        "model__layers__15__self_attn__o_proj.log_scale": 0.00018056773114949465,
+        "model__layers__15__mlp__gate_proj.log_scale": 0.0001481107174186036,
+        "model__layers__15__mlp__up_proj.log_scale": 0.00014718828606419265,
+        "model__layers__15__mlp__down_proj.log_scale": 0.00010367672075517476,
+        "model__layers__16__self_attn__q_proj.log_scale": 0.00013233348727226257,
+        "model__layers__16__self_attn__k_proj.log_scale": 0.0001792037219274789,
+        "model__layers__16__self_attn__v_proj.log_scale": 0.00012584977957885712,
+        "model__layers__16__self_attn__o_proj.log_scale": 0.00016455649165436625,
+        "model__layers__16__mlp__gate_proj.log_scale": 8.04894880275242e-05,
+        "model__layers__16__mlp__up_proj.log_scale": 8.417898061452433e-05,
+        "model__layers__16__mlp__down_proj.log_scale": 0.00010657603706931695,
+        "model__layers__17__self_attn__q_proj.log_scale": 0.0001412931305821985,
+        "model__layers__17__self_attn__k_proj.log_scale": 0.00015135336434468627,
+        "model__layers__17__self_attn__v_proj.log_scale": 0.00018605892546474934,
+        "model__layers__17__self_attn__o_proj.log_scale": 0.0001410197000950575,
+        "model__layers__17__mlp__gate_proj.log_scale": 0.00011593616363825276,
+        "model__layers__17__mlp__up_proj.log_scale": 8.920169057091698e-05,
+        "model__layers__17__mlp__down_proj.log_scale": 0.00013102700177114457,
+        "model__layers__18__self_attn__q_proj.log_scale": 8.381557563552633e-05,
+        "model__layers__18__self_attn__k_proj.log_scale": 0.00010379097511759028,
+        "model__layers__18__self_attn__v_proj.log_scale": 0.00015085020277183503,
+        "model__layers__18__self_attn__o_proj.log_scale": 0.0001611152256373316,
+        "model__layers__18__mlp__gate_proj.log_scale": 0.00011476034705992788,
+        "model__layers__18__mlp__up_proj.log_scale": 0.00016200257232412696,
+        "model__layers__18__mlp__down_proj.log_scale": 0.00014573676162399352,
+        "model__layers__19__self_attn__q_proj.log_scale": 0.00013928665430285037,
+        "model__layers__19__self_attn__k_proj.log_scale": 0.00015563657507300377,
+        "model__layers__19__self_attn__v_proj.log_scale": 0.00012990312825422734,
+        "model__layers__19__self_attn__o_proj.log_scale": 0.0001664503215579316,
+        "model__layers__19__mlp__gate_proj.log_scale": 0.00014291280240286142,
+        "model__layers__19__mlp__up_proj.log_scale": 0.0001714698737487197,
+        "model__layers__19__mlp__down_proj.log_scale": 0.00011931129120057449,
+        "model__layers__20__self_attn__q_proj.log_scale": 0.00018144860223401338,
+        "model__layers__20__self_attn__k_proj.log_scale": 0.00014600194117520005,
+        "model__layers__20__self_attn__v_proj.log_scale": 0.00016045180382207036,
+        "model__layers__20__self_attn__o_proj.log_scale": 0.00014212707174010575,
+        "model__layers__20__mlp__gate_proj.log_scale": 0.0001712197408778593,
+        "model__layers__20__mlp__up_proj.log_scale": 0.0001288157800445333,
+        "model__layers__20__mlp__down_proj.log_scale": 0.00017033301992341876,
+        "model__layers__21__self_attn__q_proj.log_scale": 0.00019083319057244807,
+        "model__layers__21__self_attn__k_proj.log_scale": 0.00015884976892266423,
+        "model__layers__21__self_attn__v_proj.log_scale": 0.00017560884589329362,
+        "model__layers__21__self_attn__o_proj.log_scale": 0.00013096799375489354,
+        "model__layers__21__mlp__gate_proj.log_scale": 0.00016448463429696858,
+        "model__layers__21__mlp__up_proj.log_scale": 0.0001689686469035223,
+        "model__layers__21__mlp__down_proj.log_scale": 0.0001611356856301427,
+        "model__layers__22__self_attn__q_proj.log_scale": 0.0001242949947481975,
+        "model__layers__22__self_attn__k_proj.log_scale": 8.551785867894068e-05,
+        "model__layers__22__self_attn__v_proj.log_scale": 0.00015447629266418517,
+        "model__layers__22__self_attn__o_proj.log_scale": 0.00015491704107262194,
+        "model__layers__22__mlp__gate_proj.log_scale": 0.00012421768042258918,
+        "model__layers__22__mlp__up_proj.log_scale": 0.0001322266907664016,
+        "model__layers__22__mlp__down_proj.log_scale": 0.00017814271268434823,
+        "model__layers__23__self_attn__q_proj.log_scale": 0.00010672926873667166,
+        "model__layers__23__self_attn__k_proj.log_scale": 0.00016803437029011548,
+        "model__layers__23__self_attn__v_proj.log_scale": 0.0001194543729070574,
+        "model__layers__23__self_attn__o_proj.log_scale": 0.00015163571515586227,
+        "model__layers__23__mlp__gate_proj.log_scale": 0.0001731312950141728,
+        "model__layers__23__mlp__up_proj.log_scale": 0.00015399551193695515,
+        "model__layers__23__mlp__down_proj.log_scale": 0.0001563520636409521
+      }
+    }
+  ],
+  "frozen_weights": "grad=None; storage/version unchanged",
+  "trainable_parameters": {
+    "model__layers__0__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__0__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__0__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__0__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__0__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__0__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__0__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__1__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__1__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__1__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__1__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__1__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__1__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__1__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__2__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__2__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__2__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__2__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__2__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__2__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__2__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__3__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__3__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__3__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__3__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__3__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__3__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__3__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__4__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__4__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__4__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__4__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__4__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__4__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__4__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__5__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__5__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__5__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__5__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__5__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__5__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__5__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__6__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__6__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__6__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__6__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__6__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__6__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__6__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__7__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__7__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__7__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__7__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__7__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__7__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__7__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__8__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__8__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__8__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__8__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__8__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__8__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__8__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__9__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__9__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__9__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__9__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__9__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__9__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__9__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__10__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__10__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__10__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__10__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__10__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__10__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__10__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__11__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__11__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__11__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__11__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__11__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__11__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__11__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__12__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__12__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__12__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__12__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__12__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__12__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__12__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__13__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__13__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__13__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__13__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__13__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__13__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__13__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__14__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__14__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__14__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__14__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__14__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__14__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__14__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__15__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__15__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__15__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__15__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__15__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__15__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__15__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__16__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__16__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__16__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__16__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__16__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__16__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__16__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__17__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__17__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__17__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__17__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__17__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__17__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__17__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__18__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__18__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__18__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__18__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__18__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__18__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__18__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__19__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__19__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__19__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__19__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__19__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__19__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__19__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__20__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__20__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__20__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__20__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__20__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__20__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__20__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__21__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__21__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__21__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__21__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__21__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__21__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__21__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__22__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__22__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__22__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__22__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__22__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__22__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__22__mlp__down_proj.log_scale": [
+      4
+    ],
+    "model__layers__23__self_attn__q_proj.log_scale": [
+      4
+    ],
+    "model__layers__23__self_attn__k_proj.log_scale": [
+      4
+    ],
+    "model__layers__23__self_attn__v_proj.log_scale": [
+      4
+    ],
+    "model__layers__23__self_attn__o_proj.log_scale": [
+      4
+    ],
+    "model__layers__23__mlp__gate_proj.log_scale": [
+      4
+    ],
+    "model__layers__23__mlp__up_proj.log_scale": [
+      4
+    ],
+    "model__layers__23__mlp__down_proj.log_scale": [
+      4
+    ]
+  },
+  "allocated_peak_bytes": 13085885952,
+  "pid": 17871,
+  "start_unix": 1791160665.3302326,
+  "end_unix": 1791160669.4439209,
+  "source_sha256": "540fa614aacc212861a4585375680b733946ce98e3e6829bccee3f173e03e660",
+  "calibration_sha256": "b33e74f657049f725ca1fb025213110789594d2118d148f85fb2bf192e620d68",
+  "scales_sha256": "882d0c99f62722eb003133ff4eb21b78b56bc83ad9eab8812beee8aebda792bd"
+}

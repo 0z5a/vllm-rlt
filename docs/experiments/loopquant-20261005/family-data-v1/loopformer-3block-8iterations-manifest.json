@@ -1,0 +1,40 @@
+{
+  "model": "loopformer-3block-8iterations",
+  "model_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "dataset_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+  "tokenizer_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+  "tokenizer_sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e",
+  "document_add_special_tokens": false,
+  "special_token_protocol": "encode each complete document before token-window slicing; no reinsertion at later windows",
+  "scoring": "causal next-token full window",
+  "window": 512,
+  "stride": 512,
+  "minimum_tokens": 128,
+  "seed": 17,
+  "document_overlap_between_splits": 0,
+  "splits": {
+    "calibration": {
+      "windows": 128,
+      "documents": 106,
+      "input_tokens": 64375,
+      "scored_targets": 64247,
+      "sha256": "12b8fb6188a531e9bdfe6d187a2ce83f9dcff8a01c1e8b20a426c77aac806330"
+    },
+    "dev": {
+      "windows": 128,
+      "documents": 49,
+      "input_tokens": 63276,
+      "scored_targets": 63148,
+      "sha256": "518a606429152a4b7d350d090403a34697abfaec20d2b4bae0ff9fcbf124566b"
+    },
+    "locked_test": {
+      "windows": 569,
+      "documents": 61,
+      "input_tokens": 282202,
+      "scored_targets": 281633,
+      "sha256": "41d024aac913273ede4d362a70dda0b9aab9c91024a34da4ac865a227ad9487a"
+    }
+  },
+  "locked_test_opened_for_model_evaluation": false,
+  "runner_sha256": "14669a1563995d0f13b2207acd46a0ec1e50ec7b18d6f829b19d187e9067c6ab"
+}

@@ -1,0 +1,47 @@
+{
+  "status": "archived",
+  "boot_id": "18dbe202-804d-4276-8357-baf55f7d79f7",
+  "pids_absent": [
+    27270,
+    27294,
+    27612,
+    27929
+  ],
+  "compute_apps": "",
+  "cases": [
+    {
+      "policy": "BF16",
+      "pid": 27294,
+      "completed": 64,
+      "tokens": 2048,
+      "graph_replays": 362,
+      "graph_fallbacks": 0
+    },
+    {
+      "policy": "DYN",
+      "pid": 27612,
+      "completed": 64,
+      "tokens": 2048,
+      "graph_replays": 362,
+      "graph_fallbacks": 0
+    },
+    {
+      "policy": "SH1",
+      "pid": 27929,
+      "completed": 64,
+      "tokens": 2048,
+      "graph_replays": 361,
+      "graph_fallbacks": 0
+    }
+  ],
+  "files": 28,
+  "original_inodes": [
+    12895501670,
+    12895501695,
+    12895501666
+  ],
+  "archive_bytes": 108192114,
+  "archive_sha256": "96c30f6244117369af59be29dcd0dced536ffc68dbba5901002f6edc482da24a",
+  "manifest_sha256": "979296b9fb8a5cb478d9571baba8ec386da968979604e1cf49c31a1ca9608d27",
+  "timestamp": 1791175109.2065516
+}

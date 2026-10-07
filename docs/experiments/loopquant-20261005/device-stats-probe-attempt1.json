@@ -1,0 +1,36 @@
+{
+  "status": "pass",
+  "pid": 13669,
+  "start_unix": 1791151725.1907237,
+  "end_unix": 1791151726.765555,
+  "records": [
+    {
+      "channels": 64,
+      "rows": 146,
+      "amax": 3.828125,
+      "rms": 1.004255280600521,
+      "reference_rms": 1.004255277170499,
+      "reproducible": true,
+      "per_update_scalar_sync": false
+    },
+    {
+      "channels": 2048,
+      "rows": 146,
+      "amax": 4.53125,
+      "rms": 0.9995548294957737,
+      "reference_rms": 0.9995548291328109,
+      "reproducible": true,
+      "per_update_scalar_sync": false
+    },
+    {
+      "channels": 5632,
+      "rows": 146,
+      "amax": 4.9375,
+      "rms": 0.9997608396691859,
+      "reference_rms": 0.9997608389995291,
+      "reproducible": true,
+      "per_update_scalar_sync": false
+    }
+  ],
+  "scope": "calibration correctness and synchronization audit; no performance measurement"
+}

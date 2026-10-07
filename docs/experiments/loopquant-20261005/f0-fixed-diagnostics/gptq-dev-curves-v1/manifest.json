@@ -1,0 +1,14 @@
+{
+  "source_commit": "f8b87c390dafa73de1019cf4464155fa416bab21",
+  "parent_package": "gptq-export-v1",
+  "parent_manifest_sha256": "17277a3bffdb8b55fa926a25b855f13ce42b2f598bf7c515141450f704b782a0",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "scope": "12 fixed GPTQ first/all/matched dev arms R1\u20134 each128windows; no search, locked G2 or timing",
+  "locks": "child originalGPU wholepolicy; originalIO for export read; no same enclosing lock",
+  "files": {
+    "dev.jsonl": "325f23166ecec45f22a8a8254dc5edc7bf465b1d456beff801b58c7a07770c1c",
+    "probe.py": "7c62cf9cae9388600095626289991559f14cdec5672c02b0059e4bd32863b60a",
+    "run.py": "9b58226c30a068d896d76de580c9e4f29c2b33d91d57f2384787e39ec0c3964c",
+    "source.tar.gz": "227725eb99121b2c31b18760b3e10eeb1fc03da754674a472b81ae808fcc9cf7"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "gpu_memory_used_mib": 0,
+  "matching_lock_holders": [],
+  "compute_apps": [],
+  "torch": "2.12.1+cu130",
+  "triton": "3.7.1",
+  "existing_window": false,
+  "admission_command_exit": 0,
+  "socket": "/tmp/flashns-33885.sock",
+  "environment_modified": false
+}

@@ -1,0 +1,14 @@
+{"event": "case_pass", "family": "parcae_int4", "index": 0, "case": [false, false]}
+Traceback (most recent call last):
+  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-boundary-fix-v2/probe.py", line 54, in <module>
+    row = check_int4_native_model("parcae", case[0], folder, compact=case[1])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-boundary-fix-v2-parcae/tests/loopquant_int4_checks.py", line 143, in check_int4_native_model
+    actual = LLM(
+             ^^^^
+  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-boundary-fix-v2-parcae/vllm_rlt/entrypoints/llm.py", line 46, in __init__
+    self.engine = LLMEngine(
+                  ^^^^^^^^^^
+  File "/root/autodl-tmp/0z5a/loopquant-h20-20261006/source-h20-boundary-fix-v2-parcae/vllm_rlt/engine/llm_engine.py", line 115, in __init__
+    raise ValueError("alias storage: unsupported execution or preemption mode")
+ValueError: alias storage: unsupported execution or preemption mode

@@ -1,0 +1,46 @@
+{
+  "compile_bf16.py": {
+    "sha256": "2e999fe76bfce5b2ba5f849d391a0745166ace796ac26040c87219517c4baea6",
+    "bytes": 1779
+  },
+  "RESULTS.md": {
+    "sha256": "40144744473480392d96c67d271accc995c1612df85cd6fcff90df239406e973",
+    "bytes": 2394
+  },
+  "offline-bf16-result.json": {
+    "sha256": "37384b575a7c1198da3e2cc5592db30aba182b76dc75592b053cd1ac39dc1658",
+    "bytes": 2999
+  },
+  "compile_bf16.executed.py": {
+    "sha256": "ab2dd11c28e21a294d08f88e0ddf3c00411c64cf41e718e6b0170f72fe744ac7",
+    "bytes": 1614
+  },
+  "tmem_gemm.py": {
+    "sha256": "e38fd2dd8a21c680d6cb15a5e0b6f71d29f8b22312ebfdad53a1424551fe70b8",
+    "bytes": 991
+  },
+  "ptx/m64-n2048-k2048.ptx": {
+    "sha256": "44e924963702f4d109ab5b3bfd88e0934607171ebaa066ce462e98a690ed87ea",
+    "bytes": 75497
+  },
+  "ptx/m512-n2048-k2048.ptx": {
+    "sha256": "728eae31be18d688ba1dc71a010aec63899fb6899b17cbb75dba98a0a58520fb",
+    "bytes": 75498
+  },
+  "ptx/m32-n2048-k2048.ptx": {
+    "sha256": "2d69ecdc7ed89be107b4e0e30b97b0577237c713e52d3ee0f2399e18c720d75f",
+    "bytes": 75588
+  },
+  "ptx/m1-n2048-k2048.ptx": {
+    "sha256": "25c1cb73d49303df238c91054d6b9c94a34cc131f33197f8ac1e6397462bd39c",
+    "bytes": 77447
+  },
+  "ptx/m32-n2048-k5632.ptx": {
+    "sha256": "4795413c8dd4c1ae96fd3f3f95e8a7faf2def16d31544208480ca800cda6f81e",
+    "bytes": 75234
+  },
+  "ptx/m32-n5632-k2048.ptx": {
+    "sha256": "10d741abef0022f1e94a73196e8260d283f39f05a3c4ff367a0a47f26ab7ea03",
+    "bytes": 75008
+  }
+}

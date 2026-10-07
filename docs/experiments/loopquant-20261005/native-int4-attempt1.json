@@ -1,0 +1,173 @@
+{
+  "status": "pass",
+  "kind": "int4",
+  "scope": "numerical qualification; no throughput claim",
+  "records": [
+    {
+      "rows": 1,
+      "columns": 128,
+      "outputs": 32,
+      "max_abs": 0.0,
+      "packed_bytes": 2048,
+      "padded_columns": 128
+    },
+    {
+      "rows": 17,
+      "columns": 128,
+      "outputs": 32,
+      "max_abs": 0.0,
+      "packed_bytes": 2048,
+      "padded_columns": 128
+    },
+    {
+      "rows": 32,
+      "columns": 128,
+      "outputs": 32,
+      "max_abs": 0.0,
+      "packed_bytes": 2048,
+      "padded_columns": 128
+    },
+    {
+      "rows": 64,
+      "columns": 128,
+      "outputs": 32,
+      "max_abs": 0.0,
+      "packed_bytes": 2048,
+      "padded_columns": 128
+    },
+    {
+      "rows": 128,
+      "columns": 128,
+      "outputs": 32,
+      "max_abs": 0.0,
+      "packed_bytes": 2048,
+      "padded_columns": 128
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.0,
+      "packed_bytes": 2097152,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.03125,
+      "packed_bytes": 2097152,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.03125,
+      "packed_bytes": 2097152,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.03125,
+      "packed_bytes": 2097152,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.015625,
+      "packed_bytes": 2097152,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.0001220703125,
+      "packed_bytes": 5767168,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.015625,
+      "packed_bytes": 5767168,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.015625,
+      "packed_bytes": 5767168,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.03125,
+      "packed_bytes": 5767168,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.03125,
+      "packed_bytes": 5767168,
+      "padded_columns": 2048
+    },
+    {
+      "rows": 1,
+      "columns": 5280,
+      "outputs": 32,
+      "max_abs": 0.0,
+      "packed_bytes": 86016,
+      "padded_columns": 5376
+    },
+    {
+      "rows": 17,
+      "columns": 5280,
+      "outputs": 32,
+      "max_abs": 0.03125,
+      "packed_bytes": 86016,
+      "padded_columns": 5376
+    },
+    {
+      "rows": 32,
+      "columns": 5280,
+      "outputs": 32,
+      "max_abs": 0.03125,
+      "packed_bytes": 86016,
+      "padded_columns": 5376
+    },
+    {
+      "rows": 64,
+      "columns": 5280,
+      "outputs": 32,
+      "max_abs": 0.03125,
+      "packed_bytes": 86016,
+      "padded_columns": 5376
+    },
+    {
+      "rows": 128,
+      "columns": 5280,
+      "outputs": 32,
+      "max_abs": 0.0,
+      "packed_bytes": 86016,
+      "padded_columns": 5376
+    }
+  ],
+  "pid": 21878,
+  "start_unix": 1791166503.8438354,
+  "end_unix": 1791166505.6804109,
+  "torch_version": "2.12.1+cu130",
+  "cuda_version": "13.0",
+  "source_sha256": "63ddeb7d81e6cda44c4c1c96c353fb38f0e1bc606fddb2fe256eb1b1c70fab82"
+}

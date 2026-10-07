@@ -1,0 +1,52 @@
+{
+  "model": "ByteDance/Ouro-1.4B",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "runtime_revision": "ecb1f8b505b7e831815b40aec3b4598619cca23a",
+  "gates": {
+    "G0_semantics": "inconclusive",
+    "G1_cost": "inconclusive",
+    "G2_quality": "not_run",
+    "G3_performance": "not_run"
+  },
+  "thresholds": {
+    "fp32_diagnostic_atol": 0.0003,
+    "fp32_diagnostic_rtol": 0.0003,
+    "ppl_ratio_upper95": 1.03,
+    "accuracy_drop_upper95": 0.02,
+    "speedup_median": 1.2,
+    "speedup_lower95": 1.1
+  },
+  "evidence": [
+    "evidence/native-fp8-probe-attempt1.json",
+    "evidence/ouro-g0-attempt1.log",
+    "evidence/ouro-g0-attempt2.log",
+    "evidence/ouro-g0-attempt3.log",
+    "evidence/full-cpu-final.xml",
+    "evidence/ouro-g0-attempt4b.json",
+    "evidence/ouro-g0-attempt4b-summary.json",
+    "evidence/official-ouro-cpu-attempt1.json",
+    "evidence/official-ouro-2.6b-cpu-attempt1.json",
+    "evidence/ouro-row-shape-control-attempt1.json",
+    "evidence/ouro-calibration-trace-device-attempt1/parity.json",
+    "evidence/fused-fp8-failure-analysis.json",
+    "evidence/fused-fp8-probe-attempt2.json",
+    "evidence/nvfp4-probe-attempt1.json",
+    "evidence/ouro-gradient-audit-attempt1.json",
+    "evidence/fp8-serving-probe-attempt2.json",
+    "evidence/native-deployment-v1-complete.json",
+    "evidence/ouro-full-calibration-summary.json",
+    "evidence/cost-profile-v1-analysis.json",
+    "evidence/cost-profile-v1-complete.json",
+    "evidence/official-nanbeige-cpu-attempt1.json"
+  ],
+  "next_step": "Fixed F0 RTN/GPTQ diagnostics and four-family native GPU qualification after explicit admission; resolve native G0 without changing tolerances. No full QAT search on scale-only FP8 cost evidence.",
+  "adapter_bf16_eager": "pass: exact 32 prompts x R1/R2/R3/R4",
+  "incremental_control": "pass: all512 state/logit comparisons bitwise equal with per-token Linear and RMSNorm; diagnostic only",
+  "external_loopq": "not_reproduced: official code/artifact revision not identified in 2026-10-05 audit",
+  "native_export": "48 updated Ouro/Nano FP8 and four INT4 tiny model GPU roundtrips pass; full FP8 dev exports reloaded exactly",
+  "int4_native": "20 tinygemm ABI and four native tiny model cases pass; full-model RTN/GPTQ pending",
+  "fused_native_serving": "8 full Ouro1.4B smoke arms measured, FP8 slower than BF16 by6.11\u20138.00%; no formal G3",
+  "full_calibration": "128/128 requests;2199150 calls;2896 groups;4096 outputs;failed0/KV0",
+  "cost_diagnostic": "3 verified Nsight profiles/15 stats. Entire fusedproducer4.150%DYN/3.951%SH1 kernel-duration sum includes mandatory work. Not removable critical path or E2E bound.",
+  "scale_only_fp8": "no measured speed benefit; do not expand full QAT grid on this evidence"
+}

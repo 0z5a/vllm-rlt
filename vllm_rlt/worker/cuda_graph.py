@@ -71,6 +71,7 @@ class RecurrentGraphs:
             batch = replace(
                 batch,
                 position_ids=batch.position_ids[:count],
+                loop_ids=batch.loop_ids[:count],
                 context_lengths=batch.context_lengths[:count],
                 block_tables=batch.block_tables[:count],
             )
@@ -115,6 +116,7 @@ class RecurrentGraphs:
                 hidden=torch.empty_like(hidden[:count]),
                 metadata=SimpleNamespace(
                     position_ids=torch.empty(count, device=cache.device, dtype=torch.long),
+                    loop_ids=torch.empty(count, device=cache.device, dtype=torch.long),
                     write_blocks=torch.empty(count, device=cache.device, dtype=torch.long),
                     write_offsets=torch.empty(count, device=cache.device, dtype=torch.long),
                     block_tables=torch.zeros(
@@ -131,6 +133,7 @@ class RecurrentGraphs:
             )
         entry.hidden.copy_(hidden[:count])
         entry.metadata.position_ids.copy_(batch.position_ids[:count])
+        entry.metadata.loop_ids.copy_(batch.loop_ids[:count])
         entry.metadata.write_blocks.copy_(batch.write_blocks[:count])
         entry.metadata.write_offsets.copy_(batch.write_offsets[:count])
         entry.metadata.context_lengths.copy_(batch.context_lengths)

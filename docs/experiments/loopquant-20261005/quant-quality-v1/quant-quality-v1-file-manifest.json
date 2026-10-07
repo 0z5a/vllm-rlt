@@ -1,0 +1,78 @@
+{
+  "quant-quality-v1-receipt.json": {
+    "bytes": 748,
+    "sha256": "a0fea9de9d9b31a0b83cef0ef00afe3aeb7fc7b351efc8a228e2478359ef1941"
+  },
+  "native-int4-models-v1.json": {
+    "bytes": 7695,
+    "sha256": "d293a210bed514c5b546aaeb43d2fdc88c1a6d8325de2b04058dd8d3eb06a71c"
+  },
+  "native-int4-models-v1.log": {
+    "bytes": 736,
+    "sha256": "6a1b0d1734adc09f2d9c2d8f8dcd0f48fbe5f9cf0978e1e33c72761cb4cbd375"
+  },
+  "native-int4-models-v1-exports/nanbeige-False/manifest.json": {
+    "bytes": 1299,
+    "sha256": "4dc0545b04e563ea7b6cd1c728cee6d3ef48c99bef0f8e96e901192a4fb036ed"
+  },
+  "native-int4-models-v1-exports/nanbeige-True/manifest.json": {
+    "bytes": 1299,
+    "sha256": "4dc0545b04e563ea7b6cd1c728cee6d3ef48c99bef0f8e96e901192a4fb036ed"
+  },
+  "native-int4-models-v1-exports/ouro-False/manifest.json": {
+    "bytes": 1294,
+    "sha256": "39d309b9ab858da4b1d53d143d5fa43a8f17967567bdceebe6fdc836fc3ccd43"
+  },
+  "native-int4-models-v1-exports/ouro-True/manifest.json": {
+    "bytes": 1294,
+    "sha256": "39d309b9ab858da4b1d53d143d5fa43a8f17967567bdceebe6fdc836fc3ccd43"
+  },
+  "ouro-static-dev-v1-sh1/result.json": {
+    "bytes": 6678,
+    "sha256": "8d2dcd4d54c654aa2ae933bbf3eb764b26845d36b0b3fe0cbd541f32317db11d"
+  },
+  "ouro-static-dev-v1-sh1/windows.jsonl": {
+    "bytes": 28800,
+    "sha256": "8d80cc0b44b1d6a2fbc18a66456895a0b93f990fe3b8d816b01b01598ca7accb"
+  },
+  "ouro-static-dev-v1-sh1.log": {
+    "bytes": 747,
+    "sha256": "f278550d55c4b820c05ea6cfb2776968573aed205ed0e048dbdfaee912af97f8"
+  },
+  "ouro-static-dev-v1-sh1/export/manifest.json": {
+    "bytes": 1836,
+    "sha256": "08ec55da85791fc0be25cafaf04ddc584ae7ded7dc7e8db52466821c41f66da1"
+  },
+  "ouro-static-dev-v1-st2/result.json": {
+    "bytes": 6683,
+    "sha256": "9fd44a76cc34b7a44d392694bcaf74807d99bec4b01da669634c55ffc2f5e1a7"
+  },
+  "ouro-static-dev-v1-st2/windows.jsonl": {
+    "bytes": 28828,
+    "sha256": "75d92d883498cf6385e839049287832f013ef841ac098d13e8d5746095373d8f"
+  },
+  "ouro-static-dev-v1-st2.log": {
+    "bytes": 749,
+    "sha256": "bbe6d10415947a8e2122302c70c0c3597fe3461d5c76eada489d4f49c5efb615"
+  },
+  "ouro-static-dev-v1-st2/export/manifest.json": {
+    "bytes": 1849,
+    "sha256": "462d3657dc56b19c21b6daa02191cc75cfb54026d50752f1c691a70620010a36"
+  },
+  "ouro-static-dev-v1-loop/result.json": {
+    "bytes": 6665,
+    "sha256": "04e8f59f8b9469b272a492ff999ff72cd796aba23dbb011750718b6d52ca75da"
+  },
+  "ouro-static-dev-v1-loop/windows.jsonl": {
+    "bytes": 28821,
+    "sha256": "e51879c10fd340ad682e4e33881e22d245fdd0cf84136e62e055b4e4e02de1df"
+  },
+  "ouro-static-dev-v1-loop.log": {
+    "bytes": 751,
+    "sha256": "902da7520a3c6c8e102c8340e6f4795f8e58f313718fc4daae4f20d616e67d8f"
+  },
+  "ouro-static-dev-v1-loop/export/manifest.json": {
+    "bytes": 1867,
+    "sha256": "10c425294e633cd44f49e6fb13453438c1ebba347c796c03fee47cef4b963816"
+  }
+}

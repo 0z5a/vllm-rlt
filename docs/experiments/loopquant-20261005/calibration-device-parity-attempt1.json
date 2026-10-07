@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "groups": 2896,
+  "amax_and_scales_exact": true,
+  "token_traces_exact": true,
+  "max_rms_abs": 4.440892098500626e-16,
+  "max_channel_energy_abs": 1.1368683772161603e-13,
+  "rms_energy_atol": 1e-09,
+  "rms_energy_rtol": 3e-06,
+  "reservoir_comparison": "not required: registered device-local RNG change; seed/device recorded",
+  "source_sha256": "be360bc80197b7b1eac0676f006cd876a7d9fc741fee2b6947b82d07ce68f8a1"
+}

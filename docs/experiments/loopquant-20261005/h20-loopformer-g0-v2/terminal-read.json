@@ -1,0 +1,56 @@
+{
+  "unix": 1791226788.578811,
+  "receipts": {
+    "receipt": {
+      "controller_pid": 71525,
+      "controller_start_ticks": 2500013826,
+      "start_unix": 1791226717.5198734,
+      "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+      "gpu_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+      "original_locks": {
+        "gpu0.lock": {
+          "inode": 12920245107,
+          "device": 64528
+        },
+        "io.lock": {
+          "inode": 12920245108,
+          "device": 64528
+        }
+      },
+      "children": [
+        {
+          "phase": "download",
+          "child_pid": 71532,
+          "child_start_ticks": 2500013841,
+          "start_unix": 1791226717.5205088,
+          "command": [
+            "/root/miniconda3/bin/python",
+            "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-loopformer-native-g0-v2/download.py",
+            "--metadata",
+            "/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-loopformer-native-g0-v2/model-metadata.json",
+            "--endpoint",
+            "https://hf-mirror.com",
+            "--destination",
+            "/root/autodl-tmp/0z5a/loopquant-h20-20261006/models/loopformer-3block-8iterations"
+          ],
+          "returncode": 1,
+          "end_unix": 1791226718.5782173
+        }
+      ],
+      "manifest_sha256": "6a9d29f69bb2666f908da8c1483eec8c887168473061de648bfd1e7f4fb305c7",
+      "model_hold": "retained for remaining registered quantization and E2E work",
+      "returncode": 1,
+      "end_unix": 1791226718.5783179
+    },
+    "foreground-exit": {
+      "launcher_pid": 71524,
+      "launcher_start_ticks": 2500013814,
+      "start_unix": 1791226717.3668993,
+      "controller_pid": 71525,
+      "returncode": 1,
+      "end_unix": 1791226718.5839086
+    }
+  },
+  "download_log": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-loopformer-native-g0-v2/download.py\", line 159, in <module>\n    main()\n  File \"/root/autodl-tmp/0z5a/loopquant-h20-20261006/h20-loopformer-native-g0-v2/download.py\", line 66, in main\n    with urllib.request.urlopen(url, timeout=60) as response:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 215, in urlopen\n    return opener.open(url, data, timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 521, in open\n    response = meth(req, response)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 630, in http_response\n    response = self.parent.error(\n               ^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 553, in error\n    result = self._call_chain(*args)\n             ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 745, in http_error_302\n    return self.parent.open(new, timeout=req.timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 521, in open\n    response = meth(req, response)\n               ^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 630, in http_response\n    response = self.parent.error(\n               ^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 559, in error\n    return self._call_chain(*args)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 492, in _call_chain\n    result = func(*args)\n             ^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/urllib/request.py\", line 639, in http_error_default\n    raise HTTPError(req.full_url, code, msg, hdrs, fp)\nurllib.error.HTTPError: HTTP Error 403: Forbidden\n",
+  "model_files": []
+}

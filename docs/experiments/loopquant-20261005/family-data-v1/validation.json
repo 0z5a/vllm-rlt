@@ -1,0 +1,157 @@
+{
+  "status": "pass",
+  "scope": "tokenization/data-integrity only; no model or locked quality evaluation",
+  "families": [
+    {
+      "model": "huginn-0125",
+      "splits": {
+        "calibration": {
+          "windows": 128,
+          "documents": 113,
+          "input_tokens": 62173,
+          "scored_targets": 62045,
+          "sha256": "216e995f5c8ba6501a0f477a4876822c79a1f495d890a273571ea959bf64bd96"
+        },
+        "dev": {
+          "windows": 128,
+          "documents": 44,
+          "input_tokens": 62821,
+          "scored_targets": 62693,
+          "sha256": "8c8f6bc92ca63280b1b4114cb481f806c2205f58ea219c22ed13b459bdce6cd4"
+        },
+        "locked_test": {
+          "windows": 610,
+          "documents": 61,
+          "input_tokens": 303450,
+          "scored_targets": 302840,
+          "sha256": "86886dc038d64300a41749fde73a560c13c119fd737d1f0576a56761a53bd502"
+        }
+      },
+      "all_hashes_match": true,
+      "unique_window_identities": true,
+      "document_overlap": 0
+    },
+    {
+      "model": "nanbeige-4.2-3b",
+      "splits": {
+        "calibration": {
+          "windows": 128,
+          "documents": 112,
+          "input_tokens": 63905,
+          "scored_targets": 63777,
+          "sha256": "366845627c8fb6fdd80d3169ca65adbda38600972c671d78e08f7b1cf7deb5bf"
+        },
+        "dev": {
+          "windows": 128,
+          "documents": 46,
+          "input_tokens": 64347,
+          "scored_targets": 64219,
+          "sha256": "1c4d25177ce9b5f81a7c4fc186787685e69c813fcb0c759a7bdb6ac52dbca34a"
+        },
+        "locked_test": {
+          "windows": 594,
+          "documents": 61,
+          "input_tokens": 295509,
+          "scored_targets": 294915,
+          "sha256": "10d6204c3b9b0fd4a2ae114e99d688d7e59a4813783d63a6fab89510a8548355"
+        }
+      },
+      "all_hashes_match": true,
+      "unique_window_identities": true,
+      "document_overlap": 0
+    },
+    {
+      "model": "hrm-text-1b",
+      "splits": {
+        "calibration": {
+          "windows": 128,
+          "documents": 115,
+          "input_tokens": 64897,
+          "scored_targets": 48513,
+          "sha256": "43d8bdb520c578d77e3403ba78e4d161821a44ca7b4c8ebda2d0f235b137d6b1"
+        },
+        "dev": {
+          "windows": 128,
+          "documents": 48,
+          "input_tokens": 64469,
+          "scored_targets": 48085,
+          "sha256": "7d7a75c7647e561ddf56f38ceaa7eda46f5179cfd872f4838bd40bb10cd3a77b"
+        },
+        "locked_test": {
+          "windows": 669,
+          "documents": 61,
+          "input_tokens": 338318,
+          "scored_targets": 252686,
+          "sha256": "51f555160a227b6a774346c3613ef9fc87d5408e715521c5ae1fd921a2656ba5"
+        }
+      },
+      "all_hashes_match": true,
+      "unique_window_identities": true,
+      "document_overlap": 0
+    },
+    {
+      "model": "loopformer-3block-8iterations",
+      "splits": {
+        "calibration": {
+          "windows": 128,
+          "documents": 106,
+          "input_tokens": 64375,
+          "scored_targets": 64247,
+          "sha256": "12b8fb6188a531e9bdfe6d187a2ce83f9dcff8a01c1e8b20a426c77aac806330"
+        },
+        "dev": {
+          "windows": 128,
+          "documents": 49,
+          "input_tokens": 63276,
+          "scored_targets": 63148,
+          "sha256": "518a606429152a4b7d350d090403a34697abfaec20d2b4bae0ff9fcbf124566b"
+        },
+        "locked_test": {
+          "windows": 569,
+          "documents": 61,
+          "input_tokens": 282202,
+          "scored_targets": 281633,
+          "sha256": "41d024aac913273ede4d362a70dda0b9aab9c91024a34da4ac865a227ad9487a"
+        }
+      },
+      "all_hashes_match": true,
+      "unique_window_identities": true,
+      "document_overlap": 0
+    },
+    {
+      "model": "parcae-370m",
+      "splits": {
+        "calibration": {
+          "windows": 128,
+          "documents": 116,
+          "input_tokens": 63919,
+          "scored_targets": 63791,
+          "sha256": "231bb3ea0782c4a31660df75bf84a7dae89c35ad40f68aa7a20f6e37cbe6058e"
+        },
+        "dev": {
+          "windows": 128,
+          "documents": 51,
+          "input_tokens": 64239,
+          "scored_targets": 64111,
+          "sha256": "6c237f1107eac37bdec321429dbeea44ae151c6a26ceca4a83736f7f0ba87358"
+        },
+        "locked_test": {
+          "windows": 607,
+          "documents": 61,
+          "input_tokens": 300867,
+          "scored_targets": 300260,
+          "sha256": "2273d50427e8b271372b27b93517a07e09da66a47b37372bc27a8dfbbd80bb13"
+        }
+      },
+      "all_hashes_match": true,
+      "unique_window_identities": true,
+      "document_overlap": 0
+    }
+  ],
+  "existing_official_smoke_token_ids_exact": {
+    "huginn-0125": 32,
+    "nanbeige-4.2-3b": 32
+  },
+  "ouro_1p4_2p6_tokenizer_bytes_identical": true,
+  "runner_sha256": "14669a1563995d0f13b2207acd46a0ec1e50ec7b18d6f829b19d187e9067c6ab"
+}

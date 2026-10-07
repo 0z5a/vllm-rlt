@@ -1,0 +1,43 @@
+{
+  "target_device": "NVIDIA H20",
+  "compute_capability": [
+    9,
+    0
+  ],
+  "target_uuid": "GPU-edf64e5f-21ef-a1f2-6601-e8620b5664ff",
+  "boot_id": "797c630e-4da1-48bd-bdf3-daabf26649d2",
+  "original_locks": {
+    "gpu0.lock": {
+      "inode": 12920245107,
+      "device": 64528
+    },
+    "io.lock": {
+      "inode": 12920245108,
+      "device": 64528
+    }
+  },
+  "sources": {
+    "families": "49734509500252cb0548d11fc78c51816666f425",
+    "huginn": "63819a08188a7ddbbf50954da57aa68b72355bf4",
+    "parcae": "08e636877b1e24a46cc65d028001e69a7867396b"
+  },
+  "families": {
+    "hrm": "families",
+    "loopformer": "families",
+    "huginn": "huginn",
+    "parcae": "parcae"
+  },
+  "native_cases": 64,
+  "metadata_control_cases": 2,
+  "full_model": false,
+  "performance": false,
+  "resource_status": "local_only_next_window_requested_not_granted",
+  "scope": "16 FP8 native cases per family; Huginn adds2existingGraph row-depth controls; same frozen helper budgets; separate child natural receipts, no package changes",
+  "files": {
+    "run.py": "9320cd4d02fe685a03ebbf574853f53a95e4b317da311243e770fc2fa5fb120d",
+    "parcae.tar.gz": "a96ab6053bb47bb5292048f91059d0d280be26dbe6e28010116207e0067a3c16",
+    "probe.py": "c105d837aef302c0c5066ca2e3386fbbf968fe7ec42959f1c524d5315b285d8c",
+    "families.tar.gz": "dc2da1af9814d319abf3dfb5dab73b30a9a5dc4361eb0df787962140dcb50b2c",
+    "huginn.tar.gz": "f1355a2729f0a8715c0eb108161eba7d91ce7e2be0814e00efd7e3d3fc3cc3c2"
+  }
+}

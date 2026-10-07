@@ -1,0 +1,18 @@
+{
+  "status": "pass",
+  "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
+  "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+  "records": 64,
+  "recurrent_states": 96,
+  "inputs": 32,
+  "input_token_range": [
+    6,
+    99
+  ],
+  "input_tokens_once": 1756,
+  "all_state_and_logits_bitwise_exact": true,
+  "receipt_sha256": "66411e3e46b9cb29e9a6fbcda41eaa789d09b096d3b26e402be53f44a6bb7a0b",
+  "runner_sha256": "49afa99e476da8d0bcded6135bced3dab412c5f0201588699e2456032d80690e",
+  "elapsed_seconds": 2824.1627571582794,
+  "timing_scope": "instrumented CPU correctness only; not serving performance"
+}

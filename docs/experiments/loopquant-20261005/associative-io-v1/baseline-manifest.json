@@ -1,0 +1,66 @@
+{
+  "project": "LoopQuant",
+  "source_commit": "8db31484dbbd8ca2e62974460f1cbb092181a1fa",
+  "baseline_commit": "ecb1f8b505b7e831815b40aec3b4598619cca23a",
+  "execution_document_sha256": "33e85d06d34b423415113b99df25acb14022fbb3df931b0f648455c29180c581",
+  "source_files": {
+    "loopquant/quantizers.py": "f4e40edf09f078246093a7b8e1125a0b24bc84c9c245acf8b59d60d305b0d801",
+    "loopquant/fused_fp8.py": "7135a5636e0b90c4ced7157af3014c2c36b122537f9c3b2e2e4255707cbe0e2e",
+    "loopquant/fp8_kernels.py": "39c58dade9c79e4e7e3fb67f259a64fa051208d77dd74730df60d6b98d0aa93e",
+    "loopquant/native_export.py": "ba9b6cb63109cab8b93b2a17430910d72f8e81f1de26938054a539176898dd70",
+    "loopquant/int4_backend.py": "b420824e2c95bc705a3a07c62e7b577f1ce91f75965bd95eb947970d0f067aaa",
+    "loopquant/int4_export.py": "43a148ad0772c3763a8e1b895afec3d81b1561165f664c2ddf50f48b8bb794bd",
+    "loopquant/nvfp4.py": "ddb42b9d0ae13c25aa3f3d1072c0dc548244efc93c138476e6a856d83a5740f5",
+    "loopquant/fused_nvfp4.py": "4abee7d90e13c42fbd5026cb4917bab529055310a043ffc7148a03f87311b58d",
+    "loopquant/nvfp4_kernels.py": "6623c4e82886db8ecb1424267a09bea0092edd48eb2ccdcdc4fba71cd3bd1bce",
+    "loopquant/train.py": "5e1d140b88f8a605f161aec1e732a82371dd5e88ee7b4080135fb4a8b71ad70c"
+  },
+  "weight_version_policy": "Q0 freezes physical model weights; activation scales update; packed payload and scales share a hashed artifact; no general optimizer weight-update repack lifecycle implemented",
+  "kv_contract": "BF16 state and KV retained; no low-precision KV payload/scale generation view implemented",
+  "format_contracts": [
+    {
+      "format": "fp8_e4m3fn",
+      "input_scale_axis": "row, optionally selected by outer loop stage",
+      "weight_scale_axis": "single physical matrix scalar replicated into ABI output-column vector",
+      "scale_dtype": "float32",
+      "rounding": "Torch E4M3 cast after explicit clamp",
+      "saturation": [
+        -448,
+        448
+      ],
+      "payload_layout": "A row-major; W column-major K,N, stride1,K",
+      "zero_point": 0,
+      "accumulation": "installed Torch scaled_mm, use_fast_accum=False; represented FP32 GEMM used as oracle",
+      "output_dtype": "bfloat16"
+    },
+    {
+      "format": "signed_int4",
+      "weight_scale_axis": "output row,K block; group128 default",
+      "portable_scale_dtype": "float32",
+      "native_scale_dtype": "bfloat16",
+      "rounding": "torch.round followed by clamp",
+      "saturation": [
+        -7,
+        7
+      ],
+      "portable_layout": "signed low-nibble first",
+      "native_layout": "unsigned high-nibble first then torch tinygemm pack",
+      "native_zero_correction": 0,
+      "output_dtype": "bfloat16"
+    },
+    {
+      "format": "nvfp4",
+      "scale_axis": "row,K-block16 E4M3 plus global FP32",
+      "scale_layout": "SWIZZLE_32_4_4",
+      "rounding": "E2M1 nearest-even with explicit tie handling",
+      "saturation": [
+        -6,
+        6
+      ],
+      "payload_layout": "packed E2M1 low nibble first",
+      "zero_point": 0,
+      "hardware_scope": "separate Blackwell qualification; not submitted on H20"
+    }
+  ],
+  "scope": "Audit of actual entrypoints plus separate H20 qualification; no claim of newly measured IO optimization or quality-qualified E2E"
+}

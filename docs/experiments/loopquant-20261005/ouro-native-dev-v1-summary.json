@@ -1,0 +1,43 @@
+{
+  "scope": "fixed initial FP8 policies on dev only; no locked G2 or hyperparameter selection",
+  "windows": 128,
+  "documents": 44,
+  "targets": 62361,
+  "seed": 20261005,
+  "resamples": 10000,
+  "rows": [
+    {
+      "policy": "BF16",
+      "ppl": 11.559050414943215,
+      "ppl_ratio": 1.0,
+      "ppl_ratio_upper95": 1.0
+    },
+    {
+      "policy": "DYN",
+      "ppl": 11.649149783833906,
+      "ppl_ratio": 1.00779470334122,
+      "ppl_ratio_upper95": 1.0093318235141775
+    },
+    {
+      "policy": "SH1",
+      "ppl": 11.6407863076064,
+      "ppl_ratio": 1.007071159803708,
+      "ppl_ratio_upper95": 1.0085427391337816
+    },
+    {
+      "policy": "ST2",
+      "ppl": 11.65094887672039,
+      "ppl_ratio": 1.0079503469989517,
+      "ppl_ratio_upper95": 1.0095650437650152
+    },
+    {
+      "policy": "LOOP",
+      "ppl": 11.65296455672809,
+      "ppl_ratio": 1.0081247281059924,
+      "ppl_ratio_upper95": 1.0097762528787648
+    }
+  ],
+  "source_commit": "72b8634e0d4029fc8106335c2c7861e40eb6c193",
+  "windows_sha256": "325f23166ecec45f22a8a8254dc5edc7bf465b1d456beff801b58c7a07770c1c",
+  "scale_sha256": "6548a1354985ea39cee991d522966df4fc6d85d6acd63519d45ca3edb89ba92b"
+}

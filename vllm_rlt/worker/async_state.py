@@ -26,6 +26,7 @@ class RoutingBank:
         device = owner.cache.device
         self.slots = torch.empty(rows, dtype=torch.int64, device=device)
         self.positions = torch.empty_like(self.slots)
+        self.loops = torch.empty_like(self.slots)
         self.blocks = torch.empty_like(self.slots)
         self.offsets = torch.empty_like(self.slots)
         self.lengths = torch.empty(rows, dtype=torch.int32, device=device)
@@ -61,6 +62,7 @@ class RoutingBank:
             self.owner.tables,
             self.slots,
             self.positions,
+            self.loops,
             self.lengths,
             self.blocks,
             self.offsets,
@@ -80,6 +82,7 @@ class RoutingBank:
         return replace(
             batch,
             position_ids=self.positions[: self.size],
+            loop_ids=self.loops[: self.size],
             context_lengths=self.lengths[: self.size],
             write_blocks=self.blocks[: self.count],
             write_offsets=self.offsets[: self.count],
@@ -200,6 +203,7 @@ class AsyncState:
                 rows=rows,
                 allocations=tuple(dict(zip(ids, (a for a, _, _ in rows))).items()),
                 position_ids=bank.host[: len(rows), 2],
+                loop_ids=bank.host[: len(rows), 1],
                 write_blocks=bank.blocks[: len(rows)],
                 write_offsets=bank.offsets[: len(rows)],
                 block_tables=bank.tables[:size, : bank.width],

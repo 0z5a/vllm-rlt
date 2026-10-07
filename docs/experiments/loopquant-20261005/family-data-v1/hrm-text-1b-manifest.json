@@ -1,0 +1,40 @@
+{
+  "model": "hrm-text-1b",
+  "model_revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+  "dataset_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+  "tokenizer_revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+  "tokenizer_sha256": "ba520107dc9b27d25643e8f43fc1d9921038c86d3ada9dcaabf18526c5836d50",
+  "document_add_special_tokens": false,
+  "special_token_protocol": "encode each complete document before token-window slicing; no reinsertion at later windows",
+  "scoring": "bidirectional prefix128 then causal continuation",
+  "window": 512,
+  "stride": 512,
+  "minimum_tokens": 256,
+  "seed": 17,
+  "document_overlap_between_splits": 0,
+  "splits": {
+    "calibration": {
+      "windows": 128,
+      "documents": 115,
+      "input_tokens": 64897,
+      "scored_targets": 48513,
+      "sha256": "43d8bdb520c578d77e3403ba78e4d161821a44ca7b4c8ebda2d0f235b137d6b1"
+    },
+    "dev": {
+      "windows": 128,
+      "documents": 48,
+      "input_tokens": 64469,
+      "scored_targets": 48085,
+      "sha256": "7d7a75c7647e561ddf56f38ceaa7eda46f5179cfd872f4838bd40bb10cd3a77b"
+    },
+    "locked_test": {
+      "windows": 669,
+      "documents": 61,
+      "input_tokens": 338318,
+      "scored_targets": 252686,
+      "sha256": "51f555160a227b6a774346c3613ef9fc87d5408e715521c5ae1fd921a2656ba5"
+    }
+  },
+  "locked_test_opened_for_model_evaluation": false,
+  "runner_sha256": "14669a1563995d0f13b2207acd46a0ec1e50ec7b18d6f829b19d187e9067c6ab"
+}

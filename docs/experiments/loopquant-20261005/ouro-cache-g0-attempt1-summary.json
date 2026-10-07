@@ -1,0 +1,90 @@
+{
+  "torch_prefill": {
+    "state_vs_sdpa": {
+      "failed_rows": 128,
+      "max_abs": 5.84375,
+      "argmax_mismatches": 87,
+      "rows": 128,
+      "worst_input": [
+        "smoke-20",
+        3
+      ]
+    },
+    "logits_vs_sdpa": {
+      "failed_rows": 128,
+      "max_abs": 10.9375,
+      "argmax_mismatches": 30,
+      "rows": 128,
+      "worst_input": [
+        "smoke-25",
+        4
+      ]
+    }
+  },
+  "torch_incremental": {
+    "state_vs_full": {
+      "failed_rows": 502,
+      "max_abs": 3.0625,
+      "argmax_mismatches": 2,
+      "rows": 512,
+      "worst_input": [
+        "smoke-9",
+        4
+      ]
+    },
+    "logits_vs_full": {
+      "failed_rows": 511,
+      "max_abs": 6.046875,
+      "argmax_mismatches": 0,
+      "rows": 512,
+      "worst_input": [
+        "smoke-9",
+        4
+      ]
+    }
+  },
+  "triton_prefill": {
+    "state_vs_sdpa": {
+      "failed_rows": 128,
+      "max_abs": 6.78125,
+      "argmax_mismatches": 97,
+      "rows": 128,
+      "worst_input": [
+        "smoke-19",
+        3
+      ]
+    },
+    "logits_vs_sdpa": {
+      "failed_rows": 128,
+      "max_abs": 10.65625,
+      "argmax_mismatches": 26,
+      "rows": 128,
+      "worst_input": [
+        "smoke-25",
+        4
+      ]
+    }
+  },
+  "triton_incremental": {
+    "state_vs_full": {
+      "failed_rows": 498,
+      "max_abs": 3.8125,
+      "argmax_mismatches": 3,
+      "rows": 512,
+      "worst_input": [
+        "smoke-17",
+        3
+      ]
+    },
+    "logits_vs_full": {
+      "failed_rows": 511,
+      "max_abs": 6.8984375,
+      "argmax_mismatches": 0,
+      "rows": 512,
+      "worst_input": [
+        "smoke-18",
+        4
+      ]
+    }
+  }
+}

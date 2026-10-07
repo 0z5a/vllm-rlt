@@ -1,0 +1,142 @@
+[
+  {
+    "path": "evidence/cost-profile-v1/bf16-cublas_api_sum.csv",
+    "bytes": 478,
+    "sha256": "86fbfb5b49b01573321d6ca97a287ca90fff34cab821be7330b10bb06e7bcd67"
+  },
+  {
+    "path": "evidence/cost-profile-v1/bf16-cuda_api_sum.csv",
+    "bytes": 1832,
+    "sha256": "d8bb80a11c6468b53c16480e8ebea0463d76f8a394a5fc5fdf796d47c1f6a604"
+  },
+  {
+    "path": "evidence/cost-profile-v1/bf16-cuda_gpu_kern_sum.csv",
+    "bytes": 10249,
+    "sha256": "daa8c50da9f3350e05caa0caff22371cd2e93815e6b04c617772b940159e1936"
+  },
+  {
+    "path": "evidence/cost-profile-v1/bf16-cuda_gpu_mem_time_sum.csv",
+    "bytes": 823,
+    "sha256": "c13ab6f4aa8f1793cb4f73d7b3a0b4e19953b1b07c79b04c406d243fc23f4773"
+  },
+  {
+    "path": "evidence/cost-profile-v1/bf16-cuda_kern_exec_sum.csv",
+    "bytes": 25748,
+    "sha256": "52e6542634b5d5ea0eba79daf0a49148d2e4affb287cbb65f96fd898dd5f3bf4"
+  },
+  {
+    "path": "evidence/cost-profile-v1/bf16.json",
+    "bytes": 2191,
+    "sha256": "204b9a5e832124e0b81f17cd211529ebe5649f036dd1d1c34841d532d779cecf"
+  },
+  {
+    "path": "evidence/cost-profile-v1/bf16.log",
+    "bytes": 4420,
+    "sha256": "ecaffca2d84e726a60510f5d637c0569af096d3b07990e36bf20a4ede43065df"
+  },
+  {
+    "path": "evidence/cost-profile-v1/bf16.nsys-rep",
+    "bytes": 28864477,
+    "sha256": "117fe8c36dfb5753fcd5bc8e4a5759c99c6337aba13cfdc316587440d41b9ce8"
+  },
+  {
+    "path": "evidence/cost-profile-v1/bf16.sqlite",
+    "bytes": 79753216,
+    "sha256": "e05075a2c7214038d3fc0b7afb403141770853aaedf7682917d6f65c04cbbb49"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn-cublas_api_sum.csv",
+    "bytes": 475,
+    "sha256": "81c0460df416942d46b270075372e733a95b4191253e1dfafb86ef133575282a"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn-cuda_api_sum.csv",
+    "bytes": 1973,
+    "sha256": "bbf7e8c434898bc92644d8cf46ea99a349fa244f190e79d74009d2290fca5b7c"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn-cuda_gpu_kern_sum.csv",
+    "bytes": 16898,
+    "sha256": "e7aa46d6f8d10cdd33075fce98f15721b22cb53c16e011955f8a3df6c1e14e68"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn-cuda_gpu_mem_time_sum.csv",
+    "bytes": 819,
+    "sha256": "b7c2f9c178302adc7326518d3d243b90b537b1b75c436a5dc1bd548d7bf0b8e9"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn-cuda_kern_exec_sum.csv",
+    "bytes": 35565,
+    "sha256": "917916e7650652196febf33c6238163782853b9fc985754710922ee3b9c6990a"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn.json",
+    "bytes": 2191,
+    "sha256": "f7e89694131ead7e52bd0064ed5063c7b0a46c1274bc1ab5c8be16e6c0291d07"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn.log",
+    "bytes": 4287,
+    "sha256": "7ee84f23402121ba5cde4da4849375c662bdf67381e4ffb22f72ab60742bb8f9"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn.nsys-rep",
+    "bytes": 26498111,
+    "sha256": "ba2aae8c618fb9f4436bf080d5c02c270fa93c02dc51f3c7d5000cdce4972860"
+  },
+  {
+    "path": "evidence/cost-profile-v1/dyn.sqlite",
+    "bytes": 70733824,
+    "sha256": "9e1883fcedd4fdfa23def483b8180c5d273b9b755edde63ac0fb2ee002d54033"
+  },
+  {
+    "path": "evidence/cost-profile-v1/receipt.json",
+    "bytes": 8066,
+    "sha256": "26d06f5727dde136488fad5bf5d6c73b6a81f7c9a3623c7eac90707aefbf7968"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1-cublas_api_sum.csv",
+    "bytes": 475,
+    "sha256": "57a4edacb225f278b446b44c5b1245356cba90c1c45bb4b7d5ed8e101a0a6fd7"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1-cuda_api_sum.csv",
+    "bytes": 1970,
+    "sha256": "66de2fdae6d267fc26fe519ab8fa47a60ce8ae68f31e90360530e0dfd7d22001"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1-cuda_gpu_kern_sum.csv",
+    "bytes": 16899,
+    "sha256": "47ef9a60c2f1691e1f8bce3a50616c5ba9f4a86dee1ca2a271b077f38a20466b"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1-cuda_gpu_mem_time_sum.csv",
+    "bytes": 819,
+    "sha256": "748a0672c2b6a0c78266d35eb4be9349bd6410e1940622c83945a9fdc0f8203a"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1-cuda_kern_exec_sum.csv",
+    "bytes": 35529,
+    "sha256": "f270449283b6f7e8543cfc64b5a60c00ee9dcb7b32408f71c5ff1d965514e1f4"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1.json",
+    "bytes": 2241,
+    "sha256": "418d26b6478fd0db9f6e3c7577e43db6d3a47041b8e7399668bd9b587355b8ec"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1.log",
+    "bytes": 4237,
+    "sha256": "0ec594fd1ad530376da0af44cfc68761bd3dfcf903aa51e5d1c90b5ebe598b18"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1.nsys-rep",
+    "bytes": 26474686,
+    "sha256": "cdc9c02cfc432f7ecda641fd4ecdacf232a8602948d1607c40b5d128ff9ce28a"
+  },
+  {
+    "path": "evidence/cost-profile-v1/sh1.sqlite",
+    "bytes": 70512640,
+    "sha256": "9f65fac1db5d8c27012e84680681f95908b1be1afaa8bab064282529f777e158"
+  }
+]

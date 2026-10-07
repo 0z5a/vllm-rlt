@@ -1,0 +1,14 @@
+{
+  "phase": "calibration",
+  "controller_pid": 22251,
+  "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
+  "manifest_sha256": "888923adf1ed51e7290c40ff08f46648c616cefa871bb6b3ff31eeecc6dbdd02",
+  "records": [
+    {
+      "job": "ouro-full-calibration-attempt1",
+      "returncode": 0,
+      "start_unix": 1791167217.0016932,
+      "end_unix": 1791168579.216391
+    }
+  ]
+}

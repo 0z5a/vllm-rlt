@@ -1,0 +1,34 @@
+{
+  "ouro-dynamic-dev-v1-receipt.json": {
+    "bytes": 250,
+    "sha256": "cd1b26f9767cc3dd2df620e83c61e6f24190ad56e7d366f7b31915a852f4a4e4"
+  },
+  "ouro-dev-v1-bf16/result.json": {
+    "bytes": 6561,
+    "sha256": "25db5bad1e10bbbedc03d1a1bdb33e909a02706f8ad93f81c29f1d41b6e3e9e3"
+  },
+  "ouro-dev-v1-bf16/windows.jsonl": {
+    "bytes": 28794,
+    "sha256": "6dbf2185641c558ec6ae6c115a30789b3e1ad5f8303fd585a22ae7c58c3b096e"
+  },
+  "ouro-dev-v1-bf16.log": {
+    "bytes": 628,
+    "sha256": "f9cc006c7345cf9336153f536e8b3c4d290aceac4597dda6fdf074281c7c0420"
+  },
+  "ouro-dev-v1-dyn/result.json": {
+    "bytes": 6619,
+    "sha256": "89bc3fced6f79ee8d8636a594114b4d8b1ebef9e5a170c9457fef81f0db116c1"
+  },
+  "ouro-dev-v1-dyn/windows.jsonl": {
+    "bytes": 28847,
+    "sha256": "35624f75c39583f4b3058e1b30a50f04cdd503af9fe4c415fb7e6eb98de14e6b"
+  },
+  "ouro-dev-v1-dyn.log": {
+    "bytes": 687,
+    "sha256": "07067d278782703685c5d7766cfab220fb4ad8d24daa5c588de3e08977bddb10"
+  },
+  "ouro-dev-v1-dyn/export/manifest.json": {
+    "bytes": 1837,
+    "sha256": "64fc13573a9a2cc1994be6f1c1b4f15724410bea3aefddba2c3db1b13e0b2c79"
+  }
+}

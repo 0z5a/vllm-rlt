@@ -1,0 +1,138 @@
+{
+  "status": "pass",
+  "scope": "rowwise FP8 correctness; no performance measurement",
+  "device": "NVIDIA GeForce RTX 5090",
+  "architecture": [
+    12,
+    0
+  ],
+  "torch_version": "2.12.1+cu130",
+  "cuda_version": "13.0",
+  "kernel_api": "torch._scaled_mm",
+  "records": [
+    {
+      "rows": 1,
+      "columns": 64,
+      "outputs": 32,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 17,
+      "columns": 64,
+      "outputs": 32,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 32,
+      "columns": 64,
+      "outputs": 32,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 64,
+      "columns": 64,
+      "outputs": 32,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 128,
+      "columns": 64,
+      "outputs": 32,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.000244140625
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.00048828125
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.0009765625
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.000244140625
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 2048,
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 1,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 17,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 7.62939453125e-06
+    },
+    {
+      "rows": 32,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.0001220703125
+    },
+    {
+      "rows": 64,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 2048,
+      "outputs": 5632,
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 1,
+      "columns": 5632,
+      "outputs": 2048,
+      "max_abs": 0.0
+    },
+    {
+      "rows": 17,
+      "columns": 5632,
+      "outputs": 2048,
+      "max_abs": 0.00390625
+    },
+    {
+      "rows": 32,
+      "columns": 5632,
+      "outputs": 2048,
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 64,
+      "columns": 5632,
+      "outputs": 2048,
+      "max_abs": 0.0078125
+    },
+    {
+      "rows": 128,
+      "columns": 5632,
+      "outputs": 2048,
+      "max_abs": 0.015625
+    }
+  ],
+  "fake_native_scale_checks": 2,
+  "pid": 10779,
+  "start_unix": 1791147916.8479595,
+  "end_unix": 1791147917.7479541
+}

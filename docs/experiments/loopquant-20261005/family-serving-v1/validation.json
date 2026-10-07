@@ -1,0 +1,47 @@
+{
+  "status": "pass",
+  "models": [
+    {
+      "model": "huginn-0125",
+      "trace_files": 6,
+      "requests": 3072,
+      "context_limit": 4096,
+      "status": "verified",
+      "performance_run": false
+    },
+    {
+      "model": "nanbeige-4.2-3b",
+      "trace_files": 6,
+      "requests": 3072,
+      "context_limit": 262144,
+      "status": "verified",
+      "performance_run": false
+    },
+    {
+      "model": "hrm-text-1b",
+      "trace_files": 5,
+      "requests": 2560,
+      "context_limit": 4096,
+      "status": "verified",
+      "performance_run": false
+    },
+    {
+      "model": "loopformer-3block-8iterations",
+      "trace_files": 5,
+      "requests": 2560,
+      "context_limit": 1024,
+      "status": "verified",
+      "performance_run": false
+    },
+    {
+      "model": "parcae-370m",
+      "trace_files": 5,
+      "requests": 2560,
+      "context_limit": 2048,
+      "status": "verified",
+      "performance_run": false
+    }
+  ],
+  "full_manifest_sha256": "7e47eaef1d308376048cb5c58ddc2f2e7c7596504eb83c3c0b85631bb9a6b0d0",
+  "locked_quality_used": false
+}

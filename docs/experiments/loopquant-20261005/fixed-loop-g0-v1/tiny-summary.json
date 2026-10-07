@@ -1,0 +1,48 @@
+{
+  "status": "TINY_DIAGNOSTIC_PASS",
+  "scope": "Tiny CPU packet preparation, no full checkpoint/CUDA/quantization/E2E qualification",
+  "records": [
+    {
+      "family": "nanbeige",
+      "reference_sdpa": "auto",
+      "actual_returncode": 0,
+      "cache_cases": 4,
+      "loops": 2,
+      "state_comparisons": 28,
+      "states_exact": false,
+      "all_within_budget": true,
+      "max_abs": 0.01953125,
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "raw_sha256": "89017969adf69480fee0e75361f5e39250ce2fdc92f0a62f116a2845b9db730f"
+    },
+    {
+      "family": "nanbeige",
+      "reference_sdpa": "math",
+      "actual_returncode": 0,
+      "cache_cases": 4,
+      "loops": 2,
+      "state_comparisons": 28,
+      "states_exact": true,
+      "all_within_budget": true,
+      "max_abs": 0.0,
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "raw_sha256": "bd276f8724f591ebf6c3a3b6e26ff2c4fe109c7fe9c2854402a04d79904350c2"
+    },
+    {
+      "family": "ouro",
+      "reference_sdpa": "math",
+      "actual_returncode": 0,
+      "cache_cases": 4,
+      "loops": 4,
+      "state_comparisons": 56,
+      "states_exact": true,
+      "all_within_budget": true,
+      "max_abs": 0.0,
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "raw_sha256": "e53006ea75012754043f50dd05ca4bb4bed9259afbc96528cd3897f1a7de598c"
+    }
+  ]
+}

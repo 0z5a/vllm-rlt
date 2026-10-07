@@ -1,0 +1,23 @@
+{
+  "source_commit": "290be852825c7cd7a1592ebb9853dfe9f774ca01",
+  "scope": "three warmed native Nsight cost captures BF16/DYN/SH1 C32 B512 P256D32 R4;32warmup64capturedrequests each;diagnostic times not E2E comparisons",
+  "nsys_version": "2025.3.1.0",
+  "locks": "parent holds original GPU0,GPU1,heavyIO across captures and stats; probe has no lock acquisition",
+  "termination": "kill=none,capture-range-end=stop,wait=all; no duration limit or signals",
+  "reports": [
+    "cuda_gpu_kern_sum",
+    "cuda_api_sum",
+    "cuda_gpu_mem_time_sum",
+    "cuda_kern_exec_sum",
+    "cublas_api_sum"
+  ],
+  "files": {
+    "bf16.json": "1ad55e88cd098b23732f6edd92baf56c31161523086b7cabfb96da37a59e5895",
+    "dyn.json": "61dad76226e0375389ba0cf49eaf204483ae5c4f60d3ec76698368b1a76b060a",
+    "probe.py": "f17a968defadd05109d89faf64a436e722bf4214c39cbcf37d2494d6ce77ddd7",
+    "run.py": "bbf766f4013e803e3e4d187db78c5d4d1e6aed4f5cbd3ab17d1ceece2e70df9e",
+    "sh1.json": "3f560942c7d347c41960a975f5570ee669defdd6cc0e6dabbfd773800f138f80",
+    "source.tar.gz": "24c42bccb35d4145a13e27bbd1f3aadc4b25ddbffde70f5b8c2560ac8fc17ae5",
+    "trace.json": "490559fcc4d8e45217d2ef477727f207abc3997d0d68abbfdbf6f36c715e83aa"
+  }
+}

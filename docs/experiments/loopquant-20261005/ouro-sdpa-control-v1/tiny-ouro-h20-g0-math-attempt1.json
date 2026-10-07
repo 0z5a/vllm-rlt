@@ -1,0 +1,625 @@
+{
+  "status": "pass",
+  "records": [
+    {
+      "request_id": "tiny-5",
+      "tokens": 5,
+      "incremental": false,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-5",
+      "tokens": 5,
+      "incremental": true,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-7",
+      "tokens": 7,
+      "incremental": false,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    },
+    {
+      "request_id": "tiny-7",
+      "tokens": 7,
+      "incremental": true,
+      "states": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        }
+      ],
+      "logits": [
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        },
+        {
+          "within_budget": true,
+          "exact": true,
+          "max_abs": 0.0
+        }
+      ],
+      "argmax_exact": true,
+      "prior_kv_exact": true,
+      "kv_after_drain": 0
+    }
+  ],
+  "full_checkpoint": false,
+  "atol": 0.02,
+  "rtol": 0.02,
+  "loops": 4,
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "backend": "torch",
+  "reference_sdpa": "math",
+  "torch_version": "2.13.0",
+  "start_unix": 1791223942.779812,
+  "end_unix": 1791223942.929693,
+  "runner_sha256": "7da9cdd3ef0b8c1c92b10c82df7c575225a2b3a9428c8d3df3cda1d9767361c5",
+  "scope": "Native BF16 vs dense SDPA adapter, R1/2/3/4 state and readout, full/incremental cache. No PTQ/QAT search, quality or timing; separate from UNKNOWN old5090 INT4 job."
+}
