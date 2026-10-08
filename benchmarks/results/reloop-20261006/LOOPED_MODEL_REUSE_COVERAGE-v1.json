@@ -60,7 +60,7 @@
   "original_source_snapshot_payloads": 34,
   "reuse_archive_sha256": "1d6ec3b9bf6ba6ffd6b65cf986ca8de99c53f914d846506b36b95a907c279578",
   "formal_whole_models_complete": 0,
-  "H100_current_Ouro_FP32_original_numerical": "12/108/96/21 + all242 archive byte/scalar + known-actor handoff PASS; complete C32/W5/C128 performance not yet run",
+  "H100_current_Ouro_FP32_original_numerical": "12/108/96/21 + all242 archive byte/scalar + known-actor handoff PASS; complete C32 has actually started with original six-fresh/60-trial scope, all performance results/audit pending; W5/C128 not yet run",
   "Ouro_quantization_old_smoke_scope": {
     "arms": 8,
     "R": 4,

@@ -46,9 +46,19 @@
     "numpy": "2.4.6",
     "host_compiler": "GCC 11.5.0"
   },
-  "performance_e2e_state": "NOT_RUN",
-  "current_gate_admission": "Verified original full numerical gate and actual known-actor handoff; performance ready remains ungranted until the coordinator binds a fresh finite window",
+  "performance_e2e_state": "COMPLETE_C32_ACTUALLY_STARTED_RESULTS_PENDING",
+  "current_gate_admission": "Actual complete C32 first-start snapshot and fresh ready/controller/profile/protocol/manifest references independently verified; original4800 minimum complete window preserved; full performance results/audit still pending",
   "publication_state": "LOCAL_BRANCH_ONLY",
   "independent_gate_review_sha256": "87114f0a8a5d1993581d33af096d295b03b61c2c3f903d3df8150a5a75a29259",
-  "handoff_scope": "Known experiment actors only; no global reader retirement claim"
+  "handoff_scope": "Known experiment actors only; no global reader retirement claim",
+  "C32_required_work": {
+    "B": 16,
+    "initial_total_C": 32,
+    "P": 512,
+    "F": 128,
+    "fresh_processes": 6,
+    "trials": 60,
+    "requests": 1920,
+    "output_tokens": 245760
+  }
 }
