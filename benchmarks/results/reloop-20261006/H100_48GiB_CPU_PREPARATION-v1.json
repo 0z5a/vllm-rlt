@@ -7,7 +7,7 @@
   "hardware": {
     "GPU": "NVIDIA H100",
     "count": 1,
-    "observed_total_memory_mib": 65247
+    "gpu_count": 1
   },
   "dtype": "float32",
   "attention_backend": "triton",

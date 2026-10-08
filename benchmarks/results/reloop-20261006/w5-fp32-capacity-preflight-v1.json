@@ -1,9 +1,9 @@
 {
   "status": "COMPLETE_CPU_PREFLIGHT_NATIVE_E2E_NOT_RUN",
   "observed_unix": 1791242954.3926332,
-  "document": "/Users/0z5a/Downloads/LoopCD_vllm-rlt_Execution_Plan_2026-10-05.md",
+  "document": "LoopCD_vllm-rlt_Execution_Plan_2026-10-05.md",
   "document_sha256": "26c0487ce40e0d8aa6dc6deff62f8c4afd6c7c5a25a7769da82dc82a830d828a",
-  "config": "/Users/0z5a/Documents/infra/loopcd-e2e-20261006/evidence/h20-fp32-candidate-cost-v1-B16C32-batch01/models/ouro-574fa66c/config.json",
+  "config": "config.json",
   "config_sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3",
   "source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
   "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",

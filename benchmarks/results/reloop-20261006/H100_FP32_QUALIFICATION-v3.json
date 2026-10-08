@@ -7,9 +7,7 @@
   "production_base_revision": "d700ecca664da2e8f3122f66ad9d45de4295e45a",
   "hardware": {
     "gpu": "NVIDIA H100",
-    "gpu_count": 1,
-    "observed_memory_mib": 65247,
-    "driver": "595.91.07"
+    "gpu_count": 1
   },
   "software": {
     "python": "3.12.1",

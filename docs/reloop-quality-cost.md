@@ -81,7 +81,7 @@ Unchanged readouts are exact. The previous full FP32 gate used Torch attention;
 its result was insufficient to qualify this Triton screen.
 
 The same complete FP32/Triton W2 and public-loader protocols now pass on one
-H100 with65,247MiB observed memory. All12/108/96/21 checks and52 tokenizer
+H100. All12/108/96/21 checks and52 tokenizer
 records/269 exact parameter casts are retained;103 off-node payload hashes and
 114 selected-logprob scalar pairs were independently reviewed. The original
 runtime assertions cover vector comparisons; full K/V/state/logit vectors were
@@ -289,3 +289,7 @@ Public-interface checks accept all six actual earlier configurations and keep
 all seven cases and 42 missing jobs in an empty matrix. Complete new 4C job
 integration awaits actual output; numerical qualification, owning processes,
 resource identity and complete offbox archives remain separate requirements.
+
+The complete original numerical protocol also ran on one current H100: all12 cases/108readouts/96forced continuations/21ownership checks pass with original1e-4 tolerances. Independent complete242-file byte/source/scalar review passes; verified resource handoff is pending, so this is not yet the admitted performance gate. [Current numerical result](../benchmarks/results/reloop-20261006/H100_CURRENT_NUMERICAL_RESULT-v1.md).
+
+Read-only diagnosis of all296 scored code outputs found60/148 empty completions in D4 and68/148 in D3 guided. Leading new-function stops account for56 and55 respectively; raw EOS accounts for4 and13. Frozen exports match the original stop rules. These results motivate a separate prompt-format development experiment without repairing the original confirmation or changing its uncertain comparisons. [Frozen code-output diagnosis](../benchmarks/results/reloop-20261006/H100_CODE_FAILURE_DIAGNOSIS-v1.md). New work remains on the local branch; public summaries contain no cluster metadata beyond CUDA, necessary dependency versions and H100 count.

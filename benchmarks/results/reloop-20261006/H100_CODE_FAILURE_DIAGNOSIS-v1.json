@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "state": "FROZEN_OUTPUT_DIAGNOSIS_ONLY_NO_NEW_GENERATION_OR_SCORE_REPAIR",
+  "original_records_sha256": "50368acf46b86ebaacf9789cc7b6a012dafe9bc71c73bb2894456f66abe55ea4",
+  "original_tokenized_plan_sha256": "b404357f434b208c706cf04a1dd5e49cf6ab2cbfde0a4c316cfced0bbbf1ae01",
+  "original_prompt_policy": {
+    "fewshot": 3,
+    "add_special_tokens": false,
+    "chat_template": false,
+    "truncation": false,
+    "seen_ids_sha256": "7015efb65e8bf49ffa725ca5635fc9193c67a9900df47f443f4e53826a072f2d"
+  },
+  "original_code_stop_sequences": [
+    "\nclass ",
+    "\ndef ",
+    "\nif __name__",
+    "\nprint("
+  ],
+  "arms": {
+    "A_P4D4_off": {
+      "denominator": 148,
+      "empty_scoring_text": 60,
+      "empty_after_leading_new_def_stop": 56,
+      "empty_raw_EOS": 4,
+      "nonempty_completion": 88,
+      "generated_completion_with_code_fence": 61,
+      "prompt_plus_completion_syntax": {
+        "PARSES": 86,
+        "SyntaxError": 61,
+        "TabError": 1
+      },
+      "base_status": {
+        "FAIL": 84,
+        "CODE_ERROR": 63,
+        "PASS": 1
+      },
+      "plus_status": {
+        "FAIL": 84,
+        "CODE_ERROR": 63,
+        "PASS": 1
+      },
+      "code_error_types": {
+        "SyntaxError": 62,
+        "TabError": 1
+      },
+      "base_correct": 1,
+      "plus_correct": 1,
+      "export_sha256": "590c5fc4424d7a341b5fca2eb3026984f1b81875ec36797eed42376c30628f15"
+    },
+    "D_P4D3_on": {
+      "denominator": 148,
+      "empty_scoring_text": 68,
+      "empty_after_leading_new_def_stop": 55,
+      "empty_raw_EOS": 13,
+      "nonempty_completion": 80,
+      "generated_completion_with_code_fence": 57,
+      "prompt_plus_completion_syntax": {
+        "PARSES": 86,
+        "SyntaxError": 60,
+        "TabError": 2
+      },
+      "base_status": {
+        "FAIL": 84,
+        "CODE_ERROR": 64
+      },
+      "plus_status": {
+        "FAIL": 84,
+        "CODE_ERROR": 64
+      },
+      "code_error_types": {
+        "SyntaxError": 61,
+        "ValueError": 1,
+        "TabError": 2
+      },
+      "base_correct": 0,
+      "plus_correct": 0,
+      "export_sha256": "e2057e97f299d4c34875a9898225ae0cffcd49165b238155996c848c91b748b5"
+    }
+  },
+  "C_P4D3_off": "16/148 generated; not scored or included in paired diagnosis",
+  "interpretation": "The frozen plain function-body prompt and leading-new-function stop policy frequently yielded empty completions; other completions contained markdown or syntax errors. This explains observed failure classes, not a causal comparison, prompt repair or quality non-inferiority proof. Any alternative prompt/generation policy needs a new explicitly labeled development experiment and separate data/protocol; original confirmation remains unchanged.",
+  "whole_task_n": 0,
+  "new_speed_memory_SOTA_claims": false,
+  "publishing_state": "LOCAL_BRANCH_ONLY"
+}
