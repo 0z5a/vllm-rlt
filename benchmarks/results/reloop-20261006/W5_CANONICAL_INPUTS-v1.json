@@ -1,0 +1,103 @@
+{
+  "archive_sha256": "1043b707e1072bd41261b4f342b601a3bb31766784df37929984b07d17112a81",
+  "manifest_sha256": "748fc5b547b793814b57d7f61c3b77be298d67c9ccd8c86a553201027f565797",
+  "payload_files": 173,
+  "original_packet_inputs": 11,
+  "source_Git_blobs": 133,
+  "tokenizer_metadata_files": 6,
+  "records": 820,
+  "prompt_token_entries": 919552,
+  "cases": [
+    {
+      "case_id": "L1",
+      "B": 1,
+      "C": 1,
+      "records": 4,
+      "first_B_target_KV_GiB": 0.9375,
+      "static_status": "STATIC_RESERVATION_FITS"
+    },
+    {
+      "case_id": "T32",
+      "B": 32,
+      "C": 32,
+      "records": 128,
+      "first_B_target_KV_GiB": 30.0,
+      "static_status": "STATIC_RESERVATION_FITS"
+    },
+    {
+      "case_id": "Q64",
+      "B": 32,
+      "C": 64,
+      "records": 256,
+      "first_B_target_KV_GiB": 66.0,
+      "static_status": "PLANNED_CAPACITY_EXCEEDED"
+    },
+    {
+      "case_id": "T64_short",
+      "B": 64,
+      "C": 64,
+      "records": 256,
+      "first_B_target_KV_GiB": 36.0,
+      "static_status": "STATIC_RESERVATION_FITS"
+    },
+    {
+      "case_id": "C8_long",
+      "B": 8,
+      "C": 8,
+      "records": 32,
+      "first_B_target_KV_GiB": 25.5,
+      "static_status": "STATIC_RESERVATION_FITS"
+    },
+    {
+      "case_id": "C4_longer",
+      "B": 4,
+      "C": 4,
+      "records": 16,
+      "first_B_target_KV_GiB": 48.75,
+      "static_status": "PLANNED_CAPACITY_EXCEEDED"
+    },
+    {
+      "case_id": "A32_large",
+      "B": 32,
+      "C": 32,
+      "records": 128,
+      "first_B_target_KV_GiB": 102.0,
+      "static_status": "PLANNED_CAPACITY_EXCEEDED"
+    }
+  ],
+  "independently_retokenized": false,
+  "token_review_scope": "Actual canonical tokenizer provenance plus integer, exact length, common seed prefix and original order checks; no local tokenizer replay",
+  "CUDA_initialized": false,
+  "model_weights_read": false,
+  "natural_waits_verified": 14,
+  "actual_release_verified": true,
+  "whole_task_n": 0,
+  "status": "CPU_CANONICAL_INPUTS_AND_INDEPENDENT_OFFBOX_REVIEW_PASS_GPU_MATRIX_NOT_RUN",
+  "source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "dtype": "float32",
+  "P": 4,
+  "R": 4,
+  "block_size": 16,
+  "common_KV_pool_GiB": 48,
+  "warmups": 5,
+  "measurements": 5,
+  "fresh_processes_per_case": 6,
+  "original_total_cases": 7,
+  "original_total_fresh_processes": 42,
+  "original_total_trials": 420,
+  "original_total_requests": 49200,
+  "original_total_output_tokens": 6297600,
+  "completed_GPU_fresh_processes": 0,
+  "queue_capacity_scope": "Q64 first-B target exceeds the common pool; the original queued case remains required and actual A/S must be observed. C4_longer and A32_large retain planned-capacity records. No case was removed or replaced.",
+  "independent_review_sha256": "4bd1018cda6e8d2703c996a8db0f3508a24dd2a5109b8eaff3c889880c8386d2",
+  "dependencies": {
+    "torch": "2.12.1+cu130",
+    "triton": "3.7.1",
+    "transformers": "4.54.1",
+    "tokenizers": "0.21.4",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.35.3",
+    "numpy": "2.4.6"
+  }
+}
