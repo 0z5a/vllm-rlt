@@ -204,9 +204,10 @@ class KVCacheManager:
         ``num_free_blocks`` already includes every block eviction could
         release. If it is still short, return ``None`` without evicting, so a
         failed admission, growth, resumption, or PD reservation does not
-        throw away prefixes it could not use anyway.
+        throw away prefixes it could not use anyway. ``num_free_blocks`` scans
+        every prefix entry, so it is only consulted when eviction is needed.
         """
-        if self.num_free_blocks < count:
+        if len(self._free_blocks) < count and self.num_free_blocks < count:
             return None
         while len(self._free_blocks) < count and self._prefixes:
             _, blocks = self._prefixes.popitem(last=False)

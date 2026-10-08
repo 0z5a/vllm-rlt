@@ -334,6 +334,22 @@ def test_failed_claim_leaves_prefix_entries_in_place():
     assert cache.num_free_blocks == 2
 
 
+def test_claim_skips_prefix_scan_when_free_blocks_suffice(monkeypatch):
+    cache = make_cache(num_blocks=10, block_size=2, max_loops=2, enable_prefix_caching=True)
+    tokens = [1, 2, 3, 4, 5]
+    assert cache.allocate("a", 4)
+    cache.mark_imported_prefix("a", 4)
+    cache.publish_prefix("a", tokens, 4)
+    cache.free("a")
+
+    def scan(self):
+        raise AssertionError("num_free_blocks scanned prefix entries")
+
+    monkeypatch.setattr(KVCacheManager, "num_free_blocks", property(scan))
+    assert cache.allocate("b", 2)
+    assert len(cache.lookup_prefix(tokens)) == 2
+
+
 def test_snapshot_refuses_leased_allocations():
     cache = make_cache()
     assert cache.allocate("a", 2)
