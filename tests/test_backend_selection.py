@@ -6,10 +6,11 @@ from types import SimpleNamespace
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams
 from vllm_rlt.attention import BackendCapabilities, backend_capabilities, create_backend
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroForCausalLM
 
 
 @pytest.fixture
@@ -164,7 +165,7 @@ def test_packed_prefill_requires_declared_support(packages, monkeypatch):
 
 
 def test_cpu_engine_resolves_auto_before_cache_planning():
-    model = OuroForCausalLM(OuroConfig.tiny())
+    model = OuroForCausalLM(tiny_ouro_config())
     engine = LLMEngine(model, attention_backend="auto")
     assert engine.cache_manager.backend == "torch"
     assert engine.cache_manager.attention_info["requested_backend"] == "auto"
@@ -188,7 +189,7 @@ def test_cuda_engine_resolves_auto_before_profiling(packages, monkeypatch, execu
 
     monkeypatch.setattr(torch.cuda, "get_device_capability", lambda device: (8, 9))
     model = SimpleNamespace(
-        config=OuroConfig.tiny(),
+        config=tiny_ouro_config(),
         parameters=lambda: iter(
             [SimpleNamespace(device=torch.device("cuda"), dtype=torch.bfloat16)]
         ),

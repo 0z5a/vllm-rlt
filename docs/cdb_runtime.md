@@ -57,6 +57,54 @@ OMP_NUM_THREADS=1 python -m vllm_rlt.entrypoints.cli --toy --dtype float32 \
 
 For a task-assigned GPU, set `CUDA_VISIBLE_DEVICES` and add `--device cuda --attention-backend triton`. Use `--single-stream` for the single-stream pipeline. `--num-blocks` overrides automatic sizing, or specify `--kv-cache-memory-bytes`; these two overrides are mutually exclusive. CPU auto mode keeps a 256-block default. `engine.memory_plan` records how the capacity was selected.
 
+## Fixed-loop self-speculative decoding
+
+Use shallow loops to draft tokens, then reuse their hidden states and KV to
+verify them at full depth. Only verified output is committed; rejected suffixes
+are discarded and corrected by the target. The feature is opt-in.
+
+```python
+from vllm_rlt import LLM, SamplingParams, SpeculativeConfig
+
+llm = LLM(
+    "../models/Ouro-1.4B",
+    device="cuda",
+    attention_backend="flash_attn_4",
+    speculative_config=SpeculativeConfig(
+        num_speculative_tokens=4, draft_loops=2, target_loops=4,
+    ),
+)
+outputs = llm.generate(
+    ["Explain why the sky is blue."],
+    SamplingParams(max_tokens=64, max_loops=4, exit_threshold=1.0),
+)
+```
+
+Equivalent offline CLI (select an available GPU through `CUDA_VISIBLE_DEVICES`):
+
+```bash
+python -m vllm_rlt.entrypoints.cli \
+  --model ../models/Ouro-1.4B --device cuda --dtype bfloat16 \
+  --attention-backend flash_attn_4 --speculative-tokens 4 \
+  --draft-loops 2 --target-loops 4 --max-loops 4 --exit-threshold 1.0 \
+  --max-tokens 64 --prompt "Explain why the sky is blue."
+```
+
+`num_speculative_tokens` / `--speculative-tokens` is K, the maximum candidates
+per round; K=4 here is an example, not a universal optimum. Draft depth defaults
+to 2 and must be below target depth. Target depth must equal the full model depth
+(4 for Ouro-1.4B). K shrinks to fit the token budget and remaining output length.
+
+Requires `last_exited`, fixed-depth `ouro` exits, synchronous eager execution,
+and refill scheduling. Async, CUDA Graphs, preemption, no-refill, and PD are not
+supported. Greedy and temperature/top-k/top-p sampling are supported; sampling
+preserves the target distribution in exact arithmetic, not identical text for
+the same seed. BF16 batch shapes can introduce numerical differences.
+
+The same flags work with the single-device server. A streaming event may contain
+multiple committed tokens. See [RFC #43](https://github.com/ThinkFlowLab/vllm-rlt/issues/43)
+for the design.
+
 ## SHARED prefill semantics
 
 SHARED is not equivalent to LAST-EXITED. A later token reads every earlier token's final KV at all depths. To make that meaning independent of chunk boundaries, the shared prefill runner completes all loops for one position before advancing that request. Different requests can still be batched at each position wave. This is a correctness-oriented implementation and can be slower than packed depth-major prefill. It is not a claim to reproduce an unpublished optimized shared-prefill kernel.

@@ -129,7 +129,7 @@ class IncrementalText:
 
     Cleanup is disabled, matching the released tokenizer. Incomplete UTF-8
     prefixes are withheld until a later token completes them (or final flush).
-    Each sampled ID still produces an event even when its text delta is empty.
+    Each sampled ID is decoded once; the worker may combine several IDs into one event.
     """
 
     def __init__(self, tokenizer):
@@ -151,7 +151,9 @@ class IncrementalText:
             try:
                 data = bytes(self.byte_decoder[char] for char in token)
             except KeyError:
-                # Match ByteLevel's whole-token UTF-8 fallback for added tokens.
+                # Handle SentencePiece leading space (\u2581) if present
+                if token.startswith("\u2581"):
+                    token = " " + token[1:]
                 data = token.encode("utf-8")
         return self.utf8.decode(data, final=finished)
 

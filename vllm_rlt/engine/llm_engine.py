@@ -6,9 +6,11 @@ from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
 from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
+from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
 from vllm_rlt.worker.model_runner import ModelRunner
+from vllm_rlt.worker.speculative import SpeculativeRunner
 
 
 class LLMEngine:
@@ -23,14 +25,39 @@ class LLMEngine:
         attention_backend="torch",
         exit_config=None,
         execution_config=None,
+        speculative_config=None,
     ):
         self.model = model
+        self.profiling = Profiler(next(model.parameters()).device)
         cache_config = cache_config or CacheConfig()
         scheduler_config = scheduler_config or SchedulerConfig()
         parameter = next(model.parameters())
         config = model.config
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
+        self.speculative_config = speculative_config
+        if speculative_config is not None:
+            if cache_config.layout != "last_exited":
+                raise ValueError("speculative decoding requires last_exited KV")
+            if speculative_config.target_loops != config.total_ut_steps:
+                raise ValueError("speculative target_loops must equal the model full depth")
+            if self.exit_config.mode != "ouro":
+                raise ValueError("speculative decoding requires fixed-depth ouro exit mode")
+            if self.execution_config.async_scheduling:
+                raise ValueError("speculative decoding currently requires synchronous execution")
+            if scheduler_config.enable_preemption or scheduler_config.mode != "refill":
+                raise ValueError(
+                    "speculative decoding requires refill scheduling without preemption"
+                )
+            # Retained q distributions and sampling scratch coexist with target
+            # logits. Reserve beyond ordinary prefill/core profiling, even when
+            # requests later choose sampling rather than greedy.
+            scratch = scheduler_config.max_num_batched_tokens * (
+                config.vocab_size * 24 + config.hidden_size * parameter.element_size() * 2
+            )
+            cache_config = replace(
+                cache_config, memory_reserve_bytes=cache_config.memory_reserve_bytes + scratch
+            )
         if self.execution_config.cuda_graphs and parameter.device.type != "cuda":
             raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
         if self.execution_config.async_scheduling:
@@ -79,7 +106,12 @@ class LLMEngine:
             incremental_allocation=cache_config.incremental_allocation,
             watermark_ratio=cache_config.watermark_ratio,
         )
-        self.scheduler = Scheduler(scheduler_config, self.cache_manager)
+        self.scheduler = Scheduler(scheduler_config, self.cache_manager, speculative_config)
+        self.speculative_runner = (
+            SpeculativeRunner(model, self.cache_manager, speculative_config, self.execution_config)
+            if speculative_config is not None
+            else None
+        )
         self.model_runner = ModelRunner(
             model,
             self.cache_manager,
@@ -121,6 +153,10 @@ class LLMEngine:
         max_loops = params.max_loops or config.total_ut_steps
         if max_loops > config.total_ut_steps or params.min_loops > max_loops:
             raise ValueError("requested loop bounds exceed the model's supported depth")
+        if self.speculative_config is not None and (
+            max_loops != self.speculative_config.target_loops or params.exit_threshold != 1.0
+        ):
+            raise ValueError("speculative requests require fixed target depth and exit_threshold=1")
         if trace_id is not None:
             if not isinstance(trace_id, str) or not trace_id:
                 raise ValueError("trace_id must be a nonempty string")
@@ -166,7 +202,33 @@ class LLMEngine:
         self._pending_exit_signals.pop(request_id, None)
         return RequestOutput.from_request(self.scheduler.abort(request_id))
 
+    def start_profile(self, config, *, scheduled=False, **identity):
+        return self.profiling.start(config, scheduled=scheduled, **identity)
+
+    def stop_profile(self):
+        return self.profiling.stop()
+
+    def profile_status(self):
+        return self.profiling.status()
+
+    def wait_for_profile_artifacts(self, timeout=None):
+        return self.profiling.wait(timeout)
+
+    def close(self):
+        self.profiling.close()
+
     def step(self) -> list[RequestOutput]:
+        if not self.profiling.recording:
+            return self._step()
+        try:
+            outputs = self._step()
+            self.profiling.step()
+            return outputs
+        except BaseException:
+            self.profiling.stop()
+            raise
+
+    def _step(self) -> list[RequestOutput]:
         if self.execution_config.async_scheduling:
             try:
                 return self._step_async()
@@ -188,6 +250,9 @@ class LLMEngine:
                 raise RuntimeError("scheduler made no progress")
             return []
         try:
+            if batch.stage == Stage.SPECULATIVE:
+                result = self.speculative_runner.execute(batch)
+                return self._update_speculative(batch, result)
             result = self.model_runner.execute(batch)
             return self._update(batch, result)
         except Exception:
@@ -196,6 +261,37 @@ class LLMEngine:
                 if item.request.request_id in self.scheduler.requests:
                     self.abort_request(item.request.request_id)
             raise
+
+    def _update_speculative(self, batch, results):
+        outputs = []
+        for item, result in zip(batch.items, results):
+            request = item.request
+            params = request.sampling_params
+            eos = self.model.config.eos_token_id
+            eos_ids = eos if isinstance(eos, (tuple, list)) else [eos]
+            emitted = 0
+            reason = None
+            for token in result.token_ids:
+                request.generated_token_ids.append(token)
+                request.exit_depths.append(self.speculative_config.target_loops)
+                emitted += 1
+                if token in eos_ids and not params.ignore_eos:
+                    reason = FinishReason.STOP
+                    break
+                if len(request.generated_token_ids) >= params.max_tokens:
+                    reason = FinishReason.LENGTH
+                    break
+            self.speculative_runner.stats.committed_tokens += emitted
+            self.speculative_runner.stats.accepted_tokens += min(result.accepted_count, emitted)
+            if reason is not None:
+                self._finish(request, reason)
+            else:
+                # The last emitted token is correction/bonus, not yet forwarded.
+                self.cache_manager.truncate_suffix(request.request_id, item.token_start + emitted)
+                request.loops_done = 0
+                self.scheduler.enqueue(request, Stage.SPECULATIVE)
+            outputs.append(RequestOutput.from_request(request))
+        return outputs
 
     def _update(self, batch, result) -> list[RequestOutput]:
         outputs = []
@@ -252,7 +348,9 @@ class LLMEngine:
                 elif len(request.generated_token_ids) >= params.max_tokens:
                     self._finish(request, FinishReason.LENGTH)
                 else:
-                    self.scheduler.enqueue(request, Stage.PRELUDE)
+                    self.scheduler.enqueue(
+                        request, Stage.SPECULATIVE if self.speculative_config else Stage.PRELUDE
+                    )
                 outputs.append(RequestOutput.from_request(request))
         return outputs
 

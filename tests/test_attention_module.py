@@ -103,3 +103,55 @@ def test_metadata_rejects_misaligned_row_inputs():
             device=torch.device("cpu"),
             packed_prefill=True,
         )
+
+
+def test_host_attention_plan_builds_packed_values_without_device_work(monkeypatch):
+    from vllm_rlt.attention import metadata
+
+    planner = getattr(metadata, "plan_attention_metadata", None)
+    assert callable(planner), "M8 must provide host values for the shared staging path"
+
+    def unexpected_tensor(*args, **kwargs):
+        pytest.fail("planning semantic metadata must not allocate or copy tensors")
+
+    monkeypatch.setattr(torch, "tensor", unexpected_tensor)
+    plan = planner(
+        AttentionRows(
+            block_tables=[(4, 7, 8), (4, 7, 8), (2,)],
+            positions=[2, 3, 1],
+            sequence_keys=[("a", 0), ("a", 0), ("b", 1)],
+        ),
+        block_size=2,
+        packed_prefill=True,
+    )
+    assert plan.block_tables == [4, 7, 2, -1]
+    assert (plan.num_rows, plan.table_width) == (2, 2)
+    assert plan.context_lengths == [4, 2]
+    assert plan.cu_seqlens_q == [0, 2, 3]
+    assert plan.max_seqlen_q == 2
+
+
+@pytest.mark.parametrize("packed", [False, True])
+def test_depth_batches_stage_metadata_twice_and_preserve_shared_views(monkeypatch, packed):
+    cache = KVCacheManager(1, 1, 8, 48, 2, 4)
+    cache.attention = SimpleNamespace(capabilities=BackendCapabilities(packed_prefill=True))
+    cache.allocate("a", 6)
+    cache.allocate("b", 6)
+    original_stage = cache._stage
+    stages = []
+
+    def stage(values, dtype):
+        stages.append(dtype)
+        return original_stage(values, dtype)
+
+    monkeypatch.setattr(cache, "_stage", stage)
+    batches = cache._prepare_batches(
+        ["a", "a", "b"], [[0, 0, 0], [1, 1, 1], [2, 2, 2]], [2, 3, 1], packed_prefill=packed
+    )
+    assert stages == [torch.long, torch.int32]
+    for name in ("position_ids", "write_offsets", "context_lengths"):
+        assert len({getattr(batch, name).data_ptr() for batch in batches}) == 1
+    if packed:
+        assert len({batch.cu_seqlens_q.data_ptr() for batch in batches}) == 1
+        assert batches[0].cu_seqlens_q.tolist() == [0, 2, 3]
+        assert batches[0].max_seqlen_q == 2

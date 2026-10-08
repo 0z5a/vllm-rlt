@@ -33,13 +33,24 @@ class AttentionMetadata:
     max_seqlen_q: int
 
 
-def build_attention_metadata(
+@dataclass(frozen=True)
+class AttentionMetadataValues:
+    """Host values for M5 to combine and stage using its own buffer lifetime."""
+
+    block_tables: list[int]
+    num_rows: int
+    table_width: int
+    context_lengths: list[int]
+    cu_seqlens_q: list[int] | None
+    max_seqlen_q: int
+
+
+def plan_attention_metadata(
     rows: AttentionRows,
     *,
     block_size: int,
-    device: torch.device,
     packed_prefill: bool = False,
-) -> AttentionMetadata:
+) -> AttentionMetadataValues:
     """Pack selected tables and causal lengths without touching KV ownership.
 
     M4 validates positions and table coverage before calling this function.
@@ -75,18 +86,36 @@ def build_attention_metadata(
     tables = []
     for index in table_rows:
         table = rows.block_tables[index][:width]
-        tables.append(list(table) + [-1] * (width - len(table)))
+        tables.extend(table)
+        tables.extend([-1] * (width - len(table)))
+    return AttentionMetadataValues(
+        block_tables=tables,
+        num_rows=len(table_rows),
+        table_width=width,
+        context_lengths=[rows.positions[index] + 1 for index in table_rows],
+        cu_seqlens_q=cumulative,
+        max_seqlen_q=max_query,
+    )
+
+
+def build_attention_metadata(
+    rows: AttentionRows,
+    *,
+    block_size: int,
+    device: torch.device,
+    packed_prefill: bool = False,
+) -> AttentionMetadata:
+    """Materialize a plan for callers without a shared staging buffer."""
+    plan = plan_attention_metadata(rows, block_size=block_size, packed_prefill=packed_prefill)
     return AttentionMetadata(
-        block_tables=torch.tensor(tables, device=device, dtype=torch.int32).reshape(
-            len(table_rows), width
+        block_tables=torch.tensor(plan.block_tables, device=device, dtype=torch.int32).reshape(
+            plan.num_rows, plan.table_width
         ),
-        context_lengths=torch.tensor(
-            [rows.positions[index] + 1 for index in table_rows], device=device, dtype=torch.int32
-        ),
+        context_lengths=torch.tensor(plan.context_lengths, device=device, dtype=torch.int32),
         cu_seqlens_q=(
-            torch.tensor(cumulative, device=device, dtype=torch.int32)
-            if cumulative is not None
+            torch.tensor(plan.cu_seqlens_q, device=device, dtype=torch.int32)
+            if plan.cu_seqlens_q is not None
             else None
         ),
-        max_seqlen_q=max_query,
+        max_seqlen_q=plan.max_seqlen_q,
     )

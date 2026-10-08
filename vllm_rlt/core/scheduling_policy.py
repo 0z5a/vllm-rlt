@@ -29,7 +29,7 @@ class SchedulingPolicy:
         """Count nonempty scheduled batches, not attempts or GPU completions."""
         if stage == Stage.PREFILL:
             self.prefill_batches_since_recurrent += 1
-        elif stage == Stage.RECURRENT:
+        elif stage in (Stage.RECURRENT, Stage.SPECULATIVE):
             self.prefill_batches_since_recurrent = 0
 
 
@@ -91,4 +91,21 @@ class NoRefillPolicy(SchedulingPolicy):
         if q[Stage.RECURRENT]:
             self.phase = NoRefillPhase.CORE
             return scheduler._take(Stage.RECURRENT)
+        return None
+
+
+class SpeculativePolicy(SchedulingPolicy):
+    """Schedule atomic draft/verify rounds with bounded prefill interleaving."""
+
+    def schedule(self, scheduler, *, prefer_recurrent=False):
+        q = scheduler.queues
+        if q[Stage.CODA]:
+            return scheduler._take(Stage.CODA)
+        if self.decode_due and q[Stage.SPECULATIVE]:
+            return scheduler._take(Stage.SPECULATIVE)
+        scheduler._admit()
+        if q[Stage.PREFILL]:
+            return scheduler._take(Stage.PREFILL)
+        if q[Stage.SPECULATIVE]:
+            return scheduler._take(Stage.SPECULATIVE)
         return None

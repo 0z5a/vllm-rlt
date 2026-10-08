@@ -12,6 +12,7 @@ class Stage(str, Enum):
     PREFILL = "prefill"
     PRELUDE = "prelude"
     RECURRENT = "recurrent"
+    SPECULATIVE = "speculative"
     CODA = "coda"
     FINISHED = "finished"
 

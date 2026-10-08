@@ -20,8 +20,8 @@ from vllm_rlt.attention import (
     AttentionRows,
     BackendCapabilities,
     backend_capabilities,
-    build_attention_metadata,
     create_backend,
+    plan_attention_metadata,
     validate_backend_name,
 )
 
@@ -313,6 +313,26 @@ class KVCacheManager:
         )
         return True
 
+    def truncate_suffix(self, request_id: str, frontier: int) -> None:
+        """Invalidate an uncommitted suffix, retaining reserved physical pages.
+
+        Call only after all suffix users complete. Retaining pages preserves the
+        admission reservation; stale bytes are hidden by written/context lengths.
+        Shared prompt pages must never be truncated or subsequently overwritten.
+        """
+        allocation = self._get_allocation(request_id)
+        if type(frontier) is not int or not 0 <= frontier <= allocation.max_tokens:
+            raise ValueError("invalid KV truncation frontier")
+        if allocation.transfer_leases:
+            raise ValueError("cannot truncate KV during a transfer")
+        for table in allocation.block_tables:
+            if any(self._refs[b] > 1 for b in table[frontier // self.block_size :]):
+                raise ValueError("cannot truncate shared prefix pages")
+        for plane in allocation.written:
+            for written in plane:
+                written.prefix = min(written.prefix, frontier)
+                written.pending = {p for p in written.pending if p < frontier}
+
     def free(self, request_id: str) -> None:
         allocation = self._allocations.get(request_id)
         if allocation is not None and allocation.transfer_leases:
@@ -409,54 +429,133 @@ class KVCacheManager:
         packed_prefill: bool = False,
     ) -> _PreparedKVBatch:
         """Build layer-independent addresses once; do not initialize any KV slot."""
-        rows = tuple(self._validate_rows(request_ids, depths, positions))
-        selected_tables = [
-            allocation.block_tables[self._plane(depth)] for allocation, depth, _ in rows
-        ]
-        position_values = [position for _, _, position in rows]
-        addresses = [
-            (table[position // self.block_size], position % self.block_size)
-            for table, position in zip(selected_tables, position_values)
-        ]
-        if for_write and len(set(addresses)) != len(addresses):
-            raise ValueError(
-                "a write batch cannot contain duplicate request/depth/position addresses"
-            )
-        if packed_prefill:
-            if self.layout != "last_exited" or not self.attention_capabilities.packed_prefill:
-                raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
-        attention_metadata = build_attention_metadata(
-            AttentionRows(
-                block_tables=selected_tables,
-                positions=position_values,
-                sequence_keys=(
-                    [(id(allocation), depth) for allocation, depth, _ in rows]
-                    if packed_prefill
-                    else None
-                ),
-            ),
-            block_size=self.block_size,
-            device=self.device,
+        return self._prepare_batches(
+            request_ids,
+            (depths,),
+            positions,
+            for_write=for_write,
             packed_prefill=packed_prefill,
-        )
-        allocations = dict(zip(request_ids, (allocation for allocation, _, _ in rows)))
-        return _PreparedKVBatch(
-            owner=self,
-            rows=rows,
-            allocations=tuple(allocations.items()),
-            position_ids=torch.tensor(position_values, device=self.device, dtype=torch.long),
-            write_blocks=torch.tensor(
-                [block for block, _ in addresses], device=self.device, dtype=torch.long
-            ),
-            write_offsets=torch.tensor(
-                [offset for _, offset in addresses], device=self.device, dtype=torch.long
-            ),
-            block_tables=attention_metadata.block_tables,
-            context_lengths=attention_metadata.context_lengths,
-            writable=for_write,
-            cu_seqlens_q=attention_metadata.cu_seqlens_q,
-            max_seqlen_q=attention_metadata.max_seqlen_q,
-        )
+        )[0]
+
+    def _prepare_batches(
+        self,
+        request_ids: Sequence[str],
+        depth_sets: Sequence[Sequence[int]],
+        positions: Sequence[int] | torch.Tensor,
+        *,
+        for_write: bool = True,
+        packed_prefill: bool = False,
+    ) -> tuple[_PreparedKVBatch, ...]:
+        """Prepare one batch per depth assignment of the same request/position rows.
+
+        Positions and write offsets do not depend on depth; they are built and
+        copied once and shared as read-only views, as are context lengths and
+        query boundaries when the per-depth grouping is identical. Block addresses
+        and page tables are built per depth assignment. No KV slot is initialized:
+        ownership and written-prefix checks still run when each batch executes.
+        """
+        if not depth_sets:
+            raise ValueError("at least one depth assignment is required")
+        if packed_prefill and (
+            self.layout != "last_exited" or not self.attention_capabilities.packed_prefill
+        ):
+            raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
+        first = tuple(self._validate_rows(request_ids, depth_sets[0], positions))
+        row_sets = [first]
+        for depths in depth_sets[1:]:
+            if len(depths) != len(first):
+                raise ValueError("request_ids, depths, and positions must have equal lengths")
+            for depth in depths:
+                self._validate_depth(depth)
+            row_sets.append(
+                tuple(
+                    (allocation, int(depth), position)
+                    for (allocation, _, position), depth in zip(first, depths)
+                )
+            )
+        n = len(first)
+        position_list = [position for _, _, position in first]
+        offsets = [position % self.block_size for position in position_list]
+        # Stage all metadata in two pinned host tensors and copy them without
+        # blocking: a pageable H2D copy would wait for all queued GPU work. The
+        # caching host allocator keeps each staging block alive until its copy ends.
+        wide = position_list + offsets
+        narrow = []
+        shared = {}
+        plans = []
+        for rows in row_sets:
+            blocks = [
+                allocation.block_tables[self._plane(depth)][position // self.block_size]
+                for allocation, depth, position in rows
+            ]
+            if for_write and len(set(zip(blocks, offsets))) != n:
+                raise ValueError(
+                    "a write batch cannot contain duplicate request/depth/position addresses"
+                )
+            metadata = plan_attention_metadata(
+                AttentionRows(
+                    block_tables=[
+                        allocation.block_tables[self._plane(depth)] for allocation, depth, _ in rows
+                    ],
+                    positions=position_list,
+                    sequence_keys=(
+                        [(id(allocation), depth) for allocation, depth, _ in rows]
+                        if packed_prefill
+                        else None
+                    ),
+                ),
+                block_size=self.block_size,
+                packed_prefill=packed_prefill,
+            )
+            block_start = len(wide)
+            wide += blocks
+            table_start = len(narrow)
+            narrow += metadata.block_tables
+            lengths, cumulative = metadata.context_lengths, metadata.cu_seqlens_q
+            key = (tuple(lengths), None if cumulative is None else tuple(cumulative))
+            if key not in shared:
+                shared[key] = len(narrow)
+                narrow += lengths + (cumulative or [])
+            packed = cumulative is not None
+            plans.append(
+                (
+                    rows,
+                    block_start,
+                    table_start,
+                    metadata.num_rows,
+                    metadata.table_width,
+                    shared[key],
+                    packed,
+                    metadata.max_seqlen_q,
+                )
+            )
+        wide = self._stage(wide, torch.long)
+        narrow = self._stage(narrow, torch.int32)
+        allocations = tuple(dict(zip(request_ids, (a for a, _, _ in first))).items())
+        batches = []
+        for rows, block_start, table_start, t, width, lengths_start, packed, max_query in plans:
+            batches.append(
+                _PreparedKVBatch(
+                    owner=self,
+                    rows=rows,
+                    allocations=allocations,
+                    position_ids=wide[:n],
+                    write_blocks=wide[block_start : block_start + n],
+                    write_offsets=wide[n : 2 * n],
+                    block_tables=narrow[table_start : table_start + t * width].reshape(t, width),
+                    context_lengths=narrow[lengths_start : lengths_start + t],
+                    writable=for_write,
+                    cu_seqlens_q=(
+                        narrow[lengths_start + t : lengths_start + 2 * t + 1] if packed else None
+                    ),
+                    max_seqlen_q=max_query,
+                )
+            )
+        return tuple(batches)
+
+    def _stage(self, values, dtype):
+        host = torch.tensor(values, dtype=dtype, pin_memory=self.device.type == "cuda")
+        return host.to(self.device, non_blocking=True)
 
     def _require_live_batch(self, batch: _PreparedKVBatch) -> None:
         if batch.owner is not self:

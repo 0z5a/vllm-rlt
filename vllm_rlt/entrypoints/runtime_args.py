@@ -5,10 +5,19 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig
+from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SpeculativeConfig
+from vllm_rlt.profiling import ProfileConfig
 
 
 def add_runtime_args(parser):
+    add_profile_args(parser)
+    parser.add_argument(
+        "--speculative-tokens",
+        type=int,
+        help="Enable fixed-loop self-speculation with K draft tokens",
+    )
+    parser.add_argument("--draft-loops", type=int, default=2)
+    parser.add_argument("--target-loops", type=int, default=4)
     parser.add_argument("--enable-prefix-caching", action="store_true")
     parser.add_argument("--incremental-kv", action="store_true")
     parser.add_argument("--kv-watermark", type=float, default=0.0)
@@ -52,6 +61,13 @@ def runtime_configs(args):
     add_runtime_args(parser)
     args = SimpleNamespace(**(vars(parser.parse_args([])) | vars(args)))
     return dict(
+        speculative_config=SpeculativeConfig(
+            num_speculative_tokens=args.speculative_tokens,
+            draft_loops=args.draft_loops,
+            target_loops=args.target_loops,
+        )
+        if args.speculative_tokens is not None
+        else None,
         cache_config=CacheConfig(
             enable_prefix_caching=args.enable_prefix_caching,
             incremental_allocation=args.incremental_kv,
@@ -81,4 +97,48 @@ def runtime_configs(args):
             static_buffers=args.static_buffers,
             pad_to_power_of_two=args.pad_to_power_of_two,
         ),
+    )
+
+
+def add_profile_args(parser):
+    group = parser.add_argument_group("PyTorch profiling")
+    group.add_argument("--profile", action="store_true")
+    group.add_argument("--profile-dir")
+    group.add_argument(
+        "--profile-activities",
+        default=ProfileConfig.activities,
+        help="comma-separated cpu,cuda",
+    )
+    for flag, field in (
+        ("record-shapes", "record_shapes"),
+        ("with-stack", "with_stack"),
+        ("memory", "profile_memory"),
+        ("with-flops", "with_flops"),
+    ):
+        group.add_argument(
+            "--profile-" + flag, action="store_true", default=getattr(ProfileConfig, field)
+        )
+    for name in ("wait", "warmup", "active", "repeat"):
+        group.add_argument("--profile-" + name, type=int, default=getattr(ProfileConfig, name))
+
+
+def profile_config_from_args(args) -> ProfileConfig | None:
+    """Build startup profiling settings, filling missing CLI fields from parser defaults."""
+    parser = argparse.ArgumentParser(add_help=False)
+    add_profile_args(parser)
+    args = SimpleNamespace(**(vars(parser.parse_args([])) | vars(args)))
+    if not args.profile:
+        return None
+
+    return ProfileConfig(
+        output_dir=args.profile_dir,
+        activities=tuple(args.profile_activities.split(",")) if args.profile_activities else None,
+        record_shapes=args.profile_record_shapes,
+        with_stack=args.profile_with_stack,
+        profile_memory=args.profile_memory,
+        with_flops=args.profile_with_flops,
+        wait=args.profile_wait,
+        warmup=args.profile_warmup,
+        active=args.profile_active,
+        repeat=args.profile_repeat,
     )
