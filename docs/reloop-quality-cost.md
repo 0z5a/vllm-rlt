@@ -4,7 +4,8 @@ Re:Loop tests whether guided readout recovers quality after reducing decode
 loops, and whether that recovery lowers measured generation cost. Prompt
 prefill retains all four KV planes. The completed public-checkpoint development
 screen and two-fresh fixed-work case select P4D3 guided for independent
-confirmation. Final quality remains unmeasured.
+confirmation. The H100 confirmation is incomplete:1827/1959 outputs were
+generated, and both scored primary comparisons remain UNCERTAIN.
 
 This increment depends on [upstream #86](https://github.com/ThinkFlowLab/vllm-rlt/pull/86).
 The fork comparison targets `feature/loopcd-ouro-task0` at
@@ -98,8 +99,9 @@ cohorts pass static capacity checks. Maximum mathematics/code reservations
 are31.9453125/28.1015625GiB, excluding weights/activation/scratch/reference.
 All48 archived payload hashes,18 control hashes and natural exits/resource
 handoff were independently verified;CUDA remains uninitialized. The original
-three-arm1959-output/1800+600 protocol is preserved,with zero final GPU
-outputs or new speed/VRAM-saving claims. See the
+three-arm1959-output/1800+600 protocol was preserved. That CPU preparation
+preceded the actual incomplete confirmation below; it supplies no speed or
+VRAM-saving claim. See the
 [CPU preparation table](../benchmarks/results/reloop-20261006/H100_48GiB_CPU_PREPARATION-v1.md).
 
 The separate BF16/Triton gate failed its first P4 prefill state check:
@@ -209,8 +211,8 @@ The final protocol freezes505 unseen mathematics and148 unseen HumanEval+
 IDs, three arms and M2 before any final outputs. It binds actual SELECTED
 receipt, the FP32/Triton numerical gate, exact scoring/cache/source hashes,
 1024-token natural-stop maximum,2,006,016-token generation budget,1800-second
-admission and600-second finite natural drain. The packet is LOCAL_READY_NOT_GRANTED;
-no final outputs have been generated. Code reference preparation is complete
+admission and600-second finite natural drain. At freeze,the packet was
+LOCAL_READY_NOT_GRANTED; subsequent H100 execution retained these values. Code reference preparation is complete
 for all148 tasks under its separate trusted-reference budget; the candidate
 executor retains20M opcodes/5 seconds per call. With148 zero-discordance code
 pairs, the interval is still about±3.371pp. Sample size, gate and time guard
@@ -230,11 +232,30 @@ At the H20 admission review, only872 seconds remained before the frozen
 evidence deadline. The1800-second admission/600-second finite drain could
 not fit; the complete mathematics extrapolation alone is about1456 seconds,
 with code runtime still unknown. The confirmation request was withdrawn
-before staging or tokenization. All1959 planned arm/question completions,
-mathematics scoring and code execution remain NOT_RUN; no zero scores,
+before staging or tokenization. For that H20 attempt,all1959 planned
+arm/question completions,mathematics scoring and code execution remained NOT_RUN; no zero scores,
 synthetic outputs or reduced denominators are substituted. The frozen inputs
 remain unchanged for a separately declared future run. See [the admission
 record](../benchmarks/results/reloop-20261006/confirmation-not-run.json).
+
+## H100 independent confirmation
+
+The separately declared48GiB/FP32/B16 run completed1827/1959 original outputs.
+All505 mathematics IDs completed in each arm. D4, guided D3 and unguided D3
+scored316,301 and287/505 respectively. Guided D3 versus D4 is−2.970pp,
+with frozen M2 interval[−9.009,+3.129]pp:UNCERTAIN for the original1pp margin.
+Code primary arms both completed148 IDs and scored1/148 versus0/148;
+interval[−4.749,+3.367]pp is also UNCERTAIN. The matched-off code arm has
+16 completed and132 NOT_RUN_BUDGET outputs and remains unscored/incomplete.
+No denominator,stop,budget,output,reference or scorer was changed.
+
+The full generation experiment is INCOMPLETE; no quality non-inferiority,
+new fixed-work speed,VRAM-saving or SOTA conclusion follows. Original
+source/raw/JIT/control and all1300 task hashes plus whole archive were checked.
+The original connection failure is retained independently of Node returns0;
+final fresh GPU release was not observed after allocation end. See the
+[confirmation tables](../benchmarks/results/reloop-20261006/H100_48GiB_CONFIRMATION-v1.md)
+and [scientific summary](../benchmarks/results/reloop-20261006/H100_48GiB_CONFIRMATION-v1.json).
 
 ## Evidence and reproduction
 
