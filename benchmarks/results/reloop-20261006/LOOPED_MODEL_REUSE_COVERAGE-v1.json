@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "state": "EXISTING_SOURCE_AND_RAW_REUSED_FORMAL_ALL_MODEL_E2E_INCOMPLETE",
+  "models": [
+    {
+      "model": "Ouro-1.4B",
+      "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+      "official_cpu_cases": 128,
+      "formal_high_concurrency_multi_batch_gpu_e2e_complete": false,
+      "http_e2e_complete": false
+    },
+    {
+      "model": "Ouro-2.6B",
+      "model_revision": "1ed04250da1a9936042725d302e81c8fa2ab5abd",
+      "official_cpu_cases": 128,
+      "formal_high_concurrency_multi_batch_gpu_e2e_complete": false,
+      "http_e2e_complete": false
+    },
+    {
+      "model": "Huginn-0125",
+      "model_revision": "bb6621b65e90b6a4b9b29ef88dc83866d450470c",
+      "official_cpu_cases": 96,
+      "formal_high_concurrency_multi_batch_gpu_e2e_complete": false,
+      "http_e2e_complete": false
+    },
+    {
+      "model": "Nanbeige4.2-3B",
+      "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+      "official_cpu_cases": 64,
+      "formal_high_concurrency_multi_batch_gpu_e2e_complete": false,
+      "http_e2e_complete": false
+    },
+    {
+      "model": "LoopFormer-3block-8iterations",
+      "model_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+      "official_cpu_cases": 48,
+      "formal_high_concurrency_multi_batch_gpu_e2e_complete": false,
+      "http_e2e_complete": false
+    },
+    {
+      "model": "Parcae-370M",
+      "model_revision": "439284464ee4999bd1f762da7d044613a4828efe",
+      "official_cpu_cases": 96,
+      "formal_high_concurrency_multi_batch_gpu_e2e_complete": false,
+      "http_e2e_complete": false
+    },
+    {
+      "model": "HRM-Text-1B",
+      "model_revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+      "official_cpu_cases": 112,
+      "formal_high_concurrency_multi_batch_gpu_e2e_complete": false,
+      "http_e2e_complete": false
+    }
+  ],
+  "official_CPU_cases_total": 672,
+  "independently_verified_source_raw_payloads": 87,
+  "independently_verified_nested_original_raw_files": 141,
+  "retained_inner_manifest_controls": 3,
+  "original_source_snapshots": 5,
+  "original_source_snapshot_payloads": 34,
+  "reuse_archive_sha256": "1d6ec3b9bf6ba6ffd6b65cf986ca8de99c53f914d846506b36b95a907c279578",
+  "formal_whole_models_complete": 0,
+  "H100_current_Ouro_FP32_original_numerical": "12/108/96/21 + all242 archive byte/scalar + known-actor handoff PASS; complete C32/W5/C128 performance not yet run",
+  "Ouro_quantization_old_smoke_scope": {
+    "arms": 8,
+    "R": 4,
+    "C": 32,
+    "prompt_tokens": 256,
+    "output_tokens": 32,
+    "requests_per_arm": 64,
+    "fresh_repetitions": 1,
+    "token_caps": [
+      128,
+      512
+    ],
+    "token_caps_are_request_batch_sizes": false,
+    "SH1_speed_change_percent": [
+      -8.0,
+      -6.59
+    ],
+    "SH1_peak_allocated_saving_GiB": [
+      1.0962,
+      1.0763
+    ],
+    "fixed_KV_pool_GiB": 20,
+    "H100_evidence": false,
+    "HTTP_evidence": false,
+    "paired_steady_E2E_evidence": false,
+    "locked_quality_evidence": false,
+    "SOTA_evidence": false
+  },
+  "deployment_state": "NOT_H100_EXECUTION_READY: original runtime and per-model mathematical source contracts must be independently qualified before a fresh resource ready; historical wrappers and device bindings are not reusable grants",
+  "original_failures_preserved": [
+    "Huginn SH1",
+    "Parcae compact/static",
+    "Ouro G0 and argmax discrepancies",
+    "LoopFormer checkpoint mirror403",
+    "NOT_RUN cases"
+  ],
+  "repeated_scientific_experiments": 0,
+  "new_GPU_starts_from_reuse": 0,
+  "weights_downloaded_or_deleted": false,
+  "publishing_state": "LOCAL_BRANCH_ONLY"
+}
