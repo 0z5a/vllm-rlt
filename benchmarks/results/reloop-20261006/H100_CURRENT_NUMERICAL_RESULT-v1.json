@@ -28,7 +28,7 @@
   "whole_task_n": 0,
   "GPU_performance_quality_serving_memory_SOTA_claims": false,
   "schema_version": 1,
-  "state": "FULL_NUMERICAL_AND_OFF_DEVICE_BYTE_REVIEW_PASS_RESOURCE_HANDOFF_PENDING",
+  "state": "FULL_NUMERICAL_AND_OFF_DEVICE_BYTE_REVIEW_AND_KNOWN_ACTOR_HANDOFF_PASS",
   "gpu": "NVIDIA H100",
   "gpu_count": 1,
   "dtype": "float32",
@@ -47,6 +47,8 @@
     "host_compiler": "GCC 11.5.0"
   },
   "performance_e2e_state": "NOT_RUN",
-  "current_gate_admission": "PENDING verified resource handoff; execution return0 alone does not authorize the next gate",
-  "publication_state": "LOCAL_BRANCH_ONLY"
+  "current_gate_admission": "Verified original full numerical gate and actual known-actor handoff; performance ready remains ungranted until the coordinator binds a fresh finite window",
+  "publication_state": "LOCAL_BRANCH_ONLY",
+  "independent_gate_review_sha256": "87114f0a8a5d1993581d33af096d295b03b61c2c3f903d3df8150a5a75a29259",
+  "handoff_scope": "Known experiment actors only; no global reader retirement claim"
 }

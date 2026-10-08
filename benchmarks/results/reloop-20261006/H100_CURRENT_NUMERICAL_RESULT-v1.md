@@ -1,6 +1,6 @@
 # Re:Loop current H100 original numerical checks
 
-The complete original FP32/eager protocol ran on one H100 with unchanged source, model and numerical criteria. Independent review verified every archived input, source, raw result and executable byte, then recomputed the emitted scalar pairs. This establishes numerical correctness within the original protocol; the resource handoff is still pending, so it is not yet an admitted performance gate or a complete high-concurrency E2E pass.
+The complete original FP32/eager protocol ran on one H100 with unchanged source, model and numerical criteria. Independent review verified every archived input, source, raw result and executable byte, then recomputed the emitted scalar pairs. This establishes numerical correctness within the original protocol; the actual handoff for the known experiment actors was subsequently verified. The next complete C32 source packet is frozen, but its performance window remains ungranted and unrun; numerical success is not a complete high-concurrency E2E pass.
 
 | Check | Required | Observed |
 |---|---:|---:|
