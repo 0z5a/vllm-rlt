@@ -79,6 +79,19 @@ selected-logprob errors are1.90735e-5/3.05176e-5/9.03010e-6/3.43323e-5/1.33514e-
 Unchanged readouts are exact. The previous full FP32 gate used Torch attention;
 its result was insufficient to qualify this Triton screen.
 
+The same complete FP32/Triton W2 and public-loader protocols now pass on one
+H100 with65,247MiB observed memory. All12/108/96/21 checks and52 tokenizer
+records/269 exact parameter casts are retained;103 off-node payload hashes and
+114 selected-logprob scalar pairs were independently reviewed. The original
+runtime assertions cover vector comparisons; full K/V/state/logit vectors were
+not retained for independent tensor replay. The63.358s qualification elapsed
+time is not a performance ratio. The prior driver-JIT load failure is preserved,
+and the successful retry uses command-scoped existing GCC and new private
+caches. See the [H100 qualification table](../benchmarks/results/reloop-20261006/H100_FP32_QUALIFICATION-v3.md)
+and [scientific summary](../benchmarks/results/reloop-20261006/H100_FP32_QUALIFICATION-v3.json).
+The original64/102GiB profiles remain capacity-stopped on this device; high-C
+E2E, Graph, HTTP and final quality are not inferred from this gate.
+
 The separate BF16/Triton gate failed its first P4 prefill state check:
 maximum difference0.23046875,998/2048 elements outside the frozen0.02
 absolute/relative criteria. No reduced-depth decode or later KV/logit/lifecycle
