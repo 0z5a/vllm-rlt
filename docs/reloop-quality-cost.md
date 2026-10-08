@@ -92,6 +92,16 @@ and [scientific summary](../benchmarks/results/reloop-20261006/H100_FP32_QUALIFI
 The original64/102GiB profiles remain capacity-stopped on this device; high-C
 E2E, Graph, HTTP and final quality are not inferred from this gate.
 
+A separately declared common48GiB H100 profile now has complete canonical
+confirmation inputs:653 records and all42 actual per-task B16 worst-span
+cohorts pass static capacity checks. Maximum mathematics/code reservations
+are31.9453125/28.1015625GiB, excluding weights/activation/scratch/reference.
+All48 archived payload hashes,18 control hashes and natural exits/resource
+handoff were independently verified;CUDA remains uninitialized. The original
+three-arm1959-output/1800+600 protocol is preserved,with zero final GPU
+outputs or new speed/VRAM-saving claims. See the
+[CPU preparation table](../benchmarks/results/reloop-20261006/H100_48GiB_CPU_PREPARATION-v1.md).
+
 The separate BF16/Triton gate failed its first P4 prefill state check:
 maximum difference0.23046875,998/2048 elements outside the frozen0.02
 absolute/relative criteria. No reduced-depth decode or later KV/logit/lifecycle
