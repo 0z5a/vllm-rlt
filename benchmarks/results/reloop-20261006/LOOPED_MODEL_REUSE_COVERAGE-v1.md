@@ -12,7 +12,7 @@ Existing source/data and raw evidence were reused without repeating the old expe
 | Parcae-370M | 96 | No | No |
 | HRM-Text-1B | 112 | No | No |
 
-All seven model variants remain incomplete for formal high-concurrency E2E. Current Ouro-1.4B FP32/eager numerical checks on one H100 pass the full original12/108/96/21 protocol, independent242-file byte/scalar review and known-actor handoff. This does not close C32, original W5, separate C128, Graph or HTTP tests.
+All seven model variants remain incomplete for formal high-concurrency E2E. Current Ouro-1.4B FP32/eager numerical checks on one H100 pass the full original12/108/96/21 protocol, independent242-file byte/scalar review and known-actor handoff. The separate [native initial-total C32 result](H100_C32_FP32_RESULT-v1.md) subsequently completed its full fixed-work audit. Original W5, separate C128, Graph, HTTP and all-model high-C/multi-BS remain incomplete.
 
 | Existing Ouro quantization smoke | Token cap128 | Token cap512 |
 |---|---:|---:|

@@ -1,6 +1,6 @@
 # Re:Loop current H100 original numerical checks
 
-The complete original FP32/eager protocol ran on one H100 with unchanged source, model and numerical criteria. Independent review verified every archived input, source, raw result and executable byte, then recomputed the emitted scalar pairs. This establishes numerical correctness within the original protocol; the actual handoff for the known experiment actors was subsequently verified. The complete C32 performance test has now actually started with a fresh verified ready; full results and audit are pending. Numerical success is not a complete high-concurrency E2E pass.
+The complete original FP32/eager protocol ran on one H100 with unchanged source, model and numerical criteria. Independent review verified every archived input, source, raw result and executable byte, then recomputed the emitted scalar pairs. This establishes numerical correctness within the original protocol; the actual handoff for the known experiment actors was subsequently verified. The complete C32 performance test has now finished with full source/raw/request audit and known-actor handoff verified. Numerical success is not a complete high-concurrency E2E pass.
 
 | Check | Required | Observed |
 |---|---:|---:|
@@ -18,10 +18,10 @@ The immutable original test executed tensor assertions; this independent review 
 
 | H100 speed comparison | Result |
 |---|---|
-| D3 off vs D4, complete fixed work | Actual complete C32 started; results pending |
-| D3 guided vs D4, complete fixed work | Actual complete C32 started; results pending |
+| D3 off vs D4, complete fixed work | +18.80% mean TPS |
+| D3 guided vs D4, complete fixed work | +15.52% mean TPS |
 | Original W5 and separate C128 refill cases | NOT_RUN |
 
-There is no new speed, memory saving, HTTP/Graph serving, quality non-inferiority or SOTA claim. The original confirmation still has 132 missing code outputs and uncertain quality comparisons. Whole-task pass contribution remains zero. Results are held on the local branch.
+The separate [complete C32 result](H100_C32_FP32_RESULT-v1.md) supplies the speed comparison above. There is no memory saving, HTTP/Graph serving, quality non-inferiority or SOTA claim. The original confirmation still has 132 missing code outputs and uncertain quality comparisons. Whole-task pass contribution remains zero. Results are held on the local branch.
 
-The C32 test preserves B16, initial-total C32, P512/F128, six fresh processes, 60 trials, 1920 requests and245760 output tokens. This is distinct from configured-C128/refill and HTTP tests. Its first-start ready and immutable source bindings were checked independently; no partial trial is presented as a complete speed comparison.
+The C32 test preserves B16, initial-total C32, P512/F128, six fresh processes, 60 trials, 1920 requests and245760 output tokens. This is distinct from configured-C128/refill and HTTP tests. Its first-start ready and immutable source bindings were checked independently; all original60 trials and1920 requests were independently audited; no partial trial is presented as a complete speed comparison.
