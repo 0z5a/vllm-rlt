@@ -15,8 +15,15 @@ from numbers import Integral
 
 import torch
 
-from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS, FlashPagedAttention
-from vllm_rlt.kernels.paged_attention import torch_paged_attention, triton_paged_attention
+from vllm_rlt.attention import (
+    AttentionBackend,
+    AttentionRows,
+    BackendCapabilities,
+    backend_capabilities,
+    create_backend,
+    plan_attention_metadata,
+    validate_backend_name,
+)
 
 
 @dataclass
@@ -94,6 +101,8 @@ class KVCacheManager:
         enable_prefix_caching: bool = False,
         incremental_allocation: bool = False,
         watermark_ratio: float = 0.0,
+        *,
+        attention: AttentionBackend | None = None,
     ):
         for name, value in (
             ("num_layers", num_layers),
@@ -106,8 +115,7 @@ class KVCacheManager:
             if not isinstance(value, Integral) or isinstance(value, bool) or value <= 0:
                 raise ValueError(f"{name} must be a positive integer")
             setattr(self, name, int(value))
-        if backend not in {"torch", "triton", *FLASH_BACKENDS}:
-            raise ValueError("unknown attention backend")
+        validate_backend_name(backend)
         if dtype not in {torch.float32, torch.float16, torch.bfloat16}:
             raise ValueError("KV dtype must be float32, float16, or bfloat16")
         if layout not in {"last_exited", "shared"}:
@@ -116,19 +124,11 @@ class KVCacheManager:
         self.storage_depths = max_loops if layout == "last_exited" else 1
         self.device = torch.device(device)
         self.dtype = dtype
-        self.backend = backend
-        if backend == "triton" and self.device.type != "cuda":
-            raise ValueError("the Triton attention backend requires a CUDA or ROCm device")
-        if backend == "triton" and self.head_dim > 256:
-            raise ValueError("the Triton attention backend supports head_dim <= 256")
-        self.attention = (
-            FlashPagedAttention(self.device, dtype, head_dim, block_size, backend)
-            if backend in FLASH_BACKENDS
-            else triton_paged_attention
-            if backend == "triton"
-            else torch_paged_attention
+        self.attention = attention or create_backend(
+            backend, self.device, dtype, head_dim, block_size
         )
-        self.attention_info = getattr(self.attention, "info", {"backend": backend})
+        self.attention_info = self.attention.info
+        self.backend = self.attention_info["selected_backend"]
         shape = (num_blocks, num_layers, block_size, num_kv_heads, head_dim)
         self.key_cache = torch.empty(shape, device=self.device, dtype=dtype)
         self.value_cache = torch.empty_like(self.key_cache)
@@ -145,6 +145,10 @@ class KVCacheManager:
         self.prefix_hits = self.prefix_queries = 0
         if enable_prefix_caching and layout != "last_exited":
             raise ValueError("prefix caching requires last_exited KV")
+
+    @property
+    def attention_capabilities(self) -> BackendCapabilities:
+        return backend_capabilities(self.attention)
 
     @property
     def num_free_blocks(self) -> int:
@@ -453,7 +457,7 @@ class KVCacheManager:
         if not depth_sets:
             raise ValueError("at least one depth assignment is required")
         if packed_prefill and (
-            self.layout != "last_exited" or getattr(self.attention, "generation", None) != 4
+            self.layout != "last_exited" or not self.attention_capabilities.packed_prefill
         ):
             raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
         first = tuple(self._validate_rows(request_ids, depth_sets[0], positions))
@@ -472,7 +476,6 @@ class KVCacheManager:
         n = len(first)
         position_list = [position for _, _, position in first]
         offsets = [position % self.block_size for position in position_list]
-        width = max((position // self.block_size + 1 for position in position_list), default=0)
         # Stage all metadata in two pinned host tensors and copy them without
         # blocking: a pageable H2D copy would wait for all queued GPU work. The
         # caching host allocator keeps each staging block alive until its copy ends.
@@ -489,30 +492,48 @@ class KVCacheManager:
                 raise ValueError(
                     "a write batch cannot contain duplicate request/depth/position addresses"
                 )
-            table_rows, cumulative, max_query = (
-                self._group_packed_rows(rows) if packed_prefill else (rows, None, 1)
+            metadata = plan_attention_metadata(
+                AttentionRows(
+                    block_tables=[
+                        allocation.block_tables[self._plane(depth)] for allocation, depth, _ in rows
+                    ],
+                    positions=position_list,
+                    sequence_keys=(
+                        [(id(allocation), depth) for allocation, depth, _ in rows]
+                        if packed_prefill
+                        else None
+                    ),
+                ),
+                block_size=self.block_size,
+                packed_prefill=packed_prefill,
             )
             block_start = len(wide)
             wide += blocks
             table_start = len(narrow)
-            for allocation, depth, _ in table_rows:
-                table = allocation.block_tables[self._plane(depth)][:width]
-                narrow += table
-                narrow += [-1] * (width - len(table))
-            lengths = [position + 1 for _, _, position in table_rows]
+            narrow += metadata.block_tables
+            lengths, cumulative = metadata.context_lengths, metadata.cu_seqlens_q
             key = (tuple(lengths), None if cumulative is None else tuple(cumulative))
             if key not in shared:
                 shared[key] = len(narrow)
                 narrow += lengths + (cumulative or [])
             packed = cumulative is not None
             plans.append(
-                (rows, block_start, table_start, len(table_rows), shared[key], packed, max_query)
+                (
+                    rows,
+                    block_start,
+                    table_start,
+                    metadata.num_rows,
+                    metadata.table_width,
+                    shared[key],
+                    packed,
+                    metadata.max_seqlen_q,
+                )
             )
         wide = self._stage(wide, torch.long)
         narrow = self._stage(narrow, torch.int32)
         allocations = tuple(dict(zip(request_ids, (a for a, _, _ in first))).items())
         batches = []
-        for rows, block_start, table_start, t, lengths_start, packed, max_query in plans:
+        for rows, block_start, table_start, t, width, lengths_start, packed, max_query in plans:
             batches.append(
                 _PreparedKVBatch(
                     owner=self,
@@ -531,28 +552,6 @@ class KVCacheManager:
                 )
             )
         return tuple(batches)
-
-    def _group_packed_rows(self, rows):
-        """Group consecutive positions of one request/depth into packed query chunks.
-
-        The last position supplies the causal key length for the whole chunk.
-        """
-        ends, cumulative, seen = [], [0], set()
-        for index, (allocation, depth, position) in enumerate(rows):
-            key = (id(allocation), depth)
-            if index and key == (id(rows[index - 1][0]), rows[index - 1][1]):
-                if position != rows[index - 1][2] + 1:
-                    raise ValueError("packed prefill positions must be contiguous")
-                ends[-1] = (allocation, depth, position)
-                cumulative[-1] = index + 1
-            else:
-                if key in seen:
-                    raise ValueError("packed prefill request/depth must form one sequence")
-                seen.add(key)
-                ends.append((allocation, depth, position))
-                cumulative.append(index + 1)
-        max_query = max((b - a for a, b in zip(cumulative, cumulative[1:])), default=1)
-        return ends, cumulative, max_query
 
     def _stage(self, values, dtype):
         host = torch.tensor(values, dtype=dtype, pin_memory=self.device.type == "cuda")
