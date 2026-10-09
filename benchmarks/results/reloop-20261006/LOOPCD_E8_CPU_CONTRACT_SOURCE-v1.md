@@ -16,7 +16,14 @@ CPU contract case, model inference, CUDA tensor or lifecycle trial has run.
 Execution requires a complete joined canonical runtime map, exact candidate
 source, actual imported-file identity and a current owner-bound finite window.
 The unbound-entry controls are rejection evidence and count as zero completed
-cases. Existing unknown actor handles are preserved without restart or signal.
+cases.
+
+The original runtime-map preparation attempt naturally returned 1 from both
+child and parent. Independent review verified all 12 archive files, 11 payload
+hashes, frozen source and the complete log. Reading a dependency file failed
+with timeout errno 60 before Torch/NumPy imports; no runtime map was produced.
+The 17 contract cases remain unrun. Separate unfinished tests still require
+their original final return, without restart or signal.
 
 This support contract does not change the production candidate or the separate
 HTTP source. The proposed tensor/lifecycle diagnostics do not close full model

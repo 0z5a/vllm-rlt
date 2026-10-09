@@ -17,5 +17,13 @@
   "actual_target_versions_bound": false,
   "actual_target_CPU_tokenizer_model_HTTP_GPU_execution": false,
   "execution_allowed": false,
-  "whole_task_n": 0
+  "whole_task_n": 0,
+  "second_task_independent_full_fixture_review": {
+    "natural_return": 0,
+    "archive_and_manifest_full_SHA_checked": true,
+    "all_4334_payloads_and_original_bytes_checked": true,
+    "all_7_original_false_plans_and_32_metadata_files_and_39_original_traces_checked": true,
+    "actual_target_execution_or_versions_bound": false,
+    "review_sha256": "4d1301ff446226717c73c5d5ef6651e09e516d680f92886c7b46e040f56d6bdb"
+  }
 }

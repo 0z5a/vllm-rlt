@@ -40,5 +40,18 @@
   "separate_CDB_original_source_model_and_gates_preserved": true,
   "GPU_diagnostics_do_not_close_original_quality_or_W5_C128_HTTP_Graph": true,
   "existing_unknown_actor_handles_not_restarted_or_signaled": true,
-  "whole_task_n": 0
+  "whole_task_n": 0,
+  "runtime_map_preparation_actual_failure": {
+    "actual_original_child_natural_return": 1,
+    "actual_original_external_parent_return": 1,
+    "archive_regular_members_verified": 12,
+    "payloads_full_bytes_SHA_and_original_bytes_verified": 11,
+    "frozen_source_and_parent_and_complete_log_checked": true,
+    "read_timeout_errno": 60,
+    "failure_before_Torch_NumPy_imports": true,
+    "runtime_map_created": false,
+    "new_positive_CPU_model_or_GPU_cases": 0,
+    "root_independent_failure_review_sha256": "666e5defac757e2dd92557ac890198f5b9b911de9057238d8533a5cced93dce0",
+    "separate_unfinished_CPU_source_test_final_return_observed": false
+  }
 }
