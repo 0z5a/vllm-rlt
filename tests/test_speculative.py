@@ -29,8 +29,10 @@ def model(seed=123, dtype=torch.float32):
     return OuroForCausalLM(tiny_ouro_config()).to(dtype=dtype)
 
 
-def engine(m, k=3, **kwargs):
-    return LLMEngine(m, speculative_config=SpeculativeConfig(k), **kwargs)
+def engine(m, k=3, *, pipelined=False, **kwargs):
+    return LLMEngine(
+        m, speculative_config=SpeculativeConfig(k, loop_level_pipelining=pipelined), **kwargs
+    )
 
 
 def drain(e):
@@ -61,14 +63,15 @@ def test_speculative_prefill_routes_by_declared_capabilities(generation, support
 
 @pytest.mark.parametrize("k", [1, 2, 4, 8])
 @pytest.mark.parametrize("budget", [1, 3, 32])
-def test_greedy_matches_native_with_ragged_rounds_and_limits(k, budget):
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_greedy_matches_native_with_ragged_rounds_and_limits(k, budget, pipelined):
     m = model()
     prompts = [[2], [3, 4, 5, 6, 7], [9, 3]]
     params = [SamplingParams(max_tokens=n, ignore_eos=True) for n in [1, 13, 8]]
     expected = LLM(m).generate(prompts, params)
     llm = LLM(
         m,
-        speculative_config=SpeculativeConfig(k),
+        speculative_config=SpeculativeConfig(k, loop_level_pipelining=pipelined),
         cache_config=CacheConfig(256, 2),
         scheduler_config=SchedulerConfig(max_num_batched_tokens=budget, prefill_chunk_size=2),
     )
@@ -87,7 +90,8 @@ def test_greedy_matches_native_with_ragged_rounds_and_limits(k, budget):
     ],
 )
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
-def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, backend):
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, backend, pipelined):
     if device == "cuda" and dtype == torch.float32 and backend == "flash_attn_4":
         pytest.skip("FA4 requires 16-bit operands")
     m = model(dtype=dtype).to(device)
@@ -96,7 +100,9 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
         m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
             device=device, dtype=dtype
         )
-    e = engine(m, k=3, cache_config=CacheConfig(128, 2), attention_backend=backend)
+    e = engine(
+        m, k=3, pipelined=pipelined, cache_config=CacheConfig(128, 2), attention_backend=backend
+    )
     cache = e.cache_manager
     prefix = [3, 4, 5]
     current = 7
@@ -113,23 +119,25 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
     work = Counter()
 
     def record(hidden, ids, positions, depth, **kwargs):
-        work[depth] += len(ids)
         out = core(hidden, ids, positions, depth, **kwargs)
         for row, pos in enumerate(positions):
-            seen[depth, pos] = out[row].clone()
+            row_depth = kwargs["batch"].rows[row][1]
+            work[row_depth] += 1
+            seen[row_depth, pos] = out[row].clone()
         return out
 
     runner._core = record
-    head_outputs = []
-    hook = m.lm_head.register_forward_hook(
-        lambda module, inputs, output: head_outputs.append(output.detach().clone())
-    )
-    try:
-        runner.execute(SchedulerOutput(Stage.SPECULATIVE, [ScheduledItem(r, 3, 4)]))
-    finally:
-        hook.remove()
-    # Include the actual batched LM-head GEMM in the numeric comparison.
-    verified_logits = head_outputs[-1]
+    # Capture the actual target logits even when heads run during the pipeline.
+    verify = runner._verify
+    verified = []
+
+    def record_verify(items, drafted, proposals, logits):
+        verified.append(logits.clone())
+        return verify(items, drafted, proposals, logits)
+
+    runner._verify = record_verify
+    runner.execute(SchedulerOutput(Stage.SPECULATIVE, [ScheduledItem(r, 3, 4)]))
+    verified_logits = verified[0]
     # The shallow head outputs determine each subsequent input in this round.
     tokens = prefix + [current]
     for pos in range(3, 6):
@@ -221,9 +229,10 @@ def test_greedy_accept_commits_target_prefix_through_first_mismatch(k):
         assert tokens == candidates[:rejected] + [7]
 
 
-def test_eos_in_accepted_prefix_never_delivers_following_tokens(monkeypatch):
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_eos_in_accepted_prefix_never_delivers_following_tokens(monkeypatch, pipelined):
     m = model()
-    e = engine(m)
+    e = engine(m, pipelined=pipelined)
     e.add_request("r", [2, 3], SamplingParams(max_tokens=12))
     while not e.step():
         pass
@@ -255,14 +264,15 @@ def test_truncation_removes_sparse_validity_without_destroying_prefix():
 
 
 @pytest.mark.parametrize("prefix_cache,incremental", [(False, True), (True, False), (True, True)])
-def test_prefix_replay_incremental_growth_cancel_and_reuse(prefix_cache, incremental):
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_prefix_replay_incremental_growth_cancel_and_reuse(prefix_cache, incremental, pipelined):
     m = model()
     kwargs = dict(
         cache_config=CacheConfig(
             128, 2, enable_prefix_caching=prefix_cache, incremental_allocation=incremental
         )
     )
-    llm = LLM(m, speculative_config=SpeculativeConfig(4), **kwargs)
+    llm = LLM(m, speculative_config=SpeculativeConfig(4, loop_level_pipelining=pipelined), **kwargs)
     params = SamplingParams(max_tokens=9, ignore_eos=True)
     prompts = [[2, 3, 4, 5, 6], [2, 3, 4, 5, 7]]
     expected = LLM(m).generate(prompts, params)
@@ -282,7 +292,8 @@ def test_prefix_replay_incremental_growth_cancel_and_reuse(prefix_cache, increme
 
 
 @pytest.mark.parametrize("top_k,top_p", [(-1, 1.0), (5, 1.0), (7, 0.8)])
-def test_sampling_seeded_replay_and_request_isolation(top_k, top_p):
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_sampling_seeded_replay_and_request_isolation(top_k, top_p, pipelined):
     m = model()
     prompts = [[2, 3], [7, 8, 9]]
     params = SamplingParams(
@@ -290,7 +301,9 @@ def test_sampling_seeded_replay_and_request_isolation(top_k, top_p):
     )
 
     def run(prompts):
-        return LLM(m, speculative_config=SpeculativeConfig(3)).generate(prompts, params)
+        return LLM(
+            m, speculative_config=SpeculativeConfig(3, loop_level_pipelining=pipelined)
+        ).generate(prompts, params)
 
     batched = run(prompts)
     assert [o.token_ids for o in run(prompts)] == [o.token_ids for o in batched]
@@ -444,8 +457,11 @@ def test_rejects_adaptive_or_wrong_target_requests():
     assert not e.has_unfinished_requests()
 
 
-def test_dynamic_arrival_budget_and_failure_reclamation(monkeypatch):
-    e = engine(model(), scheduler_config=SchedulerConfig(max_num_batched_tokens=5))
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_dynamic_arrival_budget_and_failure_reclamation(monkeypatch, pipelined):
+    e = engine(
+        model(), pipelined=pipelined, scheduler_config=SchedulerConfig(max_num_batched_tokens=5)
+    )
     params = SamplingParams(max_tokens=9, ignore_eos=True)
     e.add_request("a", [2, 3], params)
     while not e.step():
@@ -475,7 +491,8 @@ def test_invalid_k(k):
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("backend", ["triton", "flash_attn_4"])
-def test_gpu_sampling_and_greedy_match_replay_with_ragged_requests(backend):
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_gpu_sampling_and_greedy_match_replay_with_ragged_requests(backend, pipelined):
     torch.manual_seed(123)
     m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
         device="cuda", dtype=torch.bfloat16
@@ -489,7 +506,9 @@ def test_gpu_sampling_and_greedy_match_replay_with_ragged_requests(backend):
     def run(speculative, sampling):
         return LLM(
             m,
-            speculative_config=SpeculativeConfig(3) if speculative else None,
+            speculative_config=SpeculativeConfig(3, loop_level_pipelining=pipelined)
+            if speculative
+            else None,
             cache_config=CacheConfig(128, 16),
             attention_backend=backend,
         ).generate(prompts, sampling)
@@ -502,14 +521,17 @@ def test_gpu_sampling_and_greedy_match_replay_with_ragged_requests(backend):
 
 
 @pytest.mark.gpu
-def test_greedy_round_reads_back_once_with_ragged_requests():
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_greedy_round_reads_back_once_with_ragged_requests(pipelined):
     # Draft IDs stay on the device; every speculative round, including ragged and
     # budget-shortened ones, synchronizes with the host exactly once.
     torch.manual_seed(123)
     m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
         device="cuda", dtype=torch.bfloat16
     )
-    e = engine(m, k=3, cache_config=CacheConfig(128, 16), attention_backend="triton")
+    e = engine(
+        m, k=3, pipelined=pipelined, cache_config=CacheConfig(128, 16), attention_backend="triton"
+    )
     for rid, prompt, n in [("a", [2, 3, 4], 9), ("b", [7, 8], 6), ("c", [9], 4)]:
         e.add_request(rid, prompt, SamplingParams(max_tokens=n, ignore_eos=True))
     rounds = 0
@@ -529,7 +551,8 @@ def test_greedy_round_reads_back_once_with_ragged_requests():
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("max_graph_rows", [2, 8])
-def test_speculative_cuda_graph_matches_eager_with_ragged_replay(max_graph_rows):
+@pytest.mark.parametrize("pipelined", [False, True])
+def test_speculative_cuda_graph_matches_eager_with_ragged_replay(max_graph_rows, pipelined):
     m = model(dtype=torch.bfloat16).to("cuda")
     prompts = [[2, 3, 4], [7, 8]]
     params = SamplingParams(max_tokens=9, ignore_eos=True)
@@ -537,7 +560,7 @@ def test_speculative_cuda_graph_matches_eager_with_ragged_replay(max_graph_rows)
     def run(graphs):
         llm = LLM(
             m,
-            speculative_config=SpeculativeConfig(3),
+            speculative_config=SpeculativeConfig(3, loop_level_pipelining=pipelined),
             cache_config=CacheConfig(128, 16),
             attention_backend="triton",
             execution_config=ExecutionConfig(
