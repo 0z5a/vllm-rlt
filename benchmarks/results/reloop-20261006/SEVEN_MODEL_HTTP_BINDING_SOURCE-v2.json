@@ -1,0 +1,279 @@
+{
+  "state": "ROOT_COMPLETE_SEVEN_MODEL_HTTP_SOURCE_INPUT_ASSET_BINDING_REVIEW_PASS_RUNTIME_NOT_RUN",
+  "models": 7,
+  "source_regular_files": 13,
+  "source_payload_files": 12,
+  "metadata_regular_files": 33,
+  "metadata_payload_files": 32,
+  "original_traces": 39,
+  "original_requests": 39936,
+  "per_trace_requests": 1024,
+  "actual_reused_metadata_files_full_SHA": 32,
+  "all7_original_input_tokenizer_SHA_checked": true,
+  "all7_source_archives_Git_PAX_and_actual_loader_definitions_checked": true,
+  "all7_model_and_tokenizer_revisions_separately_bound": true,
+  "all39_input_SHA_and7_original_arrivals_unchanged": true,
+  "V2_origin_assertion_only_AST_change": true,
+  "actual_production_encode_default_preserved": true,
+  "Parcae_pinned_tree_tokenizer_JSON_Git_blob_checked": true,
+  "Parcae_AutoTokenizer_compatibility": "NOT_RUN",
+  "Parcae_missing_metadata_fabricated": false,
+  "actual_pre_import_negative_waits": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "actual_CLI_help_wait": 0,
+  "actual_CPU_tokenizer_model_HTTP_GPU_execution": false,
+  "whole_task_n": 0,
+  "source_archive_sha256": "f3db508b04fa8edb971162452f651e3924f2f727131f1a6ca6ff8ae68ddf1888",
+  "metadata_archive_sha256": "da9d4478fa5bd21c6cfaa54a5639b4dedbb6a0ab60ed76d155f0352369d41e6e",
+  "original_input_archive_sha256": "bd37ff8072b629507d6e46b22308e04789d72c6f559ab384d52053a4cd7edf4f",
+  "original_G0_archive_sha256": "f4c258c6719c8b18090233e01ddc86d3a0cdc1e18e07e6de643f41f42ceecda9",
+  "original_metadata_provenance_payload_files": 10,
+  "original_metadata_pin_records_verified": 32,
+  "original_provenance_archive_sha256": "ff56cf890bf0aa50ef08d1190b296e2301613b6720ba621b256fff7e0c532d59",
+  "configured_Ruff_natural_wait": 0,
+  "configured_Ruff": "Isolated E,F,I; line length100; vllm_rlt first party",
+  "independent_source_binding_review_sha256": "8e909a6b4042dacb61f6d817a01c4ee572e9142e015f4e5dad987827fe5c1e25",
+  "independent_original_pin_review_sha256": "fb7109af8d0648f69f500d0a182c83b3a3b7d4ac72a6ac0321b94d3ff43dd109",
+  "original_requests_replaced": false,
+  "default_BOS_changed": false,
+  "new_HTTP_cases_frozen": false,
+  "model_bindings": [
+    {
+      "model": "hrm-text-1b",
+      "model_revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+      "tokenizer_repository": "sapientinc/HRM-Text-1B",
+      "tokenizer_revision": "22097cbcecdd1301afe30a19a3ee61b96a9863e5",
+      "source_revision": "8045c32f49a86cfc3fc103195f52057444ec2c59",
+      "source_sha256": "3750677038a9f79bfee28637156b3c34996ee308cd7450369af9777601ef5fc6",
+      "tokenizer_assets": [
+        {
+          "name": "config.json",
+          "bytes": 619,
+          "sha256": "5a708f1230e8abe305c875c92cf4ed481377ba39d34d4d93a45ea5c9a5b924e2"
+        },
+        {
+          "name": "tokenizer.json",
+          "bytes": 4732713,
+          "sha256": "ba520107dc9b27d25643e8f43fc1d9921038c86d3ada9dcaabf18526c5836d50"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "bytes": 326,
+          "sha256": "260d448d6f45ec227e6ae53ebc793357aacb3eb09575ffa45877bb4930fc106d"
+        }
+      ]
+    },
+    {
+      "model": "huginn-0125",
+      "model_revision": "bb6621b65e90b6a4b9b29ef88dc83866d450470c",
+      "tokenizer_repository": "tomg-group-umd/huginn-0125",
+      "tokenizer_revision": "bb6621b65e90b6a4b9b29ef88dc83866d450470c",
+      "source_revision": "0b2926396bbea10520e3f5f88ba591e29b0f7424",
+      "source_sha256": "4be20bfd9f5acbcd617e3a50ce99c3901eecbe1e55b9ff022f97a02498f52d12",
+      "tokenizer_assets": [
+        {
+          "name": "config.json",
+          "bytes": 1447,
+          "sha256": "e9fe79df06a783ca33a76038c59a715b6a62f15c4a5b17b9681e697fea46c79c"
+        },
+        {
+          "name": "special_tokens_map.json",
+          "bytes": 435,
+          "sha256": "1291ad5fcb7b7628c3885a2d973f165d006cb87530ca368db90374dc9942224e"
+        },
+        {
+          "name": "tokenizer.json",
+          "bytes": 2726482,
+          "sha256": "9cc201a5061b70aba0d227ef9766fcfe21e0989e0c0ba442b4d7732c4de12308"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "bytes": 6624,
+          "sha256": "ff9e171e16f200e7865c27fa38e661722848ab665af1610d5bb2b62502d6cdcf"
+        }
+      ]
+    },
+    {
+      "model": "loopformer-3block-8iterations",
+      "model_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+      "tokenizer_repository": "armenjeddi/LoopFormer-3block-8iterations",
+      "tokenizer_revision": "2b4fbaaf4e2510353ef7cfe07a07c671b5226739",
+      "source_revision": "8045c32f49a86cfc3fc103195f52057444ec2c59",
+      "source_sha256": "3750677038a9f79bfee28637156b3c34996ee308cd7450369af9777601ef5fc6",
+      "tokenizer_assets": [
+        {
+          "name": "config.json",
+          "bytes": 296,
+          "sha256": "b7ce6d19e8ace289f322c58987b9b5bb1de1cfff8a7a0c758ff5f804fc9467c2"
+        },
+        {
+          "name": "merges.txt",
+          "bytes": 456318,
+          "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+        },
+        {
+          "name": "special_tokens_map.json",
+          "bytes": 131,
+          "sha256": "8bcf4e58d0970bbcb3b111a4c1e297c082fbf61253b14b3c0c8f2972ccb61ba4"
+        },
+        {
+          "name": "tokenizer.json",
+          "bytes": 3557680,
+          "sha256": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "bytes": 507,
+          "sha256": "d0e99e3da75fd15dd9a9747896f860100a13ef7e92cc9689b63d43f18652b24f"
+        },
+        {
+          "name": "vocab.json",
+          "bytes": 798156,
+          "sha256": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7"
+        }
+      ]
+    },
+    {
+      "model": "nanbeige-4.2-3b",
+      "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+      "tokenizer_repository": "Nanbeige/Nanbeige4.2-3B",
+      "tokenizer_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+      "source_revision": "0a73ba23f4441cdac50b181e4841fba296b61218",
+      "source_sha256": "01c9e3f72e02c576124955c14e83d0ebf1787188d17d2c5f1b3211cb4c64c37a",
+      "tokenizer_assets": [
+        {
+          "name": "added_tokens.json",
+          "bytes": 174,
+          "sha256": "9e3b127a27647df2c353cc1e5500826f7cdbe8bd15a458e368bba8422e9719cf"
+        },
+        {
+          "name": "config.json",
+          "bytes": 1019,
+          "sha256": "f6cb15b22847664f3a6049dc4b58fdd10f1650d112ac99a1da3d051f17c2ca19"
+        },
+        {
+          "name": "special_tokens_map.json",
+          "bytes": 623,
+          "sha256": "b718fce2b7a8940ffeddc1e67f3b092cc0d13ac885c63a021528786f8c4cf6c0"
+        },
+        {
+          "name": "tokenizer.json",
+          "bytes": 18450979,
+          "sha256": "1d858a0fc007f22af6ae18bfa1ae52d30e398aa9cd1ea06e7777176869346a3f"
+        },
+        {
+          "name": "tokenizer.model",
+          "bytes": 2782298,
+          "sha256": "fb41d04798b714520a9b075727b0226538b7330254299062742c50ec8374bc36"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "bytes": 10990,
+          "sha256": "3edfa64a0826a77e9412b9008f1febf3fe906a68fd616b6de4cd15897a8c8518"
+        }
+      ]
+    },
+    {
+      "model": "ouro-1.4b",
+      "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+      "tokenizer_repository": "ByteDance/Ouro-1.4B",
+      "tokenizer_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+      "source_revision": "0a73ba23f4441cdac50b181e4841fba296b61218",
+      "source_sha256": "01c9e3f72e02c576124955c14e83d0ebf1787188d17d2c5f1b3211cb4c64c37a",
+      "tokenizer_assets": [
+        {
+          "name": "config.json",
+          "bytes": 1472,
+          "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+        },
+        {
+          "name": "merges.txt",
+          "bytes": 466391,
+          "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+        },
+        {
+          "name": "special_tokens_map.json",
+          "bytes": 825,
+          "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+        },
+        {
+          "name": "tokenizer.json",
+          "bytes": 3522644,
+          "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "bytes": 4211,
+          "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+        },
+        {
+          "name": "vocab.json",
+          "bytes": 800656,
+          "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+        }
+      ]
+    },
+    {
+      "model": "ouro-2.6b",
+      "model_revision": "1ed04250da1a9936042725d302e81c8fa2ab5abd",
+      "tokenizer_repository": "ByteDance/Ouro-2.6B",
+      "tokenizer_revision": "1ed04250da1a9936042725d302e81c8fa2ab5abd",
+      "source_revision": "0a73ba23f4441cdac50b181e4841fba296b61218",
+      "source_sha256": "01c9e3f72e02c576124955c14e83d0ebf1787188d17d2c5f1b3211cb4c64c37a",
+      "tokenizer_assets": [
+        {
+          "name": "config.json",
+          "bytes": 2000,
+          "sha256": "23b5c6942a9f0ca8619fb15acfaca93e02c169cdc4e03dbceb4d8a2df145697a"
+        },
+        {
+          "name": "merges.txt",
+          "bytes": 466391,
+          "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510"
+        },
+        {
+          "name": "special_tokens_map.json",
+          "bytes": 825,
+          "sha256": "55087bb8409060d9cb0f80495e34f4e0d8a84f68a799a6b0cab3132be0aae319"
+        },
+        {
+          "name": "tokenizer.json",
+          "bytes": 3522644,
+          "sha256": "fcb808fe5e7642f5299be28aea07fc7f6d4f4364c3ac5e408e15a772cbc8fa8d"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "bytes": 4211,
+          "sha256": "7e010da95d71b0fa1aa809552922c74cc1dd98d628f21ba39ca6c35aa18d5d91"
+        },
+        {
+          "name": "vocab.json",
+          "bytes": 800656,
+          "sha256": "7b9de3f47796abf8d00ab96be299fea0dc9afdf1827f34e7e0b9fb44593efe5c"
+        }
+      ]
+    },
+    {
+      "model": "parcae-370m",
+      "model_revision": "439284464ee4999bd1f762da7d044613a4828efe",
+      "tokenizer_repository": "SandyResearch/parcae-tokenizer",
+      "tokenizer_revision": "6247b5d0592876b73660f34c2dd16c9db9e9045c",
+      "source_revision": "a8d79443ebf075aeaa37d6e22ed6608e56c6db16",
+      "source_sha256": "3d830d310c62092dc09167343b97d55c6704c438112512da828bc9ffc5d64011",
+      "tokenizer_assets": [
+        {
+          "name": "tokenizer.json",
+          "bytes": 2326980,
+          "sha256": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77"
+        }
+      ]
+    }
+  ]
+}
