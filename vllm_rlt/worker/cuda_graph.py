@@ -192,5 +192,4 @@ class CodaGraphs:
             self.captures += 1
         entry.graph.replay()
         self.replays += 1
-        # SpeculativeRunner consumes the logits before the next replay.
-        return entry.output
+        return entry.output.clone()

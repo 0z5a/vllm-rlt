@@ -1,11 +1,11 @@
 from dataclasses import replace
 
+from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
-from vllm_rlt.core.scheduler import Scheduler, SchedulerOutput
-from vllm_rlt.engine.preemption import PreemptionManager, RequestMigration
-from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS
+from vllm_rlt.core.scheduler import Scheduler
+from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
@@ -15,9 +15,6 @@ from vllm_rlt.worker.speculative import SpeculativeRunner
 
 class LLMEngine:
     """Single-device loop-level engine with synchronous or pipelined scheduling."""
-
-    _spec_drafted = None
-    _spec_interleaved = False
 
     def __init__(
         self,
@@ -59,22 +56,37 @@ class LLMEngine:
             cache_config = replace(
                 cache_config, memory_reserve_bytes=cache_config.memory_reserve_bytes + scratch
             )
-        if self.execution_config.cuda_graphs and (
-            parameter.device.type != "cuda" or attention_backend not in ("triton", *FLASH_BACKENDS)
-        ):
+        if self.execution_config.cuda_graphs and parameter.device.type != "cuda":
             raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
         if self.execution_config.async_scheduling:
             if self.exit_config.mode not in ("ouro_delayed", "random_lookahead", "trace"):
                 raise ValueError(
                     "async scheduling requires ouro_delayed, random_lookahead or trace exit mode"
                 )
-            if parameter.device.type == "cuda" and attention_backend not in (
-                "triton",
-                *FLASH_BACKENDS,
-            ):
-                raise ValueError("CUDA async scheduling requires Triton or FlashAttention")
+        if self.execution_config.prefill_uva and (
+            parameter.device.type != "cuda" or cache_config.layout != "last_exited"
+        ):
+            raise ValueError("prefill_uva requires CUDA packed prefill with last_exited KV")
+        attention = create_backend(
+            attention_backend,
+            parameter.device,
+            parameter.dtype,
+            config.head_dim,
+            cache_config.block_size,
+            required_capabilities=BackendCapabilities(
+                packed_prefill=self.execution_config.prefill_uva,
+                cuda_graphs=self.execution_config.cuda_graphs,
+                async_scheduling=(
+                    parameter.device.type == "cuda" and self.execution_config.async_scheduling
+                ),
+            ),
+        )
         num_blocks, self.memory_plan = plan_cache(
-            model, cache_config, scheduler_config, self.execution_config, attention_backend
+            model,
+            cache_config,
+            scheduler_config,
+            self.execution_config,
+            attention.info["selected_backend"],
         )
         self.cache_manager = KVCacheManager(
             num_layers=config.num_hidden_layers,
@@ -87,16 +99,11 @@ class LLMEngine:
             device=parameter.device,
             dtype=parameter.dtype,
             backend=attention_backend,
+            attention=attention,
             enable_prefix_caching=cache_config.enable_prefix_caching,
             incremental_allocation=cache_config.incremental_allocation,
             watermark_ratio=cache_config.watermark_ratio,
         )
-        if self.execution_config.prefill_uva and (
-            parameter.device.type != "cuda"
-            or cache_config.layout != "last_exited"
-            or getattr(self.cache_manager.attention, "generation", None) != 4
-        ):
-            raise ValueError("prefill_uva requires CUDA FA4 with last_exited KV")
         self.scheduler = Scheduler(scheduler_config, self.cache_manager, speculative_config)
         self.speculative_runner = (
             SpeculativeRunner(model, self.cache_manager, speculative_config, self.execution_config)
@@ -120,8 +127,6 @@ class LLMEngine:
         self._inflight = []
         self._overlap_boundary = False
         self.last_schedule = None
-        self._spec_drafted = None
-        self._spec_interleaved = False
         self.preemption = PreemptionManager(self)
         if scheduler_config.enable_preemption:
             self.scheduler.preempt_callback = self.preemption.preempt
@@ -189,18 +194,17 @@ class LLMEngine:
     def has_unfinished_requests(self) -> bool:
         return self.scheduler.has_unfinished_requests
 
-    def export_request(self, request_id: str) -> RequestMigration:
-        return self.preemption.export_request(request_id)
-
-    def import_request(self, packet: RequestMigration) -> bool:
-        return self.preemption.import_request(packet)
+    def _release_request_state(self, request):
+        """Release device resources for suspension, retaining the registered request."""
+        self.model_runner.release(request.request_id)
+        self.cache_manager.poll_prefixes()
+        self.cache_manager.free(request.request_id)
+        for queue in self.scheduler.queues.values():
+            while request.request_id in queue:
+                queue.remove(request.request_id)
+        request.hidden_state = request.input_token_tensor = None
 
     def abort_request(self, request_id: str) -> RequestOutput:
-        if self._spec_drafted is not None:
-            self._spec_drafted = [
-                entry for entry in self._spec_drafted if entry.item.request.request_id != request_id
-            ]
-        self.preemption.inflight_ids.discard(request_id)
         self.preemption.discard_snapshot(request_id)
         self.model_runner.release(request_id)
         self._pending_exit_signals.pop(request_id, None)
@@ -246,73 +250,25 @@ class LLMEngine:
                 self._pending_coda.clear()
                 self._inflight.clear()
                 raise
-        if self._spec_drafted is not None and self._spec_interleaved:
-            return self._complete_speculative()
-        batch = (
-            self.scheduler.schedule_intra_round()
-            if self._spec_drafted is not None
-            else self.scheduler.schedule()
-        )
+        batch = self.scheduler.schedule()
         self.last_schedule = batch
         if batch is None:
-            if self._spec_drafted is not None:
-                return self._complete_speculative()
             # PD imports wait for external KV completion; yield to the IPC loop.
             if any(r.stage != Stage.RECEIVING for r in self.scheduler.requests.values()):
                 raise RuntimeError("scheduler made no progress")
             return []
         try:
             if batch.stage == Stage.SPECULATIVE:
-                if self.speculative_config.interleave_round:
-                    self._spec_drafted = self.speculative_runner.draft(batch)
-                    self._spec_interleaved = False
-                    self.preemption.inflight_ids.update(
-                        item.request.request_id for item in batch.items
-                    )
-                    outputs = []
-                else:
-                    outputs = self._update_speculative(
-                        batch, self.speculative_runner.execute(batch)
-                    )
-            else:
-                outputs = self._update(batch, self.model_runner.execute(batch))
-                if self._spec_drafted is not None:
-                    self._spec_interleaved = True
-            self.scheduler.selected_request_ids.clear()
-            return outputs
+                result = self.speculative_runner.execute(batch)
+                return self._update_speculative(batch, result)
+            result = self.model_runner.execute(batch)
+            return self._update(batch, result)
         except Exception:
             # A failed execution may have partially written KV; invalidate the affected requests.
             for item in batch.items:
                 if item.request.request_id in self.scheduler.requests:
                     self.abort_request(item.request.request_id)
             raise
-
-    def _complete_speculative(self) -> list[RequestOutput]:
-        drafted = self._spec_drafted
-        self._spec_drafted = None
-        self._spec_interleaved = False
-        live = [
-            entry
-            for entry in drafted
-            if self.scheduler.requests.get(entry.item.request.request_id) is entry.item.request
-        ]
-        batch = SchedulerOutput(Stage.SPECULATIVE, [entry.item for entry in live])
-        self.last_schedule = batch
-        try:
-            if not live:
-                return []
-            return self._update_speculative(batch, self.speculative_runner.verify(live))
-        except Exception:
-            for entry in live:
-                rid = entry.item.request.request_id
-                if self.scheduler.requests.get(rid) is entry.item.request:
-                    self.abort_request(rid)
-            raise
-        finally:
-            self.preemption.inflight_ids.difference_update(
-                entry.item.request.request_id for entry in drafted
-            )
-            self.scheduler.selected_request_ids.clear()
 
     def _update_speculative(self, batch, results):
         outputs = []

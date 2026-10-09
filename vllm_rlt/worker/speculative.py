@@ -4,18 +4,16 @@ Temporary tensors belong to one execute call. Requests expose only committed
 outputs; the engine applies returned tokens and owns KV commit/truncation.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import torch
 
-from vllm_rlt.core.scheduler import ScheduledItem
 from vllm_rlt.worker.cuda_graph import CodaGraphs, RecurrentGraphs
 from vllm_rlt.worker.sampling import (
     draw,
     generator_for,
     probabilities,
     rejection_sample,
-    sample_logits,
 )
 
 
@@ -33,14 +31,6 @@ class SpeculativeStats:
     accepted_tokens: int = 0
     committed_tokens: int = 0
     verified_rows: int = 0
-
-
-@dataclass
-class DraftedItem:
-    item: ScheduledItem
-    candidates: list[torch.Tensor] = field(default_factory=list)
-    proposals: list[torch.Tensor] = field(default_factory=list)
-    states: list[torch.Tensor] = field(default_factory=list)
 
 
 def greedy_accept(candidates, targets):
@@ -69,7 +59,7 @@ class SpeculativeRunner:
         self.coda_graphs = CodaGraphs(model, execution) if execution.cuda_graphs else None
 
     def _packed(self, packed):
-        return packed and self.cache.attention_info.get("generation") == 4
+        return packed and self.cache.attention_capabilities.packed_prefill
 
     def _cores(self, hidden, ids, positions, depths, *, packed=False):
         # Depth-independent metadata is prepared and copied once for all depths.
@@ -102,11 +92,19 @@ class SpeculativeRunner:
         )
 
     @torch.inference_mode()
-    def draft(self, batch) -> list[DraftedItem]:
+    def execute(self, batch):
         items = batch.items
-        drafted = [DraftedItem(item) for item in items]
+        proposals = [[] for _ in items]
+        states = [[] for _ in items]
+        # Draft IDs stay on the device: each offset's IDs are the next offset's
+        # prelude input, and all of them are read back once after verification.
+        drafted = []
         inputs = self.cache._stage([item.request.input_token_id for item in items], torch.long)
+        # Each item includes the final shallow input needed for the bonus row.
+        # Drafting batches independent requests at every autoregressive step.
         for offset in range(max(item.token_count for item in items)):
+            # The rows still drafting at the previous offset are exactly this
+            # offset's active rows, in the same order, so their IDs are the inputs.
             active = [i for i, item in enumerate(items) if offset < item.token_count]
             ids = [items[i].request.request_id for i in active]
             positions = [items[i].token_start + offset for i in active]
@@ -114,7 +112,7 @@ class SpeculativeRunner:
             hidden = self._cores(hidden, ids, positions, range(self.config.draft_loops))
             drafting = []
             for row, i in enumerate(active):
-                drafted[i].states.append(hidden[row])
+                states[i].append(hidden[row])
                 if offset + 1 < items[i].token_count:
                     drafting.append((row, i))
             if not drafting:
@@ -125,19 +123,16 @@ class SpeculativeRunner:
                 request = items[i].request
                 if request.sampling_params.temperature != 0:
                     q = probabilities(logits[row], request.sampling_params)
-                    drafted[i].proposals.append(q)
+                    proposals[i].append(q)
+                    # Per-request RNG consumption order is unchanged; only the read moves.
                     inputs[row] = draw(q, generator_for(request, self.device))
-                drafted[i].candidates.append(inputs[row])
-        return drafted
-
-    @torch.inference_mode()
-    def verify(self, drafted: list[DraftedItem]) -> list[SpeculativeResult]:
+            drafted.append(([i for _, i in drafting], inputs))
+        # Group contiguous positions per request for causal ragged attention.
         ids, positions = [], []
-        for entry in drafted:
-            item = entry.item
+        for item in items:
             ids.extend([item.request.request_id] * item.token_count)
             positions.extend(range(item.token_start, item.token_start + item.token_count))
-        hidden = torch.stack([h for entry in drafted for h in entry.states])
+        hidden = torch.stack([h for request_states in states for h in request_states])
         hidden = self._cores(
             hidden,
             ids,
@@ -146,44 +141,49 @@ class SpeculativeRunner:
             packed=True,
         )
         logits = self._coda(hidden)
-        greedy = any(entry.item.request.sampling_params.temperature == 0 for entry in drafted)
-        pending = [candidate.reshape(1) for entry in drafted for candidate in entry.candidates]
-        if greedy:
-            pending.append(logits.argmax(-1))
+        # One device-to-host read returns every draft ID and, for greedy requests,
+        # every verification target argmax.
+        greedy = any(item.request.sampling_params.temperature == 0 for item in items)
+        pending = [draft for _, draft in drafted] + ([logits.argmax(-1)] if greedy else [])
         values = torch.cat(pending).tolist() if pending else []
-        draft_count = sum(len(entry.candidates) for entry in drafted)
-        targets = values[draft_count:]
-        results, start, candidate_start = [], 0, 0
-        for entry in drafted:
-            item = entry.item
+        candidates = [[] for _ in items]
+        start = 0
+        for rows, _ in drafted:
+            for i, candidate in zip(rows, values[start : start + len(rows)]):
+                candidates[i].append(candidate)
+            start += len(rows)
+        targets = values[start:]
+        results, start = [], 0
+        for i, item in enumerate(items):
             rows = logits[start : start + item.token_count]
             request = item.request
-            count = len(entry.candidates)
-            candidates = values[candidate_start : candidate_start + count]
-            candidate_start += count
             if request.sampling_params.temperature == 0:
                 tokens, accepted = greedy_accept(
-                    candidates, targets[start : start + item.token_count]
+                    candidates[i], targets[start : start + item.token_count]
                 )
-            else:
-                tokens, accepted = [], 0
-                for offset, candidate in enumerate(candidates):
-                    p = probabilities(rows[offset], request.sampling_params)
-                    token, accept = rejection_sample(
-                        candidate, p, entry.proposals[offset], generator_for(request, self.device)
-                    )
-                    tokens.append(token)
-                    if not accept:
-                        break
-                    accepted += 1
-                else:
-                    tokens.append(int(sample_logits(rows[-1], request).item()))
+                start += item.token_count
+                results.append(SpeculativeResult(tokens, accepted, len(candidates[i])))
+                continue
             start += item.token_count
-            results.append(SpeculativeResult(tokens, accepted, count))
-        self.stats.rounds += len(drafted)
-        self.stats.drafted_tokens += draft_count
+            # Sampling keeps sequential rejection; RNG consumption order is unchanged.
+            tokens, accepted = [], 0
+            for offset, candidate in enumerate(candidates[i]):
+                p = probabilities(rows[offset], request.sampling_params)
+                token, accept = rejection_sample(
+                    candidate, p, proposals[i][offset], generator_for(request, self.device)
+                )
+                tokens.append(token)
+                if not accept:
+                    break
+                accepted += 1
+            else:
+                token = draw(
+                    probabilities(rows[-1], request.sampling_params),
+                    generator_for(request, self.device),
+                )
+                tokens.append(int(token.item()))
+            results.append(SpeculativeResult(tokens, accepted, len(candidates[i])))
+        self.stats.rounds += len(items)
+        self.stats.drafted_tokens += sum(len(c) for c in candidates)
         self.stats.verified_rows += len(ids)
         return results
-
-    def execute(self, batch):
-        return self.verify(self.draft(batch))
