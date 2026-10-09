@@ -1,0 +1,53 @@
+{
+  "state": "ROOT_SEVEN_MODEL_1024_C128_INPUTS_BYTES_AND_ORIGINAL_PREFIX_REVIEW_PASS_NOT_E2E",
+  "regular_archive_files": 59,
+  "payload_files": 58,
+  "models": 7,
+  "trace_files": 39,
+  "request_templates": 39936,
+  "legacy_byte_prefixes_verified": 27,
+  "original_review_actual_natural_wait": 0,
+  "Nanbeige_static_prefix_counts_independently_verified": [
+    {
+      "trace": "smoke.json",
+      "requests": 1024,
+      "missing_declared_BOS": 1024
+    },
+    {
+      "trace": "primary.json",
+      "requests": 1024,
+      "missing_declared_BOS": 1023
+    },
+    {
+      "trace": "long.json",
+      "requests": 1024,
+      "missing_declared_BOS": 1024
+    },
+    {
+      "trace": "decode.json",
+      "requests": 1024,
+      "missing_declared_BOS": 1023
+    },
+    {
+      "trace": "mixed-length.json",
+      "requests": 1024,
+      "missing_declared_BOS": 1023
+    },
+    {
+      "trace": "mixed-depth.json",
+      "requests": 1024,
+      "missing_declared_BOS": 1023
+    }
+  ],
+  "Nanbeige_missing_declared_BOS_prefix": 6140,
+  "Tokenizer_SHA_binding_to_G0_plan_verified": true,
+  "production_tokenizer_roundtrip_executed": false,
+  "new_model_or_GPU_executed": false,
+  "old_ReLoop_L1_W5_C128_inputs_or_denominators_changed": false,
+  "whole_task_n": 0,
+  "next_scope": "Production default string roundtrip under per-model/tokenizer source and independent revision bindings; preserve all original mismatches. Any canonical-text/native-token counterpart is a distinct case, never rewriting old banks.",
+  "actual_local_tokenizer_assets_SHA_and_declared_BOS_policy_verified": true,
+  "independent_review_sha256": "3d260742ece2528443c390a58b5abbedbdb572e3c752446c4675a2d77c529ce5",
+  "archive_sha256": "bd37ff8072b629507d6e46b22308e04789d72c6f559ab384d52053a4cd7edf4f",
+  "manifest_sha256": "0f6699ac5409604ec43211f3859fa20406ef7a34d7822e8480c2484f21d399d5"
+}

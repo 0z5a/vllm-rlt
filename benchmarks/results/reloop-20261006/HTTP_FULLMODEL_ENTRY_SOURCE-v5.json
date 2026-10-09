@@ -1,0 +1,22 @@
+{
+  "state": "SOURCE_ONLY_FULL_HTTP_ENTRY_PREPARED_CANONICAL_RUNTIME_TESTS_NOT_RUN",
+  "source_tar_sha256": "1c0e0392d462a0125ba91fb7adc17f5e360c5c14fa979d69b059a2aaab3ca999",
+  "source_tar_files": 14,
+  "source_patch_sha256": "34ded2f510ab9f2f2c3924444656f5f046b15aeb0f9caeb6e849a4f57427c2fa",
+  "fullmodel_driver_sha256": "1c841144d68cb833d53b3de605001388e0b375d96b45be825aac19b4a4cebb02",
+  "http_observer_sha256": "66f420895fdf25cd21d4920763fecbcce802f9c700107e892a38271d61840ab4",
+  "original_neutral_observer_sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9",
+  "scope": "Original W5 4C per trial and distinct C128 supplement 4C, two fresh reversed arms,5warm/5measure; no Loopquant1024 trace substitution",
+  "warmups": 5,
+  "measurements": 5,
+  "whole_case_fresh": 6,
+  "output_tokens": 128,
+  "actual_client_and_backend_C_required": true,
+  "actual_A_S_observations_prepared": true,
+  "raw_stream_failure_preservation_prepared": true,
+  "actual_source_only_grant_rejected": true,
+  "actual_canonical_CPU_socket_or_model_or_CUDA_tests": false,
+  "execution_allowed": false,
+  "whole_task_n": 0,
+  "source_finding_corrected": "Public LLM.tokenizer is lazy; HTTP factory now explicitly loads and passes the pinned tokenizer before serving."
+}
