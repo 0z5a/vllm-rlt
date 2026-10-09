@@ -1,0 +1,63 @@
+{
+  "state": "ROOT_SOURCE_PAYLOAD_PASS_BLIND_E8_APPLY_REJECTED_PORT_AND_TARGET_QUALIFICATION_REQUIRED",
+  "archive_sha256": "3953334eb7206a0c908172bf20dd6775d7c37e49106e2d2496dd2fa15733f99a",
+  "regular_files": 39,
+  "payload_files": 38,
+  "full_e8_source_files": 133,
+  "e8_byte_verified": true,
+  "blind_apply_actual_exit": 1,
+  "source_compatibility": [
+    {
+      "source": "vllm_rlt/config.py",
+      "origin_equals_e8": false,
+      "candidate_equals_origin": false
+    },
+    {
+      "source": "vllm_rlt/engine/llm_engine.py",
+      "origin_equals_e8": false,
+      "candidate_equals_origin": false
+    },
+    {
+      "source": "vllm_rlt/worker/model_runner.py",
+      "origin_equals_e8": false,
+      "candidate_equals_origin": false
+    },
+    {
+      "source": "vllm_rlt/worker/loopcd.py",
+      "origin_equals_e8": false,
+      "candidate_equals_origin": false
+    },
+    {
+      "source": "vllm_rlt/worker/cuda_graph.py",
+      "origin_equals_e8": false,
+      "candidate_equals_origin": true
+    }
+  ],
+  "selected_method_AST": {
+    "_capture_loopcd": {
+      "candidate_equals_origin": true,
+      "origin_equals_e8": false
+    },
+    "_loopcd_readout": {
+      "candidate_equals_origin": true,
+      "origin_equals_e8": false
+    },
+    "_execute": {
+      "candidate_equals_origin": true,
+      "origin_equals_e8": false
+    },
+    "execute": {
+      "candidate_equals_origin": true,
+      "origin_equals_e8": true
+    }
+  },
+  "e8_shared_submit_reaches_capture_and_readout": true,
+  "own_candidate_step_async_AST_unchanged": true,
+  "own_origin_step_async_equals_e8": true,
+  "whole_task_n": 0,
+  "fullmodel_CPU_GPU_or_candidate_imports_executed": false,
+  "target_source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "private_review_sha256": "8f484a50e5485811dd1150110cfdb5cdde740741525feeb7aa999440fc54cbdf",
+  "candidate_enabled": false,
+  "scope": "Immutable source bytes, syntax and fresh local full-source compatibility check only. No target candidate port, imports, tensor test, GPU, performance, high-C/multi-BS or HTTP qualification."
+}
