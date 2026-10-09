@@ -1,0 +1,21 @@
+{
+  "state": "COMPLETE_EXACT_SEVEN_MODEL_OFFLINE_STAGING_FIXTURE_PASS_TARGET_NOT_BOUND",
+  "models": 7,
+  "traces": 39,
+  "original_requests": 39936,
+  "metadata_files": 32,
+  "source_archives": 7,
+  "distinct_source_archive_hashes": 4,
+  "payload_files": 4334,
+  "tar_regular_files": 4335,
+  "archive_bytes": 144301951,
+  "archive_sha256": "aa25c12bdf517bf0d18b62673cb88689863e60811fc139c1e5f072e782180d56",
+  "manifest_sha256": "8e8c0cc65e997971a86c4f5833fc461d0f7bf4a293671d5c75f21bfd0a7fabef",
+  "original_v2_plans_byte_identical": true,
+  "all_source_Archive_Git_PAX_and_original_metadata_inputs_SHA_matched": true,
+  "model_checkpoint_weights_downloaded_or_read": false,
+  "actual_target_versions_bound": false,
+  "actual_target_CPU_tokenizer_model_HTTP_GPU_execution": false,
+  "execution_allowed": false,
+  "whole_task_n": 0
+}
