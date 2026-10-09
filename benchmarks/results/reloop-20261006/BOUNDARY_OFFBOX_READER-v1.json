@@ -1,0 +1,20 @@
+{
+  "state": "ROOT_AUTHENTIC_OLD_CPU_ZIP_READER_COMPATIBILITY_PASS_NEW_MODEL_AUDIT_NOT_RUN",
+  "source_archive_sha256": "354b9a1fd303858d4f92a5916309f6057ef8355b6d28ac0f1e7ca5ed66f6824a",
+  "source_manifest_sha256": "f227cc6859d4baab54a5a7a8b2683c15d3687b315a49614644572bd5cdeaffca",
+  "source_payload_files": 4,
+  "CPU_fixture_SHA256": "a07fc3f606cce425c3a223dbf33ec1aae5300806cfafa8fe0fbe4c08885931e0",
+  "CPU_fixture_meta_SHA256": "8797fa0f9101a9790ae42f32e5059534b5f8cbe3b66d46ed6d74e20e543bd4ed",
+  "original_ID_hashes_verified": 2,
+  "old_float_arrays_read": 36,
+  "old_scientific_comparisons_recomputed": false,
+  "BF16_known_encoding_stride_signed_zero_controls_pass": true,
+  "exact_and_relative_pass_fail_controls_pass": true,
+  "Torch_imported": false,
+  "new_models_or_GPU_executed": 0,
+  "new_Huginn_Parcae_exports_audited": 0,
+  "prior_KV_tensor_replay_available": false,
+  "whole_task_n": 0,
+  "numerical_operator_scope": "FP64 mathematical combined bound evaluated on FP32-decoded values; FP32 max_abs. Producer-record disagreement must remain an audit failure, not change original tensors or tolerance.",
+  "independent_review_sha256": "9b77f47300505f3c897afc4dd6774b4b106ef5d39e0ad7c2662a2a051ea9e02c"
+}
