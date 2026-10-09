@@ -1,0 +1,87 @@
+{
+  "state": "T32_EMPIRICAL_FULL_SIX_FRESH_BUDGET_FROZEN_NOT_GRANTED_NOT_RUN",
+  "case_id": "T32",
+  "protocol_sha256": "e5c206b680a014a2dcd052e3cb9bd7247437408727be6af1fb9bea287560fe91",
+  "prompts_sha256": "b66df716e40b78ad50aa01da88795a74e0d2c1fc3f724514bce4c6177bb06354",
+  "actual_complete_C32_archive_sha256": "ea3a39f67d18c7e8e079d73c7ad979dccc515bca392f200380a40b4aa2cbfeca",
+  "actual_C32_status_sha256": "2e80a05f3e8a06b1868ec49076845de0919248cf10fd9679177dc3b63e58c051",
+  "actual_six_fresh_process_elapsed_s": [
+    256.6304543018341,
+    199.650940656662,
+    203.90889167785645,
+    205.42081665992737,
+    198.77993750572205,
+    236.1299593448639
+  ],
+  "actual_six_native_trial_sums": {
+    "B16C32-fresh0-A": 230.82023224397562,
+    "B16C32-fresh0-B": 193.30370824199053,
+    "B16C32-fresh0-C": 197.6577350810403,
+    "B16C32-fresh1-A": 229.74117823896813,
+    "B16C32-fresh1-B": 192.44968562299618,
+    "B16C32-fresh1-C": 199.1772977319779
+  },
+  "source_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "dtype": "float32",
+  "P": 512,
+  "F": 128,
+  "prefill_depth": 4,
+  "history_planes": 4,
+  "B": 32,
+  "C": 32,
+  "requests_per_trial": 128,
+  "fresh_jobs": 6,
+  "warmups_per_fresh": 5,
+  "measurements_per_fresh": 5,
+  "total_trials": 60,
+  "retained_requests": 7680,
+  "retained_output_tokens": 983040,
+  "measured_trials": 30,
+  "measured_requests": 3840,
+  "measured_output_tokens": 491520,
+  "original_six_order": [
+    [
+      0,
+      "A_P4D4_off"
+    ],
+    [
+      0,
+      "C_P4D3_off"
+    ],
+    [
+      0,
+      "D_P4D3_on"
+    ],
+    [
+      1,
+      "D_P4D3_on"
+    ],
+    [
+      1,
+      "C_P4D3_off"
+    ],
+    [
+      1,
+      "A_P4D4_off"
+    ]
+  ],
+  "common_KV_pool_bytes": 51539607552,
+  "actual_C32_requests_per_trial": 32,
+  "request_work_ratio": 4.0,
+  "assumed_speed_gain_from_B16_to_B32": 1.0,
+  "empirical_margin": 1.5,
+  "round_up_quantum_seconds": 60,
+  "forecast_one_job_seconds": 1560,
+  "natural_drain_seconds": 600,
+  "offbox_seconds": 900,
+  "strict_minimum_whole_ready_seconds": 10860,
+  "runtime_reforecast_rule": "Unchanged original parent: max(frozen forecast, observed child elapsed*1.5); verify all remaining original jobs+600+900 fit before each child; preserve incomplete disposition, no pilot/shrink/restart/signal",
+  "all_seven_W5_cases_original_inputs_retained": true,
+  "original_parent_sha256": "37783b2edbb7b07f747aabc4e1a94eb6b62a3a006d15e2a425eb6d49e64e6133",
+  "forecast_is_empirical_admission_estimate_not_T32_timing_or_performance_bound": true,
+  "actual_T32_CPU_or_GPU_execution": false,
+  "execution_allowed": false,
+  "whole_task_n": 0,
+  "forecast_source_sha256": "cacf62fad2335dc665e214638b6f2cc8ccecbe3926124e975feea90f0d5d552b"
+}

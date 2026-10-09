@@ -1,0 +1,135 @@
+{
+  "state": "COMPLETE_HTTP_CPU_ENTRY_AND_FULLMODEL_RAW_SOURCE_PREPARED_RUNTIME_NOT_RUN",
+  "files": {
+    "files/harness/audit_http_cost_arm.py": {
+      "bytes": 10073,
+      "sha256": "1a8adac9515df79eabccf398503f6a8ba295971c30978f90bf62d2ed939f613b"
+    },
+    "files/harness/check_http_fixed_work.py": {
+      "bytes": 5801,
+      "sha256": "fadbd6266351f5f5b7cf99e2ab9f725a42ac21c1a1e6a713b8cd7d690a705c27"
+    },
+    "files/harness/http_fixed_work.py": {
+      "bytes": 15529,
+      "sha256": "66f420895fdf25cd21d4920763fecbcce802f9c700107e892a38271d61840ab4"
+    },
+    "files/harness/prepare_http_prompts.py": {
+      "bytes": 3966,
+      "sha256": "38babfb94c85b204bf220b2ae002b0f9805b9f2cc8b33d01a445094e667cc59e"
+    },
+    "files/harness/run_http_cost_arm.py": {
+      "bytes": 9716,
+      "sha256": "6bd263531ff40abe040a18c31bf19a0fe9921aa55eb8ac25602802bb9cad32f0"
+    },
+    "files/harness/run_http_cpu_preflight.py": {
+      "bytes": 8846,
+      "sha256": "3d6bf5003dd02bbb5da6cfc137c9740356b99ebe68324d332873e8a629ee1538"
+    },
+    "files/reference/audit_w5_native_trials.py": {
+      "bytes": 13028,
+      "sha256": "35b94e8cdd1d69d700feeeafee7ed714d674727ae39f606ae63872fe6827d5d6"
+    },
+    "files/reference/fp32_candidate_cost_trial.py": {
+      "bytes": 11961,
+      "sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9"
+    },
+    "files/reference/prepare_w5_workloads.py": {
+      "bytes": 8325,
+      "sha256": "c04400c1b3e344ac5afa06ae83200706c91b08a0e1d13daad18b850e5967603f"
+    },
+    "files/reference/run_w5_cost_arm.py": {
+      "bytes": 10071,
+      "sha256": "63aafc4af99271702c147552171ddef834b554c3002fb14776e96ebf5a1ee5dc"
+    },
+    "files/tests/test_serving.py": {
+      "bytes": 34131,
+      "sha256": "9493d1f03bc95ba54b207d7b1e0fbef8c04369a8149964ef6191432aec32f7f7"
+    },
+    "files/vllm_rlt/entrypoints/runtime_args.py": {
+      "bytes": 6539,
+      "sha256": "b537141d2d6032e4da2c5d05451c42984466d76bdc2cbb22b9efa24a4601bad2"
+    },
+    "files/vllm_rlt/serving/protocol.py": {
+      "bytes": 7901,
+      "sha256": "5f0ecd6b3faf514a8d998c8b7cac161097c5cd5e758b1c1a032568796e1d9402"
+    },
+    "local-checks.json": {
+      "bytes": 901,
+      "sha256": "a0416baf2afb6614e23e5d4c18a424e6a4d98a475d921927a8c11f65b2c5cfed"
+    },
+    "run_http_cost_arm.py.negative.stderr": {
+      "bytes": 467,
+      "sha256": "40e8100d2a47a93f6ca4219e6240e698f78b871addc47728de23ba1b0e2d3e00"
+    },
+    "run_http_cost_arm.py.negative.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "run_http_cpu_preflight.py.negative.stderr": {
+      "bytes": 440,
+      "sha256": "dbd7efb330b4224aecd8e31b0a065763d3a06af731a9323066d51585e564c9cf"
+    },
+    "run_http_cpu_preflight.py.negative.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-only-admission.json": {
+      "bytes": 38,
+      "sha256": "d09a9e1adf91c35c61e9baec96f6dee4d8bdc43405ddae355ae57333c68c3cb8"
+    },
+    "source.patch": {
+      "bytes": 7274,
+      "sha256": "34ded2f510ab9f2f2c3924444656f5f046b15aeb0f9caeb6e849a4f57427c2fa"
+    }
+  },
+  "production_base": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "full_candidate_source_files": 133,
+  "full_candidate_original_unchanged_Git_blobs": 130,
+  "full_candidate_source_archive_sha256": "ad6b0a5d1e7adb25c4955ba07656e5135629e89d83a87df6b05c564218c42b91",
+  "full_candidate_source_manifest_sha256": "1ecfaf54fd6f42ee10fb9c0baf9bbe0484516539f9f6e56b9eaec52ee1cb3df4",
+  "CPU_actual_required_phases": [
+    "14 selected real socket/request/CLI tests,zero skips/errors/failures via JUnit",
+    "original820 default production string token roundtrip with actual loader origin/SHA",
+    "Tiny CPU finite HTTP healthy3trials48requests192tokens +16streamfailure requests and independent raw audit"
+  ],
+  "CPU_wrapper_natural_scope": "3 original finite subprocess waits with full stdout/stderr/start/wait files; fullsource133 pre/post and all6helper/original4reference SHA. No timeout/kill/signal/install/model checkpoint reads. Manager actual complete CPU admission only.",
+  "CPU_preflight_success_receipt_generated_only_after_actual_required_phases": true,
+  "whole_GPU_driver_requires_actual_CPU_preflight_and_full_candidate_numerical_source_binding": true,
+  "original_W5_and_ReLoop_C128_both_4C_scopes_unchanged": true,
+  "Loopquant1024_bank_not_substituted": true,
+  "prior_source_versions_immutable": true,
+  "actual_canonical_CPU_model_HTTP_GPU_execution": false,
+  "execution_allowed": false,
+  "whole_task_n": 0,
+  "source_only_archive_sha256": "e3abb01043858975b7e7dc7a47eaa42d799c559ce559a1ee2f9489826c204b93",
+  "frozen_regular_files": 21,
+  "source_only_archive_bytes": 39476,
+  "actual_local_syntax_helpers": 6,
+  "actual_local_CLI_help_waits": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "actual_local_unadmitted_driver_natural_waits": [
+    1,
+    1
+  ],
+  "actual_configured_Ruff_pass": true,
+  "local_review_code_files": {
+    "run_http_cpu_preflight.py": {
+      "bytes": 8918,
+      "sha256": "3aa5927c7a0bb22e556479367b0ae3326ce78d6b68b38f37b1d8ca87d951f61b",
+      "AST_equal_to_frozen_source": true,
+      "formatting_only_difference": true
+    },
+    "prepare_http_prompts.py": {
+      "bytes": 3967,
+      "sha256": "4f6477e1d7145b39e5bbefd1c67d1864268c1b0513a12d856e9b645203c6d7e4",
+      "AST_equal_to_frozen_source": true,
+      "formatting_only_difference": true
+    }
+  },
+  "frozen_private_source_package_unmodified_by_repository_formatting": true
+}
