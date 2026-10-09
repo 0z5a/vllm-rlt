@@ -1,0 +1,99 @@
+{
+  "state": "SOURCE_ONLY_FULL_HTTP_RAW_AUDITOR_PREPARED_CANONICAL_RUNTIME_TESTS_NOT_RUN",
+  "files": {
+    "files/harness/audit_http_cost_arm.py": {
+      "bytes": 10073,
+      "sha256": "1a8adac9515df79eabccf398503f6a8ba295971c30978f90bf62d2ed939f613b"
+    },
+    "files/harness/check_http_fixed_work.py": {
+      "bytes": 5801,
+      "sha256": "fadbd6266351f5f5b7cf99e2ab9f725a42ac21c1a1e6a713b8cd7d690a705c27"
+    },
+    "files/harness/http_fixed_work.py": {
+      "bytes": 15529,
+      "sha256": "66f420895fdf25cd21d4920763fecbcce802f9c700107e892a38271d61840ab4"
+    },
+    "files/harness/prepare_http_prompts.py": {
+      "bytes": 3648,
+      "sha256": "23de960aa223b2eb50ef680869cfeb89eaba32f36fde79aa8c253deeac6b3aec"
+    },
+    "files/harness/run_http_cost_arm.py": {
+      "bytes": 9716,
+      "sha256": "6bd263531ff40abe040a18c31bf19a0fe9921aa55eb8ac25602802bb9cad32f0"
+    },
+    "files/reference/audit_w5_native_trials.py": {
+      "bytes": 13028,
+      "sha256": "35b94e8cdd1d69d700feeeafee7ed714d674727ae39f606ae63872fe6827d5d6"
+    },
+    "files/reference/fp32_candidate_cost_trial.py": {
+      "bytes": 11961,
+      "sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9"
+    },
+    "files/reference/prepare_w5_workloads.py": {
+      "bytes": 8325,
+      "sha256": "c04400c1b3e344ac5afa06ae83200706c91b08a0e1d13daad18b850e5967603f"
+    },
+    "files/reference/run_w5_cost_arm.py": {
+      "bytes": 10071,
+      "sha256": "63aafc4af99271702c147552171ddef834b554c3002fb14776e96ebf5a1ee5dc"
+    },
+    "files/tests/test_serving.py": {
+      "bytes": 34131,
+      "sha256": "9493d1f03bc95ba54b207d7b1e0fbef8c04369a8149964ef6191432aec32f7f7"
+    },
+    "files/vllm_rlt/entrypoints/runtime_args.py": {
+      "bytes": 6539,
+      "sha256": "b537141d2d6032e4da2c5d05451c42984466d76bdc2cbb22b9efa24a4601bad2"
+    },
+    "files/vllm_rlt/serving/protocol.py": {
+      "bytes": 7901,
+      "sha256": "5f0ecd6b3faf514a8d998c8b7cac161097c5cd5e758b1c1a032568796e1d9402"
+    },
+    "local-checks.json": {
+      "bytes": 676,
+      "sha256": "e56464fee24df8c331ece7df629c813b3970c5e7a9ec2381122c163b390f1cdc"
+    },
+    "source-only-admission.json": {
+      "bytes": 38,
+      "sha256": "d09a9e1adf91c35c61e9baec96f6dee4d8bdc43405ddae355ae57333c68c3cb8"
+    },
+    "source-only-rejection.stderr": {
+      "bytes": 467,
+      "sha256": "5daabd003d56c2fccd1ea30db72f247cc83f619f676db1ebef9f0b9e5117e23e"
+    },
+    "source-only-rejection.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source.patch": {
+      "bytes": 7274,
+      "sha256": "34ded2f510ab9f2f2c3924444656f5f046b15aeb0f9caeb6e849a4f57427c2fa"
+    }
+  },
+  "production_base": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "patch_base": "935ca14542de9d0ffba46010699ee9e666fa86ab",
+  "original_scope": "Original W5 and distinct ReLoop C128 supplement both 4C, six fresh reversed three arms, 5warm/5measure; separate Loopquant1024 input bank never substituted",
+  "CPU_preflight_required": [
+    "actual canonical parser/CLI/socket tests natural0",
+    "actual default production tokenizer string roundtrip",
+    "healthy finite HTTP raw passed independent auditor",
+    "post-first-token engine failure preserved partial raw with natural cleanup",
+    "source manifest/helper/raw auditor/input digest binding"
+  ],
+  "numerical_gate_requires_full_candidate_source_manifest": true,
+  "independent_raw_auditor_scope": "All frames and usage/text/native IDs/depths, timestamp distributions, actual client/backend C, A/S, work/KV/memory, 10 trial parity; only one arm, whole source/raw/joins/handoff and two-fresh scope separate",
+  "actual_canonical_CPU_HTTP_model_tests": false,
+  "actual_GPU_tests": false,
+  "execution_allowed": false,
+  "whole_task_n": 0,
+  "archive_bytes": 36869,
+  "archive_sha256": "5014c86241a0cc2e1e9152ed8c900a4035cd446080f802bfce0c01beee694dcc",
+  "frozen_regular_files": 18,
+  "actual_local_checks": [
+    "Ruff and formatting PASS",
+    "5 helper syntax compile PASS",
+    "4 CLI help natural0",
+    "original scalar auditor real stdlib import PASS, no Torch import",
+    "SOURCE_ONLY admission rejected natural1 before other inputs or model reads"
+  ]
+}

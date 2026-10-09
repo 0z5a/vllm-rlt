@@ -1,0 +1,128 @@
+{
+  "state": "COMPLETE_ORIGINAL_L1_NATIVE_FIXED_WORK_WITH_LATE_ARCHIVE_PRESERVED",
+  "H100_count": 1,
+  "dependencies": {
+    "CUDA": "13.0",
+    "torch": "2.12.1+cu130",
+    "triton": "3.7.1",
+    "transformers": "4.54.1",
+    "tokenizers": "0.21.4"
+  },
+  "source_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "configuration": {
+    "dtype": "float32",
+    "attention": "eager Triton",
+    "TF32": false,
+    "prefill_depth": 4,
+    "history_planes": 4,
+    "B": 1,
+    "C": 1,
+    "actual_A": 1,
+    "actual_S": 1,
+    "P": 512,
+    "F": 128,
+    "requests_per_trial": 4,
+    "common_KV_pool_bytes": 51539607552,
+    "scheduler": "closed-loop refill",
+    "guidance_reference_loop": 1,
+    "guidance_strength": 0.3,
+    "guidance_implementation": "two_head",
+    "cuda_graphs": false,
+    "engine_async": false,
+    "HTTP": false
+  },
+  "fresh_jobs": 6,
+  "warmups_per_job": 5,
+  "measurements_per_job": 5,
+  "retained_trials": 60,
+  "retained_requests": 240,
+  "retained_output_tokens": 30720,
+  "measured_trials": 30,
+  "measured_requests": 120,
+  "measured_output_tokens": 15360,
+  "TPS_method": "Arithmetic mean of two fresh process means of five measured TPS values each",
+  "speedup_method": "(candidate mean TPS / D4 mean TPS - 1) * 100",
+  "metrics": {
+    "A_P4D4_off": {
+      "TPS": 24.483259495123896,
+      "TTFT_mean_ms": 252.98536032205448,
+      "TPOT_mean_ms": 39.17564766553821,
+      "latency_mean_ms": 5228.292613845406,
+      "speedup_percent": 0.0,
+      "fresh_ratios": [
+        1.0,
+        1.0
+      ],
+      "allocated_delta_bytes": 0,
+      "reserved_delta_bytes": 0,
+      "reference_peak_bytes": 0
+    },
+    "C_P4D3_off": {
+      "TPS": 32.883154300132766,
+      "TTFT_mean_ms": 250.0568286042835,
+      "TPOT_mean_ms": 28.680864448802808,
+      "latency_mean_ms": 3892.52661360224,
+      "speedup_percent": 34.308727588668496,
+      "fresh_ratios": [
+        1.3364412420524092,
+        1.3498332167287201
+      ],
+      "allocated_delta_bytes": 0,
+      "reserved_delta_bytes": 0,
+      "reference_peak_bytes": 0
+    },
+    "D_P4D3_on": {
+      "TPS": 32.645732144396774,
+      "TTFT_mean_ms": 252.3292101730476,
+      "TPOT_mean_ms": 28.88607987441378,
+      "latency_mean_ms": 3920.861354223598,
+      "speedup_percent": 33.338994960611856,
+      "fresh_ratios": [
+        1.3190095625118612,
+        1.3479865109602185
+      ],
+      "allocated_delta_bytes": 8192,
+      "reserved_delta_bytes": 0,
+      "reference_peak_bytes": 8192
+    }
+  },
+  "full_original_raw_files": 398,
+  "actual_closure_files": 35,
+  "full_archive_sha256": "a15a3e5a611261c00e9ca12580a0ebb9d1d8644b84e992652fd99cb7e57a5b52",
+  "closure_archive_sha256": "8a131c22f8ff2eec91c7545d663405db462ec5168ee1aa166f70f0919a0d7b7e",
+  "independent_review_sha256": "1c67746c2d7fd864b1a5bbc80072fbaadce7bd60a660549bb92c0cf30c8b5aa3",
+  "source_Git_blobs_verified": 133,
+  "original_model_metadata_archived": 10,
+  "existing_readonly_weight_omitted_with_original_full_SHA_preserved": true,
+  "JIT_ELFs_archived": 13,
+  "compiler_argv": "NOT_TRACED",
+  "original_six_scientific_child_waits": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "independent_six_original_auditor_waits": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "actual_known_experiment_resource_handoff_verified": true,
+  "global_reader_retirement_proven": false,
+  "original_transport_return": 255,
+  "original_late_archive_and_deadline_breach_preserved": true,
+  "original_grant_unchanged": true,
+  "science_replayed": false,
+  "quality_noninferiority_proven": false,
+  "KV_memory_saved_bytes": 0,
+  "external_SOTA_proven": false,
+  "full_W5_C128_HTTP_Graph_async_allmodels_proven": false,
+  "whole_task_n": 0,
+  "publication": "Local branch only"
+}

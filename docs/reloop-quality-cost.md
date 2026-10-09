@@ -7,6 +7,14 @@ screen and two-fresh fixed-work case select P4D3 guided for independent
 confirmation. The H100 confirmation is incomplete:1827/1959 outputs were
 generated, and both scored primary comparisons remain UNCERTAIN.
 
+The completed H100 native cost results now include the original
+[L1 B1/C1 refill case](../benchmarks/results/reloop-20261006/H100_L1_NATIVE_RESULT-v1.md)
+and the separate
+[B16/initial-total C32 case](../benchmarks/results/reloop-20261006/H100_C32_FP32_RESULT-v1.md).
+Their guided mean speed improvements are 33.34% and 15.52%, respectively;
+neither reduces the configured KV pool or establishes quality noninferiority.
+Remaining W5 cases, C128, full-model HTTP/Graph/async and all-model E2E are open.
+
 This increment depends on [upstream #86](https://github.com/ThinkFlowLab/vllm-rlt/pull/86).
 The fork comparison targets `feature/loopcd-ouro-task0` at
 `d700ecca664da2e8f3122f66ad9d45de4295e45a`. Tested source is
