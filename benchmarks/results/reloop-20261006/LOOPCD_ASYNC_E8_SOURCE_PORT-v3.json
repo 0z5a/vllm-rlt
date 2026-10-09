@@ -1,0 +1,34 @@
+{
+  "state": "ROOT_FULL_E8_ASYNC_SOURCE_PORT_BYTES_AND_MATH_AST_PASS_RUNTIME_UNQUALIFIED",
+  "archive_sha256": "7db7fe895e6aa062ceab732d71b8b44ea548024abeea0971bcfefc67d021419c",
+  "regular_files": 298,
+  "payload_files": 297,
+  "original_e8_files_verified": 133,
+  "candidate_source_files": 133,
+  "changed_source_files": [
+    "vllm_rlt/config.py",
+    "vllm_rlt/engine/llm_engine.py",
+    "vllm_rlt/worker/loopcd.py",
+    "vllm_rlt/worker/model_runner.py"
+  ],
+  "unchanged_source_files": 129,
+  "target_e8_math_function_AST": {
+    "worker/model_runner.py:_capture_loopcd": true,
+    "worker/model_runner.py:_loopcd_readout": true,
+    "worker/model_runner.py:_execute": true,
+    "worker/model_runner.py:execute": true,
+    "engine/llm_engine.py:_step": true,
+    "engine/llm_engine.py:_step_async": true
+  },
+  "target_Graph_bank_byte_exact": true,
+  "actual_fresh_origin_patch_check_exit": 0,
+  "target_candidate_imports_model_or_GPU_tests": 0,
+  "default_candidate_enabled": false,
+  "whole_task_n": 0,
+  "scope": "Full-source byte and syntax/patch/selected math-function AST review only. Cross-stream tensor/reference lifecycle and eager/Graph/async/HTTP/high-C quality/performance remain unqualified.",
+  "actual_private_patch_apply_exit": 0,
+  "applied_all133_bytes_equal_candidate": true,
+  "flag_false_default_independently_AST_verified": true,
+  "independent_review_sha256": "22af9c3ea22ef119ed7ca40a52dbe486a2d52dc967b4e60388a80a48e15c7be6",
+  "target_source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1"
+}
