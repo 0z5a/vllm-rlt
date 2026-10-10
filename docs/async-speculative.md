@@ -97,17 +97,173 @@ The page-table snapshot uses flat reusable pinned/device storage. Each round
 views only `batch_size * max_loops * active_page_width` entries as a contiguous
 three-dimensional table, clears that region and copies it once. Inactive storage
 is untouched; ragged rows are padded within the active width. This reduces the
-number of entries prepared and submitted for H2D, but current CUDA copy timing
-and end-to-end effects still require measurement.
+number of entries prepared and submitted for H2D. The current measurements below
+separate that reduction from end-to-end effects.
+
+## Current GPU validation (2026-10-10)
+
+Runtime source: `d977817d4e174cbc2fcc9aa7ef5893c35da2ec89`, incorporating main
+`d704aee654235f6a13e8c5bf13b41aaf80fbb7d9`. Slurm jobs 4830/4832/4834/4839 used
+one scheduler-reserved NVIDIA H20-3e on `vllm-h20-02`, TP=1, Python 3.10.20,
+PyTorch 2.11.0+cu128, CUDA 12.8 and Triton 3.6.0. Real Ouro-1.4B weights and KV
+were BF16, with greedy fixed-depth `d=2, D=4`, `last_exited` KV and eager execution.
+
+The async test module passed **26 tests** (22 CUDA cases and four CPU helpers).
+Related speculation, async state/pipeline, HTTP serving and CUDA Graph regression
+passed **148 tests**, with 15 FlashAttention cases deselected. This includes both
+synchronous speculative ragged CUDA Graph capture/replay cases. The initial
+related run had 12 failures importing the absent FA3 `flash_attn` package and
+three FA4 cases deselected; these environment failures are retained in the logs,
+and neither FlashAttention backend is qualified by the Triton rerun.
+
+The Mac CPU suite passed **477 tests**, with 164 skips: 135 GPU cases not enabled,
+26 missing optional `lm_eval`, and three Nanbeige cases missing official assets.
+Ruff lint/format passed. Pyright on changed runtime modules reported the same
+49 diagnostics as integrated main, with none in the async module; this is baseline
+parity rather than a clean whole-project type check.
+
+### Matched BF16 measurements
+
+All **80 unprofiled measured trials** and their warmups matched the fixed-depth
+native async baseline's output token IDs exactly. The four modes share the model,
+prompt IDs, output budget, backend and KV capacity. Native async uses `ouro_delayed`
+at threshold 1; speculation uses fixed-depth `ouro`, K=2. Each cell has five
+observations after warmup; mode order reverses on alternate repetitions. EOS is
+ignored, and the fixed English prompt is repeated/truncated to the listed lengths.
+Maximum sequences is 32, token budget 4096 and prefill chunk size 128. KV capacity
+per case is `32 * ceil((prompt + output) / 16) * 4` blocks, matched across modes.
+
+`Async full` is an ablation on the current source that prepares/transfers the
+full 32 x 4 x 4096 table; `Async active` uses the committed contiguous active
+region. Both wrappers expose the same logical table extents to draft/verify and
+have the same wrapper overhead. This isolates preparation/transfer capacity;
+it is not a performance measurement of the old PR head.
+
+Committed decode throughput excludes each request's first token. Timing begins
+after all first outputs and bootstrap GPU work complete, and ends after final GPU
+work completes. Values are median `[min, max]` tokens/s over five observations;
+the ranges are descriptive, not confidence intervals. Profiler is disabled.
+
+| Prompt/output | Concurrency | Native async | Sync spec | Async full | Async active |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 64/8 | 1 | 19.62 [18.96, 19.89] | 28.72 [28.56, 28.98] | 29.36 [29.08, 29.51] | 29.02 [28.36, 29.53] |
+| 64/32 | 1 | 19.51 [19.07, 19.58] | 29.85 [29.25, 30.22] | 30.14 [29.92, 30.34] | 30.32 [29.48, 30.44] |
+| 64/32 | 8 | 154.23 [153.57, 155.85] | 236.45 [234.29, 237.60] | 242.53 [240.97, 243.44] | 243.00 [242.51, 243.51] |
+| 512/128 | 1 | 19.87 [19.83, 19.92] | 27.49 [26.60, 28.14] | 28.40 [28.22, 28.44] | 28.53 [28.23, 28.71] |
+
+Engine E2E covers request admission through final completed GPU work. It includes
+prefill and first token, but excludes client/network latency. Median `[min, max]`
+milliseconds under the same protocol:
+
+| Prompt/output | Concurrency | Native async | Sync spec | Async full | Async active |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 64/8 | 1 | 411.28 [406.44, 430.49] | 298.40 [295.59, 301.16] | 292.00 [290.69, 294.45] | 295.40 [290.49, 300.41] |
+| 64/32 | 1 | 1644.06 [1637.03, 1683.32] | 1092.83 [1079.53, 1115.31] | 1083.81 [1077.01, 1090.74] | 1077.13 [1073.00, 1109.07] |
+| 64/32 | 8 | 1718.17 [1701.54, 1724.73] | 1132.40 [1126.94, 1144.91] | 1106.91 [1103.24, 1112.90] | 1104.71 [1101.74, 1106.22] |
+| 512/128 | 1 | 6655.23 [6639.07, 6669.83] | 4858.11 [4750.69, 5013.35] | 4708.12 [4700.69, 4736.14] | 4688.06 [4657.09, 4736.26] |
+
+Async active's median decode throughput exceeds sync speculation by 1.1–3.8%
+in these cells. The active/full E2E differences are small, mixed in direction and
+have overlapping observed ranges; these five observations do not establish a
+stable E2E gain from narrowing the table. The largest allocated-memory peak was
+19.03 GiB for either async variant and 18.71 GiB for sync speculation. No memory
+reduction is claimed; reserved and allocated peaks are retained per observation.
+
+### Active-region preparation and transfer
+
+A separate warmed microexperiment used 1000 CPU preparations and 100 CUDA-event
+H2D observations per variant, with prompt/output 64/32. Both banks are reused,
+and copies complete before the CPU mutates pinned storage. Times below are medians;
+they are not complete-round or E2E timings.
+
+| Concurrency | Variant | H2D bytes | CPU prepare (us) | H2D event (us) |
+| --- | --- | ---: | ---: | ---: |
+| 1 | Full capacity | 2,097,152 | 78.51 | 43.55 |
+| 1 | Active (1 x 4 x 5) | 80 | 14.22 | 7.42 |
+| 8 | Full capacity | 2,097,152 | 98.45 | 43.49 |
+| 8 | Active (8 x 4 x 5) | 640 | 34.45 | 7.23 |
+
+This supports the reduced host preparation and transfer work in `_prepare_round()`
+and the contiguous table copy in `submit_round()`. It does not imply that the same
+microsecond savings appear on the complete request's critical path.
+
+### Separate profiling diagnostics
+
+Warmed prompt/output 64/8, concurrency 1, K=2 was captured separately with CPU
+and CUDA activity. Ops-only disables shapes, memory and stacks; full enables all
+three and exports actual nonempty CPU/GPU stack and memory records. Full-request
+ops traces cover prefill, first token and decode. Matching single-round ops/full
+captures cover the first complete draft/verify/acceptance/result-transfer round
+after warmed bootstrap, ending after its GPU work completes. The initial
+full-request full trace was valid but about 468 MiB, exceeding the 200 MiB capture
+budget; it was preserved, and the remaining full captures were narrowed rather
+than repeating that oversized window.
+
+The CPU `user_annotation` decode range bounds the union of GPU kernels/copies.
+A gap is the remainder of that range, not SM utilization or proof of a host
+bottleneck. These single ops-only observations are diagnostic and include profiler
+overhead; they do not replace the unprofiled table above.
+
+| Ops-only observation | Async full | Async active | Sync spec |
+| --- | ---: | ---: | ---: |
+| Request wall (ms) | 500.82 | 513.64 | 513.32 |
+| Decode wall (ms) | 407.43 | 422.25 | 424.59 |
+| Decode GPU active union (ms) | 64.92 | 64.81 | 64.28 |
+| Decode GPU gaps (ms) | 342.51 | 357.44 | 360.31 |
+| H2D bytes / copies (whole request) | 6,303,248 / 13 | 12,032 / 13 | 12,864 / 32 |
+| H2D summed copy duration (us) | 175.90 | 10.59 | 25.31 |
+| D2H copies (whole request) | 4 | 4 | 4 |
+| CUDA synchronization calls | 12 | 12 | 10 |
+| CPU `aten::item` calls | 0 | 0 | 0 |
+
+The active/full pair reduces copied bytes while copy counts and synchronization
+counts remain unchanged. GPU active time changes little. The candidate trace's
+longer wall/gap time does not isolate a regression, just as lower transfer time
+does not establish E2E improvement. The current synchronous runner also has no
+`aten::item` events here; historical scalar-read counts must not be applied to
+this merged source. Retiring a collected ticket omits the redundant compute-event
+host wait because its copy-completion event already depends on compute completion;
+partial-failure drains retain both owned streams. The regression tests check
+ordering and lifetime behavior independently of this performance diagnosis.
+
+Both figures use matched scales, grouped activity tracks and an explicit runtime
+revision. Short waits/copies may be thinner than a pixel at this scale; their
+measured event counts above remain nonzero.
+
+![Current full-capacity and active-region request timelines](images/async-speculative-current-timeline.png)
+
+![Current first 40 ms of decode, aligned](images/async-speculative-current-zoom.png)
+
+### Evidence and reproduction
+
+Current raw artifacts and local diagnostic scripts are preserved outside the
+repository source, under
+`/home/leo/slurm-workspaces/rlt-pr66-d977817-20261010/`:
+`measure_gpu.py`, `profile_bounded.py`, `profile_paired_ops.py`, Slurm scripts and `evidence/` containing
+`bf16-performance.json`, test XML, logs, source/model/tokenizer hashes, ops traces,
+full single-round traces, stack exports and memory timelines. The diagnostic
+scripts are not supported benchmark entry points. To reproduce the measurement
+protocol inside a one-GPU Slurm allocation, copy the frozen checkout and scripts
+into a fresh directory containing `repo/` and `evidence/`. Set `PR66_RERUN` to
+that directory and use the recorded environment:
+
+```bash
+cd "$PR66_RERUN/repo"
+export PYTHONPATH="$PWD" HF_HUB_OFFLINE=1 OMP_NUM_THREADS=1
+/home/leo/vllm-project/vllm-rlt/.venv/bin/python ../measure_gpu.py measure
+```
+
+Retain a fresh evidence directory when rerunning rather than overwriting the
+captured records. The commands in Validation above remain the supported GPU
+regression entry points.
 
 ## Historical validation and measured results
 
 The measurements below belong to the 2026-09-23 snapshot: PR44 commit
 `d9fca507e766e81f5d89f90d598881c12d7d8397` plus the asynchronous implementation.
-They do not qualify current main or the review refactor. Current CUDA regression,
-BF16 output agreement and performance remain pending; CPU checks do not replace
-native GPU validation. Detailed run logs and local artifact paths are retained
-in the PR description.
+They do not qualify current main or the review refactor. The current validation
+above is a separate experiment with its own source revision and narrower workload.
+Historical logs remain under `/home/leo/slurm-logs/rlt-async-spec/`.
 
 The real Ouro-1.4B checkpoint used BF16 weights, activations and KV, Triton,
 one H20-3e on `vllm-h20-02`, TP=1 and `d=2, D=4`. It has 24 shared layers,
@@ -141,7 +297,7 @@ preparation time, H2D bytes/time and unprofiled end-to-end latency against the
 previous full-capacity transfer, especially small batches and short contexts.
 The removed historical benchmark is not a supported repository entry point.
 
-## Results
+## Historical results
 
 All **150 measured trials** (120 short + 30 longer) completed with exact token
 agreement against the matched native path. Three additional observations in the
@@ -171,7 +327,7 @@ and 18.657 GiB for async speculation (longer case, concurrency 32, K=2). This
 implementation retains device state and pinned/device banks; it does not claim a
 memory reduction. JSON also contains reserved-memory peaks for every observation.
 
-## Separate profiling analysis
+## Historical profiling analysis
 
 The diagnostic capture is the warmed short workload at concurrency 1, K=2.
 `measured_decode` is selected from the CPU `user_annotation` track; PyTorch also
@@ -225,6 +381,7 @@ hook timings. Representative kernel reports and all-pass tables are retained.
 These historical engine microbenchmarks do not establish production HTTP
 capacity, TTFT or general model quality. Repeated identical prompts do not
 represent all serving traffic; concurrency 32 is a tested point, not a saturation
-limit. No current speedup is claimed for this refactor, other GPUs/checkpoints,
-random sampling, adaptive depth, FA4, CUDA Graphs, preemption or PD. Keep the
+limit. The current runs cover K=2 and concurrency 1/8; they do not validate K=1/4/8,
+concurrency 32, production capacity, other GPUs/checkpoints, random sampling,
+adaptive depth, asynchronous CUDA Graphs, FA4, preemption or PD. Keep the
 synchronous path until the missing capabilities are covered and validated.
