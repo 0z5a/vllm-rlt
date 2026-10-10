@@ -44,6 +44,21 @@ def drain(e):
     pytest.fail("speculative scheduler did not drain")
 
 
+@pytest.mark.parametrize("generation,supports_packed", [(2, True), (4, False)])
+def test_speculative_prefill_routes_by_declared_capabilities(generation, supports_packed):
+    from types import SimpleNamespace
+
+    from vllm_rlt.attention import BackendCapabilities
+
+    e = engine(model())
+    e.cache_manager.attention = SimpleNamespace(
+        capabilities=BackendCapabilities(packed_prefill=supports_packed)
+    )
+    e.cache_manager.attention_info = {"generation": generation}
+    assert e.speculative_runner._packed(True) is supports_packed
+    assert e.speculative_runner._packed(False) is False
+
+
 @pytest.mark.parametrize("k", [1, 2, 4, 8])
 @pytest.mark.parametrize("budget", [1, 3, 32])
 def test_greedy_matches_native_with_ragged_rounds_and_limits(k, budget):
@@ -395,7 +410,7 @@ def test_greedy_round_reads_back_once_with_ragged_requests():
     # Draft IDs stay on the device; every speculative round, including ragged and
     # budget-shortened ones, synchronizes with the host exactly once.
     torch.manual_seed(123)
-    m = OuroForCausalLM(OuroConfig.tiny(hidden_size=256, head_dim=64)).to(
+    m = OuroForCausalLM(tiny_ouro_config(hidden_size=256, head_dim=64)).to(
         device="cuda", dtype=torch.bfloat16
     )
     e = engine(m, k=3, cache_config=CacheConfig(128, 16), attention_backend="triton")

@@ -11,7 +11,7 @@ from vllm_rlt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace
-from vllm_rlt.worker.cuda_graph import RecurrentGraphs
+from vllm_rlt.worker.cuda_graph import CodaGraphs, RecurrentGraphs
 from vllm_rlt.worker.loopcd import Reference, active, extrapolate
 from vllm_rlt.worker.sampler import Sampler
 
@@ -107,6 +107,13 @@ class ModelRunner:
                 self.exit_config.mode in ("ouro", "ouro_delayed"),
             )
             if self.execution_config.cuda_graphs
+            else None
+        )
+        self.coda_graphs = (
+            CodaGraphs(model, self.execution_config)
+            if self.graphs is not None
+            and self.execution_config.loopcd
+            and not self.execution_config.async_scheduling
             else None
         )
         self._prefill_banks = None
@@ -319,9 +326,18 @@ class ModelRunner:
             self.loopcd_stats[phase + "_core_rows"] += effective
             self.loopcd_stats[phase + "_submitted_rows"] += submitted
 
+    def _coda(self, hidden):
+        return (
+            self.coda_graphs.run(hidden)
+            if self.coda_graphs is not None
+            else self.model.coda(hidden)
+        )
+
     def _loopcd_readout(self, hidden, requests, positions, indices):
+        # Padding is needed by the core, but never by the output projections.
+        hidden = hidden[: len(requests)]
         if not self.execution_config.loopcd:
-            return self.model.coda(hidden)
+            return self._coda(hidden)
         references = []
         for request, position, index in zip(requests, positions, indices):
             ref = None
@@ -342,7 +358,7 @@ class ModelRunner:
             guided[row] = extrapolate(
                 hidden[row], ref.hidden, requests[row].sampling_params.loopcd.strength
             )
-        logits = self.model.coda(guided)
+        logits = self._coda(guided)
         self.loopcd_stats["head_calls"] += 1
         self.loopcd_stats["head_rows"] += logits.shape[0]
         weak_rows = [
@@ -351,7 +367,7 @@ class ModelRunner:
             if ref is not None and requests[row].sampling_params.loopcd.implementation == "two_head"
         ]
         if weak_rows:
-            weak = self.model.coda(torch.stack([references[row].hidden for row in weak_rows]))
+            weak = self._coda(torch.stack([references[row].hidden for row in weak_rows]))
             logits = logits.float()
             for row, value in zip(weak_rows, weak):
                 logits[row] = extrapolate(
@@ -364,7 +380,7 @@ class ModelRunner:
 
     def _prefill_tokens(self, ids, positions, tokens, requests=()):
         cache = self.cache_manager
-        if cache.layout == "last_exited" and getattr(cache.attention, "generation", None) == 4:
+        if cache.layout == "last_exited" and cache.attention_capabilities.packed_prefill:
             # Prefill has genuinely ragged query sequences. Do not pad token rows
             # or reuse decode's per-query, model-max-width static page tables.
             bank = None
@@ -644,10 +660,8 @@ class ModelRunner:
         copies = []
         for request in requests:
             depth = request.loops_done - 1
-            allocation = cache._get_allocation(request.request_id)
-            for layer in range(cache.num_layers):
-                if request.position not in allocation.written[depth][layer]:
-                    raise RuntimeError("cannot finalize before every layer has written KV")
+            if not cache.token_written(request.request_id, request.position, depth):
+                raise RuntimeError("cannot finalize before every layer has written KV")
             if depth + 1 < cache.max_loops:
                 copies.append(request)
         if not copies:
@@ -688,10 +702,7 @@ class ModelRunner:
             bank.record_done()
             for request in copies:
                 self.events[request.request_id] = bank.done
-                allocation = cache._get_allocation(request.request_id)
-                for depth in range(request.loops_done, cache.max_loops):
-                    for layer in range(cache.num_layers):
-                        allocation.written[depth][layer].add(request.position)
+                cache.mark_finalized(request.request_id, request.position, request.loops_done - 1)
 
     def finalize(self, request):
         # The final core event must precede copies and coda on the boundary stream.

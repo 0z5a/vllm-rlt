@@ -92,6 +92,84 @@ def test_zero_strength_matches_unguided_readout_without_references(enabled):
     assert results[0] == results[1]
 
 
+@pytest.mark.parametrize("implementation", ["two_head", "linear_fused"])
+def test_padded_coda_projects_only_real_requests(implementation):
+    model = model_for()
+    engine = LLMEngine(
+        model,
+        cache_config=CacheConfig(num_blocks=256, block_size=2),
+        scheduler_config=SchedulerConfig(max_num_seqs=3, max_num_batched_tokens=4),
+        execution_config=ExecutionConfig(
+            loopcd=True, static_buffers=True, pad_to_power_of_two=True
+        ),
+    )
+    rows = []
+    hook = model.lm_head.register_forward_pre_hook(
+        lambda _module, inputs: rows.append(len(inputs[0]))
+    )
+    for index in range(3):
+        engine.add_request(
+            str(index),
+            [4 + index],
+            replace(params_for(), max_tokens=1, loopcd=LoopCDParams(implementation=implementation)),
+        )
+    try:
+        while engine.has_unfinished_requests():
+            engine.step()
+    finally:
+        hook.remove()
+    assert rows == ([3, 3] if implementation == "two_head" else [3])
+    assert not engine.model_runner.loopcd_references
+    assert engine.cache_manager.num_used_blocks == 0
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("implementation", ["two_head", "linear_fused"])
+def test_loopcd_coda_graphs_match_eager_through_request_reuse(implementation):
+    torch.manual_seed(42)
+    model = OuroForCausalLM(tiny_ouro_config(head_dim=64)).to("cuda", torch.bfloat16).eval()
+    results = []
+    for graphs in (False, True):
+        engine = LLMEngine(
+            model,
+            cache_config=CacheConfig(num_blocks=256, block_size=4),
+            scheduler_config=SchedulerConfig(max_num_seqs=3, max_num_batched_tokens=4),
+            execution_config=ExecutionConfig(
+                loopcd=True,
+                static_buffers=True,
+                pad_to_power_of_two=True,
+                cuda_graphs=graphs,
+                cuda_graph_max_graphs=1,
+            ),
+            attention_backend="triton",
+        )
+        rounds = []
+        for _ in range(2):
+            for index in range(3):
+                engine.add_request(
+                    str(index),
+                    [4 + index, 7, 3],
+                    replace(
+                        params_for(),
+                        max_tokens=2 + index,
+                        loopcd=LoopCDParams(implementation=implementation),
+                    ),
+                )
+            finished = {}
+            while engine.has_unfinished_requests():
+                for output in engine.step():
+                    if output.finished:
+                        finished[output.request_id] = (output.token_ids, output.exit_depths)
+            assert len(finished) == 3 and engine.cache_manager.num_used_blocks == 0
+            assert not engine.model_runner.loopcd_references
+            rounds.append(finished)
+        if graphs:
+            coda = engine.model_runner.coda_graphs
+            assert coda.captures == 1 and coda.replays > 1 and coda.fallbacks > 0
+        results.append(rounds)
+    assert results[0] == results[1]
+
+
 @pytest.mark.parametrize("prefill,decode", [(4, 4), (4, 2), (3, 2)])
 @pytest.mark.parametrize("implementation", ["two_head", "linear_fused"])
 @pytest.mark.parametrize("chunk", [1, 3, 8])
