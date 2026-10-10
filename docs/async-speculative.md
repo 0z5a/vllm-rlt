@@ -103,8 +103,8 @@ separate that reduction from end-to-end effects.
 ## Current GPU validation (2026-10-10)
 
 Runtime source: `d977817d4e174cbc2fcc9aa7ef5893c35da2ec89`, incorporating main
-`d704aee654235f6a13e8c5bf13b41aaf80fbb7d9`. Slurm jobs 4830/4832/4834/4839 used
-one scheduler-reserved NVIDIA H20-3e on `vllm-h20-02`, TP=1, Python 3.10.20,
+`d704aee654235f6a13e8c5bf13b41aaf80fbb7d9`. Validation used
+one scheduler-reserved NVIDIA H20-3e, TP=1, Python 3.10.20,
 PyTorch 2.11.0+cu128, CUDA 12.8 and Triton 3.6.0. Real Ouro-1.4B weights and KV
 were BF16, with greedy fixed-depth `d=2, D=4`, `last_exited` KV and eager execution.
 
@@ -115,6 +115,15 @@ synchronous speculative ragged CUDA Graph capture/replay cases. The initial
 related run had 12 failures importing the absent FA3 `flash_attn` package and
 three FA4 cases deselected; these environment failures are retained in the logs,
 and neither FlashAttention backend is qualified by the Triton rerun.
+
+A subsequent isolated FA3 installation on the same runtime/test source was
+validated separately: all original 12 graph failures passed with zero
+skips, the related suite passed 160 tests (three explicit FA4 cases deselected),
+eight additional FA3 paged/mixed-depth cases passed, and the async Triton module
+again passed 26 tests. See [the FA3 installation and validation record](flash_attention.md)
+for official source pins, build scope and portable regression commands. The original missing-package
+failures remain preserved; this follow-up does not qualify asynchronous
+speculation on FA3, which still uses the supported Triton path.
 
 The Mac CPU suite passed **477 tests**, with 164 skips: 135 GPU cases not enabled,
 26 missing optional `lm_eval`, and three Nanbeige cases missing official assets.
@@ -234,39 +243,15 @@ measured event counts above remain nonzero.
 
 ![Current first 40 ms of decode, aligned](images/async-speculative-current-zoom.png)
 
-### Evidence and reproduction
-
-Current raw artifacts and local diagnostic scripts are preserved outside the
-repository source, under
-`/home/leo/slurm-workspaces/rlt-pr66-d977817-20261010/`:
-`measure_gpu.py`, `profile_bounded.py`, `profile_paired_ops.py`, Slurm scripts and `evidence/` containing
-`bf16-performance.json`, test XML, logs, source/model/tokenizer hashes, ops traces,
-full single-round traces, stack exports and memory timelines. The diagnostic
-scripts are not supported benchmark entry points. To reproduce the measurement
-protocol inside a one-GPU Slurm allocation, copy the frozen checkout and scripts
-into a fresh directory containing `repo/` and `evidence/`. Set `PR66_RERUN` to
-that directory and use the recorded environment:
-
-```bash
-cd "$PR66_RERUN/repo"
-export PYTHONPATH="$PWD" HF_HUB_OFFLINE=1 OMP_NUM_THREADS=1
-/home/leo/vllm-project/vllm-rlt/.venv/bin/python ../measure_gpu.py measure
-```
-
-Retain a fresh evidence directory when rerunning rather than overwriting the
-captured records. The commands in Validation above remain the supported GPU
-regression entry points.
-
 ## Historical validation and measured results
 
 The measurements below belong to the 2026-09-23 snapshot: PR44 commit
 `d9fca507e766e81f5d89f90d598881c12d7d8397` plus the asynchronous implementation.
 They do not qualify current main or the review refactor. The current validation
 above is a separate experiment with its own source revision and narrower workload.
-Historical logs remain under `/home/leo/slurm-logs/rlt-async-spec/`.
 
 The real Ouro-1.4B checkpoint used BF16 weights, activations and KV, Triton,
-one H20-3e on `vllm-h20-02`, TP=1 and `d=2, D=4`. It has 24 shared layers,
+one H20-3e, TP=1 and `d=2, D=4`. It has 24 shared layers,
 hidden size 2048, 16 attention/KV heads and head dimension 128. Source and
 model/config hashes were recorded with the results. Native async used
 `ouro_delayed` at threshold 1 (full depth); speculative modes used fixed-depth
