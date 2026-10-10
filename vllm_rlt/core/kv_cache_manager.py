@@ -97,6 +97,27 @@ class _PreparedKVBatch:
     max_seqlen_q: int = 1
 
 
+@dataclass(frozen=True, eq=False)
+class _DeviceKVBatch:
+    """Stream-ordered decode metadata with device-owned positions.
+
+    Created and validated by KVCacheManager; it contains borrowed allocation
+    identities and read-only tensor metadata, never a manager reference. Tensor
+    storage and completion events belong to the runner.
+
+    The caller reserves all pages before submission and retains allocations until
+    the final GPU reader completes. Unlike _PreparedKVBatch, this descriptor does
+    not claim that CPU written-position bookkeeping describes in-flight decode.
+    """
+
+    allocations: tuple[tuple[str, _Allocation], ...]
+    position_ids: torch.Tensor
+    write_blocks: torch.Tensor
+    write_offsets: torch.Tensor
+    block_tables: torch.Tensor
+    context_lengths: torch.Tensor
+
+
 class KVCacheManager:
     """Own a fixed physical page pool shared by request/depth allocations.
 
@@ -700,8 +721,54 @@ class KVCacheManager:
         host = torch.tensor(values, dtype=dtype, pin_memory=self.device.type == "cuda")
         return host.to(self.device, non_blocking=True)
 
-    def _require_live_batch(self, batch: _PreparedKVBatch) -> None:
-        if batch.owner is not self:
+    def _prepare_device_batch(
+        self,
+        *,
+        allocations,
+        position_ids,
+        write_blocks,
+        write_offsets,
+        block_tables,
+        context_lengths,
+    ) -> _DeviceKVBatch:
+        """Borrow stream-ordered metadata without reading device positions on CPU.
+
+        The runner reserves the upper bound and retains these allocation objects
+        until GPU completion. This does not advance host written-position state.
+        Allocation identity also rejects descriptors from another cache manager.
+        """
+        batch = _DeviceKVBatch(
+            tuple(allocations),
+            position_ids,
+            write_blocks,
+            write_offsets,
+            block_tables,
+            context_lengths,
+        )
+        self._require_live_batch(batch)
+        rows = len(position_ids)
+        for name, tensor, dtype in (
+            ("position_ids", position_ids, torch.int64),
+            ("write_blocks", write_blocks, torch.int64),
+            ("write_offsets", write_offsets, torch.int64),
+            ("context_lengths", context_lengths, torch.int32),
+        ):
+            if tensor.shape != (rows,) or tensor.dtype != dtype or tensor.device != self.device:
+                raise ValueError(f"{name} must have shape [rows] and use {dtype} on {self.device}")
+        if (
+            not allocations
+            or block_tables.ndim != 2
+            or block_tables.shape[0] != rows
+            or block_tables.shape[1] == 0
+            or block_tables.dtype != torch.int32
+            or block_tables.device != self.device
+            or not block_tables.is_contiguous()
+        ):
+            raise ValueError("device block tables must be contiguous int32 [rows, pages]")
+        return batch
+
+    def _require_live_batch(self, batch: _PreparedKVBatch | _DeviceKVBatch) -> None:
+        if isinstance(batch, _PreparedKVBatch) and batch.owner is not self:
             raise ValueError("prepared KV batch belongs to a different cache manager")
         for request_id, allocation in batch.allocations:
             if self._allocations.get(request_id) is not allocation:
@@ -741,10 +808,16 @@ class KVCacheManager:
 
     @torch.no_grad()
     def _write_prepared(
-        self, layer: int, batch: _PreparedKVBatch, k: torch.Tensor, v: torch.Tensor
+        self, layer: int, batch: _PreparedKVBatch | _DeviceKVBatch, k: torch.Tensor, v: torch.Tensor
     ) -> None:
         self._validate_layer(layer)
         self._require_live_batch(batch)
+        if isinstance(batch, _DeviceKVBatch):
+            self._validate_tensor(k, len(batch.position_ids), "k")
+            self._validate_tensor(v, len(batch.position_ids), "v")
+            self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k
+            self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v
+            return
         if not batch.writable:
             raise ValueError("a read-only prepared KV batch cannot be written")
         self._validate_tensor(k, len(batch.position_ids), "k")
@@ -781,11 +854,19 @@ class KVCacheManager:
 
     @torch.no_grad()
     def _attend_prepared(
-        self, layer: int, batch: _PreparedKVBatch, q: torch.Tensor
+        self, layer: int, batch: _PreparedKVBatch | _DeviceKVBatch, q: torch.Tensor
     ) -> torch.Tensor:
         self._validate_layer(layer)
         self._require_live_batch(batch)
         self._validate_tensor(q, len(batch.position_ids), "q", query=True)
+        if isinstance(batch, _DeviceKVBatch):
+            return self.attention(
+                q,
+                self.key_cache[:, layer],
+                self.value_cache[:, layer],
+                batch.block_tables,
+                batch.context_lengths,
+            )
         if not batch.rows:
             return torch.empty_like(q)
         for allocation, depth, position in batch.rows:
