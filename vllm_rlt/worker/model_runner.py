@@ -11,8 +11,9 @@ from vllm_rlt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace
-from vllm_rlt.worker.cuda_graph import RecurrentGraphs
+from vllm_rlt.worker.cuda_graph import CodaGraphs, RecurrentGraphs
 from vllm_rlt.worker.sampler import Sampler
+from vllm_rlt.worker.sampling import generator_for
 
 
 @dataclass
@@ -91,6 +92,11 @@ class ModelRunner:
                 self.exit_config.mode in ("ouro", "ouro_delayed"),
             )
             if self.execution_config.cuda_graphs
+            else None
+        )
+        self.coda_graphs = (
+            CodaGraphs(model, self.execution_config, cache_manager)
+            if self.graphs is not None and getattr(model, "requires_boundary_kv", False)
             else None
         )
         self._prefill_banks = None
@@ -255,25 +261,52 @@ class ModelRunner:
                 ids = [i.request.request_id for i in active]
                 positions = [i.token_start + offset for i in active]
                 tokens = [i.request.prompt_token_ids[p] for i, p in zip(active, positions)]
-                hidden = self._prefill_tokens(ids, positions, tokens)
+                hidden = self._prefill_tokens(ids, positions, tokens, [i.request for i in active])
                 for row, item in enumerate(active):
                     self._save(item.request, hidden[row])
             return
-        ids, positions, tokens = [], [], []
+        ids, positions, tokens, requests = [], [], [], []
         for item in batch.items:
             start, count, request = item.token_start, item.token_count, item.request
             ids.extend([request.request_id] * count)
             positions.extend(range(start, start + count))
             tokens.extend(request.prompt_token_ids[start : start + count])
-        hidden = self._prefill_tokens(ids, positions, tokens)
+            requests.extend([request] * count)
+        hidden = self._prefill_tokens(ids, positions, tokens, requests)
         offset = 0
         for item in batch.items:
             offset += item.token_count
             self._save(item.request, hidden[offset - 1])
 
-    def _prefill_tokens(self, ids, positions, tokens):
+    def _populate_coda(self, hidden, ids, positions, requests):
+        # The last prompt position runs coda once, when producing the first token.
+        rows = (
+            [
+                row
+                for row, (position, request) in enumerate(zip(positions, requests))
+                if position < len(request.prompt_token_ids) - 1
+            ]
+            if requests
+            else list(range(len(ids)))
+        )
+        if not rows:
+            return
+        boundary = self.cache_manager._prepare_batch(
+            [ids[row] for row in rows],
+            [0] * len(rows),
+            [positions[row] for row in rows],
+            packed_prefill=self.cache_manager.attention_capabilities.packed_prefill,
+        )
+        self.model.coda_prepared(hidden[rows], boundary, self.cache_manager, compute_logits=False)
+
+    def _prefill_tokens(self, ids, positions, tokens, requests=()):
         cache = self.cache_manager
-        if cache.layout == "last_exited" and getattr(cache.attention, "generation", None) == 4:
+        generators = (
+            [generator_for(request, self.device) for request in requests]
+            if getattr(self.model, "requires_boundary_kv", False) and requests
+            else None
+        )
+        if cache.layout == "last_exited" and cache.attention_capabilities.packed_prefill:
             # Prefill has genuinely ragged query sequences. Do not pad token rows
             # or reuse decode's per-query, model-max-width static page tables.
             bank = None
@@ -291,7 +324,7 @@ class ModelRunner:
             )
             if getattr(self.model, "requires_boundary_kv", False):
                 boundary = cache._prepare_batch(ids, [0] * len(ids), positions, packed_prefill=True)
-                hidden = self.model.prelude_prepared(tensor, boundary, cache)
+                hidden = self.model.prelude_prepared(tensor, boundary, cache, generators=generators)
             else:
                 hidden = self.model.prelude(tensor)
             for depth in range(self.model.config.total_ut_steps):
@@ -306,7 +339,7 @@ class ModelRunner:
                     hidden, metadata, cache, compute_gate=False
                 )
             if getattr(self.model, "requires_boundary_kv", False):
-                self.model.coda_prepared(hidden, boundary, cache)
+                self._populate_coda(hidden, ids, positions, requests)
             if bank:
                 bank.release()
             return hidden
@@ -320,7 +353,13 @@ class ModelRunner:
         boundary = None
         if getattr(self.model, "requires_boundary_kv", False):
             boundary = cache._prepare_batch(ids, [0] * len(ids), positions)
-            hidden = self.model.prelude_prepared(tensor[: len(ids)], boundary, cache)
+            hidden = self.model.prelude_prepared(
+                tensor[: len(ids)], boundary, cache, generators=generators
+            )
+            if workspace:
+                workspace.hidden[:size].zero_()
+                workspace.hidden[: len(ids)].copy_(hidden)
+                hidden = workspace.hidden[:size]
         else:
             hidden = self.model.prelude(tensor)
         for depth in range(self.model.config.total_ut_steps):
@@ -331,7 +370,7 @@ class ModelRunner:
             if workspace:
                 workspace.release()
         if boundary is not None:
-            self.model.coda_prepared(hidden, boundary, cache)
+            self._populate_coda(hidden, ids, positions, requests)
         return hidden
 
     def prepare(self, batch):
@@ -401,7 +440,10 @@ class ModelRunner:
                     [r.position for r in requests],
                 )
                 hidden = self.model.prelude_prepared(
-                    tokens[: len(requests)], boundary, self.cache_manager
+                    tokens[: len(requests)],
+                    boundary,
+                    self.cache_manager,
+                    generators=[generator_for(request, self.device) for request in requests],
                 )
             else:
                 hidden = self.model.prelude(tokens)
@@ -449,8 +491,12 @@ class ModelRunner:
                         [0] * len(requests),
                         [r.position for r in requests],
                     )
-                    logits = self.model.coda_prepared(
-                        hidden[: len(requests)], boundary, self.cache_manager
+                    logits = (
+                        self.coda_graphs.run(hidden[: len(requests)], boundary)
+                        if self.coda_graphs is not None
+                        else self.model.coda_prepared(
+                            hidden[: len(requests)], boundary, self.cache_manager
+                        )
                     )
                 else:
                     logits = self.model.coda(hidden)
@@ -549,10 +595,8 @@ class ModelRunner:
         copies = []
         for request in requests:
             depth = request.loops_done - 1
-            allocation = cache._get_allocation(request.request_id)
-            for layer in range(cache.num_layers):
-                if request.position not in allocation.written[depth][layer]:
-                    raise RuntimeError("cannot finalize before every layer has written KV")
+            if not cache.token_written(request.request_id, request.position, depth):
+                raise RuntimeError("cannot finalize before every layer has written KV")
             if depth + 1 < cache.max_loops:
                 copies.append(request)
         if not copies:
@@ -593,10 +637,7 @@ class ModelRunner:
             bank.record_done()
             for request in copies:
                 self.events[request.request_id] = bank.done
-                allocation = cache._get_allocation(request.request_id)
-                for depth in range(request.loops_done, cache.max_loops):
-                    for layer in range(cache.num_layers):
-                        allocation.written[depth][layer].add(request.position)
+                cache.mark_finalized(request.request_id, request.position, request.loops_done - 1)
 
     def finalize(self, request):
         # The final core event must precede copies and coda on the boundary stream.

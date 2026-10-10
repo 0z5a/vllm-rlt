@@ -211,6 +211,9 @@ class HuginnForCausalLM(nn.Module):
                 config.n_layers_in_prelude + config.n_layers_in_recurrent_block,
             )
         )
+        self.coda_kv_layers = tuple(
+            range(config.n_layers_in_prelude + config.n_layers_in_recurrent_block, config.n_layers)
+        )
         self.transformer = nn.ModuleDict(
             dict(
                 wte=nn.Embedding(config.padded_vocab_size, config.n_embd),
@@ -244,18 +247,30 @@ class HuginnForCausalLM(nn.Module):
     def _freqs(self, batch):
         return self.freqs_cis[0].index_select(0, batch.position_ids)
 
-    def prelude_prepared(self, tokens, batch: "_PreparedKVBatch", cache: "KVCacheManager"):
+    def prelude_prepared(
+        self, tokens, batch: "_PreparedKVBatch", cache: "KVCacheManager", *, generators=None
+    ):
+        if generators is not None and len(generators) != len(tokens):
+            raise ValueError("one request generator is required per token row")
         hidden = self.transformer.wte(tokens) * math.sqrt(self.config.n_embd)
         freqs = self._freqs(batch)
         for block in self.transformer.prelude:
             hidden = block(hidden, freqs, batch, cache)
-        state = torch.randn_like(hidden)
-        torch.nn.init.trunc_normal_(
-            state,
-            std=self.config.initializer_range,
-            a=-3 * self.config.initializer_range,
-            b=3 * self.config.initializer_range,
-        )
+        state = torch.empty_like(hidden)
+        start = 0
+        while start < len(state):
+            end = start + 1
+            generator = generators[start] if generators is not None else None
+            while end < len(state) and (generators is None or generators[end] is generator):
+                end += 1
+            torch.nn.init.trunc_normal_(
+                state[start:end],
+                std=self.config.initializer_range,
+                a=-3 * self.config.initializer_range,
+                b=3 * self.config.initializer_range,
+                generator=generator,
+            )
+            start = end
         state = state * math.sqrt(self.config.n_embd)
         return torch.cat((state, hidden), dim=-1)
 
@@ -276,13 +291,15 @@ class HuginnForCausalLM(nn.Module):
         batch = cache._prepare_batch(request_ids, depths, positions)
         return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
 
-    def coda_prepared(self, hidden, batch: "_PreparedKVBatch", cache: "KVCacheManager"):
+    def coda_prepared(
+        self, hidden, batch: "_PreparedKVBatch", cache: "KVCacheManager", *, compute_logits=True
+    ):
         state, _ = hidden.split(self.config.n_embd, dim=-1)
         state = self.transformer.ln_f(state)
         freqs = self._freqs(batch)
         for block in self.transformer.coda:
             state = block(state, freqs, batch, cache)
-        return self.lm_head(self.transformer.ln_f(state))
+        return self.lm_head(self.transformer.ln_f(state)) if compute_logits else None
 
     @classmethod
     def from_pretrained(

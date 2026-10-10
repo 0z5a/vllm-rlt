@@ -16,10 +16,15 @@
   <a href="#how-it-works">How It Works</a> ·
   <a href="#getting-started">Getting Started</a> ·
   <a href="docs/README.md">Documentation</a> ·
+  <a href="docs/developer-guide.md"><strong>Developer Must-Read</strong></a> ·
   <a href="#performance-baselines">Performance</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#contributing">Contributing</a>
 </p>
+
+> [!IMPORTANT]
+> **Contributing? Read the [Developer Must-Read](docs/developer-guide.md) first.**
+> Good code starts before coding. Follow the development workflow and completion criteria before marking your change ready.
 
 ## About
 
@@ -67,9 +72,8 @@ Advanced execution and cache features are opt-in; see the guides below for
 supported combinations.
 
 Huginn uses native checkpoint loading and depth-aware KV for its recurrent
-core, with separate prelude and coda KV. See the
-[Huginn CUDA Graph recipe](docs/recipes/huginn-cuda-graphs.md) for supported
-execution options, reproducible correctness checks, and A800 measurements.
+core, with separate prelude and coda KV. It supports synchronous fixed-depth
+inference and CUDA Graphs for the recurrent core and decode coda.
 
 ## How It Works
 
@@ -203,6 +207,9 @@ for the target architecture, module breakdown, and implementation sequence.
 <a id="contributing"></a>
 
 ## 🤝 Contributing
+
+Start with the **[Developer Must-Read](docs/developer-guide.md)** for the development
+workflow, required evidence, and completion criteria.
 
 Help us build efficient inference for recurrent language models. vllm-rlt is
 open to contributors working on systems, models, evaluation, and documentation.

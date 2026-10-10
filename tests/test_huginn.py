@@ -5,7 +5,6 @@ import json
 
 import pytest
 import torch
-from safetensors.torch import save_file
 
 from tests.reference.huginn import dense_huginn_reference
 from vllm_rlt import CacheConfig, ExecutionConfig, SamplingParams, SchedulerConfig
@@ -94,6 +93,8 @@ def test_prelude_core_coda_and_kv_match_independent_dense(model, parallel):
 
 @pytest.mark.parametrize("sharded", [False, True])
 def test_strict_checkpoint_and_auto_dispatch_preserve_tied_head(tmp_path, model, sharded):
+    from safetensors.torch import save_file
+
     (tmp_path / "config.json").write_text(json.dumps(model.config.to_dict()))
     weights = {name: value.clone().contiguous() for name, value in model.state_dict().items()}
     names = list(weights)
@@ -154,6 +155,86 @@ def test_request_reuse_releases_boundary_and_recurrent_kv(model):
         assert engine.cache_manager.num_used_blocks == 0
         rounds.append(finished)
     assert rounds[0] == rounds[1]
+
+
+@pytest.mark.parametrize("temperature", [0, 0.7])
+@pytest.mark.parametrize("padded", [False, True])
+def test_request_seed_is_independent_of_batching_and_global_rng(model, temperature, padded):
+    prompts = {"first": [4, 7, 3], "second": [9, 2, 5, 6]}
+    seeds = {"first": 17, "second": 83}
+
+    def run(names, global_seed):
+        engine = LLMEngine(
+            model,
+            cache_config=CacheConfig(num_blocks=128, block_size=2),
+            scheduler_config=SchedulerConfig(
+                max_num_seqs=3, max_num_batched_tokens=8, prefill_chunk_size=3
+            ),
+            execution_config=ExecutionConfig(static_buffers=padded, pad_to_power_of_two=padded),
+        )
+        torch.manual_seed(global_seed)
+        before = torch.random.get_rng_state().clone()
+        for name in names:
+            engine.add_request(
+                name,
+                prompts[name],
+                SamplingParams(
+                    max_tokens=4,
+                    min_loops=3,
+                    max_loops=3,
+                    ignore_eos=True,
+                    seed=seeds[name],
+                    temperature=temperature,
+                ),
+            )
+        result = {}
+        while engine.has_unfinished_requests():
+            for output in engine.step():
+                if output.finished:
+                    result[output.request_id] = (output.token_ids, output.exit_depths)
+        torch.testing.assert_close(torch.random.get_rng_state(), before, rtol=0, atol=0)
+        assert engine.cache_manager.num_used_blocks == 0
+        return result
+
+    separate = run(["first"], 1) | run(["second"], 999)
+    assert run(["second", "first"], 42) == separate
+
+
+@pytest.mark.parametrize("padded", [False, True])
+def test_prefill_populates_history_without_projecting_unused_logits(model, padded):
+    engine = LLMEngine(
+        model,
+        cache_config=CacheConfig(num_blocks=128, block_size=2),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=3, max_num_batched_tokens=4, prefill_chunk_size=3
+        ),
+        execution_config=ExecutionConfig(static_buffers=padded, pad_to_power_of_two=padded),
+    )
+    coda_rows, head_rows = [], []
+    hooks = [
+        model.transformer.coda[0].register_forward_pre_hook(
+            lambda _module, inputs: coda_rows.append(len(inputs[0]))
+        ),
+        model.lm_head.register_forward_pre_hook(
+            lambda _module, inputs: head_rows.append(len(inputs[0]))
+        ),
+    ]
+    prompts = ([4, 7, 3, 2, 6], [9, 2, 5], [3])
+    for index, prompt in enumerate(prompts):
+        engine.add_request(
+            str(index),
+            prompt,
+            SamplingParams(max_tokens=1, min_loops=3, max_loops=3, ignore_eos=True),
+        )
+    try:
+        while engine.has_unfinished_requests():
+            engine.step()
+    finally:
+        for hook in hooks:
+            hook.remove()
+    assert sum(coda_rows) == sum(map(len, prompts))
+    assert sum(head_rows) == len(prompts)
+    assert engine.cache_manager.num_used_blocks == 0
 
 
 @pytest.mark.parametrize(
@@ -222,8 +303,11 @@ def test_huginn_graph_replay_matches_eager_with_reuse_and_fallback(max_graphs):
         if graph:
             stats = engine.model_runner.graphs
             assert stats.captures > 0 and stats.replays > stats.captures
+            coda = engine.model_runner.coda_graphs
+            assert coda.captures > 0 and coda.replays > coda.captures
             if max_graphs == 1:
                 assert stats.fallbacks > 0
+                assert coda.fallbacks > 0
         results.append(rounds)
     assert results[0] == results[1]
 
