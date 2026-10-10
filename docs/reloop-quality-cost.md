@@ -125,8 +125,9 @@ P4 prefix planes. Peak allocated memory rounds to69.4261GiB in every arm;
 guided reference peak is131072 bytes. Off's capability-gated work counters do
 not measure actual body work.
 
-The original W5 capacity targets remain separate from the P512 candidate-cost
-recipe. CPU bounds round each P+128−1 computed span to16-token R4 groups:
+The following unchanged table preserves the historical64GiB W5 planning
+snapshot. Current common48GiB execution results are reported separately below.
+CPU bounds round each P+128−1 computed span to16-token R4 groups:
 
 | Target | B / C | Target A | Input tokens | FP32 R4 KV GiB | Static status | Exact native E2E |
 |---|---|---:|---|---:|---|---|
@@ -288,7 +289,7 @@ code arms have their separate source/dtype/data boundaries. They do not supply
 this FP32 candidate's fixed-work or independent quality result.
 
 
-The seven-point W5 input resolver and single-arm native driver are available in [execution preparation](../benchmarks/results/reloop-20261006/w5-execution-preparation/README.md). They retain all820 IDs,4C refill,the three selected arms,two fresh rounds and the original byte-identical observer. Original CLI/unresolved-template rejection receipts and an independent source review are included. Canonical tokenization has now completed with820 records/919552 token IDs. Independent review verifies all173 payload files,133 source Git blobs,six tokenizer metadata files,original case ordering and static KV geometry; actual known-actor handoff is verified. The original L1 device case subsequently started, but its final six-process/raw/archive/handoff closure remains unverified; there is no verified L1 speed result. Other W5 device cases remain NOT_RUN. [Canonical input result](../benchmarks/results/reloop-20261006/W5_CANONICAL_INPUTS-v1.md), [L1 closure status](../benchmarks/results/reloop-20261006/H100_L1_CLOSURE_PENDING-v1.md).
+The seven-point W5 input resolver and single-arm native driver are available in [execution preparation](../benchmarks/results/reloop-20261006/w5-execution-preparation/README.md). They retain all820 IDs,4C refill,the three selected arms,two fresh rounds and the original byte-identical observer. Original CLI/unresolved-template rejection receipts and an independent source review are included. Canonical tokenization has now completed with820 records/919552 token IDs. Independent review verifies all173 payload files,133 source Git blobs,six tokenizer metadata files,original case ordering and static KV geometry; actual known-actor handoff is verified. The original common48GiB L1 device case subsequently completed all six fresh processes/60trials/240requests with full source/raw/archive and known-reader handoff review. Its guided speed improvement is33.34%; the original transport failure and deadline breach remain recorded. The other six W5 device cases remain open. [Canonical input result](../benchmarks/results/reloop-20261006/W5_CANONICAL_INPUTS-v1.md), [complete L1 result](../benchmarks/results/reloop-20261006/H100_L1_NATIVE_RESULT-v1.md), [preserved earlier closure finding](../benchmarks/results/reloop-20261006/H100_L1_CLOSURE_PENDING-v1.md).
 
 The same preparation now includes a per-job raw auditor and the original
 seven-case matrix summary. The auditor verifies sampling, guidance, cache and
@@ -303,3 +304,5 @@ The complete original numerical protocol also ran on one current H100: all12 cas
 Read-only diagnosis of all296 scored code outputs found60/148 empty completions in D4 and68/148 in D3 guided. Leading new-function stops account for56 and55 respectively; raw EOS accounts for4 and13. Frozen exports match the original stop rules. These results motivate a separate prompt-format development experiment without repairing the original confirmation or changing its uncertain comparisons. [Frozen code-output diagnosis](../benchmarks/results/reloop-20261006/H100_CODE_FAILURE_DIAGNOSIS-v1.md). New work remains on the local branch; public summaries contain no cluster metadata beyond CUDA, necessary dependency versions and H100 count.
 
 The original complete H100 native initial-total C32 test passed all six fresh processes/60trials/1920requests/245760output tokens. D3 true off achieved212.99TPS (+18.80% versus D4 179.28TPS), and D3 guided207.10TPS (+15.52%). Both guided fresh ratios exceed the frozen1.15 cost-reference target. Guidance adds128KiB peak allocated and2MiB reserved; it does not save KV memory. All412 archive files and2100 request-metric scalars were independently verified, with actual known-actor handoff. These are scoped fixed-work results; quality remains UNCERTAIN/INCOMPLETE and full W5/C128/HTTP/Graph/all-model closure remains pending. [Complete speed comparison](../benchmarks/results/reloop-20261006/H100_C32_FP32_RESULT-v1.md).
+
+The separate original tiny CPU regression completed118 unique cases, with26 GPU cases deselected. Complete XML, all150 payloads,88 execution source hashes and132 actual Git blobs were independently checked. Its Torch2.13 source remains separate from the canonical e8 CPU contract and H100 full-model matrix. [Scoped CPU result](../benchmarks/results/reloop-20261006/ORIGINAL_CPU_REGRESSION_RESULT-v1.md).

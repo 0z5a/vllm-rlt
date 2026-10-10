@@ -52,6 +52,17 @@
     "runtime_map_created": false,
     "new_positive_CPU_model_or_GPU_cases": 0,
     "root_independent_failure_review_sha256": "666e5defac757e2dd92557ac890198f5b9b911de9057238d8533a5cced93dce0",
-    "separate_unfinished_CPU_source_test_final_return_observed": false
+    "separate_unfinished_CPU_source_test_final_return_observed": true
+  },
+  "separate_original_CPU_regression": {
+    "source_commit": "2597e7b992a5ec490543dddee2332a0072f6bbc2",
+    "CPU_cases_passed": 118,
+    "GPU_cases_deselected": 26,
+    "actual_original_natural_returns": [
+      0,
+      0
+    ],
+    "canonical_e8_CPU17_cases_run": 0,
+    "result": "ORIGINAL_CPU_REGRESSION_RESULT-v1.json"
   }
 }

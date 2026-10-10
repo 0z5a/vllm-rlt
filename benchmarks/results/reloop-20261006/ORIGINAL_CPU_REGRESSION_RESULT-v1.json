@@ -1,0 +1,49 @@
+{
+  "state": "SCOPED_ORIGINAL_TINY_CPU_REGRESSION_PASS_FULL_GPU_GOAL_INCOMPLETE",
+  "source_commit": "2597e7b992a5ec490543dddee2332a0072f6bbc2",
+  "dependencies": {
+    "Python": "3.12.14",
+    "Torch": "2.13.0",
+    "pytest": "9.1.1"
+  },
+  "H100_count_in_this_CPU_scope": 0,
+  "CPU_cases_passed": 118,
+  "case_counts_by_module": {
+    "tests.test_speculative": 50,
+    "tests.test_engine": 32,
+    "tests.test_kv_cache": 19,
+    "tests.test_prefix_growth": 7,
+    "tests.test_async_pipeline": 10
+  },
+  "failures_errors_skips": [
+    0,
+    0,
+    0
+  ],
+  "GPU_cases_deselected": 26,
+  "CUDA_initialized_before_after": [
+    false,
+    false
+  ],
+  "original_child_and_outer_natural_returns": [
+    0,
+    0
+  ],
+  "independent_auditor_child_and_outer_natural_returns": [
+    0,
+    0
+  ],
+  "all_regular_payloads_bytes_SHA_before_after": 150,
+  "frozen_execution_sources": 88,
+  "full_local_archive_and_actual_Git_blob_source_files": 132,
+  "original_tests_rerun": false,
+  "internal_pending_markers_preserved": true,
+  "canonical_e8_CPU17_cases_run": 0,
+  "new_H100_fullmodel_or_performance_cases": 0,
+  "closure_manifest_sha256": "2c001988cfd04eb0f64f37734e9d8f12b24f566ee1476c4ef0fa60678622f132",
+  "original_independent_audit_sha256": "371ce8d37f5318041341a1cde83fdf594202a41698264b107a492b5c90767ed8",
+  "root_whole_review_sha256": "9ecb20c5a17ef6c06964c00d98554f9032c1eb73461c69e66e645b52194a303b",
+  "whole_task_n": 0,
+  "full_goal_complete": false,
+  "publication": "local branch only"
+}

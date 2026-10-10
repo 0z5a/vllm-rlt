@@ -22,8 +22,10 @@ The original runtime-map preparation attempt naturally returned 1 from both
 child and parent. Independent review verified all 12 archive files, 11 payload
 hashes, frozen source and the complete log. Reading a dependency file failed
 with timeout errno 60 before Torch/NumPy imports; no runtime map was produced.
-The 17 contract cases remain unrun. Separate unfinished tests still require
-their original final return, without restart or signal.
+The 17 contract cases remain unrun. The separate original tiny CPU regression
+has now completed all 118 cases; its different frozen source and scope are
+reported in the [CPU result](ORIGINAL_CPU_REGRESSION_RESULT-v1.md). This does
+not execute or qualify the canonical 17-case contract.
 
 This support contract does not change the production candidate or the separate
 HTTP source. The proposed tensor/lifecycle diagnostics do not close full model
