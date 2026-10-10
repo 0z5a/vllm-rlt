@@ -5,7 +5,7 @@ import json
 import math
 from dataclasses import dataclass, fields
 
-from vllm_rlt.sampling_params import SamplingParams
+from vllm_rlt.sampling_params import LoopCDParams, SamplingParams
 
 
 @dataclass(frozen=True)
@@ -111,6 +111,15 @@ class CompletionRequest:
             if type(include_usage) is not bool:
                 raise ValueError("include_usage must be a boolean")
         params = {key: body[key] for key in params_keys & body.keys()}
+        if (loopcd := params.get("loopcd")) is not None:
+            if not isinstance(loopcd, dict):
+                raise ValueError("loopcd must be an object or null")
+            allowed_loopcd = {field.name for field in fields(LoopCDParams)}
+            if unknown := loopcd.keys() - allowed_loopcd:
+                raise ValueError(f"unsupported loopcd fields: {', '.join(sorted(unknown))}")
+            if "strength" in loopcd and type(loopcd["strength"]) not in (int, float):
+                raise ValueError("loopcd strength must be a finite nonnegative number")
+            params["loopcd"] = LoopCDParams(**loopcd)
         for key in ("temperature", "top_p", "exit_threshold"):
             if key in params and (
                 type(params[key]) not in (int, float) or not math.isfinite(params[key])

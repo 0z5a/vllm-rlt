@@ -48,6 +48,8 @@ def add_runtime_args(parser):
     parser.add_argument("--single-stream", action="store_true")
     parser.add_argument("--static-buffers", action="store_true")
     parser.add_argument("--pad-to-power-of-two", action="store_true")
+    parser.add_argument("--loopcd", action="store_true")
+    parser.add_argument("--prefill-depth", type=int)
     parser.add_argument("--prefill-chunk-size", type=int, default=128)
     parser.add_argument("--max-prefill-batches-before-decode", type=int, default=1)
     parser.add_argument("--admission-scan-limit", type=int, default=64)
@@ -87,6 +89,8 @@ def runtime_configs(args):
             else None,
         ),
         execution_config=ExecutionConfig(
+            loopcd=args.loopcd,
+            prefill_depth=args.prefill_depth,
             prefill_uva=args.prefill_uva,
             cuda_graphs=args.cuda_graphs,
             cuda_graph_max_batch_size=args.cuda_graph_max_batch_size,

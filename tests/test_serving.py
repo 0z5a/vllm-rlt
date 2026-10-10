@@ -14,7 +14,7 @@ from aiohttp import ClientPayloadError
 from aiohttp.test_utils import TestClient, TestServer
 
 from tests.helpers import tiny_ouro_config
-from vllm_rlt import CacheConfig, SamplingParams, SchedulerConfig
+from vllm_rlt import CacheConfig, ExecutionConfig, LoopCDParams, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import AutoModelForCausalLM, OuroForCausalLM
 from vllm_rlt.request import Stage
@@ -64,12 +64,13 @@ class PauseAt:
         engine.model_runner.execute = pause
 
 
-def factory(*, seqs=8, blocks=256, hook=None):
+def factory(*, seqs=8, blocks=256, hook=None, execution=None):
     torch.manual_seed(123)
     engine = LLMEngine(
         OuroForCausalLM(tiny_ouro_config()),
         cache_config=CacheConfig(num_blocks=blocks, block_size=2),
         scheduler_config=SchedulerConfig(max_num_seqs=seqs, max_num_batched_tokens=3),
+        execution_config=execution,
     )
     if hook:
         hook(engine)
@@ -151,6 +152,76 @@ def test_neutral_client_fields_and_extensions():
         "test-model",
     )
     assert spec.include_usage and spec.params.max_loops == 3 and spec.params.top_k == 9
+
+
+def test_loopcd_request_object_and_true_off():
+    spec = CompletionRequest.parse(
+        body(min_loops=3, max_loops=3, loopcd={"reference_loop": 1, "strength": 0.3}),
+        "test-model",
+    )
+    assert spec.params.loopcd == LoopCDParams(reference_loop=1, strength=0.3)
+    assert spec.params.min_loops == spec.params.max_loops == 3
+    assert CompletionRequest.parse(body(loopcd=None), "test-model").params.loopcd is None
+    off = CompletionRequest.parse(body(loopcd={"strength": 0}), "test-model")
+    assert off.params.loopcd.strength == 0
+
+
+@pytest.mark.parametrize(
+    "loopcd",
+    [[], True, "logits", {"unknown": 1}, {"strength": True}, {"strength": "0.3"},
+     {"strength": float("nan")}, {"strength": -1}, {"reference_loop": True},
+     {"reference_loop": 0}, {"implementation": "unsupported"}],
+)
+def test_loopcd_request_rejects_invalid_configuration(loopcd):
+    with pytest.raises(ValueError):
+        CompletionRequest.parse(body(loopcd=loopcd), "test-model")
+
+
+def test_runtime_flags_reserve_loopcd_and_prefill_depth():
+    import argparse
+
+    from vllm_rlt.entrypoints.runtime_args import add_runtime_args, runtime_configs
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--num-blocks", type=int, default=256)
+    parser.add_argument("--block-size", type=int, default=2)
+    add_runtime_args(parser)
+    args = parser.parse_args(["--loopcd", "--prefill-depth", "4"])
+    execution = runtime_configs(args)["execution_config"]
+    assert execution.loopcd and execution.prefill_depth == 4
+    defaults = runtime_configs(parser.parse_args([]))["execution_config"]
+    assert not defaults.loopcd and defaults.prefill_depth is None
+
+
+def test_loopcd_http_matches_direct_and_releases_references():
+    def load():
+        return factory(execution=ExecutionConfig(loopcd=True, prefill_depth=4))
+
+    async def scenario():
+        payload = body(min_loops=3, max_loops=3, loopcd={"strength": 0.3})
+        direct, tokenizer = load()
+        params = SamplingParams(
+            max_tokens=4, ignore_eos=True, min_loops=3, max_loops=3, loopcd=LoopCDParams()
+        )
+        direct.add_request("direct", tokenizer.encode("abc"), params)
+        completed = []
+        while direct.has_unfinished_requests():
+            completed.extend(output for output in direct.step() if output.finished)
+        assert len(completed) == 1
+        assert completed[0].exit_depths == [4, 3, 3, 3]
+        expected = tokenizer.decode(completed[0].token_ids)
+        async with client_for(load) as (client, worker):
+            await until(lambda: worker.ready)
+            response = await client.post("/v1/completions", json=payload)
+            assert response.status == 200
+            result = await response.json()
+            assert result["choices"][0]["text"] == expected
+            assert result["usage"]["completion_tokens"] == 4
+            await until(lambda: not worker.channels)
+            assert not worker.engine.model_runner.loopcd_references
+            assert worker.engine.cache_manager.num_used_blocks == 0
+
+    asyncio.run(scenario())
 
 
 def test_byte_decoder_unicode_special_tokens_and_final_flush(monkeypatch):
