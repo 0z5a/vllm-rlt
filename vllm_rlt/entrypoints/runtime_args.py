@@ -24,6 +24,12 @@ def add_runtime_args(parser):
     parser.add_argument("--scheduling-policy", choices=["fcfs", "priority"], default="fcfs")
     parser.add_argument("--enable-preemption", action="store_true")
     parser.add_argument("--prefill-uva", action="store_true")
+    parser.add_argument(
+        "--no-atomic-prefill",
+        dest="atomic_prefill",
+        action="store_false",
+        help="Split prompt prefill into a staged prelude plus one boundary per recurrence depth",
+    )
     parser.add_argument("--kv-layout", choices=["last_exited", "shared"], default="last_exited")
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.9)
     parser.add_argument("--kv-cache-memory-bytes", type=int)
@@ -88,6 +94,7 @@ def runtime_configs(args):
         ),
         execution_config=ExecutionConfig(
             prefill_uva=args.prefill_uva,
+            atomic_prefill=args.atomic_prefill,
             cuda_graphs=args.cuda_graphs,
             cuda_graph_max_batch_size=args.cuda_graph_max_batch_size,
             cuda_graph_max_graphs=args.cuda_graph_max_graphs,

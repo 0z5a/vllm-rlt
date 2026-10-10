@@ -7,7 +7,7 @@ from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
-from vllm_rlt.core.scheduler import Scheduler, SplitPrefillScheduler
+from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
@@ -94,6 +94,13 @@ class LLMEngine:
             parameter.device.type != "cuda" or cache_config.layout != "last_exited"
         ):
             raise ValueError("prefill_uva requires CUDA packed prefill with last_exited KV")
+        if not self.execution_config.atomic_prefill:
+            if cache_config.layout != "last_exited":
+                raise ValueError("split prefill requires last_exited KV planes")
+            if scheduler_config.enable_preemption:
+                raise ValueError("split prefill does not support preemption yet")
+            if speculative_config is not None:
+                raise ValueError("split prefill does not support speculative decoding yet")
         attention = create_backend(
             attention_backend,
             parameter.device,
@@ -131,7 +138,12 @@ class LLMEngine:
             incremental_allocation=cache_config.incremental_allocation,
             watermark_ratio=cache_config.watermark_ratio,
         )
-        self.scheduler = Scheduler(scheduler_config, self.cache_manager, speculative_config) if execution_config.atomic_prefill else SplitPrefillScheduler(scheduler_config, self.cache_manager, speculative_config)
+        self.scheduler = Scheduler(
+            scheduler_config,
+            self.cache_manager,
+            speculative_config,
+            atomic_prefill=self.execution_config.atomic_prefill,
+        )
         self.speculative_runner = (
             SpeculativeRunner(model, self.cache_manager, speculative_config, self.execution_config)
             if speculative_config is not None
@@ -231,15 +243,16 @@ class LLMEngine:
                 "increase num_blocks or reduce prompt/max_tokens"
             )
         self.scheduler.add_request(
-            Request(request_id, 
-                    list(prompt_token_ids), 
-                    params, 
-                    exit_trace=trace, 
-                    running_depth_boundary=(
-                        [[0, len(prompt_token_ids)]]
-                        + [[0, 0] for _ in range(max_loops - 1)]
-                    ),
-                    prefilled_depths=[0 for _ in range(len(prompt_token_ids))]
+            Request(
+                request_id,
+                list(prompt_token_ids),
+                params,
+                exit_trace=trace,
+                # Prefill always runs the model's full depth, whatever decode
+                # loop bound the request asks for.
+                running_depth_boundary=Request.prefill_boundaries(
+                    len(prompt_token_ids), config.total_ut_steps
+                ),
             )
         )
 

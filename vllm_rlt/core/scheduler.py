@@ -5,8 +5,19 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from vllm_rlt.config import SchedulerConfig
-from vllm_rlt.core.scheduling_policy import NoRefillPolicy, RefillPolicy, SpeculativePolicy, SplitPrefillPolicy, SpeculativeSplitPrefillPolicy
+from vllm_rlt.core.scheduling_policy import SchedulingPolicyFactory
 from vllm_rlt.request import FinishReason, Request, Stage
+
+# Items of these stages cover a contiguous span of prompt tokens, so their KV
+# frontier is the span end rather than the request's decode position.
+_SPAN_STAGES = (
+    Stage.PREFILL,
+    Stage.PREFILLING_PRELUDE,
+    Stage.PREFILLING_RECURRENT,
+    Stage.SPECULATIVE,
+)
+# Stages that must reserve KV capacity for that frontier before selection.
+_CAPACITY_STAGES = _SPAN_STAGES + (Stage.PRELUDE, Stage.RECURRENT)
 
 
 @dataclass(frozen=True)
@@ -57,7 +68,13 @@ class AdmissionPlan:
 
 
 class Scheduler:
-    def __init__(self, config: SchedulerConfig, cache_manager, speculative_config=None, policy=None):
+    def __init__(
+        self,
+        config: SchedulerConfig,
+        cache_manager,
+        speculative_config=None,
+        atomic_prefill: bool = True,
+    ):
         self.config = config
         self.cache_manager = cache_manager
         self.speculative_config = speculative_config
@@ -67,11 +84,12 @@ class Scheduler:
         # device state and mutate queues; they are operations, not predicates.
         self.preempt_callback = None
         self.resume_callback = None
-        if policy:
-            self.policy=policy
-        else:
-          policy_cls = NoRefillPolicy if config.mode == "no_refill" else RefillPolicy
-          self.policy = (SpeculativePolicy if speculative_config else policy_cls)(config)
+        # One scheduling boundary per chunk (atomic) or per recurrence depth (split).
+        # The policy is derived from the same flag so the two cannot disagree.
+        self.atomic_prefill = atomic_prefill
+        self.policy = SchedulingPolicyFactory.create_from_configs(
+            config, speculative_config, atomic_prefill
+        )
 
     def add_request(self, request: Request):
         if request.request_id in self.requests:
@@ -232,7 +250,13 @@ class Scheduler:
         ):
             return False
         request.num_prefilled_tokens = plan.cached_tokens
-        self.enqueue(request, Stage.PREFILL)
+        # A reused prompt prefix is already prefilled at every depth, so the
+        # staged window starts closed at that frontier and opens for the rest.
+        request.num_preluded_tokens = plan.cached_tokens
+        if self.atomic_prefill:
+            self.enqueue(request, Stage.PREFILL)
+        else:
+            self.enqueue(request, Stage.PREFILLING_PRELUDE)
         return True
 
     def _admit(self):
@@ -296,11 +320,34 @@ class Scheduler:
         """
         if stage == Stage.PREFILL:
             start = request.num_prefilled_tokens
-            # ensure every token in one item has the same prefilled_depth  
-            first_token_depth = request.prefilled_depths[start]
-            right_boundary = request.running_depth_boundary[first_token_depth][1]
-            right_boundary = min(len(request.prompt_token_ids), right_boundary)
-            count = min(token_budget, self.config.prefill_chunk_size, right_boundary - start)
+            count = min(
+                token_budget, self.config.prefill_chunk_size, len(request.prompt_token_ids) - start
+            )
+            return ScheduledItem(request, start, count)
+        # The two split stages are unreachable while atomic prefill is enabled.
+        if stage == Stage.PREFILLING_PRELUDE:
+            start = request.num_preluded_tokens
+            count = min(
+                token_budget,
+                self.config.prefill_chunk_size,
+                len(request.prompt_token_ids) - start,
+            )
+            return ScheduledItem(request, start, count)
+        if stage == Stage.PREFILLING_RECURRENT:
+            start = request.num_prefilled_tokens
+            first_token_depth = request.prefill_depth(start)
+            # One run per depth frontier: every token of the run already completed
+            # this depth, and no earlier token is missing a shallower one, so the
+            # plane's causal prefix covers the run. Tokens past num_preluded_tokens
+            # have no resident prelude and cannot run yet.
+            boundary = request.running_depth_boundary[first_token_depth]
+            count = min(
+                token_budget,
+                self.config.prefill_chunk_size,
+                request.num_preluded_tokens - start,
+                boundary[1] - start,
+                len(request.prompt_token_ids) - start,
+            )
             return ScheduledItem(request, start, count)
         if stage == Stage.SPECULATIVE:
             # K candidates plus one bonus distribution. At the output limit,
@@ -330,6 +377,16 @@ class Scheduler:
             return False
         return cache.ensure_capacity(request.request_id, frontier)
 
+    def _prelude_window_open(self, request: Request) -> bool:
+        """Whether the next prompt chunk may be staged for this request.
+
+        Split prefill keeps one staged chunk: deeper depths of the current chunk
+        still read its hidden rows, so the next chunk is staged only after the
+        current one reached the last depth. Wavefront chunked prefill widens the
+        window to several chunks, and then this bound becomes a chunk count.
+        """
+        return request.num_preluded_tokens == request.num_prefilled_tokens
+
     def _take(self, stage: Stage) -> SchedulerOutput | None:
         """Build a stage batch: describe work -> ensure capacity -> select.
 
@@ -351,6 +408,9 @@ class Scheduler:
         while queue and token_budget and len(items) < self.config.max_num_seqs and remaining:
             remaining -= 1
             request = self.requests[queue.popleft()]
+            if stage == Stage.PREFILLING_PRELUDE and not self._prelude_window_open(request):
+                queue.append(request.request_id)
+                continue
             if stage == Stage.SPECULATIVE and (
                 request.num_speculative_rounds >= 2
                 or request.num_scheduled_outputs >= request.sampling_params.max_tokens
@@ -358,10 +418,12 @@ class Scheduler:
                 queue.append(request.request_id)
                 continue
             item = self._make_scheduled_item(request, stage, token_budget)
-            if stage in (Stage.PREFILL, Stage.PRELUDE, Stage.RECURRENT, Stage.SPECULATIVE):
+            if stage in _CAPACITY_STAGES:
+                # A span item declares a prompt frontier; decode stages advance the
+                # request's own position by one.
                 frontier = (
                     item.token_start + item.token_count
-                    if stage in (Stage.PREFILL, Stage.SPECULATIVE)
+                    if stage in _SPAN_STAGES
                     else request.position + 1
                 )
                 if not self._ensure_execution_capacity(request, frontier, selected=selected):
@@ -387,9 +449,3 @@ class Scheduler:
         if not self.requests:
             return None
         return self.policy.schedule(self, prefer_recurrent=prefer_recurrent)
-
-class SplitPrefillScheduler(Scheduler):
-    def __init__(self, config: SchedulerConfig, cache_manager, speculative_config=None):
-        policy = SpeculativeSplitPrefillPolicy(config) if speculative_config else SplitPrefillPolicy(config)
-        super().__init__(config=config, cache_manager=cache_manager, speculative_config=speculative_config, policy=policy)
-        

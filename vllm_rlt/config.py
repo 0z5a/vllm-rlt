@@ -108,11 +108,15 @@ class ExecutionConfig:
     cuda_graph_max_graphs: int = 16
     cuda_graph_memory_reserve_bytes: int = 1024**3
     prefill_uva: bool = False
-    atomic_prefill: bool = False
+    # Split prompt prefill into a staged prelude plus one scheduling boundary per
+    # recurrence depth. Atomic prefill keeps mainline behavior and remains the
+    # default until the split path is feature-complete.
+    atomic_prefill: bool = True
 
     def __post_init__(self):
         for name in (
             "prefill_uva",
+            "atomic_prefill",
             "async_scheduling",
             "multi_stream",
             "static_buffers",

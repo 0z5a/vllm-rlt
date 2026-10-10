@@ -10,7 +10,7 @@ import torch
 from vllm_rlt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request, Stage
-from vllm_rlt.worker.buffers import Workspace
+from vllm_rlt.worker.buffers import Workspace, prefill_stage_rows
 from vllm_rlt.worker.cuda_graph import RecurrentGraphs
 from vllm_rlt.worker.sampler import Sampler
 
@@ -145,6 +145,18 @@ class ModelRunner:
         self.state_slots = {}
         self.free_state_slots = list(reversed(range(scheduler.max_num_seqs)))
         self.states = None
+        # Prompt hidden states staged between split-prefill scheduling boundaries.
+        # Sized by the same helper the memory plan reserves with.
+        stage_rows = prefill_stage_rows(model.config, scheduler, self.execution_config)
+        self.prefill_states = (
+            torch.empty(
+                (scheduler.max_num_seqs, stage_rows, model.config.hidden_size),
+                device=self.device,
+                dtype=parameter.dtype,
+            )
+            if stage_rows
+            else None
+        )
         self.last_effective_size = self.last_submitted_size = 0
         if self.execution_config.static_buffers:
             rows = scheduler.max_num_batched_tokens
@@ -358,7 +370,7 @@ class ModelRunner:
         group = "core" if batch.stage == Stage.RECURRENT else "boundary"
         routing = prepared.routing if prepared is not None else None
         workspace = None if routing is not None else self._workspace(group)
-        if batch.stage == Stage.PRELUDE:
+        if batch.stage == Stage.PRELUDE or batch.stage == Stage.PREFILLING_PRELUDE:
             if prepared is not None:
                 # Feed the sampled GPU IDs directly to embedding. No .item(),
                 # .tolist(), or CPU token roundtrip on the dependency path.
@@ -384,6 +396,8 @@ class ModelRunner:
             hidden = self.model.prelude(tokens)
             self._save_batch(requests, hidden, routing)
             result = None
+        elif batch.stage == Stage.PREFILLING_RECURRENT:
+            pass
         else:
             hidden = (
                 routing.gather() if routing is not None else self._gather(requests, workspace, size)

@@ -30,9 +30,6 @@ class Request:
     request_id: str
     prompt_token_ids: list[int]
     sampling_params: SamplingParams
-    # Interval: [rdb[d][0],rdb[d][1]) marks where tokens' recurrent depth are at d.
-    running_depth_boundary: list[list] # [rdb[max_loops-1][0],rdb[max_loops-1][1]) == [0, num_prefilled_tokens)
-    prefilled_depths: list[int] # completed depths for prefill [0, max_loops] 
     stage: Stage = Stage.WAITING
     generated_token_ids: list[int] = field(default_factory=list)
     exit_depths: list[int] = field(default_factory=list)
@@ -41,7 +38,11 @@ class Request:
     num_speculative_rounds: int = 0
     input_token_tensor: torch.Tensor | None = field(default=None, repr=False)
     num_prefilled_tokens: int = 0
+    # Split prefill. [num_prefilled_tokens, num_preluded_tokens) is the staged
+    # chunk: its prelude output is resident and it advances one depth per batch.
     num_preluded_tokens: int = 0
+    # Split prefill only: per-depth written frontiers, see prefill_boundaries.
+    running_depth_boundary: list[list[int]] = field(default_factory=list, repr=False)
     # Host progress; in async mode an event confirms submitted GPU work is done.
     loops_done: int = 0
     pending_exit_depth: int | None = None
@@ -51,6 +52,33 @@ class Request:
     generator: torch.Generator | None = field(default=None, repr=False)
     finish_reason: FinishReason | None = None
     exit_trace: tuple[int, ...] = field(default=(), repr=False)
+
+    @staticmethod
+    def prefill_boundaries(num_tokens: int, total_depths: int) -> list[list[int]]:
+        """Per-depth written frontiers of a freshly admitted split-prefill prompt.
+
+        ``running_depth_boundary[d] == [X[d + 1], X[d])`` holds the prompt tokens
+        that have completed exactly ``d`` depths, where ``X[d]`` counts the tokens
+        that completed at least ``d`` depths. A new request has ``X[0]`` at the
+        full prompt and every deeper frontier at zero. Advancing a run
+        ``[left, right)`` from depth ``d`` to ``d + 1`` sets ``X[d + 1] = right``:
+        the run leaves ``boundary[d]`` and extends the right edge of
+        ``boundary[d + 1]``. A run may start only at ``X[d + 1]`` so no depth
+        frontier ever has a hole. Every interval is empty once prefill completes,
+        and ``num_prefilled_tokens`` then holds the finished prefix.
+        """
+        if num_tokens < 1 or total_depths < 1:
+            raise ValueError("prefill boundaries require tokens and recurrence depths")
+        return [[0, num_tokens]] + [[0, 0] for _ in range(total_depths - 1)]
+
+    def prefill_depth(self, token_index: int) -> int:
+        """Completed recurrence depth of the prompt token at ``token_index``."""
+        for depth, (left, right) in enumerate(self.running_depth_boundary):
+            if left <= token_index < right:
+                return depth
+        raise RuntimeError(
+            f"request {self.request_id!r} has no prefill depth for token {token_index}"
+        )
 
     @property
     def num_scheduled_outputs(self) -> int:
