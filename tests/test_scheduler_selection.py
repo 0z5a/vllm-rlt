@@ -9,22 +9,27 @@ prefill worker, or outlive the request whose ID it names.
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Stage
 
 
 def model():
     torch.manual_seed(123)
-    return OuroForCausalLM(OuroConfig.tiny())
+    return OuroForCausalLM(tiny_ouro_config())
 
 
-def engine(max_num_seqs=2):
+def engine(max_num_seqs=2, **scheduler_options):
     return LLMEngine(
         model(),
         cache_config=CacheConfig(64, 2),
-        scheduler_config=SchedulerConfig(max_num_seqs=max_num_seqs, enable_preemption=True),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=max_num_seqs,
+            enable_preemption=True,
+            **scheduler_options,
+        ),
     )
 
 
@@ -93,6 +98,92 @@ def test_reused_request_id_is_not_protected_by_the_previous_request():
     e.add_request("requester", [5, 6], params())
     assert e.preemption.preempt(e.scheduler.requests["requester"])
     assert "r" in e.preemption.snapshots
+
+
+@pytest.mark.parametrize("boundary", [Stage.PRELUDE, Stage.CODA])
+def test_refill_runs_boundary_restored_during_admission(boundary):
+    """A sole resumed boundary must run in the admission step that restores it."""
+    e = engine(max_num_seqs=1)
+    e.add_request("resumed", [1, 2], params(max_tokens=3))
+    request = e.scheduler.requests["resumed"]
+    for _ in range(20):
+        if request.stage == boundary:
+            break
+        e.step()
+    else:
+        pytest.fail(f"request did not reach {boundary.value}")
+
+    generated_before = len(request.generated_token_ids)
+    e.add_request("pressure", [3, 4], params(max_tokens=1))
+    assert e.preemption.preempt(e.scheduler.requests["pressure"])
+    assert e.preemption.snapshots["resumed"]["stage"] == boundary
+    assert request.stage == Stage.WAITING
+    e.abort_request("pressure")
+
+    outputs = e.step()
+
+    assert e.preemption.resumptions == 1
+    assert e.last_schedule.stage == boundary
+    if boundary == Stage.PRELUDE:
+        assert not outputs
+        assert request.stage == Stage.RECURRENT
+        assert len(request.generated_token_ids) == generated_before
+    else:
+        assert [output.request_id for output in outputs] == ["resumed"]
+        assert request.stage == Stage.PRELUDE
+        assert len(request.generated_token_ids) == generated_before + 1
+
+
+def test_refill_restored_coda_waits_for_recurrent_batchmate():
+    """Post-admission CODA keeps the same batching rule as an existing CODA."""
+    e = engine(
+        max_num_seqs=2,
+        min_coda_batch_size=2,
+        max_prefill_batches_before_decode=100,
+    )
+    e.add_request("core", [1, 2], SamplingParams(max_tokens=2, ignore_eos=True))
+    core = e.scheduler.requests["core"]
+    for _ in range(20):
+        if core.stage == Stage.RECURRENT:
+            break
+        e.step()
+    else:
+        pytest.fail("core request did not reach recurrent execution")
+
+    e.add_request(
+        "restored-coda",
+        [3, 4],
+        SamplingParams(max_tokens=1, ignore_eos=True, priority=10),
+    )
+    e.step()
+    restored = e.scheduler.requests["restored-coda"]
+    assert core.stage == Stage.RECURRENT
+    assert restored.stage == Stage.CODA
+
+    e.add_request("pressure", [5, 6], params(max_tokens=1))
+    assert e.preemption.preempt(e.scheduler.requests["pressure"])
+    assert e.preemption.snapshots["restored-coda"]["stage"] == Stage.CODA
+    e.abort_request("pressure")
+
+    e.step()
+
+    assert e.preemption.resumptions == 1
+    assert e.last_schedule.stage == Stage.RECURRENT
+    assert restored.stage == Stage.CODA
+
+    for _ in range(20):
+        e.step()
+        if e.last_schedule.stage == Stage.CODA:
+            break
+    else:
+        pytest.fail("CODA requests did not form a batch")
+    assert {item.request.request_id for item in e.last_schedule.items} == {
+        "core",
+        "restored-coda",
+    }
+    assert not e.has_unfinished_requests()
+    assert not e.preemption.snapshots
+    assert e.cache_manager.num_used_blocks == 0
 
 
 @pytest.mark.parametrize("mode", ["refill", "no_refill"])
