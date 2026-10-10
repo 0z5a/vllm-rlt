@@ -236,26 +236,12 @@ measured event counts above remain nonzero.
 
 ### Evidence and reproduction
 
-Current raw artifacts and local diagnostic scripts are preserved outside the
-repository source, under
-`/home/leo/slurm-workspaces/rlt-pr66-d977817-20261010/`:
-`measure_gpu.py`, `profile_bounded.py`, `profile_paired_ops.py`, Slurm scripts and `evidence/` containing
-`bf16-performance.json`, test XML, logs, source/model/tokenizer hashes, ops traces,
-full single-round traces, stack exports and memory timelines. The diagnostic
-scripts are not supported benchmark entry points. To reproduce the measurement
-protocol inside a one-GPU Slurm allocation, copy the frozen checkout and scripts
-into a fresh directory containing `repo/` and `evidence/`. Set `PR66_RERUN` to
-that directory and use the recorded environment:
-
-```bash
-cd "$PR66_RERUN/repo"
-export PYTHONPATH="$PWD" HF_HUB_OFFLINE=1 OMP_NUM_THREADS=1
-/home/leo/vllm-project/vllm-rlt/.venv/bin/python ../measure_gpu.py measure
-```
-
-Retain a fresh evidence directory when rerunning rather than overwriting the
-captured records. The commands in Validation above remain the supported GPU
-regression entry points.
+Run-specific commands, artifact locations and source/model/tokenizer identities
+are recorded in [PR #66](https://github.com/ThinkFlowLab/vllm-rlt/pull/66).
+The measurements above specify the workload, mode order, warmup, timing boundaries
+and comparison controls. The commands in Validation remain the supported GPU
+regression entry points; the experiment's diagnostic scripts are not supported
+benchmark entry points.
 
 ## Historical validation and measured results
 
@@ -263,7 +249,7 @@ The measurements below belong to the 2026-09-23 snapshot: PR44 commit
 `d9fca507e766e81f5d89f90d598881c12d7d8397` plus the asynchronous implementation.
 They do not qualify current main or the review refactor. The current validation
 above is a separate experiment with its own source revision and narrower workload.
-Historical logs remain under `/home/leo/slurm-logs/rlt-async-spec/`.
+Historical log locations are recorded separately in the PR description.
 
 The real Ouro-1.4B checkpoint used BF16 weights, activations and KV, Triton,
 one H20-3e on `vllm-h20-02`, TP=1 and `d=2, D=4`. It has 24 shared layers,
