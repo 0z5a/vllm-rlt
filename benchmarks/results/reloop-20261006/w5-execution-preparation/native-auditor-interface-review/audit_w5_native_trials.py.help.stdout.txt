@@ -1,0 +1,12 @@
+usage: audit_w5_native_trials.py [-h] --protocol PROTOCOL --prompts PROMPTS
+                                 --job JOB --trials TRIALS --output OUTPUT
+
+Audit every request in a native W5 job; whole-window proof stays separate.
+
+options:
+  -h, --help           show this help message and exit
+  --protocol PROTOCOL
+  --prompts PROMPTS
+  --job JOB
+  --trials TRIALS
+  --output OUTPUT

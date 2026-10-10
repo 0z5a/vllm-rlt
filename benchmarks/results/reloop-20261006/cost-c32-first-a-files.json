@@ -1,0 +1,109 @@
+{
+  "files": [
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/summary.json",
+      "bytes": 44276,
+      "sha256": "719236f35452c33b8f5b83be8947ed4a2251c672add8684abc27a8e026b38fc7"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-00.json",
+      "bytes": 448648,
+      "sha256": "6210dc51d3fbe39a44309eb478abbc6c86ac102d879e82efebd360f288ee062a"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-01.json",
+      "bytes": 448304,
+      "sha256": "8c3efa7335c84a19d987bf94dbd3ccea07805265450385e6333f6619194f8412"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-02.json",
+      "bytes": 448255,
+      "sha256": "b1c6df8141ec0425146855718771a5234067f6476b81d18c60314e27ae12be38"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-03.json",
+      "bytes": 448396,
+      "sha256": "5a4005b161bd15032fb9c59043bdadcc325cec262a246122f1ffcaa3b346a00d"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-04.json",
+      "bytes": 448254,
+      "sha256": "d7aca15964519cc9af4ccfe5e56e7f8de00653ab6d4191a54dbcf9d41f49f66a"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-05.json",
+      "bytes": 448434,
+      "sha256": "fec6b54cb5843da32276fc4bc3bbbb1ed81909efbe1640a4bf053601a1fea634"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-06.json",
+      "bytes": 448311,
+      "sha256": "167c77098f647a40881c129befad1ea1a9d0f326705244be7032c75759289e31"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-07.json",
+      "bytes": 448337,
+      "sha256": "e5334a2dbe2a1101d1307cf8409a9ddc231de1a2f650ed71d351adbc84449bd3"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-08.json",
+      "bytes": 448165,
+      "sha256": "e1983f87bfa39bd7426dd862564e9c6e537bb3817d0ff04df34e6bcaca678597"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A/trial-09.json",
+      "bytes": 448337,
+      "sha256": "a2ab074c6a7fd5cacf683c3a3cc514acfa25a4ee95ed7acf56d3be2fd0ed546c"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/B16C32-fresh0-A.manifest.json",
+      "bytes": 2353,
+      "sha256": "1c1c98ee14623107ac714136b339cf31372a08d3d0912071c85f55cd2332946d"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-B16C32/status.json",
+      "bytes": 2803,
+      "sha256": "13e92b5e8ed2f651c291a12d0032c0799b526d3670e81180161fbd7721df2a05"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-protocol.json",
+      "bytes": 3238,
+      "sha256": "c45c24a22714a4f23310199f9cf8e1a763046bcc00a0cba964a54829a3bcb182"
+    },
+    {
+      "path": "cost/evidence/fp32-candidate-cost-v1-candidate.json",
+      "bytes": 2402,
+      "sha256": "cc22b60507c94f6cc857e8e7aca32a55d23b8577fd038b601c1f4c7f1c94d45f"
+    },
+    {
+      "path": "cost/models/ouro-574fa66c/config.json",
+      "bytes": 1472,
+      "sha256": "ce9cc13da41591b8b4deca053d7dfee06424c0228628ee862ea86d725bc163f3"
+    },
+    {
+      "path": "cost/scripts/audit_fp32_candidate_cost.py",
+      "bytes": 13127,
+      "sha256": "c16abdf9a9e25a316dc42e4bde7b72444f96be028c346fa08c3e12d4c3042375"
+    },
+    {
+      "path": "cost/scripts/draft_fp32_candidate_cost.py",
+      "bytes": 7080,
+      "sha256": "2f273c70abf01546821cbb12be1f516811ac7ef7f1e55ba7de818208bbe4d766"
+    },
+    {
+      "path": "cost/scripts/fp32_candidate_cost_trial.py",
+      "bytes": 11961,
+      "sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9"
+    },
+    {
+      "path": "cost/scripts/run_fp32_candidate_cost.py",
+      "bytes": 10218,
+      "sha256": "92f79f7284165d9d7303cf7a2e4f02df244988fac525119a3b57b93ee0060491"
+    },
+    {
+      "path": "verification/root-first-a.json",
+      "bytes": 1536,
+      "sha256": "0f5e9e81d656c57429ed8b28c8763112361852f8116925dd3cc94f4fb370fd32"
+    }
+  ]
+}

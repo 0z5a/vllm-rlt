@@ -1,0 +1,63 @@
+{
+  "status": "PASS_FORMAT_ONLY_SOURCE_COMPARISON_NATIVE_NOT_RUN",
+  "recorded_unix": 1791266905.550163,
+  "comparisons": [
+    {
+      "file": "prepare_w5_workloads.py",
+      "import_binding_multiset_same": true,
+      "non_import_AST_exactly_equal": true
+    },
+    {
+      "file": "resolve_w5_prompts.py",
+      "import_binding_multiset_same": true,
+      "non_import_AST_exactly_equal": true
+    },
+    {
+      "file": "run_w5_cost_arm.py",
+      "import_binding_multiset_same": true,
+      "non_import_AST_exactly_equal": true
+    }
+  ],
+  "frozen_observer": {
+    "archive": "../cost-c32-full.tar.gz",
+    "entry": "scripts/fp32_candidate_cost_trial.py",
+    "sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9",
+    "verified_archive_bytes_match_original": true
+  },
+  "root_repository_ruff": {
+    "actual_returncode": 0,
+    "scope": [
+      "prepare_w5_workloads.py",
+      "resolve_w5_prompts.py",
+      "run_w5_cost_arm.py"
+    ]
+  },
+  "retained_initial_failures": [
+    {
+      "stage": "root-private-ruff",
+      "actual_returncode": 1,
+      "finding": "I001 driver import block"
+    },
+    {
+      "stage": "first-public-copy-text-comparison",
+      "actual_returncode": 1,
+      "reason": "Inserted blank lines; actual import bindings and non-import AST are equal"
+    },
+    {
+      "stage": "initial-public-ruff",
+      "actual_returncode": 1,
+      "findings": [
+        "E501 builder two literal strings",
+        "I001 resolver/driver"
+      ]
+    },
+    {
+      "stage": "raw-observer-public-ruff",
+      "actual_returncode": 1,
+      "finding": "I001 single blank line; no observer byte change, reuse original archive instead of duplicate source"
+    }
+  ],
+  "actual_canonical_tokenization": "NOT_RUN",
+  "actual_native_GPU": "NOT_RUN",
+  "original_receipt_scope": "CLI/help and actual unresolved-template rejection only"
+}

@@ -1,0 +1,15 @@
+usage: resolve_w5_prompts.py [-h] --templates TEMPLATES --trace TRACE
+                             --selection-input SELECTION_INPUT --source SOURCE
+                             --model MODEL --output OUTPUT [--kv-gib KV_GIB]
+
+Resolve original W5 traces with the existing pinned canonical tokenizer.
+
+options:
+  -h, --help            show this help message and exit
+  --templates TEMPLATES
+  --trace TRACE
+  --selection-input SELECTION_INPUT
+  --source SOURCE
+  --model MODEL
+  --output OUTPUT
+  --kv-gib KV_GIB

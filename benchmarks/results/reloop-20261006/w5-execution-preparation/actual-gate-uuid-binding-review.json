@@ -1,0 +1,16 @@
+{
+  "status": "PREPARED_ACTUAL_HASHED_GATE_GPU_UUID_BINDING_NEW_NATIVE_NOT_RUN",
+  "checked_unix": 1791270133.3332531,
+  "previous_public_driver_sha256": "081f63d9aa1bef69920cfbac0ce850acd95e110f1bdcf82b43ae9159a84dd2d3",
+  "current_public_driver_sha256": "63aafc4af99271702c147552171ddef834b554c3002fb14776e96ebf5a1ee5dc",
+  "exact_changes": [
+    "Add known gpu_uuid to Gate TypedDict",
+    "Compare hashed gate actual UUID with both numerical-gate admission UUID and actual admitted GPU UUID"
+  ],
+  "all_other_driver_bytes_unchanged": true,
+  "actual_complete_native_positive": "NOT_RUN_AWAITING_NEW_FULL_W2_AND_RESOLVED_PROMPTS",
+  "model_science_observer_trials_and_workloads_changed": false,
+  "new_GPU_or_model_jobs": 0,
+  "CLI_help_actual_natural_return": 0,
+  "Ruff_actual_exit": 0
+}

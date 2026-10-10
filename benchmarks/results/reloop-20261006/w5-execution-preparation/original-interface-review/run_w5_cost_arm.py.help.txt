@@ -1,0 +1,21 @@
+usage: run_w5_cost_arm.py [-h] --protocol PROTOCOL --prompts PROMPTS
+                          --admission ADMISSION --gate GATE --source SOURCE
+                          --model MODEL --observer OBSERVER --output OUTPUT
+                          --case CASE --arm {A_P4D4_off,C_P4D3_off,D_P4D3_on}
+                          --fresh {0,1}
+
+One granted, preflighted W5 arm; reuse the frozen native cost observer.
+
+options:
+  -h, --help            show this help message and exit
+  --protocol PROTOCOL
+  --prompts PROMPTS
+  --admission ADMISSION
+  --gate GATE
+  --source SOURCE
+  --model MODEL
+  --observer OBSERVER
+  --output OUTPUT
+  --case CASE
+  --arm {A_P4D4_off,C_P4D3_off,D_P4D3_on}
+  --fresh {0,1}
