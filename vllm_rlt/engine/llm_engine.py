@@ -204,6 +204,15 @@ class LLMEngine:
                 raise ValueError(
                     "exit trace must cover every output and obey prefill/decode bounds"
                 )
+        # The first output comes from prefill. Later tokens require prompt KV
+        # history at every recurrent depth they can visit.
+        if params.max_tokens > 1:
+            decode_depth = max(trace[1 : params.max_tokens]) if trace else max_loops
+            if decode_depth > self.prefill_depth:
+                raise ValueError(
+                    f"decode depth {decode_depth} exceeds prefill_depth {self.prefill_depth}; "
+                    "increase prefill_depth or reduce decode depth"
+                )
         capacity = len(prompt_token_ids) + params.max_tokens - 1
         if capacity > config.max_position_embeddings:
             raise ValueError("prompt plus decode positions exceed the model context length")
