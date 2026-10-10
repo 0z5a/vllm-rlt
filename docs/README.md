@@ -15,7 +15,6 @@ an environment to receiving the first generated response. The
 | [KV cache walkthrough](kv_cache_walkthrough.md) | Allocation state, contracts, cross-module dependencies, and the M4 migration plan |
 | [Runtime configuration](cdb_runtime.md) | Exit policies, KV layouts, execution options, and CUDA Graphs |
 | [Asynchronous scheduling](https://github.com/hsliuustc0106/vllm-rlt/pull/30) | CPU/GPU pipelining and single-stream or multi-stream execution |
-| [FlashAttention](flash_attention.md) | Official FA2/FA3/FA4 installation, pinned FA3 source, and GPU regression |
 | [Cache and scheduling features](https://github.com/hsliuustc0106/vllm-rlt/pull/31) | Prefix reuse, incremental KV, priorities, and preemption |
 | [Prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-rlt/pull/31) | Single-host GPU worker pools and NIXL transfer |
 | [HTTP serving](serving.md) | Completions API, streaming, and service lifecycle |
@@ -25,11 +24,8 @@ an environment to receiving the first generated response. The
 ## Support and Runtime Notes
 
 Current model support is limited to Ouro-1.4B. CPU execution provides a Torch
-reference backend. FlashAttention hardware validation is documented for FA4 on
-B300 and FA3 forward paged attention/CUDA Graph regression on H20; FA2 still
-requires target-device validation. See the [backend guide](flash_attention.md)
-for the tested versions and scope. Disaggregated serving currently targets
-multiple GPUs on a single host.
+reference backend. Disaggregated serving currently targets multiple GPUs on a
+single host.
 
 `ouro_delayed` reuses the trained Ouro gate with a one-loop delay; it changes
 the exit policy. The `random_lookahead` mode uses an untrained head for runtime

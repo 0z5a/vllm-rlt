@@ -53,7 +53,7 @@ class FlashPagedAttention:
         except (ImportError, AttributeError) as error:
             raise ImportError(
                 f"{backend} selected FA{self.generation}; install the official {package} package. "
-                "See docs/flash_attention.md. No backend fallback was performed."
+                "No backend fallback was performed."
             ) from error
         self.info = dict(
             backend="flash_attn",

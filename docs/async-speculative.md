@@ -120,10 +120,9 @@ A subsequent isolated FA3 installation on the same runtime/test source was
 validated separately: all original 12 graph failures passed with zero
 skips, the related suite passed 160 tests (three explicit FA4 cases deselected),
 eight additional FA3 paged/mixed-depth cases passed, and the async Triton module
-again passed 26 tests. See [the FA3 installation and validation record](flash_attention.md)
-for official source pins, build scope and portable regression commands. The original missing-package
-failures remain preserved; this follow-up does not qualify asynchronous
-speculation on FA3, which still uses the supported Triton path.
+again passed 26 tests. The original missing-package failures remain preserved;
+this follow-up does not qualify asynchronous speculation on FA3, which still uses
+the supported Triton path.
 
 The Mac CPU suite passed **477 tests**, with 164 skips: 135 GPU cases not enabled,
 26 missing optional `lm_eval`, and three Nanbeige cases missing official assets.
