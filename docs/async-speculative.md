@@ -234,14 +234,6 @@ host wait because its copy-completion event already depends on compute completio
 partial-failure drains retain both owned streams. The regression tests check
 ordering and lifetime behavior independently of this performance diagnosis.
 
-Both figures use matched scales, grouped activity tracks and an explicit runtime
-revision. Short waits/copies may be thinner than a pixel at this scale; their
-measured event counts above remain nonzero.
-
-![Current full-capacity and active-region request timelines](images/async-speculative-current-timeline.png)
-
-![Current first 40 ms of decode, aligned](images/async-speculative-current-zoom.png)
-
 ### Evidence and reproduction
 
 Run-specific commands, artifact locations and source/model/tokenizer identities
@@ -345,13 +337,6 @@ instrumentation overhead and must not replace the unprofiled throughput table.
 
 Prefill plus first-token preparation occupies 87.37/83.62 ms in the two profiled
 captures; its GPU active time is 19.73 ms in both. No prefill speed claim is made.
-The full figure starts at the first recorded CPU operator and marks decode start;
-the zoom aligns the first 40 ms of decode. Both use identical scales and equivalent
-CPU, CUDA synchronization, GPU-kernel and GPU-copy tracks.
-
-![Aligned prefill and decode timeline](images/async-speculative-timeline.png)
-
-![Aligned first 40 ms of decode](images/async-speculative-zoom.png)
 
 GPU active time is essentially unchanged. The device-owned frontier removes
 candidate/acceptance scalar reads and replaces repeated pageable metadata uploads
