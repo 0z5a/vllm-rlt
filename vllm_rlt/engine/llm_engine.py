@@ -4,7 +4,7 @@ from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
-from vllm_rlt.core.scheduler import Scheduler
+from vllm_rlt.core.scheduler import Scheduler, SplitPrefillScheduler
 from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
@@ -106,7 +106,7 @@ class LLMEngine:
             incremental_allocation=cache_config.incremental_allocation,
             watermark_ratio=cache_config.watermark_ratio,
         )
-        self.scheduler = Scheduler(scheduler_config, self.cache_manager, speculative_config)
+        self.scheduler = Scheduler(scheduler_config, self.cache_manager, speculative_config) if execution_config.atomic_prefill else SplitPrefillScheduler(scheduler_config, self.cache_manager, speculative_config)
         self.speculative_runner = (
             SpeculativeRunner(model, self.cache_manager, speculative_config, self.execution_config)
             if speculative_config is not None
@@ -190,7 +190,16 @@ class LLMEngine:
                 "increase num_blocks or reduce prompt/max_tokens"
             )
         self.scheduler.add_request(
-            Request(request_id, list(prompt_token_ids), params, exit_trace=trace)
+            Request(request_id, 
+                    list(prompt_token_ids), 
+                    params, 
+                    exit_trace=trace, 
+                    running_depth_boundary=(
+                        [[0, len(prompt_token_ids)]]
+                        + [[0, 0] for _ in range(max_loops - 1)]
+                    ),
+                    prefilled_depths=[0 for _ in range(len(prompt_token_ids))]
+            )
         )
 
     def has_unfinished_requests(self) -> bool:

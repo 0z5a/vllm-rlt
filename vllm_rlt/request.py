@@ -10,6 +10,8 @@ class Stage(str, Enum):
     WAITING = "waiting"
     RECEIVING = "receiving"
     PREFILL = "prefill"
+    PREFILLING_PRELUDE = "prefilling_prelude"
+    PREFILLING_RECURRENT = "prefilling_recurrent"
     PRELUDE = "prelude"
     RECURRENT = "recurrent"
     SPECULATIVE = "speculative"
@@ -28,6 +30,9 @@ class Request:
     request_id: str
     prompt_token_ids: list[int]
     sampling_params: SamplingParams
+    # Interval: [rdb[d][0],rdb[d][1]) marks where tokens' recurrent depth are at d.
+    running_depth_boundary: list[list] # [rdb[max_loops-1][0],rdb[max_loops-1][1]) == [0, num_prefilled_tokens)
+    prefilled_depths: list[int] # completed depths for prefill [0, max_loops] 
     stage: Stage = Stage.WAITING
     generated_token_ids: list[int] = field(default_factory=list)
     exit_depths: list[int] = field(default_factory=list)
@@ -35,6 +40,7 @@ class Request:
     num_output_placeholders: int = 0
     input_token_tensor: torch.Tensor | None = field(default=None, repr=False)
     num_prefilled_tokens: int = 0
+    num_preluded_tokens: int = 0
     # Host progress; in async mode an event confirms submitted GPU work is done.
     loops_done: int = 0
     pending_exit_depth: int | None = None

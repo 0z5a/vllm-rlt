@@ -108,6 +108,7 @@ class ExecutionConfig:
     cuda_graph_max_graphs: int = 16
     cuda_graph_memory_reserve_bytes: int = 1024**3
     prefill_uva: bool = False
+    atomic_prefill: bool = False
 
     def __post_init__(self):
         for name in (

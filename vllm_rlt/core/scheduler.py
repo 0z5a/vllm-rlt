@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from vllm_rlt.config import SchedulerConfig
-from vllm_rlt.core.scheduling_policy import NoRefillPolicy, RefillPolicy, SpeculativePolicy
+from vllm_rlt.core.scheduling_policy import NoRefillPolicy, RefillPolicy, SpeculativePolicy, SplitPrefillPolicy, SpeculativeSplitPrefillPolicy
 from vllm_rlt.request import FinishReason, Request, Stage
 
 
@@ -57,7 +57,7 @@ class AdmissionPlan:
 
 
 class Scheduler:
-    def __init__(self, config: SchedulerConfig, cache_manager, speculative_config=None):
+    def __init__(self, config: SchedulerConfig, cache_manager, speculative_config=None, policy=None):
         self.config = config
         self.cache_manager = cache_manager
         self.speculative_config = speculative_config
@@ -68,8 +68,11 @@ class Scheduler:
         # device state and mutate queues; they are operations, not predicates.
         self.preempt_callback = None
         self.resume_callback = None
-        policy_cls = NoRefillPolicy if config.mode == "no_refill" else RefillPolicy
-        self.policy = (SpeculativePolicy if speculative_config else policy_cls)(config)
+        if policy:
+            self.policy=policy
+        else:
+          policy_cls = NoRefillPolicy if config.mode == "no_refill" else RefillPolicy
+          self.policy = (SpeculativePolicy if speculative_config else policy_cls)(config)
 
     def add_request(self, request: Request):
         if request.request_id in self.requests:
@@ -294,9 +297,11 @@ class Scheduler:
         """
         if stage == Stage.PREFILL:
             start = request.num_prefilled_tokens
-            count = min(
-                token_budget, self.config.prefill_chunk_size, len(request.prompt_token_ids) - start
-            )
+            # ensure every token in one item has the same prefilled_depth  
+            first_token_depth = request.prefilled_depths[start]
+            right_boundary = request.running_depth_boundary[first_token_depth][1]
+            right_boundary = min(len(request.prompt_token_ids), right_boundary)
+            count = min(token_budget, self.config.prefill_chunk_size, right_boundary - start)
             return ScheduledItem(request, start, count)
         if stage == Stage.SPECULATIVE:
             # K candidates plus one bonus distribution. At the output limit,
@@ -366,3 +371,9 @@ class Scheduler:
         if not self.requests:
             return None
         return self.policy.schedule(self, prefer_recurrent=prefer_recurrent)
+
+class SplitPrefillScheduler(Scheduler):
+    def __init__(self, config: SchedulerConfig, cache_manager, speculative_config=None):
+        policy = SpeculativeSplitPrefillPolicy(config) if speculative_config else SplitPrefillPolicy(config)
+        super().__init__(config=config, cache_manager=cache_manager, speculative_config=speculative_config, policy=policy)
+        

@@ -7,7 +7,7 @@ from vllm_rlt.config import SchedulerConfig
 from vllm_rlt.request import Stage
 
 if TYPE_CHECKING:
-    from vllm_rlt.core.scheduler import Scheduler, SchedulerOutput
+    from vllm_rlt.core.scheduler import Scheduler, SplitPrefillScheduler, SchedulerOutput
 
 
 class NoRefillPhase(Enum):
@@ -109,3 +109,31 @@ class SpeculativePolicy(SchedulingPolicy):
         if q[Stage.SPECULATIVE]:
             return scheduler._take(Stage.SPECULATIVE)
         return None
+
+class SplitPrefillPolicy(SchedulingPolicy):
+    def schedule(self, scheduler : SplitPrefillScheduler, *, prefer_recurrent=False):
+        if not isinstance(scheduler, SplitPrefillScheduler):
+            raise ValueError("SplitPrefillPolicy must work with AtomicPrefillScheduler")
+
+        
+class SpeculativeSplitPrefillPolicy(SchedulingPolicy):
+    def schedule(self, scheduler : SplitPrefillScheduler, *, prefer_recurrent=False):
+        if not isinstance(scheduler, SplitPrefillScheduler):
+            raise ValueError("SpeculativeSplitPrefillPolicy must work with AtomicPrefillScheduler")
+        q = scheduler.queues
+        if prefer_recurrent and q[Stage.RECURRENT]:
+            return scheduler._take(Stage.RECURRENT)
+        for stage in (Stage.PRELUDE, Stage.PREFILLING_PRELUDE):
+            if(q[stage]):
+                return scheduler._take(stage)
+        if q[Stage.CODA] and (
+            len(q[Stage.CODA]) >= self.config.min_coda_batch_size or not q[Stage.RECURRENT]
+        ):
+            return scheduler._take(Stage.CODA)
+        if self.decode_due and q[Stage.RECURRENT]:
+            return scheduler._take(Stage.RECURRENT)
+        scheduler._admit()
+        for stage in (Stage.PREFILLING_RECURRENT, Stage.RECURRENT):
+            if(q[stage]):
+                return scheduler._take(stage)
+            
