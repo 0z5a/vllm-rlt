@@ -9,26 +9,43 @@ import torch
 
 from vllm_rlt.config import SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.entrypoints.runtime_args import add_runtime_args, runtime_configs
-from vllm_rlt.models.config import OURO_MODEL_ID, OURO_REVISION
-from vllm_rlt.models.ouro import OuroForCausalLM
+from vllm_rlt.entrypoints.runtime_args import (
+    add_runtime_args,
+    profile_config_from_args,
+    runtime_configs,
+)
+from vllm_rlt.models import (
+    AutoModelForCausalLM,
+    load_tokenizer,
+    resolve_model_config,
+    resolve_model_source,
+)
 
 
 def load_engine(args):
     from tokenizers.decoders import ByteLevel
-    from transformers import AutoTokenizer
 
-    revision = args.revision or (OURO_REVISION if args.model == OURO_MODEL_ID else None)
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.tokenizer or args.model,
-        revision=args.tokenizer_revision or revision,
-        trust_remote_code=False,
+    profiling = profile_config_from_args(args)
+    if profiling is not None:
+        profiling.resolve_activities(args.device)
+    source, revision, config = resolve_model_config(args.model, revision=args.revision)
+    tokenizer = load_tokenizer(
+        args.tokenizer or resolve_model_source(args.model),
+        revision=(
+            args.tokenizer_revision
+            if args.tokenizer_revision is not None
+            else (args.revision if args.tokenizer else revision)
+        ),
     )
-    decoder = tokenizer.backend_tokenizer.decoder
-    if not isinstance(decoder, ByteLevel):
-        raise ValueError("serving requires the Ouro byte-level tokenizer")
-    model = OuroForCausalLM.from_pretrained(
-        args.model, revision=revision, device=args.device, dtype=getattr(torch, args.dtype)
+    if config["model_type"].lower() == "ouro":
+        decoder = getattr(getattr(tokenizer, "backend_tokenizer", None), "decoder", None)
+        if not isinstance(decoder, ByteLevel):
+            raise ValueError("serving requires the Ouro byte-level tokenizer")
+    model = AutoModelForCausalLM.from_pretrained(
+        source,
+        revision=revision,
+        device=args.device,
+        dtype=getattr(torch, args.dtype),
     )
     engine = LLMEngine(
         model,
@@ -47,6 +64,8 @@ def load_engine(args):
         ),
         attention_backend=args.attention_backend,
     )
+    if profiling is not None:
+        engine.start_profile(profiling, scheduled=True)
     return engine, tokenizer
 
 
@@ -57,17 +76,27 @@ def main():
     from vllm_rlt.serving.server import create_app
 
     parser = argparse.ArgumentParser(description="Serve one Ouro model with OpenAI completions")
-    parser.add_argument("--model", default=OURO_MODEL_ID)
+    parser.add_argument(
+        "--model", help="Local checkpoint path or HuggingFace repository ID", required=True
+    )
     parser.add_argument("--revision")
     parser.add_argument("--tokenizer")
     parser.add_argument("--tokenizer-revision")
-    parser.add_argument("--served-model-name", default=OURO_MODEL_ID)
+    parser.add_argument("--served-model-name")
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     parser.add_argument("--dtype", choices=["bfloat16", "float32"], default="bfloat16")
     parser.add_argument(
         "--attention-backend",
         type=str.lower,
-        choices=["torch", "triton", "flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4"],
+        choices=[
+            "auto",
+            "torch",
+            "triton",
+            "flash_attn",
+            "flash_attn_2",
+            "flash_attn_3",
+            "flash_attn_4",
+        ],
         default="triton",
     )
     parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
@@ -81,16 +110,17 @@ def main():
     parser.add_argument("--cpu-threads", type=int, default=1)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+
     add_runtime_args(parser)
     args = parser.parse_args()
     limits = ServingLimits(**{name: getattr(args, name) for name in defaults})
-    if args.device == "cpu" and args.attention_backend != "torch":
-        parser.error("CPU execution requires --attention-backend torch")
+    if args.device == "cpu" and args.attention_backend not in ("auto", "torch"):
+        parser.error("CPU execution requires --attention-backend torch or auto")
     torch.set_num_threads(args.cpu_threads)
     logging.basicConfig(level=logging.INFO)
     app = create_app(
         partial(load_engine, args),
-        model=args.served_model_name,
+        model=args.served_model_name or args.model,
         limits=limits,
         allowed_hosts=("localhost", args.host),
     )

@@ -10,7 +10,6 @@ import subprocess
 import time
 from pathlib import Path
 
-MODEL_REVISION = "574fa66cb8bf5abdc979642d01cf2b79b16bfab1"
 DATA_REVISION = "740312add88f781978c0658806c59bc2815b9866"
 PACKAGES = ("torch", "transformers", "lm-eval", "datasets", "tokenizers", "triton")
 DEFAULT_CASE = Path(__file__).parent / "fixtures/gsm8k-87.json"
@@ -203,9 +202,9 @@ def prepare(args):
     for path in sorted(files):
         metadata = get_hf_file_metadata(
             hf_hub_url(
-                "ByteDance/Ouro-1.4B",
+                args.model_repo,
                 path.name,
-                revision=MODEL_REVISION,
+                revision=args.model_revision,
             )
         )
         hashes[path.name] = file_digest(path)
@@ -214,12 +213,12 @@ def prepare(args):
         else:
             data = path.read_bytes()
             observed = hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
-        if observed != metadata.etag or metadata.commit_hash != MODEL_REVISION:
+        if observed != metadata.etag or metadata.commit_hash != args.model_revision:
             raise ValueError(f"File does not match the pinned HF release: {path.name}")
     protocol = {
         "format_version": 1,
         "model": str(model),
-        "model_revision": MODEL_REVISION,
+        "model_revision": args.model_revision,
         "model_files": hashes,
         "task_config": task.dump_config(),
         "records": records,
@@ -595,6 +594,10 @@ def main():
         "--model",
         required=True,
         help="Local pinned Ouro checkpoint including official Python files",
+    )
+    p.add_argument("--model-repo", required=True, help="HF repository used to verify local files")
+    p.add_argument(
+        "--model-revision", required=True, help="Exact HF commit used to verify local files"
     )
     p.add_argument("--output", required=True)
     p.add_argument("--split", choices=["train", "test"], default="test")

@@ -3,6 +3,7 @@
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
 from vllm_rlt import (
     CacheConfig,
     ExecutionConfig,
@@ -12,13 +13,13 @@ from vllm_rlt import (
 )
 from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Request, Stage
 
 
 def tiny(device="cpu", dtype=torch.float32):
     torch.manual_seed(123)
-    return OuroForCausalLM(OuroConfig.tiny()).to(device=device, dtype=dtype)
+    return OuroForCausalLM(tiny_ouro_config()).to(device=device, dtype=dtype)
 
 
 def make_engine(model, *, asynchronous=True, k=3, budget=16, prefix=False, multi_stream=True):
@@ -296,3 +297,86 @@ def test_two_round_kv_matches_serial_replay_at_every_depth(dtype):
     assert not e.speculative_runner.states
     assert all(not bank.leased for bank in e.speculative_runner.banks)
     e.close()
+
+
+def test_active_page_tables_are_contiguous_and_do_not_touch_inactive_storage():
+    from types import SimpleNamespace
+
+    from vllm_rlt.core.kv_cache_manager import KVCacheManager
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+    from vllm_rlt.worker.async_speculative import AsyncSpeculativeRunner
+
+    cache = KVCacheManager(1, 1, 4, 64, 2, 4)
+    assert cache.allocate("short", 4) and cache.allocate("long", 10)
+    runner = object.__new__(AsyncSpeculativeRunner)
+    runner.cache = cache
+    bank = SimpleNamespace(
+        leased=False,
+        host_tables=torch.full((128,), -91, dtype=torch.int32),
+        tables=torch.full((128,), -92, dtype=torch.int32),
+    )
+    runner.banks = [bank]
+    requests = [Request(rid, [2], SamplingParams()) for rid in ("short", "long")]
+    batch = SchedulerOutput(
+        Stage.SPECULATIVE,
+        [
+            ScheduledItem(requests[0], 1, 2),
+            ScheduledItem(requests[1], 7, 2),
+        ],
+    )
+    _, _, host, device = runner._prepare_round(batch)
+    assert host.shape == device.shape == (2, 4, 5)
+    assert host.is_contiguous() and device.is_contiguous()
+    assert host.data_ptr() == bank.host_tables.data_ptr()
+    for i, rid in enumerate(("short", "long")):
+        pages = 2 if i == 0 else 5
+        for depth in range(4):
+            expected = cache._get_allocation(rid).block_tables[depth][:pages]
+            assert host[i, depth, :pages].tolist() == list(expected)
+    assert not host[0, :, 2:].any()
+    assert (bank.host_tables[40:] == -91).all()
+    assert (bank.tables == -92).all()  # CPU preparation does not upload.
+    with pytest.raises(RuntimeError, match="exhausted"):
+        runner._prepare_round(batch)
+    # Simulate retirement, then shrink both dimensions using the same storage.
+    bank.leased = False
+    before = bank.host_tables.clone()
+    smaller = SchedulerOutput(Stage.SPECULATIVE, [ScheduledItem(requests[0], 0, 1)])
+    _, _, host, device = runner._prepare_round(smaller)
+    assert host.shape == device.shape == (1, 4, 1)
+    assert host.is_contiguous() and device.is_contiguous()
+    assert torch.equal(bank.host_tables[4:], before[4:])
+
+
+def test_device_metadata_rejects_foreign_and_reused_allocations_without_host_reads(monkeypatch):
+    from vllm_rlt.core.kv_cache_manager import KVCacheManager
+
+    cache = KVCacheManager(1, 1, 4, 16, 2, 4)
+    foreign = KVCacheManager(1, 1, 4, 16, 2, 4)
+    assert cache.allocate("r", 2) and foreign.allocate("r", 2)
+    allocation = cache._get_allocation("r")
+    arguments = dict(
+        allocations=(("r", allocation),),
+        position_ids=torch.tensor([0]),
+        write_blocks=torch.tensor([allocation.block_tables[0][0]]),
+        write_offsets=torch.tensor([0]),
+        block_tables=torch.tensor([allocation.block_tables[0]], dtype=torch.int32),
+        context_lengths=torch.tensor([1], dtype=torch.int32),
+    )
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("metadata creation read device values on CPU")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(torch.Tensor, "item", forbidden)
+        patch.setattr(torch.Tensor, "tolist", forbidden)
+        batch = cache._prepare_device_batch(**arguments)
+    assert not hasattr(batch, "owner")
+    with pytest.raises(RuntimeError, match="stale"):
+        foreign._require_live_batch(batch)
+    cache.free("r")
+    assert cache.allocate("r", 2)
+    with pytest.raises(RuntimeError, match="stale"):
+        cache._require_live_batch(batch)
+    with pytest.raises(RuntimeError, match="stale"):
+        cache._prepare_device_batch(**arguments)

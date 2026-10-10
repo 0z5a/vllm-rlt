@@ -6,12 +6,14 @@ from dataclasses import replace
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.pd.config import PDConfig
 from vllm_rlt.pd.transport import kv_segments, partition_segments
+from vllm_rlt.profiling import Profiler
 
 
 def test_transfer_lease_defers_free_until_last_reader():
@@ -59,7 +61,7 @@ def test_segment_ranges_cover_only_valid_tokens_and_all_layers_depths():
         key_ptr=0,
         value_ptr=10**9,
     )
-    tables = c._get_allocation("a").block_tables
+    tables = c.plane_block_tables("a")
     expected = set()
     for table in tables:
         for token in range(2, 9):
@@ -113,7 +115,7 @@ def create_pd(*, graph=False, layout="last_exited", multi=False):
 
     if torch.cuda.device_count() < (4 if multi else 2):
         pytest.skip("requires 2/4 visible GPUs")
-    config = replace(OuroConfig.tiny(), head_dim=64)
+    config = tiny_ouro_config(head_dim=64)
     return PDEngine(
         config,
         pd_config=PDConfig(
@@ -150,9 +152,7 @@ def test_pd_generation_refill_cancel_and_reuse_matches_local(graph, layout):
     params = SamplingParams(max_tokens=4, min_loops=1, ignore_eos=True)
     with create_pd(graph=graph, layout=layout) as e:
         torch.manual_seed(123)
-        model = OuroForCausalLM(replace(OuroConfig.tiny(), head_dim=64)).to(
-            "cuda:0", torch.bfloat16
-        )
+        model = OuroForCausalLM(tiny_ouro_config(head_dim=64)).to("cuda:0", torch.bfloat16)
         reference = LLMEngine(
             model,
             cache_config=CacheConfig(128, 4, layout),
@@ -240,6 +240,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
 
     engine = object.__new__(LLMEngine)
     engine.async_speculative = False
+    engine.profiling = Profiler("cpu")
     engine.preemption = PreemptionManager(engine)
     engine.execution_config = ExecutionConfig(async_scheduling=async_scheduling)
     engine.scheduler = Scheduler(SchedulerConfig(), Mock())
@@ -282,7 +283,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
 def test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs(p_cache, d_cache):
     from vllm_rlt.pd.engine import PDEngine
 
-    cfg = replace(OuroConfig.tiny(), head_dim=64)
+    cfg = tiny_ouro_config(head_dim=64)
     params = SamplingParams(max_tokens=6, min_loops=1, ignore_eos=True)
     options = dict(
         pd_config=PDConfig(

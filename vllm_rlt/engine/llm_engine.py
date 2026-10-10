@@ -1,17 +1,22 @@
 from dataclasses import replace
+from typing import TYPE_CHECKING, cast
 
 import torch
 
+from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
 from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
-from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS
+from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
 from vllm_rlt.worker.model_runner import ModelRunner
 from vllm_rlt.worker.speculative import SpeculativeRunner
+
+if TYPE_CHECKING:
+    from vllm_rlt.worker.async_speculative import AsyncSpeculativeRunner
 
 
 class LLMEngine:
@@ -29,6 +34,7 @@ class LLMEngine:
         speculative_config=None,
     ):
         self.model = model
+        self.profiling = Profiler(next(model.parameters()).device)
         cache_config = cache_config or CacheConfig()
         scheduler_config = scheduler_config or SchedulerConfig()
         parameter = next(model.parameters())
@@ -44,7 +50,7 @@ class LLMEngine:
                 raise ValueError("speculative target_loops must equal the model full depth")
             if self.exit_config.mode != "ouro":
                 raise ValueError("speculative decoding requires fixed-depth ouro exit mode")
-            if self.execution_config.cuda_graphs:
+            if self.async_speculative and self.execution_config.cuda_graphs:
                 raise ValueError(
                     "speculative decoding requires eager execution without CUDA graphs"
                 )
@@ -73,9 +79,7 @@ class LLMEngine:
             cache_config = replace(
                 cache_config, memory_reserve_bytes=cache_config.memory_reserve_bytes + scratch
             )
-        if self.execution_config.cuda_graphs and (
-            parameter.device.type != "cuda" or attention_backend not in ("triton", *FLASH_BACKENDS)
-        ):
+        if self.execution_config.cuda_graphs and parameter.device.type != "cuda":
             raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
         if self.execution_config.async_scheduling:
             if not self.async_speculative and self.exit_config.mode not in (
@@ -86,13 +90,30 @@ class LLMEngine:
                 raise ValueError(
                     "async scheduling requires ouro_delayed, random_lookahead or trace exit mode"
                 )
-            if parameter.device.type == "cuda" and attention_backend not in (
-                "triton",
-                *FLASH_BACKENDS,
-            ):
-                raise ValueError("CUDA async scheduling requires Triton or FlashAttention")
+        if self.execution_config.prefill_uva and (
+            parameter.device.type != "cuda" or cache_config.layout != "last_exited"
+        ):
+            raise ValueError("prefill_uva requires CUDA packed prefill with last_exited KV")
+        attention = create_backend(
+            attention_backend,
+            parameter.device,
+            parameter.dtype,
+            config.head_dim,
+            cache_config.block_size,
+            required_capabilities=BackendCapabilities(
+                packed_prefill=self.execution_config.prefill_uva,
+                cuda_graphs=self.execution_config.cuda_graphs,
+                async_scheduling=(
+                    parameter.device.type == "cuda" and self.execution_config.async_scheduling
+                ),
+            ),
+        )
         num_blocks, self.memory_plan = plan_cache(
-            model, cache_config, scheduler_config, self.execution_config, attention_backend
+            model,
+            cache_config,
+            scheduler_config,
+            self.execution_config,
+            attention.info["selected_backend"],
         )
         self.cache_manager = KVCacheManager(
             num_layers=config.num_hidden_layers,
@@ -105,19 +126,14 @@ class LLMEngine:
             device=parameter.device,
             dtype=parameter.dtype,
             backend=attention_backend,
+            attention=attention,
             enable_prefix_caching=cache_config.enable_prefix_caching,
             incremental_allocation=cache_config.incremental_allocation,
             watermark_ratio=cache_config.watermark_ratio,
         )
-        if self.execution_config.prefill_uva and (
-            parameter.device.type != "cuda"
-            or cache_config.layout != "last_exited"
-            or getattr(self.cache_manager.attention, "generation", None) != 4
-        ):
-            raise ValueError("prefill_uva requires CUDA FA4 with last_exited KV")
         self.scheduler = Scheduler(scheduler_config, self.cache_manager, speculative_config)
         self.speculative_runner = (
-            SpeculativeRunner(model, self.cache_manager, speculative_config)
+            SpeculativeRunner(model, self.cache_manager, speculative_config, self.execution_config)
             if speculative_config is not None
             else None
         )
@@ -223,9 +239,10 @@ class LLMEngine:
 
     def close(self):
         """Drain owned GPU work before serving teardown drops tensor owners."""
+        self.profiling.close()
         self.model_runner.synchronize()
         if self.async_speculative:
-            self.speculative_runner.synchronize()
+            cast("AsyncSpeculativeRunner", self.speculative_runner).synchronize()
         for rid in list(self.scheduler.requests):
             self.abort_request(rid)
         if self.async_speculative:
@@ -245,7 +262,30 @@ class LLMEngine:
         self._pending_exit_signals.pop(request_id, None)
         return RequestOutput.from_request(self.scheduler.abort(request_id))
 
+    def start_profile(self, config, *, scheduled=False, **identity):
+        return self.profiling.start(config, scheduled=scheduled, **identity)
+
+    def stop_profile(self):
+        return self.profiling.stop()
+
+    def profile_status(self):
+        return self.profiling.status()
+
+    def wait_for_profile_artifacts(self, timeout=None):
+        return self.profiling.wait(timeout)
+
     def step(self) -> list[RequestOutput]:
+        if not self.profiling.recording:
+            return self._step()
+        try:
+            outputs = self._step()
+            self.profiling.step()
+            return outputs
+        except BaseException:
+            self.profiling.stop()
+            raise
+
+    def _step(self) -> list[RequestOutput]:
         if self.execution_config.async_scheduling:
             try:
                 if self.async_speculative:
@@ -256,7 +296,7 @@ class LLMEngine:
                 # streams before invalidating requests or recycling any memory.
                 self.model_runner.synchronize()
                 if self.async_speculative:
-                    self.speculative_runner.synchronize()
+                    cast("AsyncSpeculativeRunner", self.speculative_runner).synchronize()
                 for rid in list(self.scheduler.requests):
                     self.abort_request(rid)
                 if self.async_speculative:
@@ -267,7 +307,7 @@ class LLMEngine:
                     self._pending_speculative.clear()
                     # Also release a bank whose submission failed before it
                     # could return a ticket. Both streams were drained above.
-                    for bank in self.speculative_runner.banks:
+                    for bank in cast("AsyncSpeculativeRunner", self.speculative_runner).banks:
                         bank.keepalive.clear()
                         bank.leased = False
                 self._pending_exit_signals.clear()
@@ -283,7 +323,8 @@ class LLMEngine:
             return []
         try:
             if batch.stage == Stage.SPECULATIVE:
-                return self._update_speculative(batch, self.speculative_runner.execute(batch))
+                result = self.speculative_runner.execute(batch)
+                return self._update_speculative(batch, result)
             result = self.model_runner.execute(batch)
             return self._update(batch, result)
         except Exception:
@@ -413,7 +454,7 @@ class LLMEngine:
         self.scheduler.finish(request, reason)
 
     def _retire_speculative(self, *, wait=False, request_id=None):
-        runner = self.speculative_runner
+        runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
         for rid, request in list(self._retiring_speculative.items()):
             if request_id is not None and rid != request_id:
                 continue
@@ -426,8 +467,9 @@ class LLMEngine:
             del self._retiring_speculative[rid]
 
     def _collect_speculative(self):
+        assert self.speculative_config is not None
         ticket = self._pending_speculative.pop(0)
-        runner = self.speculative_runner
+        runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
         if not ticket.ready():
             runner.readback_waits += 1
         results, frontiers = ticket.collect()
@@ -484,7 +526,7 @@ class LLMEngine:
         return outputs
 
     def _step_async_speculative(self):
-        runner = self.speculative_runner
+        runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
         self._retire_speculative()
         outputs = []
         # Submit ahead before collecting, even when a small round already
@@ -505,10 +547,10 @@ class LLMEngine:
             else:
                 # Prefill/bootstrap retain native semantics. All model compute
                 # shares the speculative stream; the first coda is a CPU boundary.
-                with torch.cuda.stream(runner.stream):
+                with torch.cuda.stream(runner.compute_stream):
                     result = self.model_runner.execute(batch)
                     event = torch.cuda.Event()
-                    event.record(runner.stream)
+                    event.record(runner.compute_stream)
                     for item in batch.items:
                         self.model_runner.events[item.request.request_id] = event
                     outputs.extend(self._update(batch, result))

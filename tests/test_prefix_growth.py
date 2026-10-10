@@ -1,15 +1,16 @@
 import pytest
 import torch
 
+from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroForCausalLM
 
 
 def model():
     torch.manual_seed(15)
-    return OuroForCausalLM(OuroConfig.tiny())
+    return OuroForCausalLM(tiny_ouro_config())
 
 
 def finish(engine):
@@ -51,8 +52,8 @@ def test_prefix_refcounts_and_eviction():
     c.publish_prefix("a", [1, 2, 3, 4, 5], 5)
     hit = c.lookup_prefix([1, 2, 3, 4, 9])
     assert c.allocate("b", 5, prefix=hit)
-    a = c._get_allocation("a").block_tables
-    b = c._get_allocation("b").block_tables
+    a = c.plane_block_tables("a")
+    b = c.plane_block_tables("b")
     assert a[0][:2] == b[0][:2]
     c.free("a")
     assert c._refs[b[0][0]] == 2  # cache + live request
@@ -101,7 +102,6 @@ def test_lossless_preemption_preserves_looped_history():
             assert generator is not None
             state = generator.get_state().clone()
             e.add_request("b", [5], SamplingParams(max_tokens=1))
-            e.scheduler.selected_request_ids.clear()
             assert e.preemption.preempt(e.scheduler.requests["b"])
             assert "a" in e.preemption.snapshots
             # Suspension shares release() with termination, and the RNG survives
@@ -123,12 +123,10 @@ def test_lossless_preemption_preserves_looped_history():
 @pytest.mark.gpu
 @pytest.mark.parametrize("graph", [False, True])
 def test_fa4_prefill_uva_prefix_growth_and_bank_reuse(graph):
-    from dataclasses import replace
-
     from vllm_rlt import ExecutionConfig, ExitConfig
 
     torch.manual_seed(21)
-    cfg = replace(OuroConfig.tiny(), head_dim=64)
+    cfg = tiny_ouro_config(head_dim=64)
     m = OuroForCausalLM(cfg).to(device="cuda", dtype=torch.bfloat16)
     params = SamplingParams(max_tokens=8, min_loops=1, ignore_eos=True)
     engines = []
@@ -240,12 +238,10 @@ def test_prefill_uva_metadata_matches_reference_and_waits_for_consumer():
 
 @pytest.mark.gpu
 def test_async_pressure_preemption_with_resident_state():
-    from dataclasses import replace
-
     from vllm_rlt import ExecutionConfig, ExitConfig
 
     torch.manual_seed(71)
-    cfg = replace(OuroConfig.tiny(), head_dim=64)
+    cfg = tiny_ouro_config(head_dim=64)
     m = OuroForCausalLM(cfg).to(device="cuda", dtype=torch.bfloat16)
     options = dict(
         attention_backend="triton",
