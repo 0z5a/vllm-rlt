@@ -1,0 +1,50 @@
+{
+  "passed": true,
+  "scope": "complete public/W2 FP32 tensor and lifecycle supplement, not high-C performance",
+  "streaming_archive_all_payloads_verified": 227,
+  "original_category_and_lifecycle_validation_AST_unchanged": true,
+  "comparison": "all FP32 elements promoted to binary64, original atol/rtol <= 1e-4; exact pairs also byte-equal",
+  "phases": {
+    "w2": {
+      "phase": "w2",
+      "records": 167196,
+      "all_elements_checked": 350773356,
+      "category_counts": {
+        "state": 108,
+        "key": 82944,
+        "value": 82944,
+        "logits": 108,
+        "full_log_softmax": 108,
+        "selected_lp": 108,
+        "readout_state": 96,
+        "lifecycle_hidden_state": 58,
+        "lifecycle_reference_hidden": 50,
+        "lifecycle_owned_key_block": 336,
+        "lifecycle_owned_value_block": 336
+      },
+      "raw_sha256": "028cd98f157d15a36593ae05387d76cfa18c080adf0f5eedf8e0f3fabdc8abd2"
+    },
+    "public": {
+      "phase": "public",
+      "records": 293,
+      "all_elements_checked": 1435254791,
+      "category_counts": {
+        "parameter_exact": 269,
+        "public_numeric": 18,
+        "public_full_log_softmax": 6
+      },
+      "raw_sha256": "dd1a53420269e9f473210fd38a2cb6cfdadf1825304b88077d078d446a843eec"
+    }
+  },
+  "archive_sha256": "da7e9da77aa536086fbc4cbf7ae0bad01eab3a3fae907b68e4d878f36d334844",
+  "source_head": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "source_files_verified": 133,
+  "actual_independent_audit_return": 0,
+  "hardware": "NVIDIA H100",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "runtime": {
+    "torch": "2.12.1+cu130",
+    "triton": "3.7.1",
+    "transformers": "4.54.1"
+  }
+}

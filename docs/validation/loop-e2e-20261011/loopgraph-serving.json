@@ -1,0 +1,137 @@
+{
+  "hardware": "NVIDIA H100",
+  "model_revision": "2ab69a4e17937d5fa030fe5d8a1aabc0f01d39d8",
+  "author_revision": "abdfae0adbdd12be8c6123ccb34eee98a38afb39",
+  "runtime": {
+    "torch": "2.11.0+cu129",
+    "triton": "3.6.0",
+    "transformers": "5.9.0",
+    "flash-attn-3": "3.0.0"
+  },
+  "runs": {
+    "loopgraph-serving-v1": {
+      "passed": true,
+      "archive_sha256": "62e590bc8d45bc861df4fdc73ca182b8dd07f25f0fbce9856d167b64b6017376",
+      "payloads_verified": 424,
+      "source_files": 345,
+      "profiles": {
+        "fixed4": {
+          "requests": 4,
+          "tokens": 16,
+          "same_output_and_aggregate_depth_as_author": true,
+          "drained": true
+        },
+        "live_immediate": {
+          "requests": 4,
+          "tokens": 16,
+          "same_output_and_aggregate_depth_as_author": true,
+          "drained": true
+        }
+      },
+      "scope": "saved serving outputs, work, rejection and physical-drain evidence; full hidden/KV is covered by separate prior math/G3 audits; no speed or quality claim",
+      "actual_producer_wait": 0,
+      "torch_imported": false,
+      "actual_independent_audit_return": 0
+    },
+    "loopgraph-stress-v1": {
+      "passed": true,
+      "archive_sha256": "9b1ce2f2beb78333b41ae464c2d9440f9e2c2555619c644cfd3a41a7f6925dbe",
+      "payloads_verified": 407,
+      "source_files": 345,
+      "profiles": {
+        "fixed4": {
+          "requests": 256,
+          "tokens": 640,
+          "capacity": 2,
+          "max_context": 128,
+          "original_author_output_parity": true,
+          "full_length_aggregate_depth_parity": true,
+          "counters": {
+            "nonblocking_polls": 18297,
+            "not_ready_polls": 18102,
+            "submit_while_inflight": 248,
+            "id_reuses": 248,
+            "duplicate_rejections": 256,
+            "admission_rejections": 16,
+            "close_rejections": 2,
+            "invalid_input_rejections": 6
+          },
+          "drained": true
+        },
+        "live_immediate": {
+          "requests": 256,
+          "tokens": 640,
+          "capacity": 2,
+          "max_context": 128,
+          "original_author_output_parity": true,
+          "full_length_aggregate_depth_parity": true,
+          "counters": {
+            "nonblocking_polls": 14300,
+            "not_ready_polls": 14105,
+            "submit_while_inflight": 248,
+            "id_reuses": 248,
+            "duplicate_rejections": 256,
+            "admission_rejections": 16,
+            "close_rejections": 2,
+            "invalid_input_rejections": 6
+          },
+          "drained": true
+        }
+      },
+      "scope": "saved serving outputs, work, rejection and physical-drain evidence; full hidden/KV is covered by separate prior math/G3 audits; no speed or quality claim",
+      "actual_producer_wait": 0,
+      "torch_imported": false,
+      "actual_independent_audit_return": 0
+    },
+    "loopgraph-wide-v1": {
+      "passed": true,
+      "archive_sha256": "57ec99599dc18a5492eabeb3bc222a4998904d6735cb822ec56982eeb53bd848",
+      "payloads_verified": 407,
+      "source_files": 345,
+      "profiles": {
+        "fixed4": {
+          "requests": 256,
+          "tokens": 640,
+          "capacity": 32,
+          "max_context": 384,
+          "original_author_output_parity": true,
+          "full_length_aggregate_depth_parity": true,
+          "counters": {
+            "nonblocking_polls": 470,
+            "not_ready_polls": 455,
+            "submit_while_inflight": 192,
+            "id_reuses": 192,
+            "duplicate_rejections": 256,
+            "admission_rejections": 16,
+            "close_rejections": 2,
+            "invalid_input_rejections": 6
+          },
+          "drained": true
+        },
+        "live_immediate": {
+          "requests": 512,
+          "tokens": 1280,
+          "capacity": 64,
+          "max_context": 128,
+          "original_author_output_parity": true,
+          "full_length_aggregate_depth_parity": true,
+          "counters": {
+            "nonblocking_polls": 232,
+            "not_ready_polls": 217,
+            "submit_while_inflight": 384,
+            "id_reuses": 384,
+            "duplicate_rejections": 512,
+            "admission_rejections": 16,
+            "close_rejections": 2,
+            "invalid_input_rejections": 6
+          },
+          "drained": true
+        }
+      },
+      "scope": "saved serving outputs, work, rejection and physical-drain evidence; full hidden/KV is covered by separate prior math/G3 audits; no speed or quality claim",
+      "actual_producer_wait": 0,
+      "torch_imported": false,
+      "actual_independent_audit_return": 0
+    }
+  }
+}
