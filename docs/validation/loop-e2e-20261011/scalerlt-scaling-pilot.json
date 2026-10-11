@@ -1,5 +1,5 @@
 {
-  "status": "PRELIMINARY_ONE_PAIR_LOCAL_AUDIT_PASS",
+  "status": "PRELIMINARY_TWO_PAIRS_LOCAL_AUDIT_PASS",
   "seed": 42,
   "scope": "same 32 global samples per update, FP32, controlled fixture, source/model, shared publication/checkpoint storage, 2 warmup and 5 measured full updates; co-running other GPU jobs; separate equal-size CPU core groups",
   "source_commit": "0b4f6fc130cbad5e947e964e37ee2755eaee4df5",
@@ -171,6 +171,187 @@
   "two_node_speedup": 0.8914435440740591,
   "throughput_change_percent": -10.855645592594087,
   "all_slow_updates_retained": true,
-  "independent_complete_raw_archive_audit": "PENDING",
-  "conclusion": "first pair is a regression, not scaling evidence; repeat paired seeds and attribute rollout/training/publication/IO time"
+  "independent_complete_raw_archive_audit": {
+    "scalerlt-scaling-1n2g-shared-v5-archive-v1": {
+      "passed": true,
+      "scope": "independent VPS complete archive integrity; original scientific audit remains separate",
+      "archive_sha256": "e3bc6e1e9fec2aa19abb4ee835cf8efc19e4822edb6e56769fa9ad57c9fc244a",
+      "archive_bytes": 9024759490,
+      "payloads_verified": 52,
+      "actual_transport_return": 0,
+      "full_archive_stored_on_VPS": true,
+      "finished": 1791735954.885136
+    }
+  },
+  "conclusion": "Seed 42 regressed, seed 43 improved. Two pairs and co-running diagnostic timings do not establish a stable node-scaling gain. All slow updates are retained.",
+  "seed43": {
+    "runs": {
+      "scalerlt-scaling-1n2g-shared-v6": {
+        "audit_status": "PASS",
+        "full_updates": 7,
+        "timings": [
+          {
+            "rollout_id": 0,
+            "start_ns": 443758693304252,
+            "end_ns": 443871450876378,
+            "elapsed_seconds": 112.757572126,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 1,
+            "start_ns": 443871451198080,
+            "end_ns": 443980313350033,
+            "elapsed_seconds": 108.862151953,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 2,
+            "start_ns": 443980313541354,
+            "end_ns": 444086112737328,
+            "elapsed_seconds": 105.799195974,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 3,
+            "start_ns": 444086112910690,
+            "end_ns": 444206513252035,
+            "elapsed_seconds": 120.400341345,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 4,
+            "start_ns": 444206513414572,
+            "end_ns": 444313664100451,
+            "elapsed_seconds": 107.150685879,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 5,
+            "start_ns": 444313664264836,
+            "end_ns": 444430887766091,
+            "elapsed_seconds": 117.223501255,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 6,
+            "start_ns": 444430887945150,
+            "end_ns": 444569427264178,
+            "elapsed_seconds": 138.539319028,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          }
+        ],
+        "response_tokens": [
+          822,
+          832,
+          855,
+          852,
+          780,
+          1042,
+          676
+        ],
+        "logprob_max_abs": 0.0001239776611328125,
+        "grad_norms": {
+          "actor": [
+            11.048470604466209,
+            8.219740891282658,
+            12.11585323186662,
+            6.7324839191549275,
+            6.549892558607116,
+            5.717775355598525,
+            4.420200421721676
+          ]
+        },
+        "publications": 7,
+        "mean_measured_update_seconds": 117.82260869619999,
+        "measured_response_tokens_per_second": 7.137849087762762
+      },
+      "scalerlt-scaling-2n3g-v3": {
+        "audit_status": "PASS",
+        "full_updates": 7,
+        "timings": [
+          {
+            "rollout_id": 0,
+            "start_ns": 443777130183525,
+            "end_ns": 443870976478022,
+            "elapsed_seconds": 93.846294497,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 1,
+            "start_ns": 443870977421841,
+            "end_ns": 443975507045580,
+            "elapsed_seconds": 104.529623739,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 2,
+            "start_ns": 443975507254377,
+            "end_ns": 444069607298838,
+            "elapsed_seconds": 94.100044461,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 3,
+            "start_ns": 444069607494613,
+            "end_ns": 444159469491713,
+            "elapsed_seconds": 89.8619971,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 4,
+            "start_ns": 444159469669646,
+            "end_ns": 444251205738401,
+            "elapsed_seconds": 91.736068755,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 5,
+            "start_ns": 444251205909835,
+            "end_ns": 444365327689260,
+            "elapsed_seconds": 114.121779425,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 6,
+            "start_ns": 444365327853106,
+            "end_ns": 444478873748930,
+            "elapsed_seconds": 113.545895824,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          }
+        ],
+        "response_tokens": [
+          822,
+          832,
+          855,
+          852,
+          780,
+          1042,
+          676
+        ],
+        "logprob_max_abs": 0.00015354156494140625,
+        "grad_norms": {
+          "actor": [
+            11.048470604466209,
+            8.219889862733487,
+            12.11584567542291,
+            6.732675997434139,
+            6.549907118742994,
+            5.7177997070543,
+            4.420197401169728
+          ]
+        },
+        "publications": 7,
+        "mean_measured_update_seconds": 100.673157113,
+        "measured_response_tokens_per_second": 8.353766029767243
+      }
+    },
+    "two_node_speedup": 1.1703478074493152,
+    "throughput_change_percent": 17.03478074493152,
+    "identical_response_token_counts": true
+  },
+  "further_paired_seeds": [
+    44,
+    45,
+    46
+  ]
 }

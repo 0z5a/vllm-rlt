@@ -13,7 +13,7 @@ The unchanged `e8aa1ee57734bc5c1118c143ebdb68d0b53210a1` engine and Ouro checkpo
 
 Abort, refill, stale-owner rejection and request-ID reuse were included. All 227 archived payloads passed SHA-256 verification; producer and independent auditor returned zero. Detailed counts and content hashes are in [loopcd-full-tensors.json](loopcd-full-tensors.json). The unchanged original category/lifecycle auditor was checked by AST equality.
 
-The original high-concurrency protocol declares a 64 GiB KV pool, which does not fit on the available H100 partition with model weights. Its status remains **capacity-limited, not run**. A separately named 48 GiB variant preserves the original 512-token inputs, 128-token outputs, B16/C32 and B32/C64 cases, three strategy arms, two fresh orders, and five warmups plus five measurements. That variant is pending and cannot substitute for completion of the original 64 GiB specification. Earlier exploratory quality uncertainty is unchanged.
+The original high-concurrency protocol declares a 64 GiB KV pool, which does not fit on the available H100 partition with model weights. Its status remains **capacity-limited, not run**. A separately named 48 GiB variant preserves the original 512-token inputs, 128-token outputs, B16/C32 and B32/C64 cases, three strategy arms, two fresh orders, and five warmups plus five measurements. That variant passed the raw-trial audits below and cannot substitute for completion of the original 64 GiB specification. Earlier exploratory quality uncertainty is unchanged.
 
 ## LoopGraph: real serving and request reuse
 
@@ -50,6 +50,12 @@ These are full-generation functional cases, not frozen ShareGPT/Poisson workload
 
 A further heterogeneous backlog test used four times the active capacity, mixed input lengths and output lengths 1/3/17/33/64/128. Fixed-depth-4 passed at B32 and B64 with all power-of-two branch buckets exercised. Live-gate runs retained exact generated tokens but executed 16 and 35 extra recurrent steps relative to the author. The producer and initial whole-run audit failed. Independent reconstruction confirmed both the completed cases and these mismatches; it is not an overall pass. The live-gate discrepancy is under diagnosis. See [loopgraph-backlog.json](loopgraph-backlog.json).
 
+## LoopGraph: W1 replay diagnostics
+
+Using the original author's frozen synthetic prompt/depth builders (seed 1729), P256/output128 and capacity 32, both engines allocated exactly 9,764,339,712 physical KV bytes. All-full and all-shallow replay passed two waves of 64 requests each. Bimodal replay retained exact per-request depth plans and recurrent work, but 9 of 64 requests diverged in generated tokens; that producer failed.
+
+All nine divergent requests then passed individually for two waves. Batching those same requests reproduced token differences. A separate prefill-batch diagnostic also found four request differences between the author's own two waves. These results expose batch/scheduling sensitivity; they do not yet establish its numerical or implementation cause. The native engine, gate threshold and comparison tolerances were unchanged. Independent CPU audits verified the complete archives and reconstructed every recorded pass and failure. No W1 speed claim is made. See [loopgraph-w1-diagnostics.json](loopgraph-w1-diagnostics.json).
+
 ## LoopCD: completed native cost variants
 
 Both H10048 cost runs passed independent raw-trial audits: each includes 12 fresh arm processes, 120 trials, 5,760 requests and 737,280 generated tokens. The original 64 GiB configuration remains capacity-limited. The second run isolates CPU cores by case; the first run retains its CPU-contention caveat. Each arm keeps full-depth-4 prefill and fixed 512-token inputs/128-token outputs.
@@ -68,7 +74,7 @@ The frozen FP32 controlled-reward GRPO, PPO, DPPO and Flow-DPPO runs each passed
 | Algorithm | Response tokens per path | Largest selected-logprob absolute error | Validation status |
 | --- | ---: | ---: | --- |
 | GRPO | 1,394 | 0.0001022816 | Local numerical/checkpoint audit passed; independent streaming verification of all 58 archived payloads passed |
-| PPO | 352 | 0.0001038313 | Local numerical/checkpoint audit passed; independent archive export in progress |
+| PPO | 352 | 0.0001038313 | Local numerical/checkpoint audit passed; independent verification of 80 archived paths / 67 unique payloads passed |
 | DPPO | 352 | 0.0001038313 | Local numerical/checkpoint audit passed; archive export pending |
 | Flow-DPPO | 352 | 0.0001038313 | Local numerical/checkpoint and full categorical/KL checks passed; archive export pending |
 
@@ -78,13 +84,13 @@ The independent GRPO export check verifies all archived bytes and hashes; the ty
 
 Early concurrent jobs shared a narrow Slurm CPU affinity. Their timings remain diagnostic. Subsequent timing runs use explicit CPU sets; the new one-node baseline and two-node pilot also share publication and checkpoint storage policy. Completed and interrupted attempts are retained. The repeated LoopCD cost matrix with separate CPU sets is complete.
 
-The first matched-storage scaling pair (seed 42, 32 global samples per update) passed local numerical checks with identical response-token counts. After two warmup updates, all five measured updates average **108.17 s on one node/two GPUs** and **121.34 s on two nodes/three GPUs**: a **10.86% throughput regression** in this preliminary pair. The slow 211.89 s two-node update is retained. This is not evidence of a scaling gain; another paired seed is running and full independent raw-data auditing remains pending. See [scalerlt-scaling-pilot.json](scalerlt-scaling-pilot.json).
+The first matched-storage scaling pair (seed 42, 32 global samples per update) passed local numerical checks with identical response-token counts. After two warmup updates, all five measured updates average **108.17 s on one node/two GPUs** and **121.34 s on two nodes/three GPUs**: a **10.86% throughput regression** in this preliminary pair. The slow 211.89 s two-node update is retained. The second pair (seed 43) passed the same numerical checks and identical response-token counts, averaging **117.82 s** versus **100.67 s**, or **17.03% higher throughput** on two nodes. The opposite signs and co-running I/O leave the scaling conclusion unresolved. Seeds 44/45/46 are queued with the same work and storage policy. Complete archive verification is progressing separately; this is not a held-out reward or stable scaling claim. See [scalerlt-scaling-pilot.json](scalerlt-scaling-pilot.json).
 
 ## Remaining work
 
 - ReLoop: complete the original frozen-token native and HTTP cost matrices. The small token-ID HTTP input support is on `codex/reloop-http-tokenids-20261011` (`e4f504872975563b8f31e91f02996add158cf8c8`). Capacity-exceeded cases stay explicitly separate.
-- ScaleRLT: finish the remaining independent exports and repeated scaling pairs. The matched-storage single-node baseline and two-node actor-DP pilot completed seven updates and local numerical checks; the next paired seed is submitted. No node-scaling improvement is established yet.
+- ScaleRLT: finish the remaining independent exports and repeated scaling pairs. The matched-storage single-node baseline and two-node actor-DP pilot completed seven updates and local numerical checks; two seeds are complete and three additional seeds are queued. No node-scaling improvement is established yet.
 - The attempted two-rollout, four-GPU ScaleRLT configuration was rejected before training: the pinned native backend explicitly supports one rollout GPU/engine. The next supported comparison keeps one rollout engine and increases training data parallelism across nodes. No validator is bypassed.
-- Scaling measurements must hold checkpoint, dtype, depth, samples, reward fixture, seed and publication storage fixed. Record actual role placement, full-update wall time, response tokens, training/rollout/publication time, and GPU efficiency. Retain failures and regressions; one pilot does not establish improvement. A first matched-storage pair is complete; further paired seeds and independent raw-data audit remain in progress.
+- Scaling measurements must hold checkpoint, dtype, depth, samples, reward fixture, seed and publication storage fixed. Record actual role placement, full-update wall time, response tokens, training/rollout/publication time, and GPU efficiency. Retain failures and regressions; one pilot does not establish improvement. Two matched-storage pairs are complete; further paired seeds and independent raw-data audit remain in progress.
 
 PR #82's accepted coda-only numbers remain +0.34% / +0.85%; they are not combined with any of these experiments. PR #115 was separately updated with real CUDA cleanup/recovery coverage and 88 passing targeted tests, with no skips.

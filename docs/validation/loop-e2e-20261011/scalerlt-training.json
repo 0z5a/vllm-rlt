@@ -114,6 +114,17 @@
           "runtime_epochs": 2,
           "policy_publications": 3
         }
+      },
+      "independent_archive_integrity": {
+        "passed": true,
+        "scope": "independent VPS payload and complete path-to-blob integrity; typed numerical comparison remains original local audit",
+        "archive_sha256": "64f1cbd4f6b8e9f739275c0a4c25fc4b166eb4f4b7ff7a0ecc10acf51bd161ea",
+        "archive_bytes": 33608474562,
+        "logical_paths": 80,
+        "unique_blobs": 67,
+        "actual_transport_return": 0,
+        "full_archive_stored_on_VPS": true,
+        "finished": 1791731710.8085704
       }
     },
     "dppo": {
@@ -321,5 +332,5 @@
     }
   },
   "flow_dppo": "LOCAL_NUMERICAL_AND_FULL_CATEGORICAL_AUDIT_PASS; no actual blocked step observed; independent complete archive pending",
-  "scaling": "seed42 single-node and two-node pilots passed local numerical checks; seed43 paired repeat submitted; no established scaling gain"
+  "scaling": "seed42 and seed43 pairs passed local numerical checks, with opposite speedup signs; further paired seeds queued; no established scaling gain"
 }
