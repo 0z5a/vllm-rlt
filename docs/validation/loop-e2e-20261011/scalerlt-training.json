@@ -331,6 +331,92 @@
       }
     }
   },
-  "flow_dppo": "LOCAL_NUMERICAL_AND_FULL_CATEGORICAL_AUDIT_PASS; no actual blocked step observed; independent complete archive pending",
-  "scaling": "seed42 and seed43 pairs passed local numerical checks, with opposite speedup signs; further paired seeds queued; no established scaling gain"
+  "flow_dppo": {
+    "primary_result": "LOCAL_NUMERICAL_AND_FULL_CATEGORICAL_AUDIT_PASS; no actual blocked step observed; independent complete archive pending",
+    "tight_budget_gate_supplement": {
+      "status": "PASS",
+      "source_commit": "0b4f6fc130cbad5e947e964e37ee2755eaee4df5",
+      "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+      "dtype": "float32",
+      "seed": 42,
+      "budget": 1e-08,
+      "updates": 3,
+      "samples_per_update": 4,
+      "steps_per_rollout": 2,
+      "actual_producer_return": 0,
+      "actual_local_audit_return": 0,
+      "actual_blocked_step_observed": true,
+      "flow_metrics": [
+        {
+          "step": 0,
+          "categorical_kl": 0.0,
+          "blocked_fraction": 0.0
+        },
+        {
+          "step": 1,
+          "categorical_kl": 5.991788043502311e-07,
+          "blocked_fraction": 0.19374999403953552
+        },
+        {
+          "step": 2,
+          "categorical_kl": 0.0,
+          "blocked_fraction": 0.0
+        },
+        {
+          "step": 3,
+          "categorical_kl": 1.0142036899196682e-06,
+          "blocked_fraction": 0.13636364042758942
+        },
+        {
+          "step": 4,
+          "categorical_kl": 0.0,
+          "blocked_fraction": 0.0
+        },
+        {
+          "step": 5,
+          "categorical_kl": 1.5788623386470135e-07,
+          "blocked_fraction": 0.19128787517547607
+        }
+      ],
+      "optimizer_gradient_norms": {
+        "actor": [
+          31.316892273966438,
+          12.971785812788136,
+          38.35187522153007,
+          0.7593014434228001,
+          20.443513784557073,
+          48.04572407158102
+        ],
+        "critic": [
+          1802.0901059602986,
+          1889.118511369787,
+          1680.3539805648095,
+          3003.83488227965,
+          545.7449896700839,
+          1496.0850577423732
+        ]
+      },
+      "response_tokens": 352,
+      "maximum_selected_logprob_absolute_error": 0.00011324882507324219,
+      "policy_publications": 3,
+      "scope": "separate gate activation supplement with a tight threshold; original0.01primary retained; complete independent archive integrity pending"
+    }
+  },
+  "scaling": "seeds42/43/44 completed local numerical checks; seeds45/46 queued. Signs differ, all timings retained.",
+  "archive_support_supplement": {
+    "integrity": {
+      "passed": true,
+      "scope": "independent full CPU-auditor/source supplement integrity for DPPO/Flow original checkpoint archives",
+      "payloads_verified": 695,
+      "source_files_verified": 629,
+      "archive_sha256": "5c1dceb18fd0b00120eb2fefb1cb87466437fb8e3c3e66218bf9a8e2fe43db13",
+      "actual_transport_return": 0,
+      "finished": 1791737491.4596758
+    },
+    "reason": "DPPO/Flow tensor archives originally omitted CPU auditor scripts due a path substitution in the collector. This supplementary archive supplies all original auditor scripts, local validation records and frozen source; the tensor archives remain unchanged.",
+    "applies_to": [
+      "DPPO",
+      "Flow-DPPO"
+    ]
+  }
 }

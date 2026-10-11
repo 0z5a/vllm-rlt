@@ -435,5 +435,417 @@
       },
       "actual_audit_return": 0
     }
+  },
+  "reference_execution_modes": {
+    "actual_audit_return": 0,
+    "audit": {
+      "passed": false,
+      "artifact_integrity_passed": true,
+      "complete_raw_reconstruction_passed": true,
+      "scope": "W1 training pilot/shape diagnostics; failures retained, no performance claim",
+      "actual_producer_return": 1,
+      "archive_sha256": "2114086d683293c4ba1757e2d7e85447e83669641d82e1d90a91a1c09eb96f99",
+      "payloads_verified": 472,
+      "cases": {
+        "W1-P256-B32-async0-graph0/bimodal_50": {
+          "author_passed": true,
+          "author_waves": 2,
+          "author_repeat_mismatches": [],
+          "candidate_status": "FAIL",
+          "waves": [
+            {
+              "wave": 0,
+              "requests": 64,
+              "generated_tokens": 8192,
+              "mismatches": [
+                {
+                  "request_id": "request-7",
+                  "first_different_token": 8
+                },
+                {
+                  "request_id": "request-13",
+                  "first_different_token": 17
+                },
+                {
+                  "request_id": "request-14",
+                  "first_different_token": 57
+                },
+                {
+                  "request_id": "request-20",
+                  "first_different_token": 6
+                },
+                {
+                  "request_id": "request-36",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-39",
+                  "first_different_token": 12
+                },
+                {
+                  "request_id": "request-51",
+                  "first_different_token": 34
+                },
+                {
+                  "request_id": "request-58",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-63",
+                  "first_different_token": 30
+                }
+              ],
+              "depth_work_parity": true,
+              "drained": true
+            }
+          ]
+        },
+        "W1-P256-B32-async0-graph1/bimodal_50": {
+          "author_passed": true,
+          "author_waves": 2,
+          "author_repeat_mismatches": [],
+          "candidate_status": "FAIL",
+          "waves": [
+            {
+              "wave": 0,
+              "requests": 64,
+              "generated_tokens": 8192,
+              "mismatches": [
+                {
+                  "request_id": "request-10",
+                  "first_different_token": 37
+                },
+                {
+                  "request_id": "request-12",
+                  "first_different_token": 23
+                },
+                {
+                  "request_id": "request-20",
+                  "first_different_token": 6
+                },
+                {
+                  "request_id": "request-34",
+                  "first_different_token": 41
+                },
+                {
+                  "request_id": "request-36",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-39",
+                  "first_different_token": 12
+                },
+                {
+                  "request_id": "request-58",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-63",
+                  "first_different_token": 30
+                }
+              ],
+              "depth_work_parity": true,
+              "drained": true
+            }
+          ]
+        },
+        "W1-P256-B32-async1-graph0/bimodal_50": {
+          "author_passed": true,
+          "author_waves": 2,
+          "author_repeat_mismatches": [],
+          "candidate_status": "FAIL",
+          "waves": [
+            {
+              "wave": 0,
+              "requests": 64,
+              "generated_tokens": 8192,
+              "mismatches": [
+                {
+                  "request_id": "request-7",
+                  "first_different_token": 8
+                },
+                {
+                  "request_id": "request-13",
+                  "first_different_token": 17
+                },
+                {
+                  "request_id": "request-14",
+                  "first_different_token": 57
+                },
+                {
+                  "request_id": "request-20",
+                  "first_different_token": 6
+                },
+                {
+                  "request_id": "request-36",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-39",
+                  "first_different_token": 12
+                },
+                {
+                  "request_id": "request-51",
+                  "first_different_token": 34
+                },
+                {
+                  "request_id": "request-58",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-63",
+                  "first_different_token": 30
+                }
+              ],
+              "depth_work_parity": true,
+              "drained": true
+            }
+          ]
+        },
+        "W1-P256-B32-async1-graph1/bimodal_50": {
+          "author_passed": true,
+          "author_waves": 2,
+          "author_repeat_mismatches": [],
+          "candidate_status": "FAIL",
+          "waves": [
+            {
+              "wave": 0,
+              "requests": 64,
+              "generated_tokens": 8192,
+              "mismatches": [
+                {
+                  "request_id": "request-10",
+                  "first_different_token": 37
+                },
+                {
+                  "request_id": "request-12",
+                  "first_different_token": 23
+                },
+                {
+                  "request_id": "request-20",
+                  "first_different_token": 6
+                },
+                {
+                  "request_id": "request-34",
+                  "first_different_token": 41
+                },
+                {
+                  "request_id": "request-36",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-39",
+                  "first_different_token": 12
+                },
+                {
+                  "request_id": "request-47",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-58",
+                  "first_different_token": 7
+                },
+                {
+                  "request_id": "request-63",
+                  "first_different_token": 30
+                }
+              ],
+              "depth_work_parity": true,
+              "drained": true
+            }
+          ]
+        }
+      }
+    }
+  },
+  "first_divergence_tensor_diagnosis": {
+    "actual_independent_tensor_analysis_return": 0,
+    "archive_sha256": "32976b9f6a0c6f69277505583079aeef21f7f4d62512af7723e362817bcc9d0d",
+    "analysis": {
+      "scope": "instrumented first-divergence raw hidden/logits diagnosis, no tolerance pass, no root-cause proof",
+      "author_records": 423,
+      "candidate_records": 432,
+      "shared_records": 423,
+      "prefill_index0_not_observed_by_author_runner_hook": true,
+      "mismatches": [
+        {
+          "request_id": "request-7",
+          "first_different_token": 8,
+          "same_preceding_tokens": true,
+          "snapshots_available": false
+        },
+        {
+          "request_id": "request-13",
+          "first_different_token": 17,
+          "same_preceding_tokens": true,
+          "snapshots_available": false
+        },
+        {
+          "request_id": "request-14",
+          "first_different_token": 57,
+          "same_preceding_tokens": true,
+          "snapshots_available": false
+        },
+        {
+          "request_id": "request-20",
+          "first_different_token": 6,
+          "same_preceding_tokens": true,
+          "snapshots_available": true,
+          "author_token": 788,
+          "candidate_token": 504,
+          "hidden_max_abs": 0.0234375,
+          "hidden_equal": false,
+          "hidden_cosine": 0.9999009966850281,
+          "logits_max_abs": 0.0625,
+          "logits_mean_abs": 0.00633268291130662,
+          "author_selected_logit": 3.3125,
+          "author_competing_logit": 3.296875,
+          "candidate_author_token_logit": 3.3125,
+          "candidate_selected_logit": 3.3125,
+          "author_margin": 0.015625,
+          "candidate_margin": 0.0
+        },
+        {
+          "request_id": "request-36",
+          "first_different_token": 7,
+          "same_preceding_tokens": true,
+          "snapshots_available": true,
+          "author_token": 30,
+          "candidate_token": 198,
+          "hidden_max_abs": 0.0625,
+          "hidden_equal": false,
+          "hidden_cosine": 0.9998241662979126,
+          "logits_max_abs": 0.125,
+          "logits_mean_abs": 0.020157968625426292,
+          "author_selected_logit": 8.0,
+          "author_competing_logit": 8.0,
+          "candidate_author_token_logit": 7.96875,
+          "candidate_selected_logit": 8.0,
+          "author_margin": 0.0,
+          "candidate_margin": 0.03125
+        },
+        {
+          "request_id": "request-39",
+          "first_different_token": 12,
+          "same_preceding_tokens": true,
+          "snapshots_available": true,
+          "author_token": 51,
+          "candidate_token": 50,
+          "hidden_max_abs": 0.125,
+          "hidden_equal": false,
+          "hidden_cosine": 0.9999363422393799,
+          "logits_max_abs": 0.125,
+          "logits_mean_abs": 0.020587697625160217,
+          "author_selected_logit": 9.625,
+          "author_competing_logit": 9.5625,
+          "candidate_author_token_logit": 9.625,
+          "candidate_selected_logit": 9.625,
+          "author_margin": 0.0625,
+          "candidate_margin": 0.0
+        },
+        {
+          "request_id": "request-51",
+          "first_different_token": 34,
+          "same_preceding_tokens": true,
+          "snapshots_available": false
+        },
+        {
+          "request_id": "request-58",
+          "first_different_token": 7,
+          "same_preceding_tokens": true,
+          "snapshots_available": true,
+          "author_token": 447,
+          "candidate_token": 1116,
+          "hidden_max_abs": 0.375,
+          "hidden_equal": false,
+          "hidden_cosine": 0.9995152950286865,
+          "logits_max_abs": 0.3125,
+          "logits_mean_abs": 0.04888969659805298,
+          "author_selected_logit": 10.875,
+          "author_competing_logit": 10.8125,
+          "candidate_author_token_logit": 10.8125,
+          "candidate_selected_logit": 10.9375,
+          "author_margin": 0.0625,
+          "candidate_margin": 0.125
+        },
+        {
+          "request_id": "request-63",
+          "first_different_token": 30,
+          "same_preceding_tokens": true,
+          "snapshots_available": true,
+          "author_token": 244,
+          "candidate_token": 238,
+          "hidden_max_abs": 0.1875,
+          "hidden_equal": false,
+          "hidden_cosine": 0.9987783432006836,
+          "logits_max_abs": 0.40625,
+          "logits_mean_abs": 0.0670986995100975,
+          "author_selected_logit": 17.625,
+          "author_competing_logit": 17.5,
+          "candidate_author_token_logit": 17.5,
+          "candidate_selected_logit": 17.5,
+          "author_margin": 0.125,
+          "candidate_margin": 0.0
+        }
+      ],
+      "prefix_records": [
+        {
+          "request_id": "request-10",
+          "common_records_before_or_at_first_difference": 47,
+          "hidden_max_abs": 0.25,
+          "logits_max_abs": 0.25
+        },
+        {
+          "request_id": "request-12",
+          "common_records_before_or_at_first_difference": 47,
+          "hidden_max_abs": 0.4375,
+          "logits_max_abs": 0.5625
+        },
+        {
+          "request_id": "request-20",
+          "common_records_before_or_at_first_difference": 6,
+          "hidden_max_abs": 0.375,
+          "logits_max_abs": 0.5
+        },
+        {
+          "request_id": "request-34",
+          "common_records_before_or_at_first_difference": 47,
+          "hidden_max_abs": 0.5,
+          "logits_max_abs": 0.296875
+        },
+        {
+          "request_id": "request-36",
+          "common_records_before_or_at_first_difference": 7,
+          "hidden_max_abs": 0.375,
+          "logits_max_abs": 0.40625
+        },
+        {
+          "request_id": "request-39",
+          "common_records_before_or_at_first_difference": 12,
+          "hidden_max_abs": 0.125,
+          "logits_max_abs": 0.125
+        },
+        {
+          "request_id": "request-47",
+          "common_records_before_or_at_first_difference": 47,
+          "hidden_max_abs": 0.5,
+          "logits_max_abs": 0.748046875
+        },
+        {
+          "request_id": "request-58",
+          "common_records_before_or_at_first_difference": 7,
+          "hidden_max_abs": 0.375,
+          "logits_max_abs": 0.3125
+        },
+        {
+          "request_id": "request-63",
+          "common_records_before_or_at_first_difference": 30,
+          "hidden_max_abs": 0.3515625,
+          "logits_max_abs": 0.6875
+        }
+      ],
+      "CUDA_initialized": false
+    },
+    "inference": "Saved recurrent states already differ before projection, with near-tied logits at several first token divergences. The operation producing the state difference remains unlocalized."
   }
 }
