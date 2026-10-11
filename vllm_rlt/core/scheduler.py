@@ -26,6 +26,11 @@ class ScheduledItem:
     # PREFILL and SPECULATIVE use a contiguous span; ordinary decode uses one row.
     token_start: int = 0
     token_count: int = 1
+    # Split-prefill metadata is snapshotted at selection time.  The engine must
+    # not infer it from mutable request state after submission.
+    depth: int | None = None
+    chunk_start: int | None = None
+    completes_prompt: bool = False
 
 
 @dataclass(frozen=True)
@@ -36,6 +41,15 @@ class SchedulerOutput:
     @property
     def num_tokens(self) -> int:
         return sum(item.token_count for item in self.items)
+
+
+@dataclass(frozen=True)
+class PrefillProgress:
+    """Host-side result of applying one completed split-prefill batch."""
+
+    next_stage: Stage | None
+    chunk_complete: bool
+    prompt_complete: bool
 
 
 class ResumeResult(Enum):
@@ -253,6 +267,15 @@ class Scheduler:
         # A reused prompt prefix is already prefilled at every depth, so the
         # staged window starts closed at that frontier and opens for the rest.
         request.num_preluded_tokens = plan.cached_tokens
+        request.prefill_chunk_start = plan.cached_tokens
+        if request.running_depth_boundary:
+            request.running_depth_boundary[:] = [
+                [plan.cached_tokens, len(request.prompt_token_ids)],
+                *[
+                    [plan.cached_tokens, plan.cached_tokens]
+                    for _ in range(len(request.running_depth_boundary) - 1)
+                ],
+            ]
         if self.atomic_prefill:
             self.enqueue(request, Stage.PREFILL)
         else:
@@ -323,7 +346,15 @@ class Scheduler:
             count = min(
                 token_budget, self.config.prefill_chunk_size, len(request.prompt_token_ids) - start
             )
-            return ScheduledItem(request, start, count)
+            return ScheduledItem(
+                request,
+                start,
+                count,
+                depth=(len(request.running_depth_boundary) - 1
+                       if request.running_depth_boundary else None),
+                chunk_start=start,
+                completes_prompt=start + count == len(request.prompt_token_ids),
+            )
         # The two split stages are unreachable while atomic prefill is enabled.
         if stage == Stage.PREFILLING_PRELUDE:
             start = request.num_preluded_tokens
@@ -332,9 +363,13 @@ class Scheduler:
                 self.config.prefill_chunk_size,
                 len(request.prompt_token_ids) - start,
             )
-            return ScheduledItem(request, start, count)
+            return ScheduledItem(request, start, count, chunk_start=start)
         if stage == Stage.PREFILLING_RECURRENT:
             start = request.num_prefilled_tokens
+            if start >= request.num_preluded_tokens:
+                return ScheduledItem(
+                    request, start, 0, depth=0, chunk_start=request.prefill_chunk_start
+                )
             first_token_depth = request.prefill_depth(start)
             # One run per depth frontier: every token of the run already completed
             # this depth, and no earlier token is missing a shallower one, so the
@@ -348,7 +383,17 @@ class Scheduler:
                 boundary[1] - start,
                 len(request.prompt_token_ids) - start,
             )
-            return ScheduledItem(request, start, count)
+            return ScheduledItem(
+                request,
+                start,
+                count,
+                depth=first_token_depth,
+                chunk_start=request.prefill_chunk_start,
+                completes_prompt=(
+                    first_token_depth == len(request.running_depth_boundary) - 1
+                    and start + count == len(request.prompt_token_ids)
+                ),
+            )
         if stage == Stage.SPECULATIVE:
             # K candidates plus one bonus distribution. At the output limit,
             # K=0 is an ordinary fixed-depth step and needs no extra KV slot.

@@ -7,7 +7,7 @@ from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
-from vllm_rlt.core.scheduler import Scheduler
+from vllm_rlt.core.scheduler import PrefillProgress, Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
@@ -387,6 +387,53 @@ class LLMEngine:
             outputs.append(RequestOutput.from_request(request))
         return outputs
 
+    def _advance_prefill(self, request, stage, item, *, event=None) -> PrefillProgress:
+        """Apply one completed split-prefill item to host-side request state."""
+        total_depths = self.model.config.total_ut_steps
+        start = item.token_start
+        end = start + item.token_count
+        chunk_start = item.chunk_start
+        if chunk_start is None or start < chunk_start or end <= start:
+            raise RuntimeError("invalid split-prefill item span")
+
+        if stage == Stage.PREFILLING_PRELUDE:
+            request.prefill_chunk_start = start
+            request.num_preluded_tokens = end
+            self.scheduler.enqueue(request, Stage.PREFILLING_RECURRENT)
+            return PrefillProgress(Stage.PREFILLING_RECURRENT, False, False)
+
+        # Assertion: stage == Stage.PREFILLING_RECURRENT
+        depth = item.depth
+        boundaries = request.running_depth_boundary
+        boundaries[depth][0] = end
+        if depth + 1 < total_depths:
+            deeper = boundaries[depth + 1]
+            deeper[1] = end
+            self.scheduler.enqueue(request, Stage.PREFILLING_RECURRENT)
+            return PrefillProgress(Stage.PREFILLING_RECURRENT, False, False)
+
+        request.num_prefilled_tokens = end
+        chunk_complete = end == request.num_preluded_tokens
+        if not chunk_complete:
+            self.scheduler.enqueue(request, Stage.PREFILLING_RECURRENT)
+            return PrefillProgress(Stage.PREFILLING_RECURRENT, False, False)
+
+        self.cache_manager.publish_prefix(
+            request.request_id,
+            request.prompt_token_ids,
+            request.num_prefilled_tokens,
+            event,
+        )
+        request.prefill_chunk_start = end
+        prompt_complete = end == len(request.prompt_token_ids)
+        if prompt_complete:
+            request.loops_done = total_depths
+            next_stage = Stage.CODA
+        else:
+            next_stage = Stage.PREFILLING_PRELUDE
+        self.scheduler.enqueue(request, next_stage)
+        return PrefillProgress(next_stage, True, prompt_complete)
+
     def _update(self, batch, result) -> list[RequestOutput]:
         outputs = []
         for index, item in enumerate(batch.items):
@@ -397,7 +444,10 @@ class LLMEngine:
             if self.scheduler.requests.get(request.request_id) is not request:
                 continue
             params = request.sampling_params
-            if batch.stage == Stage.PREFILL:
+            if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
+                event = self.model_runner.events.get(request.request_id)
+                self._advance_prefill(request, batch.stage, item, event=event)
+            elif batch.stage == Stage.PREFILL:
                 request.num_prefilled_tokens += item.token_count
                 event = self.model_runner.events.get(request.request_id)
                 self.cache_manager.publish_prefix(

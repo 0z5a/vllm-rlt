@@ -146,9 +146,7 @@ class SplitPrefillPolicy(SchedulingPolicy):
             if q[stage]:
                 # A stage can hold only blocked requests: the staged-chunk window
                 # may still be busy, or KV growth may be waiting for capacity.
-                batch = scheduler._take(stage)
-                if batch is not None:
-                    return batch
+                return scheduler._take(stage)
         return None
 
 

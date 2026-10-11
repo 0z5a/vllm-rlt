@@ -41,6 +41,9 @@ class Request:
     # Split prefill. [num_prefilled_tokens, num_preluded_tokens) is the staged
     # chunk: its prelude output is resident and it advances one depth per batch.
     num_preluded_tokens: int = 0
+    # Start of the resident chunk. It stays fixed while the final depth advances
+    # a partial chunk and is used for runner pool row addressing.
+    prefill_chunk_start: int = 0
     # Split prefill only: per-depth written frontiers, see prefill_boundaries.
     running_depth_boundary: list[list[int]] = field(default_factory=list, repr=False)
     # Host progress; in async mode an event confirms submitted GPU work is done.
