@@ -847,5 +847,312 @@
       "CUDA_initialized": false
     },
     "inference": "Saved recurrent states already differ before projection, with near-tied logits at several first token divergences. The operation producing the state difference remains unlocalized."
+  },
+  "projection_batch_shape_diagnosis": {
+    "passed": true,
+    "scope": "Independent compressed/payload/source integrity and CPU recomputation of 36 raw projection observations; original inputs matched offbox first-divergence archive. No serving correctness or performance pass; no projection execution on CPU.",
+    "files": 165,
+    "archive_sha256": "49665eff9e7bfdcfa2d31d8bc9648dc8e2b863b367a14af5ed9b5a49654e4d48",
+    "inputs": 6,
+    "observations": 36,
+    "all_equal_B1": true,
+    "all_equal_original_capture": true,
+    "summary": [
+      {
+        "owner": "author",
+        "key": "request-20:6",
+        "captured_token": 788,
+        "batches": [
+          {
+            "rows": 1,
+            "token": 788,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 2,
+            "token": 788,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 4,
+            "token": 788,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 8,
+            "token": 788,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 16,
+            "token": 788,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 32,
+            "token": 788,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          }
+        ]
+      },
+      {
+        "owner": "author",
+        "key": "request-58:7",
+        "captured_token": 447,
+        "batches": [
+          {
+            "rows": 1,
+            "token": 447,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 2,
+            "token": 447,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 4,
+            "token": 447,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 8,
+            "token": 447,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 16,
+            "token": 447,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 32,
+            "token": 447,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          }
+        ]
+      },
+      {
+        "owner": "author",
+        "key": "request-63:30",
+        "captured_token": 244,
+        "batches": [
+          {
+            "rows": 1,
+            "token": 244,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 2,
+            "token": 244,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 4,
+            "token": 244,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 8,
+            "token": 244,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 16,
+            "token": 244,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 32,
+            "token": 244,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          }
+        ]
+      },
+      {
+        "owner": "candidate",
+        "key": "request-20:6",
+        "captured_token": 504,
+        "batches": [
+          {
+            "rows": 1,
+            "token": 504,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 2,
+            "token": 504,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 4,
+            "token": 504,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 8,
+            "token": 504,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 16,
+            "token": 504,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 32,
+            "token": 504,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          }
+        ]
+      },
+      {
+        "owner": "candidate",
+        "key": "request-58:7",
+        "captured_token": 1116,
+        "batches": [
+          {
+            "rows": 1,
+            "token": 1116,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 2,
+            "token": 1116,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 4,
+            "token": 1116,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 8,
+            "token": 1116,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 16,
+            "token": 1116,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 32,
+            "token": 1116,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          }
+        ]
+      },
+      {
+        "owner": "candidate",
+        "key": "request-63:30",
+        "captured_token": 238,
+        "batches": [
+          {
+            "rows": 1,
+            "token": 238,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 2,
+            "token": 238,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 4,
+            "token": 238,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 8,
+            "token": 238,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 16,
+            "token": 238,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          },
+          {
+            "rows": 32,
+            "token": 238,
+            "max_abs_vs_B1": 0.0,
+            "byte_equal_B1": true,
+            "max_abs_vs_original_capture": 0.0
+          }
+        ]
+      }
+    ],
+    "CUDA_initialized": false
   }
 }
