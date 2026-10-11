@@ -143,25 +143,6 @@ class HuginnConfig:
         return {"model_type": "huginn_raven", "architectures": ["RavenForCausalLM"], **asdict(self)}
 
 
-class HuginnRMSNorm(RMSNorm):
-    """Reduce decode kernel launches without changing reduction or BF16 rounding."""
-
-    def forward(self, hidden):
-        if (
-            hidden.is_cuda
-            and not torch.is_grad_enabled()
-            and hidden.dtype == self.weight.dtype == torch.bfloat16
-            and hidden.ndim == 2
-            and hidden.shape[0] > 0
-            and 0 < hidden.shape[1] <= 8192
-            and hidden.stride(-1) == self.weight.stride(0) == 1
-        ):
-            from vllm_rlt.kernels.huginn_norm import rmsnorm_epilogue
-
-            return rmsnorm_epilogue(hidden, self.weight, self.variance_epsilon)
-        return super().forward(hidden)
-
-
 class HuginnAttention(nn.Module):
     def __init__(self, config: HuginnConfig, layer_idx: int) -> None:
         super().__init__()
@@ -204,12 +185,12 @@ class HuginnMLP(nn.Module):
 class HuginnBlock(nn.Module):
     def __init__(self, config: HuginnConfig, layer_idx: int) -> None:
         super().__init__()
-        self.norm_1 = HuginnRMSNorm(config.n_embd, eps=config.norm_eps)
+        self.norm_1 = RMSNorm(config.n_embd, eps=config.norm_eps)
         self.attn = HuginnAttention(config, layer_idx)
-        self.norm_2 = HuginnRMSNorm(config.n_embd, eps=config.norm_eps)
+        self.norm_2 = RMSNorm(config.n_embd, eps=config.norm_eps)
         self.mlp = HuginnMLP(config)
-        self.norm_3 = HuginnRMSNorm(config.n_embd, eps=config.norm_eps)
-        self.norm_4 = HuginnRMSNorm(config.n_embd, eps=config.norm_eps)
+        self.norm_3 = RMSNorm(config.n_embd, eps=config.norm_eps)
+        self.norm_4 = RMSNorm(config.n_embd, eps=config.norm_eps)
 
     def forward(self, hidden, freqs, batch, cache):
         hidden = self.norm_2(self.attn(self.norm_1(hidden), freqs, batch, cache) + hidden)
@@ -220,9 +201,6 @@ class HuginnForCausalLM(nn.Module):
     """Huginn-0125 with eager KV boundaries and a graphable recurrent core."""
 
     requires_boundary_kv = True
-    # Huginn has no learned exit head. sigmoid(-1e4), returned by recurrent(),
-    # is exactly zero; synchronous scheduling can consume that constant on CPU.
-    constant_exit_probability = 0.0
 
     def __init__(self, config: HuginnConfig) -> None:
         super().__init__()
@@ -253,7 +231,7 @@ class HuginnForCausalLM(nn.Module):
                     )
                     for i in range(config.n_layers_in_coda)
                 ),
-                ln_f=HuginnRMSNorm(config.n_embd, eps=config.norm_eps),
+                ln_f=RMSNorm(config.n_embd, eps=config.norm_eps),
             )
         )
         self.lm_head = nn.Linear(config.n_embd, config.padded_vocab_size, bias=False)
