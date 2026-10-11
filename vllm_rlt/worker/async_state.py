@@ -141,23 +141,31 @@ class AsyncState:
         ]
         self.index = self.finalize_index = 0
 
-    def ensure_slot(self, request, bank):
+    def reserve_slot(self, request):
         rid = request.request_id
         allocation = self.cache._get_allocation(rid)
         if rid in self.slots:
             if self.owners[rid] != (id(request), id(allocation)):
                 raise RuntimeError("request slot reused before retiring its previous owner")
-            slot = self.slots[rid]
-            if self.table_versions.get(rid) != allocation.block_tables:
-                table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
-                bank.uploads.append((slot, table))
-                self.table_versions[rid] = allocation.block_tables
-            return slot
+            return self.slots[rid]
         if not self.free:
             raise RuntimeError("no retired request state slots")
         slot = self.free.pop()
         self.slots[rid] = slot
         self.owners[rid] = (id(request), id(allocation))
+        return slot
+
+    def ensure_slot(self, request, bank):
+        rid = request.request_id
+        allocation = self.cache._get_allocation(rid)
+        was_reserved = rid in self.slots
+        slot = self.reserve_slot(request)
+        if was_reserved:
+            if self.table_versions.get(rid) != allocation.block_tables:
+                table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
+                bank.uploads.append((slot, table))
+                self.table_versions[rid] = allocation.block_tables
+            return slot
         table = torch.tensor(allocation.block_tables, dtype=torch.int32).pin_memory()
         bank.uploads.append((slot, table))
         self.table_versions[rid] = allocation.block_tables

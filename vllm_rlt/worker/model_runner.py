@@ -31,6 +31,10 @@ class PreparedExecution:
     token_tensors: tuple[torch.Tensor, ...] = ()
     kv: object = None
     routing: object = None
+    token_ids: tuple[int, ...] = ()
+    prefill_slots: tuple[int, ...] = ()
+    prefill_offsets: tuple[int, ...] = ()
+    hidden: torch.Tensor | None = None
 
 
 @dataclass
@@ -157,6 +161,18 @@ class ModelRunner:
             if stage_rows
             else None
         )
+        prefill_rows = scheduler.max_num_batched_tokens
+        if self.execution_config.pad_to_power_of_two:
+            prefill_rows = 1 << (prefill_rows - 1).bit_length()
+        self.prefill_hidden = (
+            torch.empty(
+                (prefill_rows, model.config.hidden_size),
+                device=self.device,
+                dtype=parameter.dtype,
+            )
+            if stage_rows
+            else None
+        )
         self.last_effective_size = self.last_submitted_size = 0
         if self.execution_config.static_buffers:
             rows = scheduler.max_num_batched_tokens
@@ -221,6 +237,41 @@ class ModelRunner:
                 self.state_slots[rid] = self.free_state_slots.pop()
             request.hidden_state = self.states[self.state_slots[rid]]
             request.hidden_state.copy_(state)
+
+    def _slot(self, request):
+        if self.async_state is not None:
+            return self.async_state.reserve_slot(request)
+        rid = request.request_id
+        if rid not in self.state_slots:
+            self.state_slots[rid] = self.free_state_slots.pop()
+        return self.state_slots[rid]
+
+    def _prefill_indices(self, batch):
+        slots, offsets = [], []
+        for item in batch.items:
+            slot = self._slot(item.request)
+            for position in range(item.token_start, item.token_start + item.token_count):
+                slots.append(slot)
+                offsets.append(position - item.chunk_start)
+        return tuple(slots), tuple(offsets)
+
+    def _gather_prefill(self, slots, offsets):
+        hidden = self.prefill_hidden[: len(slots)]
+        for row, (slot, offset) in enumerate(zip(slots, offsets)):
+            hidden[row].copy_(self.prefill_states[slot, offset])
+        return hidden
+
+    def _scatter_prefill(self, batch, hidden, slots, offsets):
+        if hidden.shape[0] != len(slots):
+            raise RuntimeError("split-prefill hidden rows do not match the scheduled span")
+        for row, (slot, offset) in enumerate(zip(slots, offsets)):
+            self.prefill_states[slot, offset].copy_(hidden[row])
+        row = 0
+        for item in batch.items:
+            end = row + item.token_count
+            if item.completes_prompt:
+                self._save(item.request, hidden[end - 1])
+            row = end
 
     def _save_batch(self, requests, hidden, routing):
         if routing is None:
@@ -336,6 +387,45 @@ class ModelRunner:
     def prepare(self, batch):
         """Snapshot CPU routing/addresses while the preceding GPU work runs."""
         requests = [i.request for i in batch.items]
+        if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
+            slots, offsets = self._prefill_indices(batch)
+            if batch.stage == Stage.PREFILLING_PRELUDE:
+                token_ids = tuple(
+                    token
+                    for item in batch.items
+                    for token in item.request.prompt_token_ids[
+                        item.token_start : item.token_start + item.token_count
+                    ]
+                )
+                return PreparedExecution( # prelude need no depths, positions and output_indices
+                    batch,
+                    (),
+                    (),
+                    (),
+                    token_ids=token_ids,
+                    prefill_slots=slots,
+                    prefill_offsets=offsets,
+                )
+            # Assertion: batch.stage == Stage.PREFILLING_RECURRENT
+            ids, depths, positions = [], [], []
+            for item in batch.items:
+                ids.extend([item.request.request_id] * item.token_count)
+                depths.extend([item.depth] * item.token_count)
+                positions.extend(range(item.token_start, item.token_start + item.token_count))
+            packed = self.cache_manager.attention_capabilities.packed_prefill
+            kv = self.cache_manager._prepare_batch(
+                ids, depths, positions, packed_prefill=packed
+            )
+            return PreparedExecution(
+                batch,
+                tuple(depths),
+                tuple(positions),
+                (),
+                kv=kv,
+                prefill_slots=slots,
+                prefill_offsets=offsets,
+                hidden=self._gather_prefill(slots, offsets),
+            )
         depths = tuple(r.loops_done for r in requests)
         positions = tuple(r.position for r in requests)
         indices = tuple(r.num_scheduled_outputs for r in requests)
@@ -366,11 +456,27 @@ class ModelRunner:
         if batch.stage == Stage.PREFILL:
             self._prefill(batch)
             return None
+        if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
+            prepared = prepared or self.prepare(batch)
+            if batch.stage == Stage.PREFILLING_PRELUDE:
+                tokens = torch.tensor(prepared.token_ids, device=self.device, dtype=torch.long)
+                hidden = self.model.prelude(tokens)
+            else:
+                hidden, _ = self.model.recurrent_prepared(
+                    prepared.hidden,
+                    prepared.kv,
+                    self.cache_manager,
+                    compute_gate=False,
+                )
+            self._scatter_prefill(
+                batch, hidden, prepared.prefill_slots, prepared.prefill_offsets
+            )
+            return None
         size = self._size(len(requests))
         group = "core" if batch.stage == Stage.RECURRENT else "boundary"
         routing = prepared.routing if prepared is not None else None
         workspace = None if routing is not None else self._workspace(group)
-        if batch.stage == Stage.PRELUDE or batch.stage == Stage.PREFILLING_PRELUDE:
+        if batch.stage == Stage.PRELUDE:
             if prepared is not None:
                 # Feed the sampled GPU IDs directly to embedding. No .item(),
                 # .tolist(), or CPU token roundtrip on the dependency path.
@@ -396,8 +502,6 @@ class ModelRunner:
             hidden = self.model.prelude(tokens)
             self._save_batch(requests, hidden, routing)
             result = None
-        elif batch.stage == Stage.PREFILLING_RECURRENT:
-            pass
         else:
             hidden = (
                 routing.gather() if routing is not None else self._gather(requests, workspace, size)

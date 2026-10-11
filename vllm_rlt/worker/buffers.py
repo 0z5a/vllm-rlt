@@ -39,6 +39,9 @@ def execution_buffer_bytes(config, scheduler, cache, execution, element_size):
         total += 2 * scheduler.max_num_seqs * 24  # fallback exit descriptors
     # Split prefill holds the staged chunk's hidden rows across batch boundaries.
     total += scheduler.max_num_seqs * prefill_stage_rows(config, scheduler, execution) * hidden
+    # Split recurrent batches gather staged rows into a contiguous model input.
+    if not execution.atomic_prefill:
+        total += rows * hidden
     return total
 
 
