@@ -7,7 +7,7 @@ from tests.helpers import tiny_ouro_config
 from vllm_rlt import LLM, CacheConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
-from vllm_rlt.request import FinishReason, RequestOutput, Stage
+from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 
 
 def tiny_model():
@@ -223,6 +223,55 @@ def test_greedy_requests_never_create_a_generator():
     else:
         pytest.fail("engine failed to finish within bounded scheduler steps")
     assert engine.rng.peek("g") is None
+
+
+def test_greedy_sampling_never_acquires_a_generator(monkeypatch):
+    # The registry is the only creator, so the strongest greedy contract is that
+    # acquire() is never reached at all, not merely that no slot is left behind.
+    engine = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("greedy sampling must not acquire a generator")
+
+    monkeypatch.setattr(engine.rng, "acquire", forbidden)
+    engine.add_request("g", [2, 4], SamplingParams(max_tokens=3, ignore_eos=True))
+    outputs, _ = drain(engine)
+    assert outputs["g"].finish_reason == "length"
+    assert engine.rng.peek("g") is None
+
+
+def test_sample_row_requests_the_generator_on_the_logits_device(monkeypatch):
+    # multinomial runs on the distribution's device, so the row helper must pass the
+    # logits device, not the model's. Moving the runner's own device to a different
+    # value makes the two sources distinguishable on a CPU-only machine; the spy
+    # below returns a real CPU generator, so no meta device is ever allocated.
+    engine = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+    runner = engine.model_runner
+    runner.device = torch.device("meta")
+    recorded = []
+    real_acquire = engine.rng.acquire
+
+    def spy(request_id, params, device):
+        recorded.append(device)
+        return real_acquire(request_id, params, torch.device("cpu"))
+
+    monkeypatch.setattr(engine.rng, "acquire", spy)
+    logits = torch.linspace(1.0, -1.0, 8)
+    request = Request("r", [1], SamplingParams(temperature=0.7, seed=3))
+    token = runner._sample_row(logits, request)
+    assert recorded == [logits.device]
+    assert runner.device != logits.device
+    assert token.dim() == 0 and token.device == logits.device
+
+
+def test_engines_own_independent_rng_registries():
+    first = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+    second = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+    assert first.model_runner.rng is first.rng
+    assert second.model_runner.rng is second.rng
+    assert first.rng is not second.rng
+    first.model_runner.rng.acquire("r", SamplingParams(temperature=1.0), torch.device("cpu"))
+    assert second.rng.peek("r") is None
 
 
 def test_execution_failure_releases_affected_requests(monkeypatch):

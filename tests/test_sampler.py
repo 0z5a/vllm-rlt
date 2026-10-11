@@ -1,8 +1,10 @@
 """Contract tests for the extracted Sampler: greedy, top-k and top-p.
 
-These pin the current arithmetic exactly as it behaved inside
-``ModelRunner._sample_tensor``; they are not a specification of what sampling
-should do in the future.
+``Sampler`` only consumes a generator the caller resolved, so these tests create
+one themselves (mirroring what ``RngRegistry.acquire`` does in production) and
+keep ``RngRegistry``'s own creation and lifetime contracts separate. The tests pin
+the current arithmetic; they are not a specification of what sampling should do in
+the future.
 """
 
 import pytest
@@ -13,27 +15,53 @@ from vllm_rlt.sampling_params import SamplingParams
 from vllm_rlt.worker.sampler import RngRegistry, Sampler
 
 
-def draw(sampler, logits, params, generator=None, count=1):
-    """Sample ``count`` tokens, threading the generator like the runner does."""
-    tokens = []
-    for _ in range(count):
-        token, generator = sampler.sample(logits, params, generator)
-        tokens.append(token)
-    return tokens, generator
+def seeded_generator(params, device=torch.device("cpu")):
+    """Caller-side generator creation, mirroring ``RngRegistry.acquire``."""
+    return torch.Generator(device=device).manual_seed(params.seed)
 
 
-def test_greedy_returns_argmax_and_never_creates_a_generator():
-    sampler = Sampler()
+def sample_many(sampler, logits, params, count=1):
+    """Sample ``count`` tokens with a generator this test owns (greedy gets None)."""
+    generator = None if params.temperature == 0 else seeded_generator(params)
+    return [int(sampler.sample(logits, params, generator)) for _ in range(count)]
+
+
+def test_greedy_returns_argmax_without_a_generator():
     logits = torch.tensor([0.1, 2.0, 1.0, -1.0])
     # top_k/top_p are deliberately set: the temperature == 0 short circuit runs
-    # first, so greedy ignores them and stays RNG-free.
+    # first, so greedy ignores them and needs no RNG.
     params = SamplingParams(temperature=0.0, top_k=1, top_p=0.5)
-    tokens, generator = draw(sampler, logits, params)
-    token = tokens[0]
+    token = Sampler().sample(logits, params, None)
     assert token.item() == int(logits.argmax())
     assert token.dim() == 0
     assert token.dtype == torch.long
-    assert generator is None
+    assert token.device == logits.device
+
+
+def test_greedy_leaves_a_supplied_generator_untouched():
+    logits = torch.tensor([0.1, 3.0, -1.0])
+    generator = torch.Generator().manual_seed(9)
+    before = generator.get_state().clone()
+    token = Sampler().sample(logits, SamplingParams(temperature=0.0), generator)
+    assert token.item() == 1
+    assert torch.equal(generator.get_state(), before)
+
+
+def test_non_greedy_requires_a_generator():
+    # None would silently draw from the process-wide default generator, so the
+    # contract is an explicit error rather than an implicit fallback.
+    logits = torch.tensor([0.1, 2.0, 1.0])
+    with pytest.raises(ValueError, match="requires a generator"):
+        Sampler().sample(logits, SamplingParams(temperature=1.0), None)
+
+
+def test_non_greedy_advances_the_supplied_generator():
+    logits = torch.linspace(1.0, -1.0, 64)
+    params = SamplingParams(temperature=0.7, top_k=8, seed=42)
+    generator = seeded_generator(params)
+    before = generator.get_state().clone()
+    Sampler().sample(logits, params, generator)
+    assert not torch.equal(generator.get_state(), before)
 
 
 GREEDY_CASES = [
@@ -46,15 +74,13 @@ GREEDY_CASES = [
 @pytest.mark.parametrize("logits", GREEDY_CASES)
 def test_top_k_one_is_equivalent_to_greedy(logits):
     sampler = Sampler()
-    greedy_tokens, _ = draw(sampler, logits, SamplingParams(temperature=0.0))
+    greedy = sample_many(sampler, logits, SamplingParams(temperature=0.0))[0]
     # top_k=1 makes the threshold the maximum, so masked_fill leaves exactly one
     # candidate and the result cannot depend on the RNG stream. Checking several
     # logits rows and seeds pins that mechanism, not one coincidental argmax.
     for seed in (0, 7, 12345):
         params = SamplingParams(temperature=1.0, top_k=1, seed=seed)
-        top_k_tokens, generator = draw(sampler, logits, params)
-        assert generator is not None
-        assert top_k_tokens[0].item() == greedy_tokens[0].item()
+        assert sample_many(sampler, logits, params)[0] == greedy
 
 
 def test_top_k_keeps_every_token_tied_at_the_threshold():
@@ -63,8 +89,7 @@ def test_top_k_keeps_every_token_tied_at_the_threshold():
     # ``logits < threshold``, so the candidate set is larger than k.
     logits = torch.tensor([3.0, 3.0, 3.0, 0.0])
     params = SamplingParams(temperature=1.0, top_k=2, seed=11)
-    tokens, _ = draw(sampler, logits, params, count=200)
-    observed = {token.item() for token in tokens}
+    observed = set(sample_many(sampler, logits, params, count=200))
     assert observed <= {0, 1, 2}
     assert len(observed) > 1
 
@@ -75,8 +100,7 @@ def test_top_p_keeps_at_least_one_token():
     # mask shift keeps the single most likely token instead.
     logits = torch.linspace(1.0, 0.0, 100)
     params = SamplingParams(temperature=1.0, top_p=0.005, seed=3)
-    tokens, _ = draw(sampler, logits, params, count=20)
-    assert {token.item() for token in tokens} == {0}
+    assert set(sample_many(sampler, logits, params, count=20)) == {0}
 
 
 def test_top_p_one_does_not_truncate_the_support():
@@ -84,19 +108,16 @@ def test_top_p_one_does_not_truncate_the_support():
     logits = torch.tensor([1.0, 0.9, 0.8, 0.7])
     truncated = SamplingParams(temperature=1.0, top_p=0.5, seed=13)
     untruncated = SamplingParams(temperature=1.0, top_p=1.0, seed=13)
-    truncated_tokens, _ = draw(sampler, logits, truncated, count=200)
-    untruncated_tokens, _ = draw(sampler, logits, untruncated, count=200)
-    assert {token.item() for token in truncated_tokens} <= {0, 1}
+    assert set(sample_many(sampler, logits, truncated, count=200)) <= {0, 1}
     # Index 3 is the least likely token, so it is reachable only while the
     # support is intact. This asserts reachability over a fixed 200-draw stream
     # (p(miss) ~ 0.79**200), not the exact draw sequence: the exact sequence
     # would couple the test to torch's multinomial implementation.
-    assert 3 in {token.item() for token in untruncated_tokens}
+    assert 3 in set(sample_many(sampler, logits, untruncated, count=200))
 
 
 def sequence(sampler, logits, params, count=32):
-    tokens, _ = draw(sampler, logits, params, count=count)
-    return [token.item() for token in tokens]
+    return sample_many(sampler, logits, params, count=count)
 
 
 def test_same_seed_reproduces_the_same_sequence():
@@ -119,39 +140,13 @@ def test_generator_is_reused_and_advanced_across_calls():
     sampler = Sampler()
     logits = torch.linspace(1.0, -1.0, 64)
     params = SamplingParams(temperature=0.7, top_k=8, seed=42)
-    _, generator = draw(sampler, logits, params)
-    assert generator is not None
+    generator = seeded_generator(params)
     state = generator.get_state().clone()
+    sampler.sample(logits, params, generator)
     # Later calls must advance the same generator instead of reseeding it, which
     # is what makes a multi-token request reproducible.
-    _, same_generator = draw(sampler, logits, params, generator=generator)
-    assert same_generator is generator
+    sampler.sample(logits, params, generator)
     assert not torch.equal(generator.get_state(), state)
-
-
-def test_generator_is_created_on_the_logits_device(monkeypatch):
-    # multinomial runs on the distribution's device, so creating the generator on
-    # the model's device instead would raise a device mismatch whenever the two
-    # differ. Pin where the device comes from without needing a second device.
-    calls = []
-
-    def spy(device, params):
-        calls.append(device)
-        return torch.Generator(device=device).manual_seed(params.seed)
-
-    monkeypatch.setattr(sampler_module, "new_generator", spy)
-    logits = torch.zeros(8)
-    _, generator = Sampler().sample(logits, SamplingParams(temperature=1.0, seed=5), None)
-    assert calls == [logits.device]
-    assert generator.device == logits.device
-
-
-def test_greedy_never_needs_a_generator_device():
-    # The greedy short circuit must not reach generator creation at all.
-    logits = torch.tensor([0.1, 3.0, -1.0])
-    token, generator = Sampler().sample(logits, SamplingParams(temperature=0.0), None)
-    assert token.item() == 1
-    assert generator is None
 
 
 def test_rng_registry_creates_lazily_and_reuses_the_slot():
@@ -165,16 +160,21 @@ def test_rng_registry_creates_lazily_and_reuses_the_slot():
     assert registry.acquire("r", params, torch.device("cpu")) is first
 
 
-def test_rng_registry_store_keeps_greedy_requests_slotless():
-    registry = RngRegistry()
-    # store() receives whatever Sampler.sample returned: None means greedy and
-    # must not create a slot.
-    registry.store("g", None)
-    assert registry.peek("g") is None
+def test_rng_registry_creates_the_generator_on_the_requested_device(monkeypatch):
+    # The registry is the single creation owner, so pin that it forwards the device
+    # instead of falling back to the process default. The fake device never reaches
+    # torch: the recorded constructor returns a real CPU generator for the caller.
+    recorded = []
+    real_generator = torch.Generator
 
-    generator = torch.Generator().manual_seed(7)
-    registry.store("r", generator)
-    assert registry.peek("r") is generator
+    def recording_generator(device=None):
+        recorded.append(device)
+        return real_generator(device="cpu")
+
+    monkeypatch.setattr(sampler_module.torch, "Generator", recording_generator)
+    registry = RngRegistry()
+    registry.acquire("r", SamplingParams(temperature=1.0, seed=1), torch.device("meta"))
+    assert recorded == [torch.device("meta")]
 
 
 def test_rng_registry_drop_removes_only_that_requests_slot():

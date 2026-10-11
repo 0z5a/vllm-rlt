@@ -1,13 +1,14 @@
 """Greedy, top-k and top-p sampling for a single logits row.
 
-The arithmetic is a verbatim move out of ``ModelRunner._sample_tensor`` so the
+The arithmetic was moved out of ``ModelRunner``'s per-row sampling helper so the
 sampling contract can be pinned by unit tests without a runner. ``probabilities``
 and ``draw`` were unified here from ``worker/sampling.py``, so the CODA and
 speculative paths keep one copy of the distribution construction.
 
-``Sampler`` itself holds no state: the generator is created on the distribution's
-device and stored by the caller in an ``RngRegistry``, which the engine owns and
-shares between its runners.
+``Sampler`` holds no state and never creates a generator: it consumes the one the
+caller obtained from ``RngRegistry``. The registry is the single owner of RNG
+creation, lookup and lifetime, and the engine shares one instance between its
+runners.
 """
 
 import torch
@@ -50,34 +51,31 @@ class Sampler:
         logits: torch.Tensor,
         params: SamplingParams,
         generator: torch.Generator | None,
-    ) -> tuple[torch.Tensor, torch.Generator | None]:
-        """Return a 0-dim long device tensor and the possibly created generator.
+    ) -> torch.Tensor:
+        """Return a 0-dim long device tensor drawn from a caller-resolved generator.
+
+        Greedy decoding needs no RNG and returns ``argmax`` whatever the caller
+        passed. Non-greedy decoding requires a generator: ``None`` would silently
+        draw from the process-wide default generator, so it is rejected instead.
 
         No host synchronization happens here: the returned tensor stays on the
         logits device so the async CODA path can feed it to the next prelude.
         """
         if params.temperature == 0:
-            return logits.argmax(), generator
-        probs = self.probabilities(logits, params)
+            return logits.argmax()
         if generator is None:
-            # multinomial runs on the distribution's device, so the generator has
-            # to be created there, not on whichever device the model was loaded on.
-            generator = new_generator(logits.device, params)
-        return (self.draw(probs, generator), generator)
-
-
-def new_generator(device: torch.device, params: SamplingParams) -> torch.Generator:
-    """Create a request's first sampling generator from its validated seed."""
-    return torch.Generator(device=device).manual_seed(params.seed)
+            raise ValueError("non-greedy sampling requires a generator")
+        return self.draw(self.probabilities(logits, params), generator)
 
 
 class RngRegistry:
     """Per-request sampling generators for one engine.
 
     The engine owns one registry and injects the same instance into every runner,
-    so the CODA and speculative paths share a request's RNG slot. Greedy requests
-    never get a slot, suspension keeps one, and termination drops it so a request
-    ID that is reused later starts from a fresh stream.
+    so the CODA and speculative paths share a request's RNG slot. This registry is
+    the single creator of generators; greedy requests never get a slot, suspension
+    keeps one, and termination drops it so a request ID that is reused later starts
+    from a fresh stream.
     """
 
     def __init__(self):
@@ -87,18 +85,18 @@ class RngRegistry:
         """Return the request's generator, or None before its first random draw."""
         return self.generators.get(request_id)
 
-    def store(self, request_id: str, generator: torch.Generator | None) -> None:
-        """Record a generator the sampler created; None keeps the slot absent."""
-        if generator is not None:
-            self.generators[request_id] = generator
-
     def acquire(
         self, request_id: str, params: SamplingParams, device: torch.device
     ) -> torch.Generator:
-        """Return the request's generator, creating it on ``device`` if needed."""
+        """Return the request's generator, creating it on ``device`` if needed.
+
+        The caller passes the device of the distribution it will sample from, so
+        ``multinomial`` and its generator agree. An existing generator is returned
+        as-is and never migrated.
+        """
         generator = self.generators.get(request_id)
         if generator is None:
-            generator = new_generator(device, params)
+            generator = torch.Generator(device=device).manual_seed(params.seed)
             self.generators[request_id] = generator
         return generator
 

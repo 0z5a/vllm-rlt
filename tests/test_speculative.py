@@ -309,6 +309,56 @@ def test_both_runners_share_the_engine_rng_registry():
     plain = LLMEngine(model())
     assert plain.model_runner.rng is plain.rng
     assert plain.speculative_runner is None
+    # The asynchronous configuration holds AsyncSpeculativeRunner instead; its
+    # constructor allocates CUDA streams, so that case is covered by
+    # test_async_speculative.py::test_async_speculative_engine_shares_its_registry.
+
+
+def test_acquire_generator_uses_the_logits_device(monkeypatch):
+    # The speculative helper must hand acquire() the logits row's device, not the
+    # model's. A different runner device makes the two sources distinguishable on a
+    # CPU-only machine; the spy returns a real CPU generator so the fake device is
+    # never allocated.
+    e = engine(model())
+    runner = e.speculative_runner
+    runner.device = torch.device("meta")
+    recorded = []
+    real_acquire = e.rng.acquire
+
+    def spy(request_id, params, device):
+        recorded.append(device)
+        return real_acquire(request_id, params, torch.device("cpu"))
+
+    monkeypatch.setattr(e.rng, "acquire", spy)
+    logits = torch.linspace(1.0, -1.0, 8)
+    request = Request("r", [2, 3], SamplingParams(temperature=0.7, seed=5))
+    generator = runner._acquire_generator(request, logits)
+    assert recorded == [logits.device]
+    assert runner.device != logits.device
+    assert generator.device == logits.device
+
+
+def test_speculative_greedy_execution_never_acquires_a_generator(monkeypatch):
+    # The CODA path has the same check in test_engine.py; this one proves the
+    # contract on a request that really executes through Stage.SPECULATIVE, so a
+    # generator that is created but unused would still be caught.
+    e = engine(model())
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("greedy speculative sampling must not acquire a generator")
+
+    monkeypatch.setattr(e.rng, "acquire", forbidden)
+    e.add_request("r", [2, 3, 4], SamplingParams(max_tokens=6, ignore_eos=True))
+    stages = []
+    for _ in range(2000):
+        if not e.has_unfinished_requests():
+            break
+        e.step()
+        stages.append(e.last_schedule.stage)
+    else:
+        pytest.fail("speculative engine did not drain")
+    assert Stage.SPECULATIVE in stages
+    assert e.rng.peek("r") is None
 
 
 def test_speculative_path_advances_the_registry_generator():

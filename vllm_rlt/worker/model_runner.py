@@ -425,9 +425,7 @@ class ModelRunner:
                 result = logits[: len(requests)].float().sigmoid() if logits is not None else None
             elif batch.stage == Stage.CODA:
                 logits = self.model.coda(hidden)
-                result = torch.stack(
-                    [self._sample_tensor(row, r) for row, r in zip(logits, requests)]
-                )
+                result = torch.stack([self._sample_row(row, r) for row, r in zip(logits, requests)])
                 if routing is not None:
                     routing.scatter(result, tokens=True)
             else:
@@ -614,12 +612,17 @@ class ModelRunner:
             if stream is not None:
                 stream.synchronize()
 
-    def _sample_tensor(self, logits: torch.Tensor, request: Request):
-        # Thin delegate kept for the async path and for tests that monkeypatch
-        # this method; the algorithm lives in Sampler.
-        request_id = request.request_id
-        token, generator = self.sampler.sample(
-            logits, request.sampling_params, self.rng.peek(request_id)
+    def _sample_row(self, logits: torch.Tensor, request: Request) -> torch.Tensor:
+        """Sample one token for one logits row from the engine's RNG registry.
+
+        Greedy rows never acquire a generator. Otherwise the registry creates it on
+        the distribution's device, so the generator follows the logits row rather
+        than the device the model was loaded on.
+        """
+        params = request.sampling_params
+        generator = (
+            None
+            if params.temperature == 0
+            else self.rng.acquire(request.request_id, params, logits.device)
         )
-        self.rng.store(request_id, generator)
-        return token
+        return self.sampler.sample(logits, params, generator)

@@ -101,7 +101,7 @@ class SpeculativeRunner:
             hidden, _ = self.model.recurrent_prepared(hidden, batch, self.cache, compute_gate=False)
         return hidden
 
-    def _generator_for(self, request, logits):
+    def _acquire_generator(self, request, logits):
         """Resolve this request's generator from the shared engine registry.
 
         The generator has to live on the distribution's device, so it follows the
@@ -150,7 +150,7 @@ class SpeculativeRunner:
                     q = Sampler.probabilities(logits[row], request.sampling_params)
                     proposals[i].append(q)
                     # Per-request RNG consumption order is unchanged; only the read moves.
-                    inputs[row] = Sampler.draw(q, self._generator_for(request, logits[row]))
+                    inputs[row] = Sampler.draw(q, self._acquire_generator(request, logits[row]))
             drafted.append(([i for _, i in drafting], inputs))
         # Group contiguous positions per request for causal ragged attention.
         ids, positions = [], []
@@ -195,7 +195,10 @@ class SpeculativeRunner:
             for offset, candidate in enumerate(candidates[i]):
                 p = Sampler.probabilities(rows[offset], request.sampling_params)
                 token, accept = rejection_sample(
-                    candidate, p, proposals[i][offset], self._generator_for(request, rows[offset])
+                    candidate,
+                    p,
+                    proposals[i][offset],
+                    self._acquire_generator(request, rows[offset]),
                 )
                 tokens.append(token)
                 if not accept:
@@ -204,7 +207,7 @@ class SpeculativeRunner:
             else:
                 token = Sampler.draw(
                     Sampler.probabilities(rows[-1], request.sampling_params),
-                    self._generator_for(request, rows[-1]),
+                    self._acquire_generator(request, rows[-1]),
                 )
                 tokens.append(int(token.item()))
             results.append(SpeculativeResult(tokens, accepted, len(candidates[i])))

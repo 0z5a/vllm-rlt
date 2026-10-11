@@ -165,6 +165,7 @@ class LLMEngine:
                 speculative_config,
                 scheduler_config,
                 multi_stream=self.execution_config.multi_stream,
+                rng=self.rng,
             )
         self._pending_speculative = []
         self._retiring_speculative = {}
