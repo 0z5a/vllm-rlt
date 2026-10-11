@@ -505,6 +505,118 @@ def test_cuda_split_prefill_matches_atomic(async_scheduling):
 
 
 @pytest.mark.gpu
+def test_cuda_split_prefill_survives_decode_graph_capture_and_replay():
+    from vllm_rlt.worker.buffers import execution_buffer_bytes
+
+    graph_reserve = 32 * 1024**2
+
+    def run(cuda_graphs):
+        torch.manual_seed(765)
+        model = OuroForCausalLM(tiny_ouro_config(head_dim=64)).to("cuda", torch.bfloat16)
+        cache = CacheConfig(
+            block_size=16, gpu_memory_utilization=0.5, memory_reserve_bytes=32 * 1024**2
+        )
+        scheduler = SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=2)
+        execution = ExecutionConfig(
+            async_scheduling=True,
+            cuda_graphs=cuda_graphs,
+            cuda_graph_memory_reserve_bytes=graph_reserve,
+            atomic_prefill=False,
+        )
+        e = LLMEngine(
+            model,
+            cache_config=cache,
+            scheduler_config=scheduler,
+            execution_config=execution,
+            exit_config=ExitConfig("trace", depths_by_request={"split": [4], "decode": [4, 2, 2]}),
+            attention_backend="triton",
+        )
+        try:
+            e.add_request("split", [1, 2, 3, 4], SamplingParams(max_tokens=1, ignore_eos=True))
+            e.step()
+            e.step()
+            split_request = e.scheduler.requests["split"]
+            assert split_request.stage is Stage.PREFILLING_RECURRENT
+            assert split_request.running_depth_boundary[0] == [2, 4]
+            # Keep the staged chunk resident while decode triggers graph capture.
+            e.scheduler.queues[Stage.PREFILLING_RECURRENT].remove("split")
+
+            e.add_request(
+                "decode",
+                [5, 6],
+                SamplingParams(max_tokens=3, max_loops=2, ignore_eos=True),
+            )
+            decode_recurrent_runs = 0
+            for _ in range(100):
+                e.step()
+                batch = e.last_schedule
+                if batch is not None and batch.stage is Stage.RECURRENT:
+                    decode_recurrent_runs += sum(
+                        item.request.request_id == "decode" for item in batch.items
+                    )
+                if decode_recurrent_runs == 2:
+                    break
+            else:
+                pytest.fail("decode request did not reach its second recurrent step")
+            assert split_request.stage is Stage.PREFILLING_RECURRENT
+            assert split_request.num_prefilled_tokens == 0
+            assert split_request.num_preluded_tokens == 2
+
+            graph_counts = None
+            if e.model_runner.graphs is not None:
+                graph_counts = (
+                    e.model_runner.graphs.captures,
+                    e.model_runner.graphs.replays,
+                    e.model_runner.graphs.fallbacks,
+                )
+            e.scheduler.enqueue(split_request, Stage.PREFILLING_RECURRENT)
+            finished = {}
+            for _ in range(200):
+                for output in e.step():
+                    if output.finished:
+                        finished[output.request_id] = output
+                if len(finished) == 2:
+                    break
+            else:
+                pytest.fail("split-prefill graph requests did not finish")
+            if graph_counts is not None:
+                graph_counts = (
+                    graph_counts,
+                    (
+                        e.model_runner.graphs.captures,
+                        e.model_runner.graphs.replays,
+                        e.model_runner.graphs.fallbacks,
+                    ),
+                )
+
+            expected_buffers = execution_buffer_bytes(
+                model.config, scheduler, cache, execution, next(model.parameters()).element_size()
+            )
+            return (
+                {
+                    "decode": (finished["decode"].token_ids, finished["decode"].exit_depths),
+                    "split": (finished["split"].token_ids, finished["split"].exit_depths),
+                },
+                e.memory_plan,
+                expected_buffers,
+                graph_counts,
+            )
+        finally:
+            e.close()
+
+    eager, graphed = run(False), run(True)
+    assert eager[0] == graphed[0]
+    assert eager[1]["cuda_graph_reserve_bytes"] == 0
+    assert graphed[1]["cuda_graph_reserve_bytes"] == graph_reserve
+    assert eager[1]["kv_budget_bytes"] >= graphed[1]["kv_budget_bytes"] + graph_reserve
+    assert eager[1]["static_buffer_bytes"] == eager[2] > 0
+    assert graphed[1]["static_buffer_bytes"] == graphed[2] > 0
+    before_resume, after_resume = graphed[3]
+    assert before_resume == (1, 2, 0)
+    assert after_resume == (1, 4, 0)
+
+
+@pytest.mark.gpu
 def test_cuda_async_split_preemption_releases_and_reuses_slot():
     prompt = [1, 2, 3, 4]
     params = SamplingParams(max_tokens=3, max_loops=2, ignore_eos=True, priority=10)
