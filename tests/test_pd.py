@@ -98,19 +98,6 @@ def test_pd_configuration_validation(options):
         PDConfig(**options)
 
 
-def test_pd_rejects_split_prefill_before_spawning_workers():
-    from vllm_rlt.pd.engine import PDEngine
-
-    with pytest.raises(ValueError, match="PD currently supports atomic prefill"):
-        PDEngine(
-            tiny_ouro_config(),
-            execution_config=ExecutionConfig(
-                async_scheduling=True,
-                atomic_prefill=False,
-            ),
-        )
-
-
 def drain(engine):
     outputs = {}
     deadline = time.monotonic() + 90
@@ -122,7 +109,82 @@ def drain(engine):
     return outputs
 
 
-def create_pd(*, graph=False, layout="last_exited", multi=False):
+def test_pd_split_transfer_uses_chunk_origin_after_budget_contention(monkeypatch):
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+
+    from vllm_rlt.pd.worker import PDWorker, Work
+
+    class ReadyEvent:
+        def record(self, stream):
+            pass
+
+        def query(self):
+            return True
+
+    monkeypatch.setattr(torch.cuda, "current_stream", lambda device: object())
+    monkeypatch.setattr(torch.cuda, "stream", lambda stream: nullcontext())
+    monkeypatch.setattr(torch.cuda, "Event", ReadyEvent)
+    config = tiny_ouro_config()
+    engine = LLMEngine(
+        OuroForCausalLM(config),
+        cache_config=CacheConfig(64, 4),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2, max_num_batched_tokens=5, prefill_chunk_size=4
+        ),
+        execution_config=ExecutionConfig(atomic_prefill=False),
+    )
+    worker = object.__new__(PDWorker)
+    worker.role = "prefill"
+    worker.engine = engine
+    worker.cache = engine.cache_manager
+    worker.config = PDConfig()
+    worker.connector = SimpleNamespace(inflight_bytes=0, busy=lambda tid: False)
+    worker.hidden = torch.empty((2, config.hidden_size))
+    worker.work = {}
+    worker.prefill_tokens = 0
+    transfers = []
+    worker.queue_chunk = lambda w, start, end, event, final: transfers.append(
+        (w.tid, start, end, final)
+    )
+    batches = []
+    take = engine.scheduler._take
+
+    def record_take(stage):
+        batch = take(stage)
+        if batch is not None:
+            batches.append(batch)
+        return batch
+
+    engine.scheduler._take = record_take
+    params = SamplingParams(max_tokens=1)
+    for request_id in ("b", "a"):
+        engine.add_request(request_id, [1, 2, 3, 4], params)
+        engine.scheduler._admit()
+        request = engine.scheduler.requests[request_id]
+        worker.work[request_id] = Work(request_id, request, len(worker.work), "peer")
+        assert worker.prefill_step() and worker.prefill_tokens == 0
+
+    for _ in range(config.total_ut_steps):
+        assert worker.prefill_step()
+    assert (engine.scheduler.requests["a"].num_prefilled_tokens, worker.prefill_tokens) == (1, 4)
+
+    for _ in range(config.total_ut_steps):
+        assert worker.prefill_step()
+    final_item = next(item for item in batches[-1].items if item.request.request_id == "a")
+    assert (final_item.token_start, final_item.token_count, final_item.chunk_start) == (1, 3, 0)
+    assert (transfers, worker.prefill_tokens) == ([("b", 0, 4, True), ("a", 0, 4, True)], 8)
+
+
+def create_pd(
+    *,
+    graph=False,
+    layout="last_exited",
+    multi=False,
+    atomic_prefill=True,
+    prefill_chunk_size=3,
+    max_num_batched_tokens=5,
+):
     pytest.importorskip("nixl")
     from vllm_rlt.pd.engine import PDEngine
 
@@ -142,12 +204,15 @@ def create_pd(*, graph=False, layout="last_exited", multi=False):
         prefill_cache_config=CacheConfig(128, 4, layout),
         decode_cache_config=CacheConfig(128, 4, layout),
         prefill_scheduler_config=SchedulerConfig(
-            max_num_seqs=2, max_num_batched_tokens=5, prefill_chunk_size=3
+            max_num_seqs=2,
+            max_num_batched_tokens=max_num_batched_tokens,
+            prefill_chunk_size=prefill_chunk_size,
         ),
         decode_scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=2),
         exit_config=ExitConfig("trace", depths_by_request={"t": [4, 2, 3, 1] * 16}),
         execution_config=ExecutionConfig(
             async_scheduling=True,
+            atomic_prefill=atomic_prefill,
             static_buffers=graph,
             pad_to_power_of_two=graph,
             cuda_graphs=graph,
@@ -196,6 +261,33 @@ def test_pd_generation_refill_cancel_and_reuse_matches_local(graph, layout):
         assert all(p.slots == 0 and p.blocks == 0 for p in e.peers.values())
     assert all(m["used_blocks"] == 0 for m in e.worker_metrics.values())
     assert sum(m["bytes_sent"] for m in e.worker_metrics.values()) > 0
+
+
+@pytest.mark.gpu
+def test_pd_split_prefill_matches_atomic_transfer_boundaries_and_overlaps():
+    prompt = list(range(1, 33))
+    params = SamplingParams(max_tokens=4, min_loops=1, ignore_eos=True)
+    runs = {}
+    for atomic_prefill in (True, False):
+        with create_pd(
+            atomic_prefill=atomic_prefill,
+            prefill_chunk_size=16,
+            max_num_batched_tokens=16,
+        ) as e:
+            e.add_request("pd", prompt, params, trace_id="t")
+            output = drain(e)["pd"]
+            timings = next(m["timings"] for m in e.metrics if m["request_id"] == "pd")
+            runs[atomic_prefill] = (
+                output.token_ids,
+                output.exit_depths,
+                timings["prefill_transfer_boundaries"],
+                timings["prefill_transfer_overlaps"],
+            )
+
+    atomic, split = runs[True], runs[False]
+    assert split[:2] == atomic[:2]
+    assert atomic[2] == split[2] == ((0, 16), (16, 32), 2)
+    assert split[3] > 0
 
 
 @pytest.mark.gpu

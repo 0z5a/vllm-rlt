@@ -30,6 +30,10 @@ class Work:
     cached_tokens: int = 0
     target_cached_tokens: int = 0
     chunks: deque = field(default_factory=deque)
+    transfer_boundary_count: int = 0
+    transfer_boundary_first: tuple[int, int] | None = None
+    transfer_boundary_last: tuple[int, int] | None = None
+    transfer_overlaps: int = 0
     received: set = field(default_factory=set)
     next_sequence: int = 0
     expected: int | None = None
@@ -172,7 +176,12 @@ class PDWorker:
                 event = torch.cuda.Event()
                 event.record(torch.cuda.current_stream(self.cache.device))
                 self.queue_chunk(w, w.target_cached_tokens, hit, event, False)
-            self.engine.scheduler.enqueue(request, Stage.PREFILL)
+            stage = (
+                Stage.PREFILL
+                if self.engine.execution_config.atomic_prefill
+                else Stage.PREFILLING_PRELUDE
+            )
+            self.engine.scheduler.enqueue(request, stage)
             self.send("prefill_started", tid=tid)
 
     def command(self, command):
@@ -228,9 +237,14 @@ class PDWorker:
             w.cancelled = True
             if self.role == "prefill":
                 w.chunks.clear()
-                queue = self.engine.scheduler.queues[Stage.PREFILL]
-                if w.tid in queue:
-                    queue.remove(w.tid)
+                for stage in (
+                    Stage.PREFILL,
+                    Stage.PREFILLING_PRELUDE,
+                    Stage.PREFILLING_RECURRENT,
+                ):
+                    queue = self.engine.scheduler.queues[stage]
+                    if w.tid in queue:
+                        queue.remove(w.tid)
             elif w.active:
                 self.remove(w)  # All imports ended before decode activation.
         elif kind == "cancel_safe":
@@ -262,6 +276,12 @@ class PDWorker:
         peer = self.connector.peers[w.peer]
         tables = self.cache.plane_block_tables(w.tid)
         start = max(start, w.target_cached_tokens)
+        if start < end:
+            boundary = (start, end)
+            if w.transfer_boundary_first is None:
+                w.transfer_boundary_first = boundary
+            w.transfer_boundary_last = boundary
+            w.transfer_boundary_count += 1
         source = list(kv_segments(self.connector.info, tables, start, end)) if start < end else []
         target = list(kv_segments(peer, w.target_tables, start, end)) if start < end else []
         if final:
@@ -281,25 +301,36 @@ class PDWorker:
             w.next_sequence += 1
 
     def prefill_step(self):
-        queue = self.engine.scheduler.queues[Stage.PREFILL]
+        stages = (
+            (Stage.PREFILL,)
+            if self.engine.execution_config.atomic_prefill
+            else (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT)
+        )
+        stage = None
         # Limit unsubmitted data as well as posted network work. Each request
         # can have at most one unfinished chunk; ready requests still progress.
-        eligible = []
-        for tid in list(queue):
-            w = self.work[tid]
-            if not w.chunks and (w.last_event is None or w.last_event.query()):
-                eligible.append(tid)
-        if not eligible or self.connector.inflight_bytes >= self.config.max_inflight_bytes:
+        for candidate in stages:
+            queue = self.engine.scheduler.queues[candidate]
+            eligible = [
+                tid
+                for tid in queue
+                if not self.work[tid].chunks
+                and (self.work[tid].last_event is None or self.work[tid].last_event.query())
+            ]
+            if eligible:
+                stage = candidate
+                break
+        if stage is None or self.connector.inflight_bytes >= self.config.max_inflight_bytes:
             return
-        original = self.engine.scheduler.queues[Stage.PREFILL]
+        original = self.engine.scheduler.queues[stage]
         selected = set(eligible)
-        self.engine.scheduler.queues[Stage.PREFILL] = deque(eligible)
-        batch = self.engine.scheduler._take(Stage.PREFILL)
-        unused = self.engine.scheduler.queues[Stage.PREFILL]
-        self.engine.scheduler.queues[Stage.PREFILL] = deque(
-            tid for tid in original if tid not in selected
-        )
-        self.engine.scheduler.queues[Stage.PREFILL].extend(unused)
+        self.engine.scheduler.queues[stage] = deque(eligible)
+        batch = self.engine.scheduler._take(stage)
+        unused = self.engine.scheduler.queues[stage]
+        self.engine.scheduler.queues[stage] = deque(tid for tid in original if tid not in selected)
+        self.engine.scheduler.queues[stage].extend(unused)
+        if batch is None:
+            return
         ticket = self.engine.model_runner.submit(batch)
         stream = self.engine.model_runner.core_stream or torch.cuda.current_stream(
             self.cache.device
@@ -308,22 +339,43 @@ class PDWorker:
             for item in batch.items:
                 w = self.work[item.request.request_id]
                 request = w.request
-                request.num_prefilled_tokens += item.token_count
-                final = request.num_prefilled_tokens == len(request.prompt_token_ids)
+                if stage == Stage.PREFILL:
+                    request.num_prefilled_tokens += item.token_count
+                    final = request.num_prefilled_tokens == len(request.prompt_token_ids)
+                    if final:
+                        self.hidden[w.slot].copy_(request.hidden_state)
+                    event = torch.cuda.Event()
+                    event.record(stream)
+                    w.last_event = event
+                    self.queue_chunk(
+                        w, item.token_start, request.num_prefilled_tokens, event, final
+                    )
+                    self.cache.publish_prefix(
+                        w.tid, request.prompt_token_ids, request.num_prefilled_tokens, event
+                    )
+                    if final:
+                        w.compute_done = True
+                    else:
+                        self.engine.scheduler.enqueue(request, Stage.PREFILL)
+                    self.prefill_tokens += item.token_count
+                    continue
+
+                progress = self.engine._advance_prefill(request, stage, item, event=ticket.event)
+                if stage == Stage.PREFILLING_PRELUDE:
+                    w.transfer_overlaps += self.connector.busy(w.tid)
+                if not progress.chunk_complete:
+                    w.last_event = ticket.event
+                    continue
+                self.prefill_tokens += request.num_prefilled_tokens - item.chunk_start
+                final = progress.prompt_complete
                 if final:
                     self.hidden[w.slot].copy_(request.hidden_state)
                 event = torch.cuda.Event()
                 event.record(stream)
                 w.last_event = event
-                self.queue_chunk(w, item.token_start, request.num_prefilled_tokens, event, final)
-                self.prefill_tokens += item.token_count
-                self.cache.publish_prefix(
-                    w.tid, request.prompt_token_ids, request.num_prefilled_tokens, event
-                )
+                self.queue_chunk(w, item.chunk_start, request.num_prefilled_tokens, event, final)
                 if final:
                     w.compute_done = True
-                else:
-                    self.engine.scheduler.enqueue(request, Stage.PREFILL)
         # submit keeps its events; the prefill ticket has no readback slot.
         del ticket
         return True
@@ -357,7 +409,16 @@ class PDWorker:
                     self.engine.model_runner.release(w.tid)
                     w.request.hidden_state = None
                     w.compute_released = True
-                    self.send("prefill_complete", tid=w.tid)
+                    self.send(
+                        "prefill_complete",
+                        tid=w.tid,
+                        boundaries=(
+                            w.transfer_boundary_first,
+                            w.transfer_boundary_last,
+                            w.transfer_boundary_count,
+                        ),
+                        overlaps=w.transfer_overlaps,
+                    )
                 # Round robin: at most one bounded transfer per request per tick.
                 if w.chunks:
                     event, seq, local, remote, size = w.chunks[0]
