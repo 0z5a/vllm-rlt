@@ -399,7 +399,51 @@
       "response_tokens": 352,
       "maximum_selected_logprob_absolute_error": 0.00011324882507324219,
       "policy_publications": 3,
-      "scope": "separate gate activation supplement with a tight threshold; original0.01primary retained; complete independent archive integrity pending"
+      "scope": "separate gate activation supplement with unchanged algorithm; original0.01primary retained; independent complete archive integrity passed; durable transfer pending",
+      "independent_archive_integrity": {
+        "passed": true,
+        "scope": "independent full path-to-blob integrity and archived local categorical/gate result reconstruction; full numerical tensor audit was local",
+        "archive_sha256": "a4084c9e35bd375a2bc73edbe57acd9c0708229b683a66a092c8ca704fe70e59",
+        "archive_bytes": 17151847443,
+        "logical_paths": 59,
+        "unique_blobs": 55,
+        "actual_transport_return": 0,
+        "actual_blocked_step_observed_in_verified_archive": true,
+        "flow_metrics": [
+          {
+            "step": 0,
+            "categorical_kl": 0.0,
+            "blocked_fraction": 0.0
+          },
+          {
+            "step": 1,
+            "categorical_kl": 5.991788043502311e-07,
+            "blocked_fraction": 0.19374999403953552
+          },
+          {
+            "step": 2,
+            "categorical_kl": 0.0,
+            "blocked_fraction": 0.0
+          },
+          {
+            "step": 3,
+            "categorical_kl": 1.0142036899196682e-06,
+            "blocked_fraction": 0.13636364042758942
+          },
+          {
+            "step": 4,
+            "categorical_kl": 0.0,
+            "blocked_fraction": 0.0
+          },
+          {
+            "step": 5,
+            "categorical_kl": 1.5788623386470135e-07,
+            "blocked_fraction": 0.19128787517547607
+          }
+        ],
+        "finished": 1791741968.642303,
+        "durable_full_archive_complete": false
+      }
     }
   },
   "scaling": "seeds42/43/44 completed local numerical checks; seeds45/46 queued. Signs differ, all timings retained.",

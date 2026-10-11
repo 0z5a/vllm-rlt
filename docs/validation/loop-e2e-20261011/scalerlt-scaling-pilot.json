@@ -557,7 +557,33 @@
     },
     "two_node_speedup": 1.2040061078116913,
     "throughput_change_percent": 20.400610781169128,
-    "identical_response_token_counts": true
+    "identical_response_token_counts": true,
+    "independent_complete_raw_archive_audit": {
+      "scalerlt-scaling-2n3g-v4": {
+        "passed": true,
+        "seed": 44,
+        "scope": "independent complete archive bytes and all payload hashes; local scientific audit remains separate",
+        "archive_sha256": "4792c093ea55b069a500de36b82f8e0093544d79c2cbff98fa368cd988d25faf",
+        "archive_bytes": 9039991340,
+        "payloads_verified": 52,
+        "actual_transport_return": 0,
+        "full_archive_preserved_on_GPFS": true,
+        "no_reclaim": true,
+        "finished": 1791742324.0163002
+      },
+      "scalerlt-scaling-1n2g-shared-v7": {
+        "passed": true,
+        "seed": 44,
+        "scope": "independent complete archive bytes and all payload hashes; local scientific audit remains separate",
+        "archive_sha256": "a5591f29da3349529ad2aea8f1b0b2f26659e6287b9f333cfb89bc24824d11ef",
+        "archive_bytes": 9039992844,
+        "payloads_verified": 52,
+        "actual_transport_return": 0,
+        "full_archive_preserved_on_GPFS": true,
+        "no_reclaim": true,
+        "finished": 1791742146.6200318
+      }
+    }
   },
   "seed45": {
     "runs": {
@@ -727,6 +753,31 @@
       "1node2GPU": 0,
       "2nodes3GPU": 0
     },
-    "independent_complete_raw_archive_audit": "pending; complete local archive production is in progress"
+    "independent_complete_raw_archive_audit": {
+      "scalerlt-scaling-2n3g-v5": {
+        "passed": true,
+        "seed": 45,
+        "scope": "independent complete archive bytes and all payload hashes; local scientific audit remains separate",
+        "archive_sha256": "ce6b1e6a8f07eb694e421ac65a571d80e143e0217ba8cb22ae6ed2ec43946761",
+        "archive_bytes": 9042951749,
+        "payloads_verified": 52,
+        "actual_transport_return": 0,
+        "full_archive_preserved_on_GPFS": true,
+        "no_reclaim": true,
+        "finished": 1791742677.3286564
+      },
+      "scalerlt-scaling-1n2g-shared-v8": {
+        "passed": true,
+        "seed": 45,
+        "scope": "independent complete archive bytes and all payload hashes; local scientific audit remains separate",
+        "archive_sha256": "06a599b1a637077964a2b55bc007f87df93fd2c58bf2e7c499c7d20ac8d12df9",
+        "archive_bytes": 9042947404,
+        "payloads_verified": 52,
+        "actual_transport_return": 0,
+        "full_archive_preserved_on_GPFS": true,
+        "no_reclaim": true,
+        "finished": 1791742496.003958
+      }
+    }
   }
 }
