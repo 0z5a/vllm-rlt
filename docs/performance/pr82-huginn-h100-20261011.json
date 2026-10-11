@@ -1,0 +1,3163 @@
+{
+  "production_head": "3a40fdf154981392d170bd8958675119051df2f1",
+  "baseline_head": "681b695874c745a5494916aa0353109637da4db0",
+  "model_repo": "tomg-group-umd/huginn-0125",
+  "model_revision": "bb6621b65e90b6a4b9b29ef88dc83866d450470c",
+  "hardware": {
+    "gpu": "NVIDIA H100",
+    "total_memory_bytes": 67952836608
+  },
+  "runtime": {
+    "numpy": "2.4.6",
+    "safetensors": "0.8.0",
+    "tokenizers": "0.21.4",
+    "torch": "2.12.1+cu130",
+    "transformers": "4.54.1",
+    "triton": "3.7.1"
+  },
+  "fixed_workload": {
+    "loops": 32,
+    "dtype": "bfloat16",
+    "batches": [
+      1,
+      4
+    ],
+    "generated_tokens_per_request": 16,
+    "sampling": "greedy, ignore_eos",
+    "seeds": "warmups 123..127; measured 123",
+    "kv_layout": "last_exited",
+    "blocks": 1024,
+    "block_size": 16,
+    "max_num_seqs": 4,
+    "max_num_batched_tokens": 32,
+    "prefill_chunk_size": 8,
+    "attention": "triton"
+  },
+  "combined_optimization_comparison": {
+    "passed": true,
+    "head": "3a40fdf154981392d170bd8958675119051df2f1",
+    "base_head": "681b695874c745a5494916aa0353109637da4db0",
+    "full_tensor_files": 1080,
+    "bitwise_equal_comparisons": 540,
+    "raw_trials": 80,
+    "measured_trials": 40,
+    "model_parameters_equal_before_measurement": true,
+    "batches": {
+      "1": {
+        "pairs": 10,
+        "mean_seconds": {
+          "baseline": 1.5446618522051723,
+          "candidate": 1.4387728034926113
+        },
+        "tokens_per_second": {
+          "baseline": 10.358254123488752,
+          "candidate": 11.120588296609519
+        },
+        "speedup_ratio": 1.0735967822407513,
+        "throughput_increase_percent": 7.359678224075128,
+        "latency_reduction_percent": 6.855160471619914,
+        "paired_speedup": {
+          "n": 10,
+          "mean": 1.0735968626439285,
+          "median": 1.0734473722903641,
+          "min": 1.0727065685761397,
+          "max": 1.0747255307614432,
+          "p95_descriptive": 1.074502118821249,
+          "cv": 0.0005620455605751511
+        },
+        "per_start_speedup": {
+          "0": 1.0734918280982135,
+          "1": 1.073701857927215
+        },
+        "peak_allocated_bytes": {
+          "baseline": 19987778560,
+          "candidate": 19987778560
+        },
+        "raw_pairs": [
+          {
+            "start": 0,
+            "trial": 0,
+            "seconds": {
+              "baseline": 1.5458297539735213,
+              "candidate": 1.4392567800241522
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 0,
+            "trial": 1,
+            "seconds": {
+              "baseline": 1.5447124759666622,
+              "candidate": 1.4393563339835964
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 0,
+            "trial": 2,
+            "seconds": {
+              "baseline": 1.546625170041807,
+              "candidate": 1.4397536130272783
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 0,
+            "trial": 3,
+            "seconds": {
+              "baseline": 1.5447595319710672,
+              "candidate": 1.4400578659842722
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 0,
+            "trial": 4,
+            "seconds": {
+              "baseline": 1.5450963330222294,
+              "candidate": 1.4396025020396337
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 0,
+            "seconds": {
+              "baseline": 1.545563566032797,
+              "candidate": 1.4381007259944454
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 1,
+            "seconds": {
+              "baseline": 1.5440451379981823,
+              "candidate": 1.4379279159475118
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 2,
+            "seconds": {
+              "baseline": 1.5433846110245213,
+              "candidate": 1.4377149669453502
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 3,
+            "seconds": {
+              "baseline": 1.5432025620248169,
+              "candidate": 1.4376818629680201
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 4,
+            "seconds": {
+              "baseline": 1.5433993799961172,
+              "candidate": 1.4382754680118524
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      "4": {
+        "pairs": 10,
+        "mean_seconds": {
+          "baseline": 1.973898034892045,
+          "candidate": 1.8272741865017452
+        },
+        "tokens_per_second": {
+          "baseline": 32.423154017426356,
+          "candidate": 35.024847651641075
+        },
+        "speedup_ratio": 1.0802418429994933,
+        "throughput_increase_percent": 8.024184299949333,
+        "latency_reduction_percent": 7.428136904666349,
+        "paired_speedup": {
+          "n": 10,
+          "mean": 1.0802423912053354,
+          "median": 1.080398186907443,
+          "min": 1.078440337948394,
+          "max": 1.082574182225252,
+          "p95_descriptive": 1.0818877716832305,
+          "cv": 0.0011440566971531079
+        },
+        "per_start_speedup": {
+          "0": 1.0812574515502105,
+          "1": 1.0792272636983307
+        },
+        "peak_allocated_bytes": {
+          "baseline": 19996070400,
+          "candidate": 19996070400
+        },
+        "raw_pairs": [
+          {
+            "start": 0,
+            "trial": 0,
+            "seconds": {
+              "baseline": 1.9743770159548149,
+              "candidate": 1.8265429269522429
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 0,
+            "trial": 1,
+            "seconds": {
+              "baseline": 1.9775768459658138,
+              "candidate": 1.8267356440192088
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 0,
+            "trial": 2,
+            "seconds": {
+              "baseline": 1.9737525889649987,
+              "candidate": 1.8261177300009876
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 0,
+            "trial": 3,
+            "seconds": {
+              "baseline": 1.9739402399864048,
+              "candidate": 1.8262326270341873
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 0,
+            "trial": 4,
+            "seconds": {
+              "baseline": 1.9741141950362362,
+              "candidate": 1.8261101150419563
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 0,
+            "seconds": {
+              "baseline": 1.9729603449814022,
+              "candidate": 1.8280830190051347
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 1,
+            "seconds": {
+              "baseline": 1.9735500890528783,
+              "candidate": 1.8274456699728034
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 2,
+            "seconds": {
+              "baseline": 1.9726962490240112,
+              "candidate": 1.8292122239945456
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 3,
+            "seconds": {
+              "baseline": 1.9736587569932453,
+              "candidate": 1.82833828299772
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          },
+          {
+            "start": 1,
+            "trial": 4,
+            "seconds": {
+              "baseline": 1.9723540229606442,
+              "candidate": 1.8279236259986646
+            },
+            "graph_delta": {
+              "baseline": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              "candidate": {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "scope": "combined Huginn optimizations with core+coda enabled in BOTH arms; not coda-only ablation"
+  },
+  "coda_only_ablation": {
+    "baseline": {
+      "1": {
+        "ratio_of_mean_seconds": 1.0034213050321474,
+        "throughput_increase_percent": 0.3421305032147437,
+        "paired_ratios": {
+          "n": 10,
+          "mean": 1.0034215944856402,
+          "median": 1.003506008175421,
+          "min": 1.0022570010161151,
+          "max": 1.0040873052793826,
+          "p95_descriptive": 1.0039801317237025,
+          "cv": 0.0005095378130898052
+        },
+        "arms": {
+          "core_only": {
+            "seconds": {
+              "n": 10,
+              "mean": 1.548568198789144,
+              "median": 1.548800290474901,
+              "min": 1.5466389519860968,
+              "max": 1.5503702589776367,
+              "p95_descriptive": 1.5503616419358877,
+              "cv": 0.0011296134826498147
+            },
+            "tokens_per_second": {
+              "n": 10,
+              "mean": 10.33213673662641,
+              "median": 10.330581820660456,
+              "min": 10.320115409431878,
+              "max": 10.345012958230363,
+              "p95_descriptive": 10.344918981479456,
+              "cv": 0.0011296797136071055
+            },
+            "requests_per_second": {
+              "n": 10,
+              "mean": 0.6457585460391506,
+              "median": 0.6456613637912785,
+              "min": 0.6450072130894924,
+              "max": 0.6465633098893977,
+              "p95_descriptive": 0.646557436342466,
+              "cv": 0.0011296797136071055
+            },
+            "peak_allocated_bytes": {
+              "n": 10,
+              "mean": 12814654976,
+              "median": 12814654976.0,
+              "min": 12814654976,
+              "max": 12814654976,
+              "p95_descriptive": 12814654976.0,
+              "cv": 0.0
+            },
+            "peak_reserved_bytes": {
+              "n": 10,
+              "mean": 13176406016,
+              "median": 13176406016.0,
+              "min": 13176406016,
+              "max": 13176406016,
+              "p95_descriptive": 13176406016.0,
+              "cv": 0.0
+            },
+            "ttft_seconds": {
+              "n": 10,
+              "mean": 0.10433286878978834,
+              "median": 0.10427960648667067,
+              "min": 0.10409315396100283,
+              "max": 0.10474027198506519,
+              "p95_descriptive": 0.10466987355903257,
+              "cv": 0.0023263810416808317
+            },
+            "e2e_seconds": {
+              "n": 10,
+              "mean": 1.548529665195383,
+              "median": 1.5487660259823315,
+              "min": 1.5466039379825816,
+              "max": 1.5503352649975568,
+              "p95_descriptive": 1.5503268549364293,
+              "cv": 0.0011274596629949267
+            },
+            "tpot_seconds": {
+              "n": 10,
+              "mean": 0.09627978642703966,
+              "median": 0.09629651880046974,
+              "min": 0.09616555779939517,
+              "max": 0.09638859713450074,
+              "p95_descriptive": 0.09638449808349833,
+              "cv": 0.001053280572903632
+            },
+            "graph_deltas": [
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              }
+            ]
+          },
+          "core_coda": {
+            "seconds": {
+              "n": 10,
+              "mean": 1.5432881393120623,
+              "median": 1.5431129355274606,
+              "min": 1.5413189540267922,
+              "max": 1.5468530890066177,
+              "p95_descriptive": 1.5461634819890606,
+              "cv": 0.0012876272512346825
+            },
+            "tokens_per_second": {
+              "n": 10,
+              "mean": 10.367489683040533,
+              "median": 10.368656905016401,
+              "min": 10.343580856974032,
+              "max": 10.380719680504155,
+              "p95_descriptive": 10.38048476509097,
+              "cv": 0.001286941445405826
+            },
+            "requests_per_second": {
+              "n": 10,
+              "mean": 0.6479681051900333,
+              "median": 0.6480410565635251,
+              "min": 0.646473803560877,
+              "max": 0.6487949800315097,
+              "p95_descriptive": 0.6487802978181856,
+              "cv": 0.001286941445405826
+            },
+            "peak_allocated_bytes": {
+              "n": 10,
+              "mean": 12814654976,
+              "median": 12814654976.0,
+              "min": 12814654976,
+              "max": 12814654976,
+              "p95_descriptive": 12814654976.0,
+              "cv": 0.0
+            },
+            "peak_reserved_bytes": {
+              "n": 10,
+              "mean": 13176406016,
+              "median": 13176406016.0,
+              "min": 13176406016,
+              "max": 13176406016,
+              "p95_descriptive": 13176406016.0,
+              "cv": 0.0
+            },
+            "ttft_seconds": {
+              "n": 10,
+              "mean": 0.10421999350655824,
+              "median": 0.10419903750880621,
+              "min": 0.10397170099895447,
+              "max": 0.1045063940109685,
+              "p95_descriptive": 0.1044880303874379,
+              "cv": 0.0022888569359737765
+            },
+            "e2e_seconds": {
+              "n": 10,
+              "mean": 1.5432511019113009,
+              "median": 1.5430514575273264,
+              "min": 1.5412871870212257,
+              "max": 1.5468208930105902,
+              "p95_descriptive": 1.5461325712007237,
+              "cv": 0.0012858879182666412
+            },
+            "tpot_seconds": {
+              "n": 10,
+              "mean": 0.09593540722698284,
+              "median": 0.0959248045013131,
+              "min": 0.09582076939987019,
+              "max": 0.0961571030667983,
+              "p95_descriptive": 0.09610995353606995,
+              "cv": 0.0012248389472588705
+            },
+            "graph_deltas": [
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      "4": {
+        "ratio_of_mean_seconds": 1.0084511242962786,
+        "throughput_increase_percent": 0.8451124296278589,
+        "paired_ratios": {
+          "n": 10,
+          "mean": 1.0084517201681877,
+          "median": 1.0082923082333632,
+          "min": 1.005326564435493,
+          "max": 1.013079351613554,
+          "p95_descriptive": 1.0111868780735451,
+          "cv": 0.001894940424761513
+        },
+        "arms": {
+          "core_only": {
+            "seconds": {
+              "n": 10,
+              "mean": 1.9887877587927505,
+              "median": 1.988940093491692,
+              "min": 1.9851008219993673,
+              "max": 1.99753607501043,
+              "p95_descriptive": 1.9942238081566757,
+              "cv": 0.001830466022934169
+            },
+            "tokens_per_second": {
+              "n": 10,
+              "mean": 32.180504062521166,
+              "median": 32.17794254303282,
+              "min": 32.039471427150986,
+              "max": 32.24017606095193,
+              "p95_descriptive": 32.23858910246647,
+              "cv": 0.0018262579476993554
+            },
+            "requests_per_second": {
+              "n": 10,
+              "mean": 2.011281503907573,
+              "median": 2.0111214089395513,
+              "min": 2.0024669641969366,
+              "max": 2.0150110038094957,
+              "p95_descriptive": 2.0149118189041544,
+              "cv": 0.0018262579476993554
+            },
+            "peak_allocated_bytes": {
+              "n": 10,
+              "mean": 12822637056,
+              "median": 12822637056.0,
+              "min": 12822637056,
+              "max": 12822637056,
+              "p95_descriptive": 12822637056.0,
+              "cv": 0.0
+            },
+            "peak_reserved_bytes": {
+              "n": 10,
+              "mean": 13182697472,
+              "median": 13182697472.0,
+              "min": 13182697472,
+              "max": 13182697472,
+              "p95_descriptive": 13182697472.0,
+              "cv": 0.0
+            },
+            "ttft_seconds": {
+              "n": 40,
+              "mean": 0.22876989564829273,
+              "median": 0.23027448653010651,
+              "min": 0.11408109398325905,
+              "max": 0.34083375899353996,
+              "p95_descriptive": 0.3406285342964111,
+              "cv": 0.3535192201214137
+            },
+            "e2e_seconds": {
+              "n": 40,
+              "mean": 1.983256790023006,
+              "median": 1.9835448819794692,
+              "min": 1.9740665280260146,
+              "max": 1.9974968889728189,
+              "p95_descriptive": 1.9918597199721262,
+              "cv": 0.002647568234762182
+            },
+            "tpot_seconds": {
+              "n": 40,
+              "mean": 0.11696579295831422,
+              "median": 0.11685459479922428,
+              "min": 0.10969414520077407,
+              "max": 0.12479075586500889,
+              "p95_descriptive": 0.12429308073362336,
+              "cv": 0.04387526603490343
+            },
+            "graph_deltas": [
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              }
+            ]
+          },
+          "core_coda": {
+            "seconds": {
+              "n": 10,
+              "mean": 1.972121118096402,
+              "median": 1.9725786549970508,
+              "min": 1.9691677410155535,
+              "max": 1.9747529810410924,
+              "p95_descriptive": 1.9746765246731228,
+              "cv": 0.001035562509290723
+            },
+            "tokens_per_second": {
+              "n": 10,
+              "mean": 32.45239919596637,
+              "median": 32.444840586372095,
+              "min": 32.40911679305789,
+              "max": 32.501040245049644,
+              "p95_descriptive": 32.50018040782728,
+              "cv": 0.0010358571304370607
+            },
+            "requests_per_second": {
+              "n": 10,
+              "mean": 2.0282749497478982,
+              "median": 2.027802536648256,
+              "min": 2.025569799566118,
+              "max": 2.0313150153156028,
+              "p95_descriptive": 2.031261275489205,
+              "cv": 0.0010358571304370607
+            },
+            "peak_allocated_bytes": {
+              "n": 10,
+              "mean": 12822637056,
+              "median": 12822637056.0,
+              "min": 12822637056,
+              "max": 12822637056,
+              "p95_descriptive": 12822637056.0,
+              "cv": 0.0
+            },
+            "peak_reserved_bytes": {
+              "n": 10,
+              "mean": 13182697472,
+              "median": 13182697472.0,
+              "min": 13182697472,
+              "max": 13182697472,
+              "p95_descriptive": 13182697472.0,
+              "cv": 0.0
+            },
+            "ttft_seconds": {
+              "n": 40,
+              "mean": 0.22870523962192238,
+              "median": 0.23042521349270828,
+              "min": 0.1139795919880271,
+              "max": 0.3407274059718475,
+              "p95_descriptive": 0.34029490385437383,
+              "cv": 0.35346234891865863
+            },
+            "e2e_seconds": {
+              "n": 40,
+              "mean": 1.967068697376817,
+              "median": 1.9675894760293886,
+              "min": 1.9590312269865535,
+              "max": 1.9747246759943664,
+              "p95_descriptive": 1.973579834148404,
+              "cv": 0.00209701710077368
+            },
+            "tpot_seconds": {
+              "n": 40,
+              "mean": 0.11589089718365964,
+              "median": 0.11580788736852507,
+              "min": 0.10865781913356234,
+              "max": 0.12336330740169311,
+              "p95_descriptive": 0.12328690701261318,
+              "cv": 0.0444299192858156
+            },
+            "graph_deltas": [
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "candidate": {
+      "1": {
+        "ratio_of_mean_seconds": 1.001679841042419,
+        "throughput_increase_percent": 0.1679841042419028,
+        "paired_ratios": {
+          "n": 10,
+          "mean": 1.0016799159952088,
+          "median": 1.0016200350218383,
+          "min": 1.0013809381834127,
+          "max": 1.0020936660054385,
+          "p95_descriptive": 1.0020805878041894,
+          "cv": 0.00027208246778990755
+        },
+        "arms": {
+          "core_only": {
+            "seconds": {
+              "n": 10,
+              "mean": 1.4403945542988368,
+              "median": 1.4404986005101819,
+              "min": 1.4397202439722605,
+              "max": 1.4408543879981153,
+              "p95_descriptive": 1.44083646494837,
+              "cv": 0.00027400972458660586
+            },
+            "tokens_per_second": {
+              "n": 10,
+              "mean": 11.108068295275324,
+              "median": 11.10726525536839,
+              "min": 11.104522520301288,
+              "max": 11.113270141882007,
+              "p95_descriptive": 11.112628349610386,
+              "cv": 0.0002740408845721178
+            },
+            "requests_per_second": {
+              "n": 10,
+              "mean": 0.6942542684547077,
+              "median": 0.6942040784605243,
+              "min": 0.6940326575188305,
+              "max": 0.6945793838676254,
+              "p95_descriptive": 0.6945392718506491,
+              "cv": 0.0002740408845721178
+            },
+            "peak_allocated_bytes": {
+              "n": 10,
+              "mean": 12814654976,
+              "median": 12814654976.0,
+              "min": 12814654976,
+              "max": 12814654976,
+              "p95_descriptive": 12814654976.0,
+              "cv": 0.0
+            },
+            "peak_reserved_bytes": {
+              "n": 10,
+              "mean": 13176406016,
+              "median": 13176406016.0,
+              "min": 13176406016,
+              "max": 13176406016,
+              "p95_descriptive": 13176406016.0,
+              "cv": 0.0
+            },
+            "ttft_seconds": {
+              "n": 10,
+              "mean": 0.09952053161105141,
+              "median": 0.09952381200855598,
+              "min": 0.099238591035828,
+              "max": 0.09983333002310246,
+              "p95_descriptive": 0.09980847021506634,
+              "cv": 0.0023877108330355385
+            },
+            "e2e_seconds": {
+              "n": 10,
+              "mean": 1.440359835093841,
+              "median": 1.4404627294861712,
+              "min": 1.439684833982028,
+              "max": 1.4408204110222869,
+              "p95_descriptive": 1.440802682354115,
+              "cv": 0.0002740731603176597
+            },
+            "tpot_seconds": {
+              "n": 10,
+              "mean": 0.08938928689885263,
+              "median": 0.08939001023342522,
+              "min": 0.08935805526562035,
+              "max": 0.08941158313148966,
+              "p95_descriptive": 0.08940950440204082,
+              "cv": 0.0001805169542521328
+            },
+            "graph_deltas": [
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              }
+            ]
+          },
+          "core_coda": {
+            "seconds": {
+              "n": 10,
+              "mean": 1.4379789781931323,
+              "median": 1.4379718139825854,
+              "min": 1.437104092037771,
+              "max": 1.438827626989223,
+              "p95_descriptive": 1.4386866797867697,
+              "cv": 0.000409073836596817
+            },
+            "tokens_per_second": {
+              "n": 10,
+              "mean": 11.126729008190122,
+              "median": 11.126783028448951,
+              "min": 11.120164570012,
+              "max": 11.133501107294514,
+              "p95_descriptive": 11.133092380300276,
+              "cv": 0.00040909296225635327
+            },
+            "requests_per_second": {
+              "n": 10,
+              "mean": 0.6954205630118826,
+              "median": 0.6954239392780595,
+              "min": 0.69501028562575,
+              "max": 0.6958438192059071,
+              "p95_descriptive": 0.6958182737687673,
+              "cv": 0.00040909296225635327
+            },
+            "peak_allocated_bytes": {
+              "n": 10,
+              "mean": 12814654976,
+              "median": 12814654976.0,
+              "min": 12814654976,
+              "max": 12814654976,
+              "p95_descriptive": 12814654976.0,
+              "cv": 0.0
+            },
+            "peak_reserved_bytes": {
+              "n": 10,
+              "mean": 13176406016,
+              "median": 13176406016.0,
+              "min": 13176406016,
+              "max": 13176406016,
+              "p95_descriptive": 13176406016.0,
+              "cv": 0.0
+            },
+            "ttft_seconds": {
+              "n": 10,
+              "mean": 0.09946833568392321,
+              "median": 0.09956626550410874,
+              "min": 0.09908952796831727,
+              "max": 0.09982783999294043,
+              "p95_descriptive": 0.09976510144770145,
+              "cv": 0.0026457616536992696
+            },
+            "e2e_seconds": {
+              "n": 10,
+              "mean": 1.4379398775927257,
+              "median": 1.437940448493464,
+              "min": 1.4370644660084508,
+              "max": 1.438796636997722,
+              "p95_descriptive": 1.4386561955907382,
+              "cv": 0.000417442579080779
+            },
+            "tpot_seconds": {
+              "n": 10,
+              "mean": 0.0892314361272535,
+              "median": 0.08922918663398983,
+              "min": 0.08918899946535627,
+              "max": 0.08927486853596443,
+              "p95_descriptive": 0.08926626369512329,
+              "cv": 0.00029998610290069943
+            },
+            "graph_deltas": [
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 480,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 16,
+                  "fallbacks": 0
+                }
+              }
+            ]
+          }
+        }
+      },
+      "4": {
+        "ratio_of_mean_seconds": 1.0016176796457088,
+        "throughput_increase_percent": 0.16176796457088027,
+        "paired_ratios": {
+          "n": 10,
+          "mean": 1.001617892514035,
+          "median": 1.0016166141346767,
+          "min": 1.0007289459400959,
+          "max": 1.0022804007788586,
+          "p95_descriptive": 1.002214212208912,
+          "cv": 0.0004508571879508511
+        },
+        "arms": {
+          "core_only": {
+            "seconds": {
+              "n": 10,
+              "mean": 1.8350255518918857,
+              "median": 1.8349340204731561,
+              "min": 1.8343414400005713,
+              "max": 1.8359281580196694,
+              "p95_descriptive": 1.8358324272558093,
+              "cv": 0.00027609043882766913
+            },
+            "tokens_per_second": {
+              "n": 10,
+              "mean": 34.87690093695372,
+              "median": 34.87863829798077,
+              "min": 34.85975184836962,
+              "max": 34.8899057745651,
+              "p95_descriptive": 34.88943815779854,
+              "cv": 0.0002760588977327059
+            },
+            "requests_per_second": {
+              "n": 10,
+              "mean": 2.1798063085596073,
+              "median": 2.179914893623798,
+              "min": 2.178734490523101,
+              "max": 2.180619110910319,
+              "p95_descriptive": 2.1805898848624086,
+              "cv": 0.0002760588977327059
+            },
+            "peak_allocated_bytes": {
+              "n": 10,
+              "mean": 12822637056,
+              "median": 12822637056.0,
+              "min": 12822637056,
+              "max": 12822637056,
+              "p95_descriptive": 12822637056.0,
+              "cv": 0.0
+            },
+            "peak_reserved_bytes": {
+              "n": 10,
+              "mean": 13182697472,
+              "median": 13182697472.0,
+              "min": 13182697472,
+              "max": 13182697472,
+              "p95_descriptive": 13182697472.0,
+              "cv": 0.0
+            },
+            "ttft_seconds": {
+              "n": 40,
+              "mean": 0.2187820959938108,
+              "median": 0.22044785547768697,
+              "min": 0.10897179797757417,
+              "max": 0.32588553498499095,
+              "p95_descriptive": 0.32572566602320874,
+              "cv": 0.3530191518088486
+            },
+            "e2e_seconds": {
+              "n": 40,
+              "mean": 1.8300940708766575,
+              "median": 1.8300693554920144,
+              "min": 1.8244116040295921,
+              "max": 1.8358903450425714,
+              "p95_descriptive": 1.8352246744121659,
+              "cv": 0.001955977817785791
+            },
+            "tpot_seconds": {
+              "n": 40,
+              "mean": 0.10742079832552312,
+              "median": 0.10732599726761691,
+              "min": 0.100601536136431,
+              "max": 0.11442121339884276,
+              "p95_descriptive": 0.11440358989348169,
+              "cv": 0.04572979689255108
+            },
+            "graph_deltas": [
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 0,
+                  "fallbacks": 0
+                }
+              }
+            ]
+          },
+          "core_coda": {
+            "seconds": {
+              "n": 10,
+              "mean": 1.8320618627069052,
+              "median": 1.831912836030824,
+              "min": 1.830683020001743,
+              "max": 1.8336036740220152,
+              "p95_descriptive": 1.8336026759207016,
+              "cv": 0.0005875647635540086
+            },
+            "tokens_per_second": {
+              "n": 10,
+              "mean": 34.93332904609376,
+              "median": 34.936160550293,
+              "min": 34.90394402385539,
+              "max": 34.95962943925654,
+              "p95_descriptive": 34.957912300108596,
+              "cv": 0.0005874865236813525
+            },
+            "requests_per_second": {
+              "n": 10,
+              "mean": 2.18333306538086,
+              "median": 2.1835100343933127,
+              "min": 2.1814965014909617,
+              "max": 2.1849768399535336,
+              "p95_descriptive": 2.1848695187567873,
+              "cv": 0.0005874865236813525
+            },
+            "peak_allocated_bytes": {
+              "n": 10,
+              "mean": 12822637056,
+              "median": 12822637056.0,
+              "min": 12822637056,
+              "max": 12822637056,
+              "p95_descriptive": 12822637056.0,
+              "cv": 0.0
+            },
+            "peak_reserved_bytes": {
+              "n": 10,
+              "mean": 13182697472,
+              "median": 13182697472.0,
+              "min": 13182697472,
+              "max": 13182697472,
+              "p95_descriptive": 13182697472.0,
+              "cv": 0.0
+            },
+            "ttft_seconds": {
+              "n": 40,
+              "mean": 0.21865095000102883,
+              "median": 0.22024507002788596,
+              "min": 0.10891903901938349,
+              "max": 0.32559748605126515,
+              "p95_descriptive": 0.3255728586926125,
+              "cv": 0.3530391142589112
+            },
+            "e2e_seconds": {
+              "n": 40,
+              "mean": 1.8272800829261542,
+              "median": 1.8271927665336989,
+              "min": 1.8210276800091378,
+              "max": 1.8335735170403495,
+              "p95_descriptive": 1.8327970393613213,
+              "cv": 0.001969127416469922
+            },
+            "tpot_seconds": {
+              "n": 40,
+              "mean": 0.10724194219500835,
+              "median": 0.10714150346660366,
+              "min": 0.10043801240002116,
+              "max": 0.11429103939638784,
+              "p95_descriptive": 0.11424137784886018,
+              "cv": 0.045845311760317385
+            },
+            "graph_deltas": [
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              },
+              {
+                "core": {
+                  "captures": 0,
+                  "replays": 482,
+                  "fallbacks": 0
+                },
+                "coda": {
+                  "captures": 0,
+                  "replays": 48,
+                  "fallbacks": 0
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "profiles_diagnostic_only": {
+    "pr82-v1-ops": {
+      "core": [
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.393,
+          "gpu_span_us": 2745.4359130859375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.989,
+          "gpu_span_us": 2744.6689453125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.988,
+          "gpu_span_us": 2744.8599853515625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2643.869,
+          "gpu_span_us": 2749.27685546875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.93,
+          "gpu_span_us": 2743.1639404296875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.748,
+          "gpu_span_us": 2746.3961181640625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.453,
+          "gpu_span_us": 2742.907958984375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2638.332,
+          "gpu_span_us": 2743.7088623046875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2641.437,
+          "gpu_span_us": 2745.8519287109375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2643.517,
+          "gpu_span_us": 2746.2049560546875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.965,
+          "gpu_span_us": 2743.5478515625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2641.98,
+          "gpu_span_us": 2746.81201171875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.84,
+          "gpu_span_us": 2745.14794921875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.908,
+          "gpu_span_us": 2748.125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2638.333,
+          "gpu_span_us": 2743.2919921875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2637.565,
+          "gpu_span_us": 2742.427978515625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2645.8179999999998,
+          "gpu_span_us": 2750.780029296875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2638.811,
+          "gpu_span_us": 2742.9410400390625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.4120000000003,
+          "gpu_span_us": 2744.4439697265625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2643.164,
+          "gpu_span_us": 2747.7078857421875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.195,
+          "gpu_span_us": 2743.613037109375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2641.755,
+          "gpu_span_us": 2746.587890625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2637.402,
+          "gpu_span_us": 2740.700927734375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.455,
+          "gpu_span_us": 2746.843994140625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.035,
+          "gpu_span_us": 2741.9478759765625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2644.417,
+          "gpu_span_us": 2748.18798828125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.014,
+          "gpu_span_us": 2745.595947265625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2645.081,
+          "gpu_span_us": 2748.9560546875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2638.334,
+          "gpu_span_us": 2741.98095703125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.348,
+          "gpu_span_us": 2744.0599365234375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2637.438,
+          "gpu_span_us": 2741.5640869140625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2643.262,
+          "gpu_span_us": 2746.26806640625
+        }
+      ],
+      "coda": {
+        "kernels": 132,
+        "gpu_sum_us": 1776.382,
+        "gpu_span_us": 1833.2139892578125
+      }
+    },
+    "pr82-v1-full": {
+      "core": [
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.589,
+          "gpu_span_us": 2746.4599609375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2643.067,
+          "gpu_span_us": 2746.1090087890625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2638.778,
+          "gpu_span_us": 2743.323974609375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2645.408,
+          "gpu_span_us": 2747.77294921875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.639,
+          "gpu_span_us": 2744.1878662109375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.715,
+          "gpu_span_us": 2747.6439208984375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2641.567,
+          "gpu_span_us": 2746.1719970703125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.227,
+          "gpu_span_us": 2743.8360595703125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.044,
+          "gpu_span_us": 2745.3079833984375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2643.198,
+          "gpu_span_us": 2747.1319580078125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.455,
+          "gpu_span_us": 2743.7080078125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2635.933,
+          "gpu_span_us": 2739.0040283203125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.608,
+          "gpu_span_us": 2744.700927734375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2643.578,
+          "gpu_span_us": 2746.2679443359375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2636.573,
+          "gpu_span_us": 2741.052001953125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2642.138,
+          "gpu_span_us": 2745.116943359375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2638.556,
+          "gpu_span_us": 2742.6199951171875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2643.773,
+          "gpu_span_us": 2747.740966796875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2636.957,
+          "gpu_span_us": 2740.572998046875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.291,
+          "gpu_span_us": 2742.33203125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.863,
+          "gpu_span_us": 2744.699951171875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2637.917,
+          "gpu_span_us": 2741.97998046875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.708,
+          "gpu_span_us": 2743.1329345703125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2641.659,
+          "gpu_span_us": 2744.283935546875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2635.901,
+          "gpu_span_us": 2739.1650390625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.859,
+          "gpu_span_us": 2744.66796875
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2638.013,
+          "gpu_span_us": 2742.491943359375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.797,
+          "gpu_span_us": 2743.8359375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2638.747,
+          "gpu_span_us": 2742.3331298828125
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2640.408,
+          "gpu_span_us": 2745.0849609375
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2636.954,
+          "gpu_span_us": 2741.595947265625
+        },
+        {
+          "kernels": 234,
+          "gpu_sum_us": 2639.645,
+          "gpu_span_us": 2743.9649658203125
+        }
+      ],
+      "coda": {
+        "kernels": 132,
+        "gpu_sum_us": 1776.766,
+        "gpu_span_us": 1834.2060546875
+      }
+    },
+    "pr82-v2-ops": {
+      "core": [
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.265,
+          "gpu_span_us": 2642.427978515625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2564.857,
+          "gpu_span_us": 2639.803955078125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2563.419,
+          "gpu_span_us": 2640.02783203125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2570.525,
+          "gpu_span_us": 2646.780029296875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.034,
+          "gpu_span_us": 2642.8109130859375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2562.782,
+          "gpu_span_us": 2638.2049560546875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2560.539,
+          "gpu_span_us": 2636.6669921875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2563.229,
+          "gpu_span_us": 2638.93994140625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2563.132,
+          "gpu_span_us": 2639.6439208984375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.38,
+          "gpu_span_us": 2644.3480224609375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2565.021,
+          "gpu_span_us": 2640.891845703125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2569.531,
+          "gpu_span_us": 2644.7958984375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.508,
+          "gpu_span_us": 2644.31591796875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2572.602,
+          "gpu_span_us": 2648.4119873046875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.829,
+          "gpu_span_us": 2644.4759521484375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2564.2889999999998,
+          "gpu_span_us": 2640.31591796875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.994,
+          "gpu_span_us": 2644.31591796875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2571.579,
+          "gpu_span_us": 2646.8759765625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.585,
+          "gpu_span_us": 2641.9788818359375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.134,
+          "gpu_span_us": 2642.6209716796875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2563.197,
+          "gpu_span_us": 2638.7469482421875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2570.62,
+          "gpu_span_us": 2646.6199951171875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2569.724,
+          "gpu_span_us": 2645.7239990234375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.428,
+          "gpu_span_us": 2642.748046875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.774,
+          "gpu_span_us": 2643.803955078125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2561.182,
+          "gpu_span_us": 2637.2440185546875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.933,
+          "gpu_span_us": 2642.8118896484375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.445,
+          "gpu_span_us": 2643.931884765625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.558,
+          "gpu_span_us": 2641.6279296875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2570.332,
+          "gpu_span_us": 2646.2039794921875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.968,
+          "gpu_span_us": 2642.33203125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.688,
+          "gpu_span_us": 2642.6839599609375
+        }
+      ],
+      "coda": {
+        "kernels": 92,
+        "gpu_sum_us": 1736.254,
+        "gpu_span_us": 1776.18896484375
+      }
+    },
+    "pr82-v2-full": {
+      "core": [
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.17,
+          "gpu_span_us": 2642.458984375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.293,
+          "gpu_span_us": 2642.458984375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.677,
+          "gpu_span_us": 2643.3868408203125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.909,
+          "gpu_span_us": 2643.0030517578125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.676,
+          "gpu_span_us": 2642.6829833984375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2571.42,
+          "gpu_span_us": 2648.2178955078125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2569.148,
+          "gpu_span_us": 2645.2750244140625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.217,
+          "gpu_span_us": 2643.6429443359375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2570.14,
+          "gpu_span_us": 2645.658935546875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.842,
+          "gpu_span_us": 2642.7149658203125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2571.929,
+          "gpu_span_us": 2647.4190673828125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2564.281,
+          "gpu_span_us": 2640.2198486328125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2563.609,
+          "gpu_span_us": 2640.0260009765625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.003,
+          "gpu_span_us": 2642.3629150390625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.484,
+          "gpu_span_us": 2643.578857421875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.35,
+          "gpu_span_us": 2645.051025390625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.349,
+          "gpu_span_us": 2644.4749755859375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.941,
+          "gpu_span_us": 2642.554931640625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2569.147,
+          "gpu_span_us": 2645.3389892578125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.187,
+          "gpu_span_us": 2643.5789794921875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2570.8759999999997,
+          "gpu_span_us": 2646.2989501953125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.681,
+          "gpu_span_us": 2641.658935546875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2565.342,
+          "gpu_span_us": 2641.56298828125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.281,
+          "gpu_span_us": 2643.386962890625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2566.523,
+          "gpu_span_us": 2642.8109130859375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2564.156,
+          "gpu_span_us": 2639.802978515625
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.506,
+          "gpu_span_us": 2644.3470458984375
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2568.7309999999998,
+          "gpu_span_us": 2645.178955078125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2571.004,
+          "gpu_span_us": 2646.23486328125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2571.419,
+          "gpu_span_us": 2647.098876953125
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2571.321,
+          "gpu_span_us": 2646.906982421875
+        },
+        {
+          "kernels": 170,
+          "gpu_sum_us": 2567.738,
+          "gpu_span_us": 2643.866943359375
+        }
+      ],
+      "coda": {
+        "kernels": 92,
+        "gpu_sum_us": 1735.612,
+        "gpu_span_us": 1775.8680419921875
+      }
+    }
+  },
+  "unit_tests": {
+    "unit-cuda-graph": {
+      "tests": 14,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "unit-huginn": {
+      "tests": 48,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "unit-fa3-import": {
+      "tests": 14,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    }
+  },
+  "numerical_audits": {
+    "candidate_coda_on_off": {
+      "raw_tensor_files": 1080,
+      "bitwise_equal_pairs": 540
+    },
+    "original_vs_candidate": {
+      "raw_tensor_files": 1080,
+      "bitwise_equal_pairs": 540
+    }
+  },
+  "archive": {
+    "candidate": {
+      "size": 236420262,
+      "sha256": "9ba964069980b11d948f1ab7b45c60f8af5251b8980f538b9fd149307ef8cede"
+    },
+    "baseline": {
+      "size": 120194596,
+      "sha256": "39fc778c5e830963c251790e8b626953e13a2ccd76301e7200d9c4b272395f07"
+    },
+    "candidate_payload_files": 3439,
+    "scope": "complete source, raw tensors, trials, traces, JIT caches and receipts; model/runtime inventories are hashes, not bundled model/runtime binaries"
+  },
+  "actual_returns": {
+    "candidate_audit_parent": 0,
+    "comparison_audit_wait": 0,
+    "backup_wait": 0,
+    "byte_wait": 0
+  },
+  "rejected_candidate": {
+    "change": "fully fuse RMSNorm variance reduction",
+    "full_tensor_comparisons": 540,
+    "nonidentical_tensors": 420,
+    "sampled_tokens_unchanged": true,
+    "included_in_production": false
+  },
+  "scope": "Huginn native synchronous engine on H100. Combined optimization speedup is not the standalone coda graph speedup."
+}
