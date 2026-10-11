@@ -65,6 +65,94 @@ def run_request(e, prompt, request_id="run"):
     return drain_request(e)
 
 
+def test_cpu_prefill_segments_gather_and_scatter_contiguous_spans():
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+
+    e = split_engine(
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=4
+        )
+    )
+    e.add_request("a", [1, 2, 3, 4], SamplingParams(max_tokens=1))
+    e.add_request("b", [5, 6, 7, 8], SamplingParams(max_tokens=1))
+    a, b = (e.scheduler.requests[request_id] for request_id in ("a", "b"))
+    batch = SchedulerOutput(
+        Stage.PREFILLING_PRELUDE,
+        [
+            ScheduledItem(a, 1, 2, chunk_start=0),
+            ScheduledItem(b, 2, 1, chunk_start=1),
+        ],
+    )
+    prepared = e.model_runner.prepare(batch)
+    slots = e.model_runner.state_slots
+    assert prepared.prefill_segments == ((slots["a"], 1, 2, 0), (slots["b"], 1, 1, 2))
+    assert prepared.prefill_segment_indices is None
+
+    hidden = torch.arange(3 * e.model.config.hidden_size, dtype=e.model_runner.prefill_states.dtype)
+    hidden = hidden.view(3, e.model.config.hidden_size)
+    e.model_runner._scatter_prefill(hidden, prepared)
+    assert torch.equal(e.model_runner._gather_prefill(prepared), hidden)
+    e.close()
+
+
+def test_recurrent_prepare_uses_absolute_token_start_for_kv_span():
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+
+    e = split_engine()
+    e.add_request("a", [1, 2, 3, 4], SamplingParams(max_tokens=1))
+    request = e.scheduler.requests["a"]
+    assert e.cache_manager.allocate("a", 4)
+    batch = SchedulerOutput(
+        Stage.PREFILLING_RECURRENT,
+        [ScheduledItem(request, token_start=2, token_count=1, depth=1, chunk_start=1)],
+    )
+    try:
+        prepared = e.model_runner.prepare(batch)
+        assert prepared.kv.position_ids.tolist() == [2]
+        assert prepared.kv.rows[0][2] == 2
+        slot = e.model_runner.state_slots["a"]
+        assert prepared.prefill_segments == ((slot, 1, 1, 0),)
+    finally:
+        e.close()
+
+
+@pytest.mark.gpu
+def test_cuda_prefill_segments_gather_and_scatter_variable_spans():
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+
+    e = LLMEngine(
+        OuroForCausalLM(tiny_ouro_config()).to("cuda", torch.bfloat16),
+        cache_config=CacheConfig(64, 4),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=4
+        ),
+        execution_config=ExecutionConfig(atomic_prefill=False),
+        attention_backend="triton",
+    )
+    try:
+        e.add_request("a", [1, 2, 3, 4], SamplingParams(max_tokens=1))
+        e.add_request("b", [5, 6, 7, 8], SamplingParams(max_tokens=1))
+        a, b = (e.scheduler.requests[request_id] for request_id in ("a", "b"))
+        batch = SchedulerOutput(
+            Stage.PREFILLING_PRELUDE,
+            [
+                ScheduledItem(a, 1, 2, chunk_start=0),
+                ScheduledItem(b, 2, 1, chunk_start=1),
+            ],
+        )
+        prepared = e.model_runner.prepare(batch)
+        assert prepared.prefill_segments == ()
+        assert tuple(prepared.prefill_segment_indices.shape) == (2, 4)
+        hidden = torch.arange(
+            3 * e.model.config.hidden_size, device="cuda", dtype=torch.bfloat16
+        ).view(3, e.model.config.hidden_size)
+        e.model_runner._scatter_prefill(hidden, prepared)
+        torch.cuda.synchronize()
+        assert torch.equal(e.model_runner._gather_prefill(prepared), hidden)
+    finally:
+        e.close()
+
+
 class HeldEvent:
     def __init__(self, before_sync=None):
         self.complete = False

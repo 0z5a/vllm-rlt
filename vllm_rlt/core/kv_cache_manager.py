@@ -59,6 +59,16 @@ class _Allocation:
 
 
 @dataclass(frozen=True)
+class KVSpan:
+    """A logical KV range; ``start`` is an absolute prompt token position."""
+
+    request_id: str
+    depth: int
+    start: int
+    count: int
+
+
+@dataclass(frozen=True)
 class KVSnapshot:
     """What preemption keeps for one request: its pages and its written state.
 
@@ -601,6 +611,50 @@ class KVCacheManager:
             packed_prefill=packed_prefill,
         )[0]
 
+    def _prepare_batch_spans(
+        self,
+        spans: Sequence[KVSpan],
+        *,
+        for_write: bool = True,
+        packed_prefill: bool = False,
+    ) -> _PreparedKVBatch:
+        """Prepare logical KV ranges; an empty sequence produces an empty batch.
+
+        Counts must be positive integers and each range must stay within its
+        allocation. Span errors use the same depth/position errors as row input.
+        """
+        rows = []
+        allocations = {}
+        for span in spans:
+            request_id, depth, start, count = (
+                span.request_id,
+                span.depth,
+                span.start,
+                span.count,
+            )
+            if not isinstance(count, Integral) or isinstance(count, bool) or count <= 0:
+                raise ValueError("span token counts must be positive integers")
+            allocation = self._get_allocation(request_id)
+            self._validate_depth(depth)
+            self._validate_position(allocation, start)
+            self._validate_position(allocation, start + count - 1)
+            allocations.setdefault(request_id, allocation)
+            rows.extend(
+                (allocation, int(depth), position) for position in range(start, start + count)
+            )
+        return self._prepare_row_sets(
+            (tuple(rows),),
+            tuple(allocations.items()),
+            for_write=for_write,
+            packed_prefill=packed_prefill,
+        )[0]
+
+    def _validate_packed_prefill(self, packed_prefill: bool) -> None:
+        if packed_prefill and (
+            self.layout != "last_exited" or not self.attention_capabilities.packed_prefill
+        ):
+            raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
+
     def _prepare_batches(
         self,
         request_ids: Sequence[str],
@@ -620,10 +674,6 @@ class KVCacheManager:
         """
         if not depth_sets:
             raise ValueError("at least one depth assignment is required")
-        if packed_prefill and (
-            self.layout != "last_exited" or not self.attention_capabilities.packed_prefill
-        ):
-            raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
         first = tuple(self._validate_rows(request_ids, depth_sets[0], positions))
         row_sets = [first]
         for depths in depth_sets[1:]:
@@ -637,6 +687,24 @@ class KVCacheManager:
                     for (allocation, _, position), depth in zip(first, depths)
                 )
             )
+        allocations = tuple(dict(zip(request_ids, (a for a, _, _ in first))).items())
+        return self._prepare_row_sets(
+            row_sets,
+            allocations,
+            for_write=for_write,
+            packed_prefill=packed_prefill,
+        )
+
+    def _prepare_row_sets(
+        self,
+        row_sets,
+        allocations,
+        *,
+        for_write: bool,
+        packed_prefill: bool,
+    ):
+        self._validate_packed_prefill(packed_prefill)
+        first = row_sets[0]
         n = len(first)
         position_list = [position for _, _, position in first]
         offsets = [position % self.block_size for position in position_list]
@@ -695,7 +763,6 @@ class KVCacheManager:
             )
         wide = self._stage(wide, torch.long)
         narrow = self._stage(narrow, torch.int32)
-        allocations = tuple(dict(zip(request_ids, (a for a, _, _ in first))).items())
         batches = []
         for rows, block_start, table_start, t, width, lengths_start, packed, max_query in plans:
             batches.append(

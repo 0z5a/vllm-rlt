@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 import torch
 
 from vllm_rlt.config import ExecutionConfig, ExitConfig, SchedulerConfig
+from vllm_rlt.core.kv_cache_manager import KVSpan
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace, prefill_stage_rows
@@ -31,12 +32,12 @@ class PreparedExecution:
     token_tensors: tuple[torch.Tensor, ...] = ()
     kv: object = None
     routing: object = None
-    prefill_slots: tuple[int, ...] = ()
-    prefill_offsets: tuple[int, ...] = ()
+    prefill_segments: tuple[tuple[int, int, int, int], ...] = ()
+    prefill_rows: int = 0
+    prefill_max_rows: int = 0
     hidden: torch.Tensor | None = None
-    prefill_indices: torch.Tensor | None = None
+    prefill_segment_indices: torch.Tensor | None = None
     prefill_token_ids: torch.Tensor | None = None
-    prefill_commits: tuple[tuple[Request, int], ...] = ()
 
 
 @dataclass
@@ -250,67 +251,90 @@ class ModelRunner:
             self.state_slots[rid] = self.free_state_slots.pop()
         return self.state_slots[rid]
 
-    def _prefill_indices(self, batch):
-        slots, offsets = [], []
+    def _prefill_segments(self, batch):
+        segments = []
+        row_start = 0
+        max_rows = 0
         for item in batch.items:
             slot = self._slot(item.request)
-            for position in range(item.token_start, item.token_start + item.token_count):
-                slots.append(slot)
-                offsets.append(position - item.chunk_start)
-        return tuple(slots), tuple(offsets)
+            offset = item.token_start - item.chunk_start
+            segments.append((slot, offset, item.token_count, row_start))
+            row_start += item.token_count
+            max_rows = max(max_rows, item.token_count)
+        return tuple(segments), row_start, max_rows
 
-    def _prefill_index_tensors(self, slots, offsets):
-        rows_per_request = self.prefill_states.shape[1]
-        flat_rows = [slot * rows_per_request + offset for slot, offset in zip(slots, offsets)]
-        host = torch.tensor(flat_rows, dtype=torch.int64, pin_memory=self.device.type == "cuda")
-        return host.to(self.device, non_blocking=self.device.type == "cuda")
+    def _prefill_segment_tensors(self, segments):
+        if self.device.type != "cuda":
+            return None
+        host = torch.tensor(segments, dtype=torch.int64, pin_memory=True)
+        return host.to(self.device, non_blocking=True)
 
     def _gather_prefill(self, prepared):
-        count = len(prepared.prefill_slots)
+        count = prepared.prefill_rows
         hidden = self.prefill_hidden[:count]
         if self.device.type == "cuda":
-            from vllm_rlt.kernels.routing import gather_kernel
+            from vllm_rlt.kernels.routing import gather_segments_kernel
 
             pool = self.prefill_states.view(-1, self.model.config.hidden_size)
-            gather_kernel[(count, math.ceil(pool.shape[1] / 256))](
+            gather_segments_kernel[
+                (
+                    len(prepared.prefill_segment_indices),
+                    math.ceil(prepared.prefill_max_rows / 4),
+                    math.ceil(pool.shape[1] / 256),
+                )
+            ](
                 pool,
-                prepared.prefill_indices,
+                prepared.prefill_segment_indices,
                 hidden,
-                count,
+                self.prefill_states.shape[1],
                 pool.shape[1],
                 pool.stride(0),
                 hidden.stride(0),
+                4,
                 256,
             )
             return hidden
-        for row, (slot, offset) in enumerate(zip(prepared.prefill_slots, prepared.prefill_offsets)):
-            hidden[row].copy_(self.prefill_states[slot, offset])
+        for slot, offset, rows, row_start in prepared.prefill_segments:
+            hidden[row_start : row_start + rows].copy_(
+                self.prefill_states[slot, offset : offset + rows]
+            )
         return hidden
 
     def _scatter_prefill(self, hidden, prepared):
-        count = len(prepared.prefill_slots)
+        count = prepared.prefill_rows
         if hidden.shape[0] != count:
             raise RuntimeError("split-prefill hidden rows do not match the scheduled span")
         if self.device.type == "cuda":
-            from vllm_rlt.kernels.routing import scatter_kernel
+            from vllm_rlt.kernels.routing import scatter_segments_kernel
 
             pool = self.prefill_states.view(-1, self.model.config.hidden_size)
-            scatter_kernel[(count, math.ceil(pool.shape[1] / 256))](
+            scatter_segments_kernel[
+                (
+                    len(prepared.prefill_segment_indices),
+                    math.ceil(prepared.prefill_max_rows / 4),
+                    math.ceil(pool.shape[1] / 256),
+                )
+            ](
                 hidden,
-                prepared.prefill_indices,
+                prepared.prefill_segment_indices,
                 pool,
+                self.prefill_states.shape[1],
                 pool.shape[1],
                 hidden.stride(0),
                 pool.stride(0),
+                4,
                 256,
             )
         else:
-            for row, (slot, offset) in enumerate(
-                zip(prepared.prefill_slots, prepared.prefill_offsets)
-            ):
-                self.prefill_states[slot, offset].copy_(hidden[row])
-        for request, row in prepared.prefill_commits:
-            self._save(request, hidden[row])
+            for slot, offset, rows, row_start in prepared.prefill_segments:
+                self.prefill_states[slot, offset : offset + rows].copy_(
+                    hidden[row_start : row_start + rows]
+                )
+        row = 0
+        for item in prepared.batch.items:
+            if item.completes_prompt:
+                self._save(item.request, hidden[row + item.token_count - 1])
+            row += item.token_count
 
     def _save_batch(self, requests, hidden, routing):
         if routing is None:
@@ -427,14 +451,8 @@ class ModelRunner:
         """Snapshot CPU routing/addresses while the preceding GPU work runs."""
         requests = [i.request for i in batch.items]
         if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
-            slots, offsets = self._prefill_indices(batch)
-            indices = self._prefill_index_tensors(slots, offsets)
-            commits = []
-            row = 0
-            for item in batch.items:
-                if item.completes_prompt:
-                    commits.append((item.request, row + item.token_count - 1))
-                row += item.token_count
+            segments, rows, max_rows = self._prefill_segments(batch)
+            segment_indices = self._prefill_segment_tensors(segments)
             if batch.stage == Stage.PREFILLING_PRELUDE:
                 token_values = tuple(
                     token
@@ -452,30 +470,36 @@ class ModelRunner:
                     (),
                     (),
                     (),
-                    prefill_slots=slots,
-                    prefill_offsets=offsets,
-                    prefill_indices=indices,
+                    prefill_segments=segments if self.device.type != "cuda" else (),
+                    prefill_rows=rows,
+                    prefill_max_rows=max_rows,
+                    prefill_segment_indices=segment_indices,
                     prefill_token_ids=token_device,
-                    prefill_commits=tuple(commits),
                 )
             # Assertion: batch.stage == Stage.PREFILLING_RECURRENT
-            ids, depths, positions = [], [], []
-            for item in batch.items:
-                ids.extend([item.request.request_id] * item.token_count)
-                depths.extend([item.depth] * item.token_count)
-                positions.extend(range(item.token_start, item.token_start + item.token_count))
+            spans = [
+                KVSpan(
+                    request_id=item.request.request_id,
+                    depth=item.depth,
+                    start=item.token_start,
+                    count=item.token_count,
+                )
+                for item in batch.items
+            ]
             packed = self.cache_manager.attention_capabilities.packed_prefill
-            kv = self.cache_manager._prepare_batch(ids, depths, positions, packed_prefill=packed)
+            kv = self.cache_manager._prepare_batch_spans(
+                spans, for_write=True, packed_prefill=packed
+            )
             prepared = PreparedExecution(
                 batch,
-                tuple(depths),
-                tuple(positions),
+                (),
+                (),
                 (),
                 kv=kv,
-                prefill_slots=slots,
-                prefill_offsets=offsets,
-                prefill_indices=indices,
-                prefill_commits=tuple(commits),
+                prefill_segments=segments if self.device.type != "cuda" else (),
+                prefill_rows=rows,
+                prefill_max_rows=max_rows,
+                prefill_segment_indices=segment_indices,
             )
             return replace(prepared, hidden=self._gather_prefill(prepared))
         depths = tuple(r.loops_done for r in requests)
