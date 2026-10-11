@@ -1,0 +1,893 @@
+{
+  "scope": "instrumented native fixed work, separate H10048 variant; same-depth CD overhead and depth-reduction effects distinguished; no quality claim",
+  "arms": {
+    "A": "prefill4/decode4, CD off",
+    "B": "prefill4/decode3, CD off",
+    "C": "prefill4/decode3, CD on"
+  },
+  "mean_definition": "mean of all 10 measured trials across two fresh processes per arm",
+  "controlled_CPU_summary": {
+    "B16C32": {
+      "mean_measured_tokens_per_second": {
+        "A": 178.8389747898088,
+        "B": 209.3061375708328,
+        "C": 206.93825893988543
+      },
+      "C_vs_A_percent": 15.71205839392784,
+      "C_vs_B_percent": -1.13129918617223
+    },
+    "B32C64": {
+      "mean_measured_tokens_per_second": {
+        "A": 246.2145466363516,
+        "B": 277.6836071623977,
+        "C": 274.1573629864094
+      },
+      "C_vs_A_percent": 11.34897053476216,
+      "C_vs_B_percent": -1.2698784101886407
+    }
+  },
+  "runs": {
+    "loopcd-h100-cost-v2": {
+      "passed": true,
+      "name": "loopcd-h100-cost-v2",
+      "archive_sha256": "639b75b455c583e85e8439904a0b125fbb251892353db3ce6befb53f0f9c765e",
+      "payloads_verified": 364,
+      "complete_cost_raw": true,
+      "timing_scope": "CPU contention diagnostic only",
+      "cases": {
+        "B16C32": {
+          "status": "FULL_CASE_RAW_PASS",
+          "case": "B16C32",
+          "processes": 6,
+          "raw_trials": 60,
+          "total_requests": 1920,
+          "total_outputs": 245760,
+          "rows": [
+            {
+              "label": "B16C32-fresh0-A",
+              "arm": "A",
+              "fresh": 0,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 4,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 135.86196640465295,
+              "measured_tps_median": 138.51183607662074,
+              "measured_ttft_ms_mean": 12018.521397594304,
+              "measured_tpot_ms_mean": 85.81964494178393,
+              "measured_latency_ms_mean": 22917.616305200863,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 313.2036237716675,
+              "peak_allocated_bytes": 57325950976,
+              "peak_reserved_bytes": 57344524288
+            },
+            {
+              "label": "B16C32-fresh0-B",
+              "arm": "B",
+              "fresh": 0,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 154.76223360053044,
+              "measured_tps_median": 151.13721622753684,
+              "measured_ttft_ms_mean": 11207.164420741174,
+              "measured_tpot_ms_mean": 69.37533882774864,
+              "measured_latency_ms_mean": 20017.83245186525,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 273.6551856994629,
+              "peak_allocated_bytes": 57325950976,
+              "peak_reserved_bytes": 57344524288
+            },
+            {
+              "label": "B16C32-fresh0-C",
+              "arm": "C",
+              "fresh": 0,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": true,
+              "measured_tps_mean": 163.84910857773153,
+              "measured_tps_median": 163.05932827028033,
+              "measured_ttft_ms_mean": 10356.46658836522,
+              "measured_tpot_ms_mean": 65.77862738401642,
+              "measured_latency_ms_mean": 18710.352266135305,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 274.46929907798767,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B16C32-fresh1-C",
+              "arm": "C",
+              "fresh": 1,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": true,
+              "measured_tps_mean": 155.25944724426878,
+              "measured_tps_median": 164.2665630940212,
+              "measured_ttft_ms_mean": 10976.296452966562,
+              "measured_tpot_ms_mean": 69.8978657193432,
+              "measured_latency_ms_mean": 19853.32539932315,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 260.4718563556671,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B16C32-fresh1-B",
+              "arm": "B",
+              "fresh": 1,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 200.85892066543536,
+              "measured_tps_median": 206.40150253013076,
+              "measured_ttft_ms_mean": 8628.582280614864,
+              "measured_tpot_ms_mean": 52.17279507865667,
+              "measured_latency_ms_mean": 15254.527255604262,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 214.53102564811707,
+              "peak_allocated_bytes": 57325950976,
+              "peak_reserved_bytes": 57344524288
+            },
+            {
+              "label": "B16C32-fresh1-A",
+              "arm": "A",
+              "fresh": 1,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 4,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 178.154885494557,
+              "measured_tps_median": 178.12954159489001,
+              "measured_ttft_ms_mean": 9188.929560805991,
+              "measured_tpot_ms_mean": 63.601348937004865,
+              "measured_latency_ms_mean": 17266.30087580561,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 242.48977637290955,
+              "peak_allocated_bytes": 57325950976,
+              "peak_reserved_bytes": 57344524288
+            }
+          ],
+          "scope": "Native instrumented fixed-work cost; initialC/totalC/no4C-refill; no quality/HTTP/engine-async claim",
+          "per_GPU_qualification": {
+            "public": {
+              "public_parameters": 269,
+              "tokenizer_records": 52,
+              "facade_trials": 4,
+              "dense_readouts": 6,
+              "dtype": "float32"
+            },
+            "w2": {
+              "w2_cases": 12,
+              "readouts": 108,
+              "forced_inputs": 96,
+              "maxima": {
+                "state_max_abs": 6.29425048828125e-05,
+                "key_max_abs": 3.0994415283203125e-05,
+                "value_max_abs": 1.0848045349121094e-05,
+                "logits_max_abs": 5.698204040527344e-05,
+                "selected_lp_max_abs": 2.86102294921875e-05,
+                "readout_state_max_abs": 0
+              },
+              "checks": {
+                "state_checks": 108,
+                "key_checks": 82944,
+                "value_checks": 82944,
+                "logits_checks": 108,
+                "selected_lp_checks": 108,
+                "readout_state_checks": 96
+              },
+              "lifecycle": {
+                "abort_refill_id_reuse": true,
+                "stale_owner_rejected": true,
+                "ownership_checks": 21,
+                "completed": {
+                  "life-b": {
+                    "tokens": [
+                      198,
+                      198,
+                      19
+                    ],
+                    "depths": [
+                      4,
+                      2,
+                      2
+                    ]
+                  },
+                  "life-a": {
+                    "tokens": [
+                      274,
+                      198,
+                      2
+                    ],
+                    "depths": [
+                      4,
+                      2,
+                      2
+                    ]
+                  }
+                },
+                "drained": true
+              },
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "atol": 0.0001,
+              "rtol": 0.0001
+            }
+          }
+        },
+        "B32C64": {
+          "status": "FULL_CASE_RAW_PASS",
+          "case": "B32C64",
+          "processes": 6,
+          "raw_trials": 60,
+          "total_requests": 3840,
+          "total_outputs": 491520,
+          "rows": [
+            {
+              "label": "B32C64-fresh0-A",
+              "arm": "A",
+              "fresh": 0,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 4,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 224.6315437126059,
+              "measured_tps_median": 226.3886440876438,
+              "measured_ttft_ms_mean": 16662.52715118626,
+              "measured_tpot_ms_mean": 85.06102261877301,
+              "measured_latency_ms_mean": 27465.27702377043,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 379.5451810359955,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57344524288
+            },
+            {
+              "label": "B32C64-fresh0-B",
+              "arm": "B",
+              "fresh": 0,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 258.1876438836135,
+              "measured_tps_median": 254.13154612401624,
+              "measured_ttft_ms_mean": 15015.449601874025,
+              "measured_tpot_ms_mean": 68.44273929296675,
+              "measured_latency_ms_mean": 23707.677492080802,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 328.35999846458435,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B32C64-fresh0-C",
+              "arm": "C",
+              "fresh": 0,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": true,
+              "measured_tps_mean": 229.5841015628127,
+              "measured_tps_median": 228.35113834296146,
+              "measured_ttft_ms_mean": 17249.140535933657,
+              "measured_tpot_ms_mean": 75.44964388314438,
+              "measured_latency_ms_mean": 26831.245309092992,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 355.48654198646545,
+              "peak_allocated_bytes": 57326344192,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B32C64-fresh1-C",
+              "arm": "C",
+              "fresh": 1,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": true,
+              "measured_tps_mean": 202.08534213180602,
+              "measured_tps_median": 205.21094489030395,
+              "measured_ttft_ms_mean": 18702.462150638712,
+              "measured_tpot_ms_mean": 88.38696851819941,
+              "measured_latency_ms_mean": 29927.607152450037,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 386.9019284248352,
+              "peak_allocated_bytes": 57326344192,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B32C64-fresh1-B",
+              "arm": "B",
+              "fresh": 1,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 278.5738910213014,
+              "measured_tps_median": 278.5743477933071,
+              "measured_ttft_ms_mean": 14146.494664922466,
+              "measured_tpot_ms_mean": 62.27879129182982,
+              "measured_latency_ms_mean": 22055.901158984852,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 305.108775138855,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B32C64-fresh1-A",
+              "arm": "A",
+              "fresh": 1,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 4,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 244.5234434447521,
+              "measured_tps_median": 244.64923538966363,
+              "measured_ttft_ms_mean": 15268.585970735148,
+              "measured_tpot_ms_mean": 77.80160277931907,
+              "measured_latency_ms_mean": 25149.38952370867,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 343.283255815506,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57344524288
+            }
+          ],
+          "scope": "Native instrumented fixed-work cost; initialC/totalC/no4C-refill; no quality/HTTP/engine-async claim",
+          "per_GPU_qualification": {
+            "public": {
+              "public_parameters": 269,
+              "tokenizer_records": 52,
+              "facade_trials": 4,
+              "dense_readouts": 6,
+              "dtype": "float32"
+            },
+            "w2": {
+              "w2_cases": 12,
+              "readouts": 108,
+              "forced_inputs": 96,
+              "maxima": {
+                "state_max_abs": 6.29425048828125e-05,
+                "key_max_abs": 3.0994415283203125e-05,
+                "value_max_abs": 1.0848045349121094e-05,
+                "logits_max_abs": 5.698204040527344e-05,
+                "selected_lp_max_abs": 2.86102294921875e-05,
+                "readout_state_max_abs": 0
+              },
+              "checks": {
+                "state_checks": 108,
+                "key_checks": 82944,
+                "value_checks": 82944,
+                "logits_checks": 108,
+                "selected_lp_checks": 108,
+                "readout_state_checks": 96
+              },
+              "lifecycle": {
+                "abort_refill_id_reuse": true,
+                "stale_owner_rejected": true,
+                "ownership_checks": 21,
+                "completed": {
+                  "life-b": {
+                    "tokens": [
+                      198,
+                      198,
+                      19
+                    ],
+                    "depths": [
+                      4,
+                      2,
+                      2
+                    ]
+                  },
+                  "life-a": {
+                    "tokens": [
+                      274,
+                      198,
+                      2
+                    ],
+                    "depths": [
+                      4,
+                      2,
+                      2
+                    ]
+                  }
+                },
+                "drained": true
+              },
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "atol": 0.0001,
+              "rtol": 0.0001
+            }
+          }
+        }
+      },
+      "original64GiB": "CAPACITY_LIMITED_NOT_RUN",
+      "candidate_quality": "UNCERTAIN; cost acceptance is not quality acceptance",
+      "actual_offbox_audit_return": 0
+    },
+    "loopcd-h100-cost-v3": {
+      "passed": true,
+      "name": "loopcd-h100-cost-v3",
+      "archive_sha256": "cd1d25721948bfb6367f929b0d3cada72ca1fbe30ad2f8b6e39c3cdfe09960a8",
+      "payloads_verified": 364,
+      "complete_cost_raw": true,
+      "timing_scope": "distinct per-case physical CPU core sets; co-running other GPUs",
+      "cases": {
+        "B16C32": {
+          "status": "FULL_CASE_RAW_PASS",
+          "case": "B16C32",
+          "processes": 6,
+          "raw_trials": 60,
+          "total_requests": 1920,
+          "total_outputs": 245760,
+          "rows": [
+            {
+              "label": "B16C32-fresh0-A",
+              "arm": "A",
+              "fresh": 0,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 4,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 177.85484806870062,
+              "measured_tps_median": 177.90638210854485,
+              "measured_ttft_ms_mean": 9213.063177204094,
+              "measured_tpot_ms_mean": 63.65106527185227,
+              "measured_latency_ms_mean": 17296.748466729332,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 242.4420325756073,
+              "peak_allocated_bytes": 57325950976,
+              "peak_reserved_bytes": 57344524288
+            },
+            {
+              "label": "B16C32-fresh0-B",
+              "arm": "B",
+              "fresh": 0,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 209.4817550523077,
+              "measured_tps_median": 209.55403751956086,
+              "measured_ttft_ms_mean": 8326.937873611314,
+              "measured_tpot_ms_mean": 50.06540135585478,
+              "measured_latency_ms_mean": 14685.243845804871,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 204.71823978424072,
+              "peak_allocated_bytes": 57325950976,
+              "peak_reserved_bytes": 57344524288
+            },
+            {
+              "label": "B16C32-fresh0-C",
+              "arm": "C",
+              "fresh": 0,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": true,
+              "measured_tps_mean": 208.28989022411963,
+              "measured_tps_median": 208.25634971816248,
+              "measured_ttft_ms_mean": 8324.032561828426,
+              "measured_tpot_ms_mean": 50.72694659825425,
+              "measured_latency_ms_mean": 14766.354779806716,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 205.3652012348175,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B16C32-fresh1-C",
+              "arm": "C",
+              "fresh": 1,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": true,
+              "measured_tps_mean": 205.58662765565123,
+              "measured_tps_median": 205.58501026444415,
+              "measured_ttft_ms_mean": 8433.900329315657,
+              "measured_tpot_ms_mean": 51.3937935371388,
+              "measured_latency_ms_mean": 14960.912108532284,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 206.87010264396667,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B16C32-fresh1-B",
+              "arm": "B",
+              "fresh": 1,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 209.13052008935784,
+              "measured_tps_median": 209.16437519067597,
+              "measured_ttft_ms_mean": 8334.519302091212,
+              "measured_tpot_ms_mean": 50.213354208407985,
+              "measured_latency_ms_mean": 14711.615286559027,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 204.24599242210388,
+              "peak_allocated_bytes": 57325950976,
+              "peak_reserved_bytes": 57344524288
+            },
+            {
+              "label": "B16C32-fresh1-A",
+              "arm": "A",
+              "fresh": 1,
+              "B": 16,
+              "C": 32,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 4,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 179.82310151091696,
+              "measured_tps_median": 179.84775781631797,
+              "measured_ttft_ms_mean": 9111.364986775152,
+              "measured_tpot_ms_mean": 62.94250133498395,
+              "measured_latency_ms_mean": 17105.062656318114,
+              "observed_A": 16,
+              "observed_S": 16,
+              "observed_C": 32,
+              "whole_job_elapsed_s": 235.9994032382965,
+              "peak_allocated_bytes": 57325950976,
+              "peak_reserved_bytes": 57344524288
+            }
+          ],
+          "scope": "Native instrumented fixed-work cost; initialC/totalC/no4C-refill; no quality/HTTP/engine-async claim",
+          "per_GPU_qualification": {
+            "public": {
+              "public_parameters": 269,
+              "tokenizer_records": 52,
+              "facade_trials": 4,
+              "dense_readouts": 6,
+              "dtype": "float32"
+            },
+            "w2": {
+              "w2_cases": 12,
+              "readouts": 108,
+              "forced_inputs": 96,
+              "maxima": {
+                "state_max_abs": 6.29425048828125e-05,
+                "key_max_abs": 3.0994415283203125e-05,
+                "value_max_abs": 1.0848045349121094e-05,
+                "logits_max_abs": 5.698204040527344e-05,
+                "selected_lp_max_abs": 2.86102294921875e-05,
+                "readout_state_max_abs": 0
+              },
+              "checks": {
+                "state_checks": 108,
+                "key_checks": 82944,
+                "value_checks": 82944,
+                "logits_checks": 108,
+                "selected_lp_checks": 108,
+                "readout_state_checks": 96
+              },
+              "lifecycle": {
+                "abort_refill_id_reuse": true,
+                "stale_owner_rejected": true,
+                "ownership_checks": 21,
+                "completed": {
+                  "life-b": {
+                    "tokens": [
+                      198,
+                      198,
+                      19
+                    ],
+                    "depths": [
+                      4,
+                      2,
+                      2
+                    ]
+                  },
+                  "life-a": {
+                    "tokens": [
+                      274,
+                      198,
+                      2
+                    ],
+                    "depths": [
+                      4,
+                      2,
+                      2
+                    ]
+                  }
+                },
+                "drained": true
+              },
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "atol": 0.0001,
+              "rtol": 0.0001
+            }
+          }
+        },
+        "B32C64": {
+          "status": "FULL_CASE_RAW_PASS",
+          "case": "B32C64",
+          "processes": 6,
+          "raw_trials": 60,
+          "total_requests": 3840,
+          "total_outputs": 491520,
+          "rows": [
+            {
+              "label": "B32C64-fresh0-A",
+              "arm": "A",
+              "fresh": 0,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 4,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 246.90210674110293,
+              "measured_tps_median": 247.06306392278464,
+              "measured_ttft_ms_mean": 15110.163261448724,
+              "measured_tpot_ms_mean": 77.12743506776967,
+              "measured_latency_ms_mean": 24905.347515055473,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 344.33423829078674,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57344524288
+            },
+            {
+              "label": "B32C64-fresh0-B",
+              "arm": "B",
+              "fresh": 0,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 278.0406198109395,
+              "measured_tps_median": 278.12264339576416,
+              "measured_ttft_ms_mean": 14188.10854219464,
+              "measured_tpot_ms_mean": 62.346226123101914,
+              "measured_latency_ms_mean": 22106.079259828584,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 303.0821249485016,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B32C64-fresh0-C",
+              "arm": "C",
+              "fresh": 0,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": true,
+              "measured_tps_mean": 271.82743808111434,
+              "measured_tps_median": 271.8254197058453,
+              "measured_ttft_ms_mean": 14417.491869736114,
+              "measured_tpot_ms_mean": 64.30417270443944,
+              "measured_latency_ms_mean": 22584.121803199923,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 310.7343821525574,
+              "peak_allocated_bytes": 57326344192,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B32C64-fresh1-C",
+              "arm": "C",
+              "fresh": 1,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": true,
+              "measured_tps_mean": 276.48728789170445,
+              "measured_tps_median": 276.5423217293291,
+              "measured_ttft_ms_mean": 14157.92017282729,
+              "measured_tpot_ms_mean": 63.343872653142995,
+              "measured_latency_ms_mean": 22202.59199977645,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 304.6759123802185,
+              "peak_allocated_bytes": 57326344192,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B32C64-fresh1-B",
+              "arm": "B",
+              "fresh": 1,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 3,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 277.326594513856,
+              "measured_tps_median": 277.3133337331889,
+              "measured_ttft_ms_mean": 14201.49274740379,
+              "measured_tpot_ms_mean": 62.58338164806353,
+              "measured_latency_ms_mean": 22149.58221670786,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 304.00158405303955,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57346621440
+            },
+            {
+              "label": "B32C64-fresh1-A",
+              "arm": "A",
+              "fresh": 1,
+              "B": 32,
+              "C": 64,
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "decode_depth": 4,
+              "loopcd_enabled": false,
+              "measured_tps_mean": 245.52698653160027,
+              "measured_tps_median": 245.81541602774334,
+              "measured_ttft_ms_mean": 15172.666026950174,
+              "measured_tpot_ms_mean": 77.71951244103262,
+              "measured_latency_ms_mean": 25043.044106961315,
+              "observed_A": 32,
+              "observed_S": 32,
+              "observed_C": 64,
+              "whole_job_elapsed_s": 342.4636285305023,
+              "peak_allocated_bytes": 57326082048,
+              "peak_reserved_bytes": 57344524288
+            }
+          ],
+          "scope": "Native instrumented fixed-work cost; initialC/totalC/no4C-refill; no quality/HTTP/engine-async claim",
+          "per_GPU_qualification": {
+            "public": {
+              "public_parameters": 269,
+              "tokenizer_records": 52,
+              "facade_trials": 4,
+              "dense_readouts": 6,
+              "dtype": "float32"
+            },
+            "w2": {
+              "w2_cases": 12,
+              "readouts": 108,
+              "forced_inputs": 96,
+              "maxima": {
+                "state_max_abs": 6.29425048828125e-05,
+                "key_max_abs": 3.0994415283203125e-05,
+                "value_max_abs": 1.0848045349121094e-05,
+                "logits_max_abs": 5.698204040527344e-05,
+                "selected_lp_max_abs": 2.86102294921875e-05,
+                "readout_state_max_abs": 0
+              },
+              "checks": {
+                "state_checks": 108,
+                "key_checks": 82944,
+                "value_checks": 82944,
+                "logits_checks": 108,
+                "selected_lp_checks": 108,
+                "readout_state_checks": 96
+              },
+              "lifecycle": {
+                "abort_refill_id_reuse": true,
+                "stale_owner_rejected": true,
+                "ownership_checks": 21,
+                "completed": {
+                  "life-b": {
+                    "tokens": [
+                      198,
+                      198,
+                      19
+                    ],
+                    "depths": [
+                      4,
+                      2,
+                      2
+                    ]
+                  },
+                  "life-a": {
+                    "tokens": [
+                      274,
+                      198,
+                      2
+                    ],
+                    "depths": [
+                      4,
+                      2,
+                      2
+                    ]
+                  }
+                },
+                "drained": true
+              },
+              "dtype": "float32",
+              "attention_backend": "triton",
+              "atol": 0.0001,
+              "rtol": 0.0001
+            }
+          }
+        }
+      },
+      "original64GiB": "CAPACITY_LIMITED_NOT_RUN",
+      "candidate_quality": "UNCERTAIN; cost acceptance is not quality acceptance",
+      "actual_offbox_audit_return": 0
+    }
+  }
+}

@@ -88,10 +88,42 @@
       },
       "requests": 128,
       "generated_tokens": 16384
+    },
+    "loopgraph-longcontext-v4": {
+      "passed": true,
+      "archive_sha256": "ec60726277cec91501b7af38319ffd4bd134789775538e2ddd5a4a72806f0f69",
+      "payloads_verified": 435,
+      "actual_producer_return": 0,
+      "torch_imported": false,
+      "scope": "synthetic long-prompt serving outputs, executed depth/work, request-ID reuse and physical drain; not formal W1/W2, full hidden/KV numerical evidence or speed claim",
+      "source_files": 345,
+      "cases": {
+        "P1024-B64/fixed4": {
+          "requests": 128,
+          "prompt_tokens": 1024,
+          "output_tokens_per_request": 128,
+          "generated_tokens": 16384,
+          "exact_author_tokens_and_aggregate_exit_work": true,
+          "drained": true
+        },
+        "P1024-B64/live_immediate": {
+          "requests": 128,
+          "prompt_tokens": 1024,
+          "output_tokens_per_request": 128,
+          "generated_tokens": 16384,
+          "exact_author_tokens_and_aggregate_exit_work": true,
+          "drained": true
+        }
+      },
+      "requests": 256,
+      "generated_tokens": 32768,
+      "separate_variant": "H10056_B64_P1024",
+      "common_kv_cap_bytes": 60129542144,
+      "original_48GiB_B64_status": "CAPACITY_STOP_RETAINED"
     }
   },
-  "qualified_candidate_requests": 256,
-  "qualified_candidate_output_tokens": 32768,
+  "qualified_candidate_requests": 512,
+  "qualified_candidate_output_tokens": 65536,
   "original_48GiB_B64_P1024_status": "CAPACITY_STOP_BEFORE_CANDIDATE_GENERATION",
-  "separate_56GiB_B64_P1024_variant": "PENDING"
+  "separate_56GiB_B64_P1024_variant": "PASS"
 }

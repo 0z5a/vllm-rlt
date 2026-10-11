@@ -174,8 +174,152 @@
           "policy_publications": 3
         }
       }
+    },
+    "flow-dppo": {
+      "status": "LOCAL_NUMERICAL_AUDIT_PASS",
+      "actual_local_audit_return": 0,
+      "source_commit": "0b4f6fc130cbad5e947e964e37ee2755eaee4df5",
+      "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+      "dtype": "float32",
+      "checkpoint_comparison": {
+        "actor": {
+          "status": "PASS",
+          "compared_chunks": 202,
+          "comparison": "Every typed DCP value plus optimizer, scheduler, iteration and checkpoint version; saved RNG required"
+        },
+        "critic": {
+          "status": "PASS",
+          "compared_chunks": 202,
+          "comparison": "Every typed DCP value plus optimizer, scheduler, iteration and checkpoint version; saved RNG required"
+        }
+      },
+      "runs": {
+        "continuous": {
+          "updates": 3,
+          "response_tokens": 352,
+          "maximum_selected_logprob_absolute_error": 0.00010383129119873047,
+          "optimizer_gradient_norms": {
+            "actor": [
+              31.316892273966438,
+              59.816032664093285,
+              38.18143875792268,
+              66.71497354651727,
+              20.522647907822165,
+              41.6164930660572
+            ],
+            "critic": [
+              1802.0901059602986,
+              1889.118511369787,
+              1680.3539805648095,
+              3003.83488227965,
+              545.7449896700839,
+              1496.0850577423732
+            ]
+          },
+          "runtime_epochs": 1,
+          "policy_publications": 3
+        },
+        "resumed": {
+          "updates": 3,
+          "response_tokens": 352,
+          "maximum_selected_logprob_absolute_error": 0.00010383129119873047,
+          "optimizer_gradient_norms": {
+            "actor": [
+              31.316892273966438,
+              59.816032664093285,
+              38.18143875792268,
+              66.71497354651727,
+              20.522647907822165,
+              41.6164930660572
+            ],
+            "critic": [
+              1802.0901059602986,
+              1889.118511369787,
+              1680.3539805648095,
+              3003.83488227965,
+              545.7449896700839,
+              1496.0850577423732
+            ]
+          },
+          "runtime_epochs": 2,
+          "policy_publications": 3
+        }
+      },
+      "full_categorical_KL_audit": {
+        "passed": true,
+        "actual_return": 0,
+        "actual_blocked_step_observed": false,
+        "flow_budget": 0.01,
+        "steps_per_rollout": 2,
+        "runs": {
+          "continuous": [
+            {
+              "step": 0,
+              "categorical_kl": 0.0,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 1,
+              "categorical_kl": 5.991788043502311e-07,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 2,
+              "categorical_kl": 0.0,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 3,
+              "categorical_kl": 1.0329049473511986e-06,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 4,
+              "categorical_kl": 0.0,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 5,
+              "categorical_kl": 1.8072289265091968e-07,
+              "blocked_fraction": 0.0
+            }
+          ],
+          "resumed": [
+            {
+              "step": 0,
+              "categorical_kl": 0.0,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 1,
+              "categorical_kl": 5.991788043502311e-07,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 2,
+              "categorical_kl": 0.0,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 3,
+              "categorical_kl": 1.0329049473511986e-06,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 4,
+              "categorical_kl": 0.0,
+              "blocked_fraction": 0.0
+            },
+            {
+              "step": 5,
+              "categorical_kl": 1.8072289265091968e-07,
+              "blocked_fraction": 0.0
+            }
+          ]
+        }
+      }
     }
   },
-  "flow_dppo": "RUNNING; additional full categorical/KL audit queued",
-  "scaling": "matched CPU and shared publication/checkpoint storage single-node baseline running; supported two-node actor-DP pilot queued; one rollout engine retained"
+  "flow_dppo": "LOCAL_NUMERICAL_AND_FULL_CATEGORICAL_AUDIT_PASS; no actual blocked step observed; independent complete archive pending",
+  "scaling": "seed42 single-node and two-node pilots passed local numerical checks; seed43 paired repeat submitted; no established scaling gain"
 }
