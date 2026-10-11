@@ -1,5 +1,7 @@
 """Official paged attention: ragged prefixes, physical strides and async exits."""
 
+from types import SimpleNamespace
+
 import pytest
 import torch
 
@@ -44,6 +46,50 @@ def test_unsupported_architecture_and_dtype():
         select_version((7, 5), "flash_attn")
     with pytest.raises(ValueError, match="NVIDIA"):
         FlashPagedAttention(torch.device("cpu"), torch.bfloat16, 128, 16)
+
+
+@pytest.mark.parametrize("layout", ["packaged", "flat"])
+def test_fa3_import_supports_official_wheel_layouts(monkeypatch, layout):
+    from vllm_rlt.kernels import flash_attention
+
+    kernel = object()
+    imports = []
+
+    def load(name):
+        imports.append(name)
+        if name == "flash_attn_3.flash_attn_interface" and layout == "flat":
+            raise ModuleNotFoundError(name=name)
+        return SimpleNamespace(flash_attn_with_kvcache=kernel)
+
+    monkeypatch.setattr(torch.version, "hip", None)
+    monkeypatch.setattr(torch.cuda, "get_device_capability", lambda device: (9, 0))
+    monkeypatch.setattr(flash_attention.importlib, "import_module", load)
+    monkeypatch.setattr(flash_attention, "version", lambda package: "3.0.0")
+    attention = FlashPagedAttention(torch.device("cuda"), torch.bfloat16, 128, 16)
+    assert attention.kernel is kernel
+    assert attention.info["generation"] == 3
+    assert imports == ["flash_attn_3.flash_attn_interface"] + (
+        ["flash_attn_interface"] if layout == "flat" else []
+    )
+
+
+def test_fa3_import_preserves_missing_binary_error(monkeypatch):
+    from vllm_rlt.kernels import flash_attention
+
+    imports = []
+    missing_binary = ModuleNotFoundError(name="_flash_attn_3_cuda")
+
+    def load(name):
+        imports.append(name)
+        raise missing_binary
+
+    monkeypatch.setattr(torch.version, "hip", None)
+    monkeypatch.setattr(torch.cuda, "get_device_capability", lambda device: (9, 0))
+    monkeypatch.setattr(flash_attention.importlib, "import_module", load)
+    with pytest.raises(ImportError, match="selected FA3") as caught:
+        FlashPagedAttention(torch.device("cuda"), torch.bfloat16, 128, 16)
+    assert caught.value.__cause__ is missing_binary
+    assert imports == ["flash_attn_3.flash_attn_interface"]
 
 
 @pytest.mark.gpu

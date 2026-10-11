@@ -48,7 +48,16 @@ class FlashPagedAttention:
             4: ("flash_attn.cute", "flash-attn-4", "flash_attn_varlen_func"),
         }[self.generation]
         try:
-            self.kernel = getattr(importlib.import_module(module), function)
+            try:
+                implementation = importlib.import_module(module)
+            except ModuleNotFoundError as error:
+                # Official FA3 wheels also expose the interface at top level.
+                # A missing dependency inside either interface is still an error.
+                if self.generation != 3 or error.name not in ("flash_attn_3", module):
+                    raise
+                module = "flash_attn_interface"
+                implementation = importlib.import_module(module)
+            self.kernel = getattr(implementation, function)
             package_version = version(package)
         except (ImportError, AttributeError) as error:
             raise ImportError(
@@ -60,6 +69,7 @@ class FlashPagedAttention:
             generation=self.generation,
             package=package,
             version=package_version,
+            module=module,
         )
         logging.getLogger(__name__).warning("Attention implementation: %s", self.info)
 
