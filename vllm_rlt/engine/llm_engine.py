@@ -97,8 +97,6 @@ class LLMEngine:
         if not self.execution_config.atomic_prefill:
             if cache_config.layout != "last_exited":
                 raise ValueError("split prefill requires last_exited KV planes")
-            if scheduler_config.enable_preemption:
-                raise ValueError("split prefill does not support preemption yet")
             if speculative_config is not None:
                 raise ValueError("split prefill does not support speculative decoding yet")
         attention = create_backend(
@@ -437,6 +435,23 @@ class LLMEngine:
             next_stage = Stage.PREFILLING_PRELUDE
         self.scheduler.enqueue(request, next_stage)
         return PrefillProgress(True, prompt_complete)
+
+    def _rewind_split_prefill(self, request):
+        """Rewind an in-flight chunk; the caller rebuilds its queue membership."""
+        if self.execution_config.atomic_prefill or request.stage not in (
+            Stage.PREFILLING_PRELUDE,
+            Stage.PREFILLING_RECURRENT,
+        ):
+            return
+        frontier = request.num_prefilled_tokens
+        request.num_preluded_tokens = frontier
+        request.prefill_chunk_start = frontier
+        request.running_depth_boundary[:] = Request.prefill_boundaries(
+            len(request.prompt_token_ids),
+            self.model.config.total_ut_steps,
+            start=frontier,
+        )
+        request.stage = Stage.PREFILLING_PRELUDE
 
     def _update(self, batch, result) -> list[RequestOutput]:
         outputs = []

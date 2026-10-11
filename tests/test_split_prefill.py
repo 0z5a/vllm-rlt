@@ -362,6 +362,95 @@ def test_runner_slot_release_waits_for_last_request_event():
     e.abort_request("slot")
 
 
+@pytest.mark.parametrize("completed_depths", range(TOTAL_DEPTHS))
+def test_split_preemption_rewinds_and_recomputes_the_resident_chunk(completed_depths):
+    prompt = [1, 2, 3, 4]
+    params = SamplingParams(max_tokens=3, max_loops=2, ignore_eos=True)
+    scheduler = SchedulerConfig(
+        max_num_seqs=2,
+        max_num_batched_tokens=4,
+        prefill_chunk_size=2,
+        enable_preemption=True,
+    )
+    expected = run_request(split_engine(scheduler_config=scheduler), prompt)
+    e = split_engine(scheduler_config=scheduler)
+    e.add_request("victim", prompt, params)
+    request = e.scheduler.requests["victim"]
+
+    for _ in range(completed_depths + 1):
+        e.step()
+    assert request.stage is Stage.PREFILLING_RECURRENT
+
+    requester = Request("pressure", [9], SamplingParams(max_tokens=1))
+    assert e.preemption.preempt(requester)
+    assert e.preemption.snapshots["victim"]["stage"] is Stage.PREFILLING_PRELUDE
+    assert request.num_preluded_tokens == request.num_prefilled_tokens
+    assert request.prefill_chunk_start == request.num_prefilled_tokens
+    assert all(left == request.num_prefilled_tokens for left, _ in request.running_depth_boundary)
+    assert e.cache_manager.num_used_blocks == 0
+
+    e.scheduler._admit()
+    assert request.stage is Stage.PREFILLING_PRELUDE
+    actual = drain_request(e)
+    assert actual.token_ids == expected.token_ids
+    assert actual.exit_depths == expected.exit_depths
+    assert e.preemption.resumptions == 1
+    assert not e.preemption.snapshots
+    assert e.cache_manager.num_used_blocks == 0
+
+
+def test_priority_admission_preempts_split_prefill_and_matches_reference():
+    prompt = [1, 2, 3, 4]
+    params = SamplingParams(max_tokens=3, max_loops=2, ignore_eos=True, priority=10)
+    trace = ExitConfig("trace", depths_by_request={"reference": [4, 2, 2]})
+    scheduler = SchedulerConfig(
+        max_num_seqs=1,
+        max_num_batched_tokens=4,
+        prefill_chunk_size=2,
+        policy="priority",
+    )
+    expected = run_request(
+        split_engine(scheduler_config=scheduler, exit_config=trace), prompt, "reference"
+    )
+
+    e = split_engine(
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=1,
+            max_num_batched_tokens=4,
+            prefill_chunk_size=2,
+            policy="priority",
+            enable_preemption=True,
+        ),
+        exit_config=ExitConfig("trace", depths_by_request={"low": [4, 2, 2], "high": [4]}),
+    )
+    e.add_request("low", prompt, params)
+    e.step()
+    e.step()
+    assert e.scheduler.requests["low"].stage is Stage.PREFILLING_RECURRENT
+    e.add_request(
+        "high",
+        [5, 6],
+        SamplingParams(max_tokens=1, max_loops=2, ignore_eos=True, priority=-10),
+    )
+
+    finished = {}
+    for _ in range(100):
+        for output in e.step():
+            if output.finished:
+                finished[output.request_id] = output
+        if len(finished) == 2:
+            break
+    else:
+        pytest.fail("priority preemption did not finish both requests")
+
+    assert e.preemption.preemptions == 1 == e.preemption.resumptions
+    assert finished["low"].token_ids == expected.token_ids
+    assert finished["low"].exit_depths == expected.exit_depths
+    assert len(finished["high"].token_ids) == 1
+    assert e.cache_manager.num_used_blocks == 0
+    assert e.model_runner.state_slots == {}
+
+
 @pytest.mark.gpu
 @pytest.mark.parametrize("async_scheduling", [False, True])
 def test_cuda_split_prefill_matches_atomic(async_scheduling):
@@ -413,6 +502,91 @@ def test_cuda_split_prefill_matches_atomic(async_scheduling):
     assert split_output.exit_depths == atomic_output.exit_depths
     assert split_cached_output.token_ids == atomic_cached_output.token_ids
     assert split_cached_output.exit_depths == atomic_cached_output.exit_depths
+
+
+@pytest.mark.gpu
+def test_cuda_async_split_preemption_releases_and_reuses_slot():
+    prompt = [1, 2, 3, 4]
+    params = SamplingParams(max_tokens=3, max_loops=2, ignore_eos=True, priority=10)
+    scheduler = SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=2)
+    execution = ExecutionConfig(atomic_prefill=False)
+    torch.manual_seed(432)
+    reference_model = OuroForCausalLM(tiny_ouro_config()).to("cuda", torch.bfloat16)
+    reference = LLMEngine(
+        reference_model,
+        cache_config=CacheConfig(128, 2),
+        scheduler_config=scheduler,
+        execution_config=execution,
+        exit_config=ExitConfig("trace", depths_by_request={"run": [4, 2, 2]}),
+        attention_backend="triton",
+    )
+    expected = run_request(reference, prompt)
+    reference.close()
+    del reference_model
+    torch.cuda.empty_cache()
+
+    torch.manual_seed(432)
+    model = OuroForCausalLM(tiny_ouro_config()).to("cuda", torch.bfloat16)
+    e = LLMEngine(
+        model,
+        cache_config=CacheConfig(128, 2),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2,
+            max_num_batched_tokens=4,
+            prefill_chunk_size=2,
+            policy="priority",
+            enable_preemption=True,
+        ),
+        execution_config=ExecutionConfig(async_scheduling=True, atomic_prefill=False),
+        exit_config=ExitConfig(
+            "trace",
+            depths_by_request={
+                "victim": [4, 2, 2],
+                "pressure-a": [4],
+                "pressure-b": [4],
+            },
+        ),
+        attention_backend="triton",
+    )
+    try:
+        e.add_request("victim", prompt, params)
+        e.step()
+        e.step()
+        assert e.scheduler.requests["victim"].stage is Stage.PREFILLING_RECURRENT
+        state = e.model_runner.async_state
+        slot = state.slots["victim"]
+        old_event = e.model_runner.events["victim"]
+        assert e.preemption.preempt(
+            Request("pressure", [9], SamplingParams(max_tokens=1, priority=-10))
+        )
+        assert "victim" not in state.slots
+        assert slot in state.free
+        assert "victim" not in e.model_runner.events
+
+        pressure_params = SamplingParams(max_tokens=1, priority=-10)
+        e.add_request("pressure-a", [5, 6], pressure_params)
+        e.add_request("pressure-b", [7, 8], pressure_params)
+        e.scheduler._admit()
+        e.step()
+        assert e.scheduler.requests["victim"].stage is Stage.WAITING
+        assert slot in state.slots.values()
+        assert len(state.slots) == 2
+        occupant = next(rid for rid, assigned in state.slots.items() if assigned == slot)
+        other = "pressure-b" if occupant == "pressure-a" else "pressure-a"
+        e.abort_request(occupant)
+        e.abort_request(other)
+
+        e.scheduler._admit()
+        e.step()
+        assert state.slots["victim"] != slot
+        assert e.model_runner.events["victim"] is not old_event
+        actual = drain_request(e)
+
+        assert actual.token_ids == expected.token_ids
+        assert actual.exit_depths == expected.exit_depths
+        assert e.preemption.preemptions == 1 == e.preemption.resumptions
+    finally:
+        e.close()
 
 
 @pytest.mark.gpu
@@ -566,11 +740,6 @@ def test_split_prefill_policy_is_selected_only_by_the_atomic_prefill_flag():
             "shared layout",
             {"cache_config": CacheConfig(64, 2, "shared")},
             "split prefill requires last_exited",
-        ),
-        (
-            "preemption",
-            {"scheduler_config": SchedulerConfig(enable_preemption=True)},
-            "split prefill does not support preemption",
         ),
         (
             "speculative",

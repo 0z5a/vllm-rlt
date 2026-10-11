@@ -83,6 +83,7 @@ class PreemptionManager:
             return False
         e = self.engine
         e.model_runner.synchronize()
+        e._rewind_split_prefill(victim)
         cache = e.cache_manager
         snapshot = dict(
             stage=victim.stage,
