@@ -47,7 +47,6 @@ class SchedulerOutput:
 class PrefillProgress:
     """Host-side result of applying one completed split-prefill batch."""
 
-    next_stage: Stage | None
     chunk_complete: bool
     prompt_complete: bool
 
@@ -269,13 +268,11 @@ class Scheduler:
         request.num_preluded_tokens = plan.cached_tokens
         request.prefill_chunk_start = plan.cached_tokens
         if request.running_depth_boundary:
-            request.running_depth_boundary[:] = [
-                [plan.cached_tokens, len(request.prompt_token_ids)],
-                *[
-                    [plan.cached_tokens, plan.cached_tokens]
-                    for _ in range(len(request.running_depth_boundary) - 1)
-                ],
-            ]
+            request.running_depth_boundary[:] = Request.prefill_boundaries(
+                len(request.prompt_token_ids),
+                len(request.running_depth_boundary),
+                start=plan.cached_tokens,
+            )
         if self.atomic_prefill:
             self.enqueue(request, Stage.PREFILL)
         else:
@@ -346,15 +343,7 @@ class Scheduler:
             count = min(
                 token_budget, self.config.prefill_chunk_size, len(request.prompt_token_ids) - start
             )
-            return ScheduledItem(
-                request,
-                start,
-                count,
-                depth=(len(request.running_depth_boundary) - 1
-                       if request.running_depth_boundary else None),
-                chunk_start=start,
-                completes_prompt=start + count == len(request.prompt_token_ids),
-            )
+            return ScheduledItem(request, start, count)
         # The two split stages are unreachable while atomic prefill is enabled.
         if stage == Stage.PREFILLING_PRELUDE:
             start = request.num_preluded_tokens
@@ -463,6 +452,12 @@ class Scheduler:
                 queue.append(request.request_id)
                 continue
             item = self._make_scheduled_item(request, stage, token_budget)
+            if (
+                stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT)
+                and item.token_count <= 0
+            ):
+                queue.append(request.request_id)
+                continue
             if stage in _CAPACITY_STAGES:
                 # A span item declares a prompt frontier; decode stages advance the
                 # request's own position by one.

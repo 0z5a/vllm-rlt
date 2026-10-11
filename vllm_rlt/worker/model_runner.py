@@ -31,10 +31,12 @@ class PreparedExecution:
     token_tensors: tuple[torch.Tensor, ...] = ()
     kv: object = None
     routing: object = None
-    token_ids: tuple[int, ...] = ()
     prefill_slots: tuple[int, ...] = ()
     prefill_offsets: tuple[int, ...] = ()
     hidden: torch.Tensor | None = None
+    prefill_indices: torch.Tensor | None = None
+    prefill_token_ids: torch.Tensor | None = None
+    prefill_commits: tuple[tuple[Request, int], ...] = ()
 
 
 @dataclass
@@ -255,23 +257,58 @@ class ModelRunner:
                 offsets.append(position - item.chunk_start)
         return tuple(slots), tuple(offsets)
 
-    def _gather_prefill(self, slots, offsets):
-        hidden = self.prefill_hidden[: len(slots)]
-        for row, (slot, offset) in enumerate(zip(slots, offsets)):
+    def _prefill_index_tensors(self, slots, offsets):
+        rows_per_request = self.prefill_states.shape[1]
+        flat_rows = [slot * rows_per_request + offset for slot, offset in zip(slots, offsets)]
+        host = torch.tensor(flat_rows, dtype=torch.int64, pin_memory=self.device.type == "cuda")
+        return host.to(self.device, non_blocking=self.device.type == "cuda")
+
+    def _gather_prefill(self, prepared):
+        count = len(prepared.prefill_slots)
+        hidden = self.prefill_hidden[:count]
+        if self.device.type == "cuda":
+            from vllm_rlt.kernels.routing import gather_kernel
+
+            pool = self.prefill_states.view(-1, self.model.config.hidden_size)
+            gather_kernel[(count, math.ceil(pool.shape[1] / 256))](
+                pool,
+                prepared.prefill_indices,
+                hidden,
+                count,
+                pool.shape[1],
+                pool.stride(0),
+                hidden.stride(0),
+                256,
+            )
+            return hidden
+        for row, (slot, offset) in enumerate(zip(prepared.prefill_slots, prepared.prefill_offsets)):
             hidden[row].copy_(self.prefill_states[slot, offset])
         return hidden
 
-    def _scatter_prefill(self, batch, hidden, slots, offsets):
-        if hidden.shape[0] != len(slots):
+    def _scatter_prefill(self, hidden, prepared):
+        count = len(prepared.prefill_slots)
+        if hidden.shape[0] != count:
             raise RuntimeError("split-prefill hidden rows do not match the scheduled span")
-        for row, (slot, offset) in enumerate(zip(slots, offsets)):
-            self.prefill_states[slot, offset].copy_(hidden[row])
-        row = 0
-        for item in batch.items:
-            end = row + item.token_count
-            if item.completes_prompt:
-                self._save(item.request, hidden[end - 1])
-            row = end
+        if self.device.type == "cuda":
+            from vllm_rlt.kernels.routing import scatter_kernel
+
+            pool = self.prefill_states.view(-1, self.model.config.hidden_size)
+            scatter_kernel[(count, math.ceil(pool.shape[1] / 256))](
+                hidden,
+                prepared.prefill_indices,
+                pool,
+                pool.shape[1],
+                hidden.stride(0),
+                pool.stride(0),
+                256,
+            )
+        else:
+            for row, (slot, offset) in enumerate(
+                zip(prepared.prefill_slots, prepared.prefill_offsets)
+            ):
+                self.prefill_states[slot, offset].copy_(hidden[row])
+        for request, row in prepared.prefill_commits:
+            self._save(request, hidden[row])
 
     def _save_batch(self, requests, hidden, routing):
         if routing is None:
@@ -389,22 +426,35 @@ class ModelRunner:
         requests = [i.request for i in batch.items]
         if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
             slots, offsets = self._prefill_indices(batch)
+            indices = self._prefill_index_tensors(slots, offsets)
+            commits = []
+            row = 0
+            for item in batch.items:
+                if item.completes_prompt:
+                    commits.append((item.request, row + item.token_count - 1))
+                row += item.token_count
             if batch.stage == Stage.PREFILLING_PRELUDE:
-                token_ids = tuple(
+                token_values = tuple(
                     token
                     for item in batch.items
                     for token in item.request.prompt_token_ids[
                         item.token_start : item.token_start + item.token_count
                     ]
                 )
-                return PreparedExecution( # prelude need no depths, positions and output_indices
+                token_host = torch.tensor(
+                    token_values, dtype=torch.long, pin_memory=self.device.type == "cuda"
+                )
+                token_device = token_host.to(self.device, non_blocking=self.device.type == "cuda")
+                return PreparedExecution(
                     batch,
                     (),
                     (),
                     (),
-                    token_ids=token_ids,
                     prefill_slots=slots,
                     prefill_offsets=offsets,
+                    prefill_indices=indices,
+                    prefill_token_ids=token_device,
+                    prefill_commits=tuple(commits),
                 )
             # Assertion: batch.stage == Stage.PREFILLING_RECURRENT
             ids, depths, positions = [], [], []
@@ -413,10 +463,8 @@ class ModelRunner:
                 depths.extend([item.depth] * item.token_count)
                 positions.extend(range(item.token_start, item.token_start + item.token_count))
             packed = self.cache_manager.attention_capabilities.packed_prefill
-            kv = self.cache_manager._prepare_batch(
-                ids, depths, positions, packed_prefill=packed
-            )
-            return PreparedExecution(
+            kv = self.cache_manager._prepare_batch(ids, depths, positions, packed_prefill=packed)
+            prepared = PreparedExecution(
                 batch,
                 tuple(depths),
                 tuple(positions),
@@ -424,8 +472,10 @@ class ModelRunner:
                 kv=kv,
                 prefill_slots=slots,
                 prefill_offsets=offsets,
-                hidden=self._gather_prefill(slots, offsets),
+                prefill_indices=indices,
+                prefill_commits=tuple(commits),
             )
+            return replace(prepared, hidden=self._gather_prefill(prepared))
         depths = tuple(r.loops_done for r in requests)
         positions = tuple(r.position for r in requests)
         indices = tuple(r.num_scheduled_outputs for r in requests)
@@ -459,8 +509,7 @@ class ModelRunner:
         if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
             prepared = prepared or self.prepare(batch)
             if batch.stage == Stage.PREFILLING_PRELUDE:
-                tokens = torch.tensor(prepared.token_ids, device=self.device, dtype=torch.long)
-                hidden = self.model.prelude(tokens)
+                hidden = self.model.prelude(prepared.prefill_token_ids)
             else:
                 hidden, _ = self.model.recurrent_prepared(
                     prepared.hidden,
@@ -468,9 +517,7 @@ class ModelRunner:
                     self.cache_manager,
                     compute_gate=False,
                 )
-            self._scatter_prefill(
-                batch, hidden, prepared.prefill_slots, prepared.prefill_offsets
-            )
+            self._scatter_prefill(hidden, prepared)
             return None
         size = self._size(len(requests))
         group = "core" if batch.stage == Stage.RECURRENT else "boundary"
@@ -552,7 +599,29 @@ class ModelRunner:
 
     def execute(self, batch: SchedulerOutput):
         # Baseline explicitly synchronizes signals; delayed routing can be tested here.
-        result = self._execute(batch)
+        split_prefilling = batch.stage in (
+            Stage.PREFILLING_PRELUDE,
+            Stage.PREFILLING_RECURRENT,
+        )
+        prepared = None
+        try:
+            if split_prefilling:
+                prepared = self.prepare(batch)
+        except Exception:
+            if split_prefilling and self.device.type == "cuda":
+                torch.cuda.current_stream(self.device).synchronize()
+            raise
+        try:
+            result = self._execute(batch, prepared)
+        except Exception:
+            if split_prefilling and self.device.type == "cuda":
+                torch.cuda.current_stream(self.device).synchronize()
+            raise
+        if split_prefilling and self.device.type == "cuda":
+            event = torch.cuda.Event()
+            event.record(torch.cuda.current_stream(self.device))
+            for item in batch.items:
+                self.events[item.request.request_id] = event
         return result.cpu().tolist() if result is not None else None
 
     def _readback_slot(self, result):
@@ -565,16 +634,30 @@ class ModelRunner:
         raise RuntimeError("readback buffers exhausted; retire completed submissions")
 
     def submit(self, batch: SchedulerOutput):
-        prepared = self.prepare(batch)
+        split_prefill = batch.stage in (
+            Stage.PREFILLING_PRELUDE,
+            Stage.PREFILLING_RECURRENT,
+        )
+        stream = (
+            self.core_stream
+            if split_prefill or batch.stage in (Stage.PREFILL, Stage.RECURRENT)
+            else self.boundary_stream
+        )
+        if split_prefill and stream is not None:
+            # Split metadata copies and staging gathers must be ordered with the
+            # recurrent work that consumes them.
+            try:
+                with torch.cuda.stream(stream):
+                    prepared = self.prepare(batch)
+            except Exception:
+                stream.synchronize()
+                raise
+        else:
+            prepared = self.prepare(batch)
         while self.submission_events and self.submission_events[0].query():
             self.submission_events.popleft()
         if len(self.submission_events) >= 3:
             self.submission_events.popleft().synchronize()
-        stream = (
-            self.core_stream
-            if batch.stage in (Stage.PREFILL, Stage.RECURRENT)
-            else self.boundary_stream
-        )
         if prepared.routing is not None:
             if prepared.routing.imports:
                 self.copy_stream.wait_stream(torch.cuda.current_stream(self.device))
@@ -592,6 +675,10 @@ class ModelRunner:
                     hidden.record_stream(stream)
             try:
                 result = self._execute(batch, prepared)
+            except Exception:
+                if split_prefill and stream is not None:
+                    stream.synchronize()
+                raise
             finally:
                 if prepared.routing is not None:
                     prepared.routing.record_done()

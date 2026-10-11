@@ -161,6 +161,13 @@ class PDWorker:
             w.target_tables, w.target_slot = command["tables"], command["slot"]
             w.target_cached_tokens = command.get("cached_tokens", 0)
             request.num_prefilled_tokens = hit
+            request.num_preluded_tokens = hit
+            request.prefill_chunk_start = hit
+            request.running_depth_boundary[:] = request.prefill_boundaries(
+                len(request.prompt_token_ids),
+                self.model.config.total_ut_steps,
+                start=hit,
+            )
             if hit > w.target_cached_tokens:
                 event = torch.cuda.Event()
                 event.record(torch.cuda.current_stream(self.cache.device))

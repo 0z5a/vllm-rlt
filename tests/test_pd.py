@@ -98,6 +98,19 @@ def test_pd_configuration_validation(options):
         PDConfig(**options)
 
 
+def test_pd_rejects_split_prefill_before_spawning_workers():
+    from vllm_rlt.pd.engine import PDEngine
+
+    with pytest.raises(ValueError, match="PD currently supports atomic prefill"):
+        PDEngine(
+            tiny_ouro_config(),
+            execution_config=ExecutionConfig(
+                async_scheduling=True,
+                atomic_prefill=False,
+            ),
+        )
+
+
 def drain(engine):
     outputs = {}
     deadline = time.monotonic() + 90

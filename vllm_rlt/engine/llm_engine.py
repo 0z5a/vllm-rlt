@@ -400,23 +400,27 @@ class LLMEngine:
             request.prefill_chunk_start = start
             request.num_preluded_tokens = end
             self.scheduler.enqueue(request, Stage.PREFILLING_RECURRENT)
-            return PrefillProgress(Stage.PREFILLING_RECURRENT, False, False)
+            return PrefillProgress(False, False)
 
         # Assertion: stage == Stage.PREFILLING_RECURRENT
         depth = item.depth
         boundaries = request.running_depth_boundary
+        if depth is None or not 0 <= depth < len(boundaries):
+            raise RuntimeError("split-prefill recurrent item has no valid depth")
+        if boundaries[depth][0] != start:
+            raise RuntimeError("split-prefill recurrent item skips its depth frontier")
         boundaries[depth][0] = end
         if depth + 1 < total_depths:
             deeper = boundaries[depth + 1]
             deeper[1] = end
             self.scheduler.enqueue(request, Stage.PREFILLING_RECURRENT)
-            return PrefillProgress(Stage.PREFILLING_RECURRENT, False, False)
+            return PrefillProgress(False, False)
 
         request.num_prefilled_tokens = end
         chunk_complete = end == request.num_preluded_tokens
         if not chunk_complete:
             self.scheduler.enqueue(request, Stage.PREFILLING_RECURRENT)
-            return PrefillProgress(Stage.PREFILLING_RECURRENT, False, False)
+            return PrefillProgress(False, False)
 
         self.cache_manager.publish_prefix(
             request.request_id,
@@ -432,7 +436,7 @@ class LLMEngine:
         else:
             next_stage = Stage.PREFILLING_PRELUDE
         self.scheduler.enqueue(request, next_stage)
-        return PrefillProgress(next_stage, True, prompt_complete)
+        return PrefillProgress(True, prompt_complete)
 
     def _update(self, batch, result) -> list[RequestOutput]:
         outputs = []

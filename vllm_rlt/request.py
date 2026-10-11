@@ -57,7 +57,9 @@ class Request:
     exit_trace: tuple[int, ...] = field(default=(), repr=False)
 
     @staticmethod
-    def prefill_boundaries(num_tokens: int, total_depths: int) -> list[list[int]]:
+    def prefill_boundaries(
+        num_tokens: int, total_depths: int, *, start: int = 0
+    ) -> list[list[int]]:
         """Per-depth written frontiers of a freshly admitted split-prefill prompt.
 
         ``running_depth_boundary[d] == [X[d + 1], X[d])`` holds the prompt tokens
@@ -70,9 +72,11 @@ class Request:
         frontier ever has a hole. Every interval is empty once prefill completes,
         and ``num_prefilled_tokens`` then holds the finished prefix.
         """
-        if num_tokens < 1 or total_depths < 1:
-            raise ValueError("prefill boundaries require tokens and recurrence depths")
-        return [[0, num_tokens]] + [[0, 0] for _ in range(total_depths - 1)]
+        if num_tokens < 1 or total_depths < 1 or not 0 <= start <= num_tokens:
+            raise ValueError(
+                "prefill boundaries require positive sizes and start in [0, num_tokens]"
+            )
+        return [[start, num_tokens]] + [[start, start] for _ in range(total_depths - 1)]
 
     def prefill_depth(self, token_index: int) -> int:
         """Completed recurrence depth of the prompt token at ``token_index``."""

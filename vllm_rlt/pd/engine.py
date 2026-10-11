@@ -82,6 +82,10 @@ class PDEngine:
         self.config = pd_config or PDConfig()
         self.exit_config = exit_config or ExitConfig("ouro_delayed")
         execution = execution_config or ExecutionConfig(async_scheduling=True)
+        if not execution.atomic_prefill:
+            raise ValueError(
+                "PD currently supports atomic prefill only; split prefill is planned for M5"
+            )
         p_scheduler = prefill_scheduler_config or SchedulerConfig(
             max_num_seqs=8, max_num_batched_tokens=2048, prefill_chunk_size=2048
         )
