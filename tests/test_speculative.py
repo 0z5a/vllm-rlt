@@ -408,14 +408,18 @@ def test_rejection_sampling_recovers_target_distribution(p, q):
     torch.testing.assert_close(counts / counts.sum(), p, atol=0.016, rtol=0)
 
 
-def test_probability_filters_match_expected_and_keep_boundary_ties():
+def test_probability_filters_match_expected_and_apply_strict_top_k():
     logits = torch.tensor([0.50, 0.25, 0.15, 0.10]).log()
     p = Sampler.probabilities(logits, SamplingParams(temperature=1, top_p=0.8))
     torch.testing.assert_close(p, torch.tensor([0.50, 0.25, 0.15, 0]) / 0.9)
     p = Sampler.probabilities(logits, SamplingParams(temperature=0.5, top_k=2))
     torch.testing.assert_close(p, torch.tensor([0.8, 0.2, 0, 0]))
+    # All four logits are tied, so the threshold mask used to keep all of them
+    # (a uniform 0.25). Strict top-k keeps exactly one; which index survives a tie
+    # is not guaranteed across devices, so only the count and weight are asserted.
     p = Sampler.probabilities(torch.zeros(4), SamplingParams(temperature=1, top_k=1))
-    torch.testing.assert_close(p, torch.full((4,), 0.25))
+    assert int((p > 0).sum()) == 1
+    torch.testing.assert_close(p[p > 0], torch.ones(1))
 
 
 @pytest.mark.parametrize(

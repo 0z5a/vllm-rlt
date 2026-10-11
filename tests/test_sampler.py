@@ -2,9 +2,10 @@
 
 ``Sampler`` only consumes a generator the caller resolved, so these tests create
 one themselves (mirroring what ``RngRegistry.acquire`` does in production) and
-keep ``RngRegistry``'s own creation and lifetime contracts separate. The tests pin
-the current arithmetic; they are not a specification of what sampling should do in
-the future.
+keep ``RngRegistry``'s own creation and lifetime contracts separate. The
+distribution tests state the sampling contract itself, including strict top-k:
+exactly ``k`` candidates survive by index, so a tie at the k-th logit does not
+widen the support.
 """
 
 import pytest
@@ -75,23 +76,82 @@ GREEDY_CASES = [
 def test_top_k_one_is_equivalent_to_greedy(logits):
     sampler = Sampler()
     greedy = sample_many(sampler, logits, SamplingParams(temperature=0.0))[0]
-    # top_k=1 makes the threshold the maximum, so masked_fill leaves exactly one
-    # candidate and the result cannot depend on the RNG stream. Checking several
-    # logits rows and seeds pins that mechanism, not one coincidental argmax.
+    # top_k=1 keeps the single highest logit by index, so the draw cannot depend
+    # on the RNG stream. Checking several logits rows and seeds pins that
+    # mechanism, not one coincidental argmax.
     for seed in (0, 7, 12345):
         params = SamplingParams(temperature=1.0, top_k=1, seed=seed)
         assert sample_many(sampler, logits, params)[0] == greedy
 
 
-def test_top_k_keeps_every_token_tied_at_the_threshold():
-    sampler = Sampler()
-    # top_k=2 selects a threshold of 3.0, which three tokens share. The mask is
-    # ``logits < threshold``, so the candidate set is larger than k.
-    logits = torch.tensor([3.0, 3.0, 3.0, 0.0])
-    params = SamplingParams(temperature=1.0, top_k=2, seed=11)
-    observed = set(sample_many(sampler, logits, params, count=200))
-    assert observed <= {0, 1, 2}
-    assert len(observed) > 1
+def test_top_k_keeps_exactly_k_candidates_when_the_threshold_is_tied():
+    # [5, 4, 4, 1] with k=2 has three tokens at or above the k-th logit 4.0. A
+    # threshold mask kept all three; selecting by index keeps exactly two.
+    logits = torch.tensor([5.0, 4.0, 4.0, 1.0])
+    params = SamplingParams(temperature=1.0, top_k=2, top_p=1.0)
+    probs = Sampler.probabilities(logits, params)
+
+    assert probs.shape == logits.shape
+    # top_p=1 on finite logits that cannot underflow: the support is exactly the
+    # candidate set, so counting non-zero entries is meaningful.
+    candidates = probs.nonzero().flatten().tolist()
+    assert len(candidates) == 2
+    assert 0 in candidates  # the maximum always survives
+    assert 3 not in candidates  # the minimum never does
+    # Which of the two tied tokens survives is not guaranteed across devices, so
+    # assert "exactly one of them" instead of a specific index.
+    assert len({1, 2} & set(candidates)) == 1
+    # The survivors carry their own logits, normalized into a distribution.
+    assert probs.sum().item() == pytest.approx(1.0)
+    tied = next(index for index in candidates if index != 0)
+    retained = torch.softmax(torch.tensor([5.0, 4.0]), dim=-1)
+    assert probs[0].item() == pytest.approx(retained[0].item())
+    assert probs[tied].item() == pytest.approx(retained[1].item())
+
+
+def test_top_k_one_on_all_tied_logits_keeps_one_candidate():
+    # Every token shares the maximum, so the threshold mask kept all four at a
+    # uniform 0.25 each. Strict top-k keeps a single one at weight 1.
+    probs = Sampler.probabilities(
+        torch.zeros(4), SamplingParams(temperature=1.0, top_k=1, top_p=1.0)
+    )
+    candidates = probs.nonzero().flatten()
+    assert len(candidates) == 1
+    assert probs[candidates[0]].item() == pytest.approx(1.0)
+
+
+def test_probabilities_leaves_the_caller_row_unmodified():
+    # top-k rebuilds the row with an in-place scatter, so pin that the buffer it
+    # writes to is the one created inside probabilities(), not the caller's row
+    # (a row view of the batch tensor).
+    logits = torch.tensor([5.0, 4.0, 4.0, 1.0])
+    before = logits.clone()
+    Sampler.probabilities(logits, SamplingParams(temperature=1.0, top_k=2, top_p=1.0))
+    torch.testing.assert_close(logits, before)
+
+
+def test_top_k_at_or_above_the_vocabulary_keeps_every_token():
+    logits = torch.tensor([1.0, 2.0, 3.0])
+    expected = torch.softmax(logits, dim=-1)
+    for top_k in (3, 5):
+        params = SamplingParams(temperature=1.0, top_k=top_k)
+        torch.testing.assert_close(Sampler.probabilities(logits, params), expected)
+
+
+def test_disabled_top_k_keeps_every_token():
+    logits = torch.tensor([1.0, 2.0, 3.0])
+    probs = Sampler.probabilities(logits, SamplingParams(temperature=1.0, top_k=-1))
+    torch.testing.assert_close(probs, torch.softmax(logits, dim=-1))
+
+
+def test_top_p_trims_the_strict_top_k_candidate_set():
+    # top-k keeps 3 candidates and top-p then keeps the head of their sorted
+    # distribution, so the final support is smaller than k.
+    logits = torch.tensor([4.0, 3.0, 2.0, 1.0])
+    params = SamplingParams(temperature=1.0, top_k=3, top_p=0.8)
+    probs = Sampler.probabilities(logits, params)
+    assert probs.nonzero().flatten().tolist() == [0, 1]
+    torch.testing.assert_close(probs[:2], torch.softmax(logits[:2], dim=-1))
 
 
 def test_top_p_keeps_at_least_one_token():

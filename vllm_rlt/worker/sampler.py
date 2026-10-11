@@ -5,6 +5,11 @@ sampling contract can be pinned by unit tests without a runner. ``probabilities`
 and ``draw`` were unified here from ``worker/sampling.py``, so the CODA and
 speculative paths keep one copy of the distribution construction.
 
+Top-k keeps exactly ``k`` candidates by index, so tokens tied with the k-th logit
+no longer widen the support. That is a deliberate arithmetic change from the
+earlier threshold mask, which kept every tied token; the remaining order is
+unchanged (``float()/temperature`` -> top-k -> top-p -> ``multinomial``).
+
 ``Sampler`` holds no state and never creates a generator: it consumes the one the
 caller obtained from ``RngRegistry``. The registry is the single owner of RNG
 creation, lookup and lifetime, and the engine shares one instance between its
@@ -25,14 +30,22 @@ class Sampler:
 
         ``params`` is assumed to be validated by ``SamplingParams.__post_init__``.
         Greedy decoding has no temperature-scaled distribution, so it is a caller
-        error rather than a silent argmax.
+        error rather than a silent argmax. Top-k keeps exactly ``k`` candidates
+        (or every token when ``k`` reaches the vocabulary); top-p may trim that
+        support further.
         """
         if params.temperature == 0:
             raise ValueError("greedy decoding has no temperature-scaled distribution")
         logits = logits.float() / params.temperature
         if params.top_k > 0:
-            threshold = logits.topk(min(params.top_k, logits.numel())).values[-1]
-            logits = logits.masked_fill(logits < threshold, -torch.inf)
+            # Select by index, not by the k-th logit value: a threshold mask also
+            # keeps every token tied with it, so the support could exceed k. Which
+            # index survives a tie is not specified across devices, so callers
+            # must not rely on a particular one. ``scatter_`` writes into the
+            # buffer created here, so the caller's row is never modified and the
+            # candidates come from topk instead of a second gather.
+            values, indices = logits.topk(min(params.top_k, logits.numel()))
+            logits = torch.full_like(logits, -torch.inf).scatter_(0, indices, values)
         if params.top_p < 1:
             sorted_logits, indices = logits.sort(descending=True)
             remove = sorted_logits.softmax(-1).cumsum(-1) > params.top_p
