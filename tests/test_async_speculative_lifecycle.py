@@ -1,4 +1,4 @@
-"""CPU producer/consumer contracts with GPU completion boundaries stubbed."""
+"""Producer/consumer failure contracts on stubbed boundaries and real CUDA streams."""
 
 from dataclasses import replace
 from types import SimpleNamespace
@@ -132,6 +132,102 @@ def test_discard_waits_for_copy_without_interpreting_payload():
     assert ticket.bank.leased and len(ticket.bank.keepalive) == 1
     assert ticket.bank.copy_done.waits == 1
     engine.close()
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("decode_failure", [False, True])
+@torch.inference_mode()
+def test_cuda_serving_two_completed_rounds_isolate_decode_failure(monkeypatch, decode_failure):
+    from tests.test_async_speculative import bootstrap, make_engine, tiny
+
+    engine = make_engine(tiny("cuda"), k=2)
+    try:
+        bootstrap(engine, max_tokens=6)
+        # Force full acceptance, so the two real queued rounds produce both
+        # an intermediate snapshot and the terminal snapshot in the same tick.
+        monkeypatch.setattr(
+            engine.model,
+            "coda",
+            lambda h: torch.zeros(len(h), engine.model.config.vocab_size, device=h.device),
+        )
+        engine.step()
+        engine.step()
+        assert len(engine._pending_speculative) == 2
+        engine.speculative_runner.synchronize()
+        decoder = RecordingDecoder(fail=decode_failure)
+        worker = EngineWorker.__new__(EngineWorker)
+        worker.engine = engine
+        worker.decoders = {"r": (decoder, 1)}
+        failures, events, running = worker._tick([], set())
+        assert not running and not worker.decoders
+        assert "r" not in engine.scheduler.requests
+        if decode_failure:
+            assert [rid for rid, _ in failures] == ["r"] and not events
+            assert decoder.calls == [(0, False)]
+        else:
+            assert not failures and len(events) == 2
+            assert events[-1][1].finish_reason == "length"
+            assert len(decoder.calls) == 5
+
+        # Admit and finish a fresh request through the same actual CUDA engine
+        # and serving adapter after the failed request has already retired.
+        engine.add_request("healthy", [7, 8], SamplingParams(max_tokens=3, ignore_eos=True))
+        healthy_decoder = RecordingDecoder()
+        worker.decoders["healthy"] = (healthy_decoder, 0)
+        healthy_events = []
+        for _ in range(60):
+            failures, events, running = worker._tick([], set())
+            assert not failures
+            healthy_events.extend(events)
+            if not running:
+                break
+        else:
+            pytest.fail("unrelated CUDA request did not finish")
+        assert len(healthy_decoder.calls) == 3
+        assert all(rid == "healthy" for rid, _ in healthy_events)
+        assert healthy_events[-1][1].finish_reason == "length"
+        assert not worker.decoders and engine.cache_manager.num_used_blocks == 0
+        assert not engine.speculative_runner.states
+        assert all(
+            not bank.leased and not bank.keepalive for bank in engine.speculative_runner.banks
+        )
+    finally:
+        engine.close()
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("bad_second", [False, True])
+@torch.inference_mode()
+def test_cuda_failure_cleanup_preserves_error_and_releases_real_banks(bad_second):
+    from tests.test_async_speculative import bootstrap, make_engine, tiny
+
+    engine = make_engine(tiny("cuda"), k=2)
+    try:
+        bootstrap(engine)
+        engine.step()
+        engine.step()
+        tickets = engine._pending_speculative.copy()
+        assert len(tickets) == 2
+        engine.speculative_runner.synchronize()
+        # Corrupt only the completed host payload; the real compute/copy
+        # streams and pending bank leases retain their production lifecycle.
+        first = tickets[0]
+        first.bank.host_result[first.rows + len(first.batch.items)] = 0
+        if bad_second:
+            tickets[1].bank.host_result = InvalidHostResult()
+        with pytest.raises(RuntimeError, match="frontier disagrees with committed prefix"):
+            engine.step()
+        assert not engine._pending_speculative and not engine._retiring_speculative
+        assert not engine.scheduler.requests and engine.cache_manager.num_used_blocks == 0
+        assert not engine.speculative_runner.states
+        assert all(
+            not bank.leased and not bank.keepalive for bank in engine.speculative_runner.banks
+        )
+        if bad_second:
+            assert tickets[1].bank.host_result.reads == 0
+        engine.close()
+    finally:
+        engine.close()
 
 
 @torch.inference_mode()
