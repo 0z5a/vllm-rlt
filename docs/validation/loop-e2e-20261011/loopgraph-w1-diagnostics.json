@@ -1154,5 +1154,224 @@
       }
     ],
     "CUDA_initialized": false
+  },
+  "host_routing_isolation": {
+    "passed": false,
+    "artifact_integrity_passed": true,
+    "complete_raw_reconstruction_passed": true,
+    "scope": "Exact host-route isolation diagnostic with original math/token failure gates; no production change or performance pass",
+    "actual_producer_return": 1,
+    "archive_sha256": "97f403045287725991995eeb8425ece44bfddcc1be14445b63009987c4b69a9d",
+    "payloads_verified": 428,
+    "cases": {
+      "W1-P256-B32-async0-graph0-eager_body/bimodal_50": {
+        "author_passed": true,
+        "author_waves": 2,
+        "author_repeat_mismatches": [],
+        "candidate_status": "FAIL",
+        "waves": [
+          {
+            "wave": 0,
+            "requests": 64,
+            "generated_tokens": 8192,
+            "mismatches": [
+              {
+                "request_id": "request-7",
+                "first_different_token": 8
+              },
+              {
+                "request_id": "request-13",
+                "first_different_token": 17
+              },
+              {
+                "request_id": "request-14",
+                "first_different_token": 57
+              },
+              {
+                "request_id": "request-20",
+                "first_different_token": 6
+              },
+              {
+                "request_id": "request-36",
+                "first_different_token": 7
+              },
+              {
+                "request_id": "request-39",
+                "first_different_token": 12
+              },
+              {
+                "request_id": "request-51",
+                "first_different_token": 34
+              },
+              {
+                "request_id": "request-58",
+                "first_different_token": 7
+              },
+              {
+                "request_id": "request-63",
+                "first_different_token": 30
+              }
+            ],
+            "depth_work_parity": true,
+            "drained": true
+          }
+        ]
+      },
+      "W1-P256-B32-async0-graph0-host_branch_graph/bimodal_50": {
+        "author_passed": true,
+        "author_waves": 2,
+        "author_repeat_mismatches": [],
+        "candidate_status": "FAIL",
+        "waves": [
+          {
+            "wave": 0,
+            "requests": 64,
+            "generated_tokens": 8192,
+            "mismatches": [
+              {
+                "request_id": "request-7",
+                "first_different_token": 8
+              },
+              {
+                "request_id": "request-13",
+                "first_different_token": 17
+              },
+              {
+                "request_id": "request-14",
+                "first_different_token": 57
+              },
+              {
+                "request_id": "request-20",
+                "first_different_token": 6
+              },
+              {
+                "request_id": "request-36",
+                "first_different_token": 7
+              },
+              {
+                "request_id": "request-39",
+                "first_different_token": 12
+              },
+              {
+                "request_id": "request-51",
+                "first_different_token": 34
+              },
+              {
+                "request_id": "request-58",
+                "first_different_token": 7
+              },
+              {
+                "request_id": "request-63",
+                "first_different_token": 30
+              }
+            ],
+            "depth_work_parity": true,
+            "drained": true
+          }
+        ]
+      }
+    },
+    "routing_isolation": {
+      "W1-P256-B32-async0-graph0-eager_body": {
+        "scope": "All saved candidate hidden/logit snapshots compared to previously verified native conditional-router run; exact reused-author provenance; original token failures retained",
+        "execution": "eager_body",
+        "snapshot_records": 432,
+        "hidden_byte_equal_records": 432,
+        "logits_byte_equal_records": 432,
+        "hidden_max_abs_vs_conditional": 0.0,
+        "logits_max_abs_vs_conditional": 0.0,
+        "epochs": 254,
+        "branch_live_work": 20047
+      },
+      "W1-P256-B32-async0-graph0-host_branch_graph": {
+        "scope": "All saved candidate hidden/logit snapshots compared to previously verified native conditional-router run; exact reused-author provenance; original token failures retained",
+        "execution": "host_branch_graph",
+        "snapshot_records": 432,
+        "hidden_byte_equal_records": 432,
+        "logits_byte_equal_records": 432,
+        "hidden_max_abs_vs_conditional": 0.0,
+        "logits_max_abs_vs_conditional": 0.0,
+        "epochs": 254,
+        "branch_live_work": 20047
+      }
+    }
+  },
+  "fixed_capacity_padding_isolation": {
+    "passed": false,
+    "artifact_integrity_passed": true,
+    "complete_raw_reconstruction_passed": true,
+    "scope": "Fixed-capacity padding isolation diagnostic with original math/token failure gates; no production change or performance pass",
+    "actual_producer_return": 1,
+    "archive_sha256": "4fb2a7f95847f907ace4e9a890c73da5721c4a98062f351a22d55be1496f5bd3",
+    "payloads_verified": 410,
+    "cases": {
+      "W1-P256-B32-async0-graph0-eager_body/bimodal_50": {
+        "author_passed": true,
+        "author_waves": 2,
+        "author_repeat_mismatches": [],
+        "candidate_status": "FAIL",
+        "waves": [
+          {
+            "wave": 0,
+            "requests": 64,
+            "generated_tokens": 8192,
+            "mismatches": [
+              {
+                "request_id": "request-7",
+                "first_different_token": 8
+              },
+              {
+                "request_id": "request-13",
+                "first_different_token": 17
+              },
+              {
+                "request_id": "request-14",
+                "first_different_token": 57
+              },
+              {
+                "request_id": "request-20",
+                "first_different_token": 6
+              },
+              {
+                "request_id": "request-36",
+                "first_different_token": 7
+              },
+              {
+                "request_id": "request-39",
+                "first_different_token": 12
+              },
+              {
+                "request_id": "request-51",
+                "first_different_token": 34
+              },
+              {
+                "request_id": "request-58",
+                "first_different_token": 7
+              },
+              {
+                "request_id": "request-63",
+                "first_different_token": 30
+              }
+            ],
+            "depth_work_parity": true,
+            "drained": true
+          }
+        ]
+      }
+    },
+    "routing_isolation": {
+      "W1-P256-B32-async0-graph0-eager_body": {
+        "scope": "All saved candidate hidden/logit snapshots compared to previously verified native conditional-router run; exact reused-author provenance; original token failures retained",
+        "execution": "eager_body",
+        "padding_policy": "always full capacity; real eligible rows and depth/work unchanged",
+        "snapshot_records": 432,
+        "hidden_byte_equal_records": 420,
+        "logits_byte_equal_records": 420,
+        "hidden_max_abs_vs_conditional": 0.15625,
+        "logits_max_abs_vs_conditional": 0.1875,
+        "epochs": 254,
+        "branch_live_work": 20047
+      }
+    }
   }
 }
