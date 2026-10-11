@@ -1,0 +1,181 @@
+{
+  "scope": "frozen controlled-reward numerical E2E checks; not reward improvement or node scaling evidence",
+  "algorithms": {
+    "grpo": {
+      "status": "LOCAL_NUMERICAL_AUDIT_PASS",
+      "actual_local_audit_return": 0,
+      "source_commit": "0b4f6fc130cbad5e947e964e37ee2755eaee4df5",
+      "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+      "dtype": "float32",
+      "checkpoint_comparison": {
+        "actor": {
+          "status": "PASS",
+          "compared_chunks": 202,
+          "comparison": "Every typed DCP value plus optimizer, scheduler, iteration and checkpoint version; saved RNG required"
+        }
+      },
+      "runs": {
+        "continuous": {
+          "updates": 3,
+          "response_tokens": 1394,
+          "maximum_selected_logprob_absolute_error": 0.00010228157043457031,
+          "optimizer_gradient_norms": {
+            "actor": [
+              9.27362343168701,
+              10.206298708405281,
+              20.747213521253506
+            ]
+          },
+          "runtime_epochs": 1,
+          "policy_publications": 3
+        },
+        "resumed": {
+          "updates": 3,
+          "response_tokens": 1394,
+          "maximum_selected_logprob_absolute_error": 0.00010228157043457031,
+          "optimizer_gradient_norms": {
+            "actor": [
+              9.27362343168701,
+              10.206298708405281,
+              20.747213521253506
+            ]
+          },
+          "runtime_epochs": 2,
+          "policy_publications": 3
+        }
+      },
+      "numerical_audit_sha256": "f15864a624003c3fd11a4f4d0a126e19af5a01dd5568a35bd8c180694e3e5caf",
+      "archive_integrity": {
+        "passed": true,
+        "scope": "independent VPS streaming verification of every archived payload; original local typed numerical checkpoint audit remains separate",
+        "payloads": 58,
+        "uncompressed_bytes": 50040049684,
+        "archive_bytes": 26789031197,
+        "archive_sha256": "8f71955da37f424eafd658c271e2f68ab8a41a9a271c2639d674b200624a1da0",
+        "actual_transport_return": 0,
+        "full_archive_storage": "MN5 verified archive retained; no second full VPS archive due available space",
+        "finished": 1791729454.1490047
+      }
+    },
+    "ppo": {
+      "status": "LOCAL_NUMERICAL_AUDIT_PASS",
+      "actual_local_audit_return": 0,
+      "source_commit": "0b4f6fc130cbad5e947e964e37ee2755eaee4df5",
+      "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+      "dtype": "float32",
+      "checkpoint_comparison": {
+        "actor": {
+          "status": "PASS",
+          "compared_chunks": 202,
+          "comparison": "Every typed DCP value plus optimizer, scheduler, iteration and checkpoint version; saved RNG required"
+        },
+        "critic": {
+          "status": "PASS",
+          "compared_chunks": 202,
+          "comparison": "Every typed DCP value plus optimizer, scheduler, iteration and checkpoint version; saved RNG required"
+        }
+      },
+      "runs": {
+        "continuous": {
+          "updates": 3,
+          "response_tokens": 352,
+          "maximum_selected_logprob_absolute_error": 0.00010383129119873047,
+          "optimizer_gradient_norms": {
+            "actor": [
+              41.02312431441107,
+              50.45760325820579,
+              20.218208128847774
+            ],
+            "critic": [
+              1806.5685705225806,
+              2317.964624406507,
+              925.4246322634815
+            ]
+          },
+          "runtime_epochs": 1,
+          "policy_publications": 3
+        },
+        "resumed": {
+          "updates": 3,
+          "response_tokens": 352,
+          "maximum_selected_logprob_absolute_error": 0.00010383129119873047,
+          "optimizer_gradient_norms": {
+            "actor": [
+              41.02312431441107,
+              50.45760325820579,
+              20.218208128847774
+            ],
+            "critic": [
+              1806.5685705225806,
+              2317.964624406507,
+              925.4246322634815
+            ]
+          },
+          "runtime_epochs": 2,
+          "policy_publications": 3
+        }
+      }
+    },
+    "dppo": {
+      "status": "LOCAL_NUMERICAL_AUDIT_PASS",
+      "actual_local_audit_return": 0,
+      "source_commit": "0b4f6fc130cbad5e947e964e37ee2755eaee4df5",
+      "model_revision": "b82e54bd609793562a75cbf9337970a93369eab5",
+      "dtype": "float32",
+      "checkpoint_comparison": {
+        "actor": {
+          "status": "PASS",
+          "compared_chunks": 202,
+          "comparison": "Every typed DCP value plus optimizer, scheduler, iteration and checkpoint version; saved RNG required"
+        },
+        "critic": {
+          "status": "PASS",
+          "compared_chunks": 202,
+          "comparison": "Every typed DCP value plus optimizer, scheduler, iteration and checkpoint version; saved RNG required"
+        }
+      },
+      "runs": {
+        "continuous": {
+          "updates": 3,
+          "response_tokens": 352,
+          "maximum_selected_logprob_absolute_error": 0.00010383129119873047,
+          "optimizer_gradient_norms": {
+            "actor": [
+              41.023155558686454,
+              50.45779679903295,
+              20.21798699898226
+            ],
+            "critic": [
+              1806.5685705225806,
+              2317.964624406507,
+              925.4246322634815
+            ]
+          },
+          "runtime_epochs": 1,
+          "policy_publications": 3
+        },
+        "resumed": {
+          "updates": 3,
+          "response_tokens": 352,
+          "maximum_selected_logprob_absolute_error": 0.00010383129119873047,
+          "optimizer_gradient_norms": {
+            "actor": [
+              41.023155558686454,
+              50.45779679903295,
+              20.21798699898226
+            ],
+            "critic": [
+              1806.5685705225806,
+              2317.964624406507,
+              925.4246322634815
+            ]
+          },
+          "runtime_epochs": 2,
+          "policy_publications": 3
+        }
+      }
+    }
+  },
+  "flow_dppo": "RUNNING; additional full categorical/KL audit queued",
+  "scaling": "matched CPU and shared publication/checkpoint storage single-node baseline running; supported two-node actor-DP pilot queued; one rollout engine retained"
+}

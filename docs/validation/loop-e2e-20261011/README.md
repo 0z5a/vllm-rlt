@@ -31,11 +31,41 @@ All three complete archives passed independent CPU audit, including payload hash
 
 These serving runs use the two original short prompts (5 and 15 tokens), with requested output lengths 3 and 5, plus explicit one-token/EOS cases. The configured context limits are not evidence of long-context execution. Full hidden-state/KV numerical parity is covered by separate math/G3 gates; this serving export does not contain full hidden/KV tensors. These co-running, instrumented runs do not establish a throughput gain, a quality improvement, or completion of the formal W1/W2 performance matrix.
 
+## LoopGraph: gate boundaries and actual long prompts
+
+The unchanged CDB cumulative-hazard gate passed an additional real-CUDA boundary oracle: 38 cases, four signal dtypes, eager and captured CUDA Graph execution, and two slot-reuse waves. The independent CPU auditor reconstructed all 4,096 recorded slot-state observations. Exact threshold equality and the adjacent binary64 values, minimum/maximum depth, padding, and stable addresses are covered. This primitive test uses an exactly representable hazard of 0.5; it does not replace the separate real-model math/G3 checks.
+
+The following additional candidate runs use repeated canonical token sequences, 128 generated tokens per request, two request-ID reuse waves, and both fixed-depth-4 and immediate live-gate profiles:
+
+| Prompt length | Capacity | Common KV cap | Candidate requests | Generated tokens | Independently audited result |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 256 | 32 | 48 GiB | 128 | 16,384 | Exact author tokens, aggregate exit-depth/core-work parity, complete drain |
+| 1,024 | 32 | 48 GiB | 128 | 16,384 | Exact author tokens, aggregate exit-depth/core-work parity, complete drain |
+| 1,024 | 64 | 48 GiB | 0 | 0 | Candidate admission stopped before generation: its preallocated KV bank exceeds the cap |
+
+The original author completed the B64 reference, but the combined B64 comparison remains a capacity stop. Its producer returned 1 and the initial whole-run auditor rejected it. A separate partial-result audit verified the completed B32 cases and confirmed the two B64 admission failures; it does not turn the failed whole run into a pass. The B32/1,024-token run is a separately named capacity variant. A separately declared 56 GiB B64 functional variant is pending.
+
+These are full-generation functional cases, not frozen ShareGPT/Poisson workloads, matched-physical-allocation performance comparisons, or full hidden/KV exports. No throughput or quality gain is claimed. Counts, scopes, natural return codes and archive hashes are in [loopgraph-long-context.json](loopgraph-long-context.json).
+
+## ScaleRLT: completed numerical training stages
+
+The frozen FP32 controlled-reward GRPO, PPO and DPPO runs each passed three continuous updates and the matching save/fresh-resume path. Rollouts, selected log probabilities, recurrent traces, publication versions and optimizer gradients match the original numerical checks. Final complete checkpoint comparisons cover 202 typed actor chunks for GRPO, and 202 actor plus 202 critic chunks for PPO/DPPO, together with optimizer, scheduler, iteration/version and saved RNG state.
+
+| Algorithm | Response tokens per path | Largest selected-logprob absolute error | Validation status |
+| --- | ---: | ---: | --- |
+| GRPO | 1,394 | 0.0001022816 | Local numerical/checkpoint audit passed; independent streaming verification of all 58 archived payloads passed |
+| PPO | 352 | 0.0001038313 | Local numerical/checkpoint audit passed; independent archive export in progress |
+| DPPO | 352 | 0.0001038313 | Local numerical/checkpoint audit passed; archive export pending |
+
+The independent GRPO export check verifies all archived bytes and hashes; the typed numerical checkpoint comparison was performed by the local auditor. These controlled-fixture checks establish E2E consistency, not held-out reward improvement or a scaling gain. See [scalerlt-training.json](scalerlt-training.json).
+
+Early concurrent jobs shared a narrow Slurm CPU affinity. Their timings remain diagnostic. Subsequent timing runs use explicit CPU sets; the new one-node baseline and two-node pilot also share publication and checkpoint storage policy. Completed and interrupted attempts are retained. A repeated LoopCD cost matrix with separate CPU sets is in progress.
+
 ## Remaining work
 
 - ReLoop: complete the original frozen-token native and HTTP cost matrices. The small token-ID HTTP input support is on `codex/reloop-http-tokenids-20261011` (`e4f504872975563b8f31e91f02996add158cf8c8`). Capacity-exceeded cases stay explicitly separate.
-- ScaleRLT: finish all continuous/save/fresh-resume checks and independent exports. The single-node, two-GPU GRPO pilot completed seven real updates with nonzero gradients and all local trace/checkpoint checks. It is not yet a scaling result.
+- ScaleRLT: finish Flow-DPPO, its full categorical/KL supplement, and the remaining independent exports. The earlier single-node, two-GPU GRPO pilot completed seven updates and local checks; the new matched-storage/CPU baseline is running. No node-scaling improvement is established yet.
 - The attempted two-rollout, four-GPU ScaleRLT configuration was rejected before training: the pinned native backend explicitly supports one rollout GPU/engine. The next supported comparison keeps one rollout engine and increases training data parallelism across nodes. No validator is bypassed.
-- Scaling measurements must hold checkpoint, dtype, depth, samples, reward fixture, seed and publication storage fixed. Record actual role placement, full-update wall time, response tokens, training/rollout/publication time, and GPU efficiency. Retain failures and regressions; one pilot does not establish improvement. Shared-publication timing and multi-node qualification are pending.
+- Scaling measurements must hold checkpoint, dtype, depth, samples, reward fixture, seed and publication storage fixed. Record actual role placement, full-update wall time, response tokens, training/rollout/publication time, and GPU efficiency. Retain failures and regressions; one pilot does not establish improvement. The new matched-storage/CPU baseline and supported multi-node qualification remain in progress.
 
 PR #82's accepted coda-only numbers remain +0.34% / +0.85%; they are not combined with any of these experiments. PR #115 was separately updated with real CUDA cleanup/recovery coverage and 88 passing targeted tests, with no skips.

@@ -1,0 +1,97 @@
+{
+  "scope": "GPU gate primitive and synthetic long-prompt functional supplements; not formal W1/W2 or a speed/quality claim",
+  "gate_boundary": {
+    "passed": true,
+    "archive_sha256": "adc367ed3a6c499c96e4ab6e698829aa111f9b4bee13b4fccd2a827f799f9d6b",
+    "payloads_verified": 7,
+    "actual_producer_return": 0,
+    "torch_imported": false,
+    "scope": "recorded CUDA CDB gate primitive states and boundary decisions only; separate arithmetic with exact hazard 0.5; not model numerical or performance evidence",
+    "cases": 38,
+    "records": 64,
+    "slot_state_observations": 4096,
+    "modes": [
+      "eager",
+      "cuda_graph"
+    ],
+    "dtypes": [
+      "bfloat16",
+      "float16",
+      "float32",
+      "float64"
+    ],
+    "reuse_waves": 2
+  },
+  "long_prompt_runs": {
+    "loopgraph-longcontext-v2": {
+      "passed": false,
+      "archive_sha256": "e5efc2fbac0eeb63617b599cd99bcf7c65e51bb006014756343c85cadeb98954",
+      "payloads_verified": 470,
+      "actual_producer_return": 1,
+      "torch_imported": false,
+      "scope": "synthetic long-prompt serving outputs, executed depth/work, request-ID reuse and physical drain; not formal W1/W2, full hidden/KV numerical evidence or speed claim",
+      "source_files": 345,
+      "cases": {
+        "P256-B32/fixed4": {
+          "requests": 64,
+          "prompt_tokens": 256,
+          "output_tokens_per_request": 128,
+          "generated_tokens": 8192,
+          "exact_author_tokens_and_aggregate_exit_work": true,
+          "drained": true
+        },
+        "P256-B32/live_immediate": {
+          "requests": 64,
+          "prompt_tokens": 256,
+          "output_tokens_per_request": 128,
+          "generated_tokens": 8192,
+          "exact_author_tokens_and_aggregate_exit_work": true,
+          "drained": true
+        }
+      },
+      "requests": 128,
+      "generated_tokens": 16384,
+      "archive_integrity_passed": true,
+      "audited_completed_cases_passed": true,
+      "overall_status": "PARTIAL_WITH_CAPACITY_STOP",
+      "capacity_stops": [
+        "P1024-B64/fixed4",
+        "P1024-B64/live_immediate"
+      ],
+      "interpretation": "auditor success confirms saved partial results and explicit admission failures; it is not a full long-context matrix pass"
+    },
+    "loopgraph-longcontext-v3": {
+      "passed": true,
+      "archive_sha256": "314f651e79560e310236c4d8bd88f45d20160cfbd2ecea8ecaa3dcb67b21dfa6",
+      "payloads_verified": 434,
+      "actual_producer_return": 0,
+      "torch_imported": false,
+      "scope": "synthetic long-prompt serving outputs, executed depth/work, request-ID reuse and physical drain; not formal W1/W2, full hidden/KV numerical evidence or speed claim",
+      "source_files": 345,
+      "cases": {
+        "P1024-B32/fixed4": {
+          "requests": 64,
+          "prompt_tokens": 1024,
+          "output_tokens_per_request": 128,
+          "generated_tokens": 8192,
+          "exact_author_tokens_and_aggregate_exit_work": true,
+          "drained": true
+        },
+        "P1024-B32/live_immediate": {
+          "requests": 64,
+          "prompt_tokens": 1024,
+          "output_tokens_per_request": 128,
+          "generated_tokens": 8192,
+          "exact_author_tokens_and_aggregate_exit_work": true,
+          "drained": true
+        }
+      },
+      "requests": 128,
+      "generated_tokens": 16384
+    }
+  },
+  "qualified_candidate_requests": 256,
+  "qualified_candidate_output_tokens": 32768,
+  "original_48GiB_B64_P1024_status": "CAPACITY_STOP_BEFORE_CANDIDATE_GENERATION",
+  "separate_56GiB_B64_P1024_variant": "PENDING"
+}
