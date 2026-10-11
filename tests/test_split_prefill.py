@@ -35,6 +35,7 @@ def model():
 
 def engine(**kwargs):
     kwargs.setdefault("cache_config", CacheConfig(64, 2))
+    kwargs.setdefault("execution_config", ExecutionConfig(atomic_prefill=True))
     kwargs.setdefault(
         "scheduler_config",
         SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=2),
@@ -62,6 +63,20 @@ def run_request(e, prompt, request_id="run"):
         SamplingParams(max_tokens=3, max_loops=2, ignore_eos=True),
     )
     return drain_request(e)
+
+
+class HeldEvent:
+    def __init__(self, before_sync=None):
+        self.complete = False
+        self.before_sync = before_sync
+
+    def query(self):
+        return self.complete
+
+    def synchronize(self):
+        if self.before_sync is not None:
+            self.before_sync()
+        self.complete = True
 
 
 def advance_chunk(request, item):
@@ -264,6 +279,87 @@ def test_cpu_async_split_prefill_matches_sync_split():
     assert actual.token_ids == expected.token_ids
     assert actual.exit_depths == expected.exit_depths
     assert asynchronous.cache_manager.num_used_blocks == 0
+
+
+def test_cpu_async_split_frontier_advances_once_per_submission():
+    prompt = [1, 2, 3, 4, 5]
+    trace = ExitConfig("trace", depths_by_request={"run": [TOTAL_DEPTHS, 2, 2]})
+    e = split_engine(
+        exit_config=trace,
+        execution_config=ExecutionConfig(async_scheduling=True, atomic_prefill=False),
+    )
+    e.add_request("run", prompt, SamplingParams(max_tokens=3, max_loops=2, ignore_eos=True))
+    request = e.scheduler.requests["run"]
+    held = []
+    submit = e.model_runner.submit
+
+    def hold_split_ticket(batch):
+        ticket = submit(batch)
+        if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
+            ticket.event = HeldEvent()
+            held.append(ticket.event)
+        return ticket
+
+    e.model_runner.submit = hold_split_ticket
+    for _ in range(32):
+        e.step()
+        if request.stage is Stage.CODA:
+            break
+
+    assert request.stage is Stage.CODA
+    assert request.num_prefilled_tokens == len(prompt)
+    assert all(left == right for left, right in request.running_depth_boundary)
+    assert len(held) == 15  # Three chunks, each with prelude plus four depths.
+    assert e.model_runner.split_prefill_submissions == len(held)
+    for event in held:
+        event.complete = True
+
+    output = drain_request(e)
+    assert output.exit_depths == [TOTAL_DEPTHS, 2, 2]
+
+
+def test_split_submission_bound_counts_and_waits_for_oldest_event():
+    e = split_engine(
+        exit_config=ExitConfig("ouro_delayed"),
+        execution_config=ExecutionConfig(async_scheduling=True, atomic_prefill=False),
+    )
+    e.add_request("wait", [1, 2], SamplingParams(max_tokens=1, ignore_eos=True))
+    e.scheduler._admit()
+    batch = e.scheduler.schedule()
+    runner = e.model_runner
+    events = [HeldEvent() for _ in range(3)]
+    runner.submission_events.extend(events)
+
+    runner.submit(batch)
+    e._update(batch, None)
+
+    assert events[0].complete
+    assert len(runner.submission_events) == 2
+    assert runner.split_prefill_submissions == 1
+    assert runner.split_prefill_submission_waits == 1
+    e.abort_request("wait")
+
+
+def test_runner_slot_release_waits_for_last_request_event():
+    e = split_engine()
+    e.add_request("slot", [1, 2], SamplingParams(max_tokens=1, ignore_eos=True))
+    e.scheduler._admit()
+    request = e.scheduler.requests["slot"]
+    runner = e.model_runner
+    slot = runner._slot(request)
+
+    def verify_slot_is_still_owned():
+        assert runner.state_slots["slot"] == slot
+
+    event = HeldEvent(before_sync=verify_slot_is_still_owned)
+    runner.events["slot"] = event
+
+    runner.release("slot")
+
+    assert event.complete
+    assert "slot" not in runner.state_slots
+    assert slot in runner.free_state_slots
+    e.abort_request("slot")
 
 
 @pytest.mark.gpu

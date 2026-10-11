@@ -145,6 +145,8 @@ class ModelRunner:
         # Two core rounds plus one interleaved boundary stage can be in flight.
         # Prepare the next batch BEFORE retiring the oldest submission.
         self.submission_events = deque()
+        self.split_prefill_submissions = 0
+        self.split_prefill_submission_waits = 0
         self.events = {}
         self.workspaces = {}
         self.workspace_index = {"core": 0, "boundary": 0}
@@ -657,6 +659,8 @@ class ModelRunner:
         while self.submission_events and self.submission_events[0].query():
             self.submission_events.popleft()
         if len(self.submission_events) >= 3:
+            if split_prefill:
+                self.split_prefill_submission_waits += 1
             self.submission_events.popleft().synchronize()
         if prepared.routing is not None:
             if prepared.routing.imports:
@@ -698,6 +702,8 @@ class ModelRunner:
                 for item in batch.items:
                     self.events[item.request.request_id] = event
                 self.submission_events.append(event)
+            if split_prefill:
+                self.split_prefill_submissions += 1
             return Submission(
                 batch,
                 result,
