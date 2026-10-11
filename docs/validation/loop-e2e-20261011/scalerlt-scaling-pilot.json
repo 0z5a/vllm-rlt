@@ -225,7 +225,7 @@
       "actual_reclaim_return": 0
     }
   },
-  "conclusion": "Seed42 regressed; seeds43/44/45/46 improved. All slow updates, paired seeds and co-running I/O retained; five pairs do not establish stable scaling or held-out reward improvement.",
+  "conclusion": "Seed42 regressed; seeds43/44/45/46 improved. All slow updates, paired seeds and co-running I/O retained; five pairs do not establish stable scaling or held-out reward improvement. All ten complete pilot archives now passed independent compressed and payload integrity checks.",
   "seed43": {
     "runs": {
       "scalerlt-scaling-1n2g-shared-v6": {
@@ -956,7 +956,16 @@
         "finished": 1791752873.6230917
       },
       "scalerlt-scaling-2n3g-v6": {
-        "status": "PENDING_ACTUAL_INDEPENDENT_RECEIPT"
+        "passed": true,
+        "seed": 46,
+        "scope": "independent complete archive bytes and all payload hashes; local scientific audit remains separate",
+        "archive_sha256": "9abbd94e22cd46bebfd34b83f3d790fc86f8281469c7adc3bae89a0d73bf1696",
+        "archive_bytes": 9041007458,
+        "payloads_verified": 52,
+        "actual_transport_return": 0,
+        "full_archive_preserved_on_GPFS": true,
+        "no_reclaim": true,
+        "finished": 1791760510.9044304
       }
     }
   }

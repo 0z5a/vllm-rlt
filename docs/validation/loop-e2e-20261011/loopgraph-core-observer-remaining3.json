@@ -1,0 +1,207 @@
+{
+  "passed": false,
+  "artifact_integrity_passed": true,
+  "complete_raw_reconstruction_passed": true,
+  "scope": "Observed prefill/decode core states and hidden/logits, original scientific failures retained, no performance qualification",
+  "actual_producer_return": 1,
+  "archive_sha256": "d0991449361f9181b1733aec10ca68bc377996fcdd43d5a1ede94e075c87447f",
+  "payloads_verified": 420,
+  "cases": {
+    "W1-P256-B32-async0-graph0/bimodal_50": {
+      "author_passed": true,
+      "author_waves": 2,
+      "author_repeat_mismatches": [],
+      "candidate_status": "FAIL",
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "generated_tokens": 8192,
+          "mismatches": [
+            {
+              "request_id": "request-7",
+              "first_different_token": 8
+            },
+            {
+              "request_id": "request-13",
+              "first_different_token": 17
+            },
+            {
+              "request_id": "request-14",
+              "first_different_token": 57
+            },
+            {
+              "request_id": "request-20",
+              "first_different_token": 6
+            },
+            {
+              "request_id": "request-36",
+              "first_different_token": 7
+            },
+            {
+              "request_id": "request-39",
+              "first_different_token": 12
+            },
+            {
+              "request_id": "request-51",
+              "first_different_token": 34
+            },
+            {
+              "request_id": "request-58",
+              "first_different_token": 7
+            },
+            {
+              "request_id": "request-63",
+              "first_different_token": 30
+            }
+          ],
+          "depth_work_parity": true,
+          "drained": true
+        }
+      ]
+    }
+  },
+  "core_observer": {
+    "W1-P256-B32-async0-graph0": {
+      "scope": "CPU compares actual saved prefill/decode module operands and outputs; no CUDA recomputation or operation root-cause proof; original token gate unchanged",
+      "core_records": 85935,
+      "head_records_each": 432,
+      "input_byte_equal_records": 20915,
+      "output_byte_equal_records": 20751,
+      "first_differences": [
+        {
+          "request_id": "request-7",
+          "first_observed_difference": {
+            "key": "request-7:decode:5:0:layers.0.mlp.down_proj",
+            "request_id": "request-7",
+            "stage": "decode",
+            "index": 5,
+            "depth": 0,
+            "module": "layers.0.mlp.down_proj",
+            "input": {
+              "byte_equal": true,
+              "max_abs": 0.0,
+              "different_elements": 0,
+              "elements": 5632
+            },
+            "output": {
+              "byte_equal": false,
+              "max_abs": 2.384185791015625e-07,
+              "different_elements": 2,
+              "elements": 2048
+            }
+          },
+          "prefill_index0_hidden": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 2048
+          },
+          "prefill_index0_logits": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 49152
+          }
+        },
+        {
+          "request_id": "request-13",
+          "first_observed_difference": {
+            "key": "request-13:decode:10:0:layers.0.mlp.down_proj",
+            "request_id": "request-13",
+            "stage": "decode",
+            "index": 10,
+            "depth": 0,
+            "module": "layers.0.mlp.down_proj",
+            "input": {
+              "byte_equal": true,
+              "max_abs": 0.0,
+              "different_elements": 0,
+              "elements": 5632
+            },
+            "output": {
+              "byte_equal": false,
+              "max_abs": 0.00048828125,
+              "different_elements": 2,
+              "elements": 2048
+            }
+          },
+          "prefill_index0_hidden": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 2048
+          },
+          "prefill_index0_logits": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 49152
+          }
+        },
+        {
+          "request_id": "request-63",
+          "first_observed_difference": {
+            "key": "request-63:decode:5:0:layers.0.mlp.down_proj",
+            "request_id": "request-63",
+            "stage": "decode",
+            "index": 5,
+            "depth": 0,
+            "module": "layers.0.mlp.down_proj",
+            "input": {
+              "byte_equal": true,
+              "max_abs": 0.0,
+              "different_elements": 0,
+              "elements": 5632
+            },
+            "output": {
+              "byte_equal": false,
+              "max_abs": 0.00048828125,
+              "different_elements": 2,
+              "elements": 2048
+            }
+          },
+          "prefill_index0_hidden": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 2048
+          },
+          "prefill_index0_logits": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 49152
+          }
+        }
+      ],
+      "observer_invariants": {
+        "author": {
+          "previous_shared_records": 235,
+          "new_records": 432,
+          "previous_hidden_byte_equal": 235,
+          "previous_logits_byte_equal": 235
+        },
+        "candidate": {
+          "previous_shared_records": 240,
+          "new_records": 432,
+          "previous_hidden_byte_equal": 240,
+          "previous_logits_byte_equal": 240
+        }
+      },
+      "actual_author_attention_backend": {
+        "implementation": "paged|flash_attention_3",
+        "callable": "transformers.integrations.flash_paged.paged_attention_forward",
+        "source_sha256": "6a83037a637cff837addad17e0568e33246b7c09fcc73b777700d9bb9e24dcfa",
+        "bytes": 7079,
+        "provenance": "installed Transformers runtime; not claimed part of original353 source manifest"
+      }
+    }
+  },
+  "actual_independent_audit_return": 0,
+  "maximum_decode_index": 32,
+  "limits": [
+    "Observer execution preserves nine original exact-token failures.",
+    "First differing module is observed; no full original batch replay or serving-performance pass."
+  ]
+}
