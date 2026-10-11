@@ -2,6 +2,7 @@
 """Huginn numerical, checkpoint and request-lifecycle regressions."""
 
 import json
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -11,6 +12,7 @@ from vllm_rlt import CacheConfig, ExecutionConfig, SamplingParams, SchedulerConf
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import AutoModelForCausalLM, HuginnConfig, HuginnForCausalLM
+from vllm_rlt.request import Stage
 
 
 def tiny_huginn_config(**overrides):
@@ -38,6 +40,33 @@ def tiny_huginn_config(**overrides):
 def model():
     torch.manual_seed(42)
     return HuginnForCausalLM(tiny_huginn_config()).eval()
+
+
+@pytest.mark.parametrize("mode", ["ouro", "ouro_delayed", "random_lookahead"])
+def test_constant_gate_avoids_readback_without_overriding_lookahead(model, monkeypatch, mode):
+    from vllm_rlt import ExitConfig
+    from vllm_rlt.worker.model_runner import ModelRunner
+
+    runner = ModelRunner(model, make_cache(model), exit_config=ExitConfig(mode=mode))
+    calls = []
+
+    class DeviceResult:
+        def cpu(self):
+            calls.append("readback")
+            return torch.tensor([0.25, 0.75])
+
+    def execute(batch):
+        calls.append(batch.stage)
+        return DeviceResult()
+
+    monkeypatch.setattr(runner, "_execute", execute)
+    batch = SimpleNamespace(stage=Stage.RECURRENT, items=[None, None])
+    assert runner.execute(batch) == ([0.25, 0.75] if mode == "random_lookahead" else [0.0, 0.0])
+    assert calls == [Stage.RECURRENT] + (["readback"] if mode == "random_lookahead" else [])
+    calls.clear()
+    batch.stage = Stage.CODA
+    assert runner.execute(batch) == [0.25, 0.75]
+    assert calls == [Stage.CODA, "readback"]
 
 
 def make_cache(model, device="cpu", backend="torch"):

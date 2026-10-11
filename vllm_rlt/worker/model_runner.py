@@ -514,6 +514,15 @@ class ModelRunner:
     def execute(self, batch: SchedulerOutput):
         # Baseline explicitly synchronizes signals; delayed routing can be tested here.
         result = self._execute(batch)
+        constant = getattr(self.model, "constant_exit_probability", None)
+        if (
+            batch.stage == Stage.RECURRENT
+            and self.exit_config.mode in ("ouro", "ouro_delayed")
+            and constant is not None
+        ):
+            # Keep the actual recurrent computation and KV bookkeeping, but do
+            # not wait for the GPU just to read a model-declared constant hazard.
+            return [constant] * len(batch.items)
         return result.cpu().tolist() if result is not None else None
 
     def _readback_slot(self, result):
