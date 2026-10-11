@@ -328,11 +328,32 @@
             }
           ]
         }
+      },
+      "archive_integrity": {
+        "passed": true,
+        "archive_sha256": "e5f6d93dfcd96150d4a8746f9a7b4e5b19af31acd63dda40d4b18b4280d3568c",
+        "archive_bytes": 34259929453,
+        "logical_paths": 79,
+        "unique_blobs": 66,
+        "RAM_original_retained": true,
+        "scientific_records": [
+          "full-flow-audit/audit.json",
+          "full-flow-audit/result.json",
+          "validation/audit-order-fix.json",
+          "validation/flow-dppo-audit-wait.json",
+          "validation/flow-dppo-audit.json",
+          "validation/flow-dppo-continuous-wait.json",
+          "validation/flow-dppo-resume-wait.json",
+          "validation/flow-dppo-save-wait.json"
+        ],
+        "finished": 1791753951.5379827,
+        "durable_full_archive_storage": "MN5 persistent shared filesystem",
+        "actual_independent_audit_return": 0
       }
     }
   },
   "flow_dppo": {
-    "primary_result": "LOCAL_NUMERICAL_AND_FULL_CATEGORICAL_AUDIT_PASS; no actual blocked step observed; independent complete archive pending",
+    "primary_result": "LOCAL_NUMERICAL_AND_FULL_CATEGORICAL_AUDIT_PASS; no actual blocked step observed; durable full archive and independent complete integrity passed",
     "tight_budget_gate_supplement": {
       "status": "PASS",
       "source_commit": "0b4f6fc130cbad5e947e964e37ee2755eaee4df5",
@@ -399,7 +420,7 @@
       "response_tokens": 352,
       "maximum_selected_logprob_absolute_error": 0.00011324882507324219,
       "policy_publications": 3,
-      "scope": "separate gate activation supplement with unchanged algorithm; original0.01primary retained; independent complete archive integrity passed; durable transfer pending",
+      "scope": "separate gate activation supplement with unchanged algorithm; original0.01primary retained; independent complete archive integrity passed; durable full shared-filesystem archive and independent second-node integrity passed",
       "independent_archive_integrity": {
         "passed": true,
         "scope": "independent full path-to-blob integrity and archived local categorical/gate result reconstruction; full numerical tensor audit was local",
@@ -442,8 +463,30 @@
           }
         ],
         "finished": 1791741968.642303,
-        "durable_full_archive_complete": false
+        "durable_full_archive_complete": true,
+        "durable_storage": "MN5 persistent shared filesystem"
       }
+    },
+    "durable_gate_archive": {
+      "passed": true,
+      "archive_sha256": "a4084c9e35bd375a2bc73edbe57acd9c0708229b683a66a092c8ca704fe70e59",
+      "archive_bytes": 17151847443,
+      "logical_paths": 59,
+      "unique_blobs": 55,
+      "RAM_original_retained": true,
+      "scientific_records": [
+        "producer-wait.json",
+        "run/flow-three-update-gate-wait.json",
+        "run/native-pair-preflight-wait.json",
+        "run/pair-admission-wait.json",
+        "run/pilot-audit.json",
+        "run/pilot-scientific-audit-start.json",
+        "run/pilot-scientific-audit-wait.json",
+        "run/result.json"
+      ],
+      "finished": 1791754159.740013,
+      "durable_full_archive_storage": "MN5 persistent shared filesystem",
+      "actual_independent_audit_return": 0
     }
   },
   "scaling": "seeds42/43/44 completed local numerical checks; seeds45/46 queued. Signs differ, all timings retained.",
@@ -462,5 +505,56 @@
       "DPPO",
       "Flow-DPPO"
     ]
+  },
+  "durable_flow_archives": {
+    "passed": true,
+    "started": 1791742354.6113796,
+    "scope": "complete durable archive/payload integrity, verified primary recovery support, archived scientific result reconstruction; original full numerical tensor audits remain separate",
+    "archives": [
+      {
+        "passed": true,
+        "archive_sha256": "e5f6d93dfcd96150d4a8746f9a7b4e5b19af31acd63dda40d4b18b4280d3568c",
+        "archive_bytes": 34259929453,
+        "logical_paths": 79,
+        "unique_blobs": 66,
+        "RAM_original_retained": true,
+        "scientific_records": [
+          "full-flow-audit/audit.json",
+          "full-flow-audit/result.json",
+          "validation/audit-order-fix.json",
+          "validation/flow-dppo-audit-wait.json",
+          "validation/flow-dppo-audit.json",
+          "validation/flow-dppo-continuous-wait.json",
+          "validation/flow-dppo-resume-wait.json",
+          "validation/flow-dppo-save-wait.json"
+        ],
+        "finished": 1791753951.5379827,
+        "durable_full_archive_storage": "MN5 persistent shared filesystem",
+        "actual_independent_audit_return": 0
+      },
+      {
+        "passed": true,
+        "archive_sha256": "a4084c9e35bd375a2bc73edbe57acd9c0708229b683a66a092c8ca704fe70e59",
+        "archive_bytes": 17151847443,
+        "logical_paths": 59,
+        "unique_blobs": 55,
+        "RAM_original_retained": true,
+        "scientific_records": [
+          "producer-wait.json",
+          "run/flow-three-update-gate-wait.json",
+          "run/native-pair-preflight-wait.json",
+          "run/pair-admission-wait.json",
+          "run/pilot-audit.json",
+          "run/pilot-scientific-audit-start.json",
+          "run/pilot-scientific-audit-wait.json",
+          "run/result.json"
+        ],
+        "finished": 1791754159.740013,
+        "durable_full_archive_storage": "MN5 persistent shared filesystem",
+        "actual_independent_audit_return": 0
+      }
+    ],
+    "required_primary_recovery_support_archive_sha256": "5c1dceb18fd0b00120eb2fefb1cb87466437fb8e3c3e66218bf9a8e2fe43db13",
+    "finished": 1791754159.8105216
   }
 }
