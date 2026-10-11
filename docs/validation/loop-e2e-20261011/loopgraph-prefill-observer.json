@@ -1,0 +1,148 @@
+{
+  "passed": false,
+  "artifact_integrity_passed": true,
+  "complete_raw_reconstruction_passed": true,
+  "scope": "Observed prefill core states and first-output hidden/logits, original scientific failures retained, no performance qualification",
+  "actual_producer_return": 1,
+  "archive_sha256": "3e14790835bfc8fff5e9d5684fcfaed5f0a7a8607ddb5e504726e11bcef088ae",
+  "payloads_verified": 420,
+  "cases": {
+    "W1-P256-B32-async0-graph0/bimodal_50": {
+      "author_passed": true,
+      "author_waves": 2,
+      "author_repeat_mismatches": [],
+      "candidate_status": "FAIL",
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "generated_tokens": 8192,
+          "mismatches": [
+            {
+              "request_id": "request-7",
+              "first_different_token": 8
+            },
+            {
+              "request_id": "request-13",
+              "first_different_token": 17
+            },
+            {
+              "request_id": "request-14",
+              "first_different_token": 57
+            },
+            {
+              "request_id": "request-20",
+              "first_different_token": 6
+            },
+            {
+              "request_id": "request-36",
+              "first_different_token": 7
+            },
+            {
+              "request_id": "request-39",
+              "first_different_token": 12
+            },
+            {
+              "request_id": "request-51",
+              "first_different_token": 34
+            },
+            {
+              "request_id": "request-58",
+              "first_different_token": 7
+            },
+            {
+              "request_id": "request-63",
+              "first_different_token": 30
+            }
+          ],
+          "depth_work_parity": true,
+          "drained": true
+        }
+      ]
+    }
+  },
+  "prefill_observer": {
+    "W1-P256-B32-async0-graph0": {
+      "scope": "CPU compares actual saved prefill module operands and outputs; no CUDA recomputation or operation root-cause proof; original token gate unchanged",
+      "core_records": 2696,
+      "head_records_each": 432,
+      "input_byte_equal_records": 2696,
+      "output_byte_equal_records": 2696,
+      "first_differences": [
+        {
+          "request_id": "request-20",
+          "first_observed_difference": null,
+          "prefill_index0_hidden": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 2048
+          },
+          "prefill_index0_logits": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 49152
+          }
+        },
+        {
+          "request_id": "request-58",
+          "first_observed_difference": null,
+          "prefill_index0_hidden": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 2048
+          },
+          "prefill_index0_logits": {
+            "byte_equal": true,
+            "max_abs": 0.0,
+            "different_elements": 0,
+            "elements": 49152
+          }
+        }
+      ],
+      "observer_invariants": {
+        "author": {
+          "previous_records": 423,
+          "new_records": 432,
+          "previous_hidden_byte_equal": 423,
+          "previous_logits_byte_equal": 423
+        },
+        "candidate": {
+          "previous_records": 432,
+          "new_records": 432,
+          "previous_hidden_byte_equal": 432,
+          "previous_logits_byte_equal": 432
+        }
+      },
+      "actual_author_attention_backend": {
+        "implementation": "paged|flash_attention_3",
+        "callable": "transformers.integrations.flash_paged.paged_attention_forward",
+        "source_sha256": "6a83037a637cff837addad17e0568e33246b7c09fcc73b777700d9bb9e24dcfa",
+        "bytes": 7079,
+        "provenance": "installed Transformers runtime; not claimed part of original353 source manifest"
+      }
+    }
+  },
+  "actual_independent_audit_return": 0,
+  "archive_bytes": 137953746,
+  "observer_failure_retained": {
+    "producer_actual_return": 1,
+    "author_waves_completed": 0,
+    "selected_core_snapshots": 0,
+    "candidate": "NOT_RUN",
+    "error": "observer assumed positional hidden_states; author self_attn uses kwargs",
+    "collector_actual_return": 0,
+    "offbox_complete_payload_integrity": true,
+    "offbox_payloads": 404,
+    "offbox_comparison_auditor_return": 1,
+    "archive_sha256": "169672a8f2aad03041077c501e4aa301beee16fa498a1ed895b36b5c9c10aa2a",
+    "repair": "v2 read-only observer accepts kwargs; original failure preserved"
+  },
+  "limits": [
+    "Two selected requests, last prompt row per module; whole prompt operands only at first depth and first layer. No complete KV equality claim.",
+    "CPU auditor recomputes comparisons from actual raw tensors; it does not rerun CUDA kernels.",
+    "All original exact-token failures and natural nonzero producer returns are retained. No performance or root-cause pass."
+  ]
+}
