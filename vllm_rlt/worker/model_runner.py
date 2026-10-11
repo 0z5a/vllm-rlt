@@ -74,7 +74,7 @@ class ModelRunner:
         exit_config=None,
         execution_config=None,
         scheduler_config=None,
-        rng=None,
+        rng: RngRegistry | None = None,
     ):
         self.model = model.eval()
         self.cache_manager = cache_manager

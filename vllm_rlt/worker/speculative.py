@@ -63,7 +63,7 @@ def rejection_sample(candidate, target, proposal, generator):
 
 
 class SpeculativeRunner:
-    def __init__(self, model, cache, config, execution, rng=None):
+    def __init__(self, model, cache, config, execution, rng: RngRegistry | None = None):
         self.model, self.cache, self.config = model, cache, config
         self.device = next(model.parameters()).device
         # The engine injects one registry per engine so both sampling paths share

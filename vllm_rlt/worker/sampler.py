@@ -92,7 +92,9 @@ class RngRegistry:
         if generator is not None:
             self.generators[request_id] = generator
 
-    def acquire(self, request_id: str, params: SamplingParams, device) -> torch.Generator:
+    def acquire(
+        self, request_id: str, params: SamplingParams, device: torch.device
+    ) -> torch.Generator:
         """Return the request's generator, creating it on ``device`` if needed."""
         generator = self.generators.get(request_id)
         if generator is None:
