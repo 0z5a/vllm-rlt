@@ -37,7 +37,10 @@ actual inference may include lazy library/kernel setup; validate it explicitly.
 ## Completions contract
 
 `POST /v1/completions` requires `Content-Type: application/json`, `model` and one
-string `prompt`. Requests with an `Origin` header are rejected with 403: this
+`prompt`, either a string or a nonempty flat list of token IDs. Token IDs are
+passed directly to the engine without tokenization or insertion of special tokens;
+each must be an integer in the model's vocabulary. Requests with an `Origin`
+header are rejected with 403: this
 frontend supports command-line clients, not browser callers. Other content
 types return 415. All routes reject unrecognized Host headers; accepted hosts
 are the connection's local IP address, `localhost`, and the configured `--host`.
@@ -67,7 +70,7 @@ Missing or invalid model identifiers return 400. Omit fields to use defaults;
 explicit null is accepted only for `max_loops`, `stream_options` and the four
 null-only fields above. Structured errors use the same value for `error.type`
 and `error.code`; admission messages include diagnostic context/KV limits.
-There is no chat endpoint, prompt-list batching, token-ID prompt API, stop-string
+There is no chat endpoint, prompt-list batching, stop-string
 matching, beam search or multi-completion support. Independent HTTP requests
 share continuous engine batching. Prompt prefill always runs full depth;
 loop extensions control subsequent decode, as in the offline engine.

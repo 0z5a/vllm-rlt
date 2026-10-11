@@ -109,7 +109,13 @@ def body(**kwargs):
 @pytest.mark.parametrize(
     "extra",
     [
-        {"prompt": [1, 2]},
+        {"prompt": []},
+        {"prompt": [True]},
+        {"prompt": [1.0]},
+        {"prompt": [-1]},
+        {"prompt": [[1, 2]]},
+        {"prompt": ["abc"]},
+        {"prompt": [None]},
         {"prompt": None},
         {"prompt": "\ud800"},
         {"stream": 1},
@@ -152,6 +158,13 @@ def test_neutral_client_fields_and_extensions():
         "test-model",
     )
     assert spec.include_usage and spec.params.max_loops == 3 and spec.params.top_k == 9
+
+
+def test_token_id_prompt_is_copied():
+    prompt = [0, 7, 2, 7]
+    spec = CompletionRequest.parse(body(prompt=prompt), "test-model")
+    prompt.append(9)
+    assert spec.prompt == [0, 7, 2, 7]
 
 
 def test_loopcd_request_object_and_true_off():
@@ -378,27 +391,50 @@ def test_startup_readiness_failure_and_shutdown_during_load():
     asyncio.run(run())
 
 
-def test_http_output_matches_direct_and_stream_has_exact_token_events():
+@pytest.mark.parametrize("prompt", ["abc", [0, 7, 2, 7]])
+def test_http_output_matches_direct_and_stream_has_exact_token_events(prompt):
     engine, tokenizer = factory()
+    prompt_ids = tokenizer.encode(prompt) if isinstance(prompt, str) else prompt
     engine.add_request(
-        "direct", tokenizer.encode("abc"), SamplingParams(max_tokens=4, ignore_eos=True)
+        "direct", prompt_ids, SamplingParams(max_tokens=4, ignore_eos=True)
     )
     outputs = []
     while engine.has_unfinished_requests():
         outputs.extend(engine.step())
     expected = tokenizer.decode(outputs[-1].token_ids)
 
+    admitted = []
+
+    def load():
+        http_engine, http_tokenizer = factory()
+        add_request = http_engine.add_request
+
+        def record(request_id, tokens, *args, **kwargs):
+            admitted.append(list(tokens))
+            return add_request(request_id, tokens, *args, **kwargs)
+
+        http_engine.add_request = record
+        if isinstance(prompt, list):
+            def reject_encode(_):
+                raise AssertionError("token ID inputs must bypass tokenization")
+            http_tokenizer.encode = reject_encode
+        return http_engine, http_tokenizer
+
     async def run():
-        async with client_for() as (client, worker):
+        async with client_for(load) as (client, worker):
             await until(lambda: worker.ready)
-            response = await client.post("/v1/completions", json=body())
+            response = await client.post("/v1/completions", json=body(prompt=prompt))
             data = await response.json()
             assert response.status == 200
             assert data["choices"][0]["text"] == expected
-            assert data["usage"] == {"prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7}
+            assert data["usage"] == {
+                "prompt_tokens": len(prompt_ids), "completion_tokens": 4,
+                "total_tokens": len(prompt_ids) + 4,
+            }
             response = await client.post(
                 "/v1/completions",
                 json=body(
+                    prompt=prompt,
                     stream=True,
                     stream_options={"include_usage": True},
                     repetition_penalty=1,
@@ -417,6 +453,7 @@ def test_http_output_matches_direct_and_stream_has_exact_token_events():
             ]
             assert events[-1]["choices"] == [] and events[-1]["usage"] == data["usage"]
             await until(lambda: not worker.channels)
+            assert admitted == [prompt_ids, prompt_ids]
 
     asyncio.run(run())
 
@@ -489,6 +526,10 @@ def test_http_invalid_admission_and_browser_requests_preserve_readiness():
                 missing_model,
                 body(prompt=""),
                 body(prompt="\ud800"),
+                body(prompt=[]),
+                body(prompt=[worker.engine.model.config.vocab_size]),
+                body(prompt=[0, -1]),
+                body(prompt=[True]),
                 body(max_tokens=worker.engine.model.config.max_position_embeddings + 1),
                 body(max_loops=worker.engine.model.config.total_ut_steps + 1),
             ]:

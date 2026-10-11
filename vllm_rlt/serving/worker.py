@@ -149,7 +149,8 @@ class EngineWorker:
             if request_id in cancellations:
                 continue
             try:
-                tokens = self.tokenizer.encode(channel.spec.prompt)
+                prompt = channel.spec.prompt
+                tokens = self.tokenizer.encode(prompt) if isinstance(prompt, str) else list(prompt)
                 options = {"trace_id": channel.spec.trace_id} if channel.spec.trace_id else {}
                 self.engine.add_request(request_id, tokens, channel.spec.params, **options)
                 self.decoders[request_id] = (IncrementalText(self.tokenizer), 0)

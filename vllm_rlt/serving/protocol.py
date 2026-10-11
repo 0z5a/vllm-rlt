@@ -50,7 +50,7 @@ class ServingError(Exception):
 
 @dataclass(frozen=True)
 class CompletionRequest:
-    prompt: str
+    prompt: str | list[int]
     params: SamplingParams
     stream: bool = False
     include_usage: bool = False
@@ -84,12 +84,19 @@ class CompletionRequest:
             raise ValueError("model must be a nonempty string")
         if body["model"] != model:
             raise ServingError(f"model must be {model!r}", 404, "model_not_found")
-        if not isinstance(body.get("prompt"), str):
-            raise ValueError("prompt must be one string")
-        try:
-            body["prompt"].encode("utf-8")
-        except UnicodeError as exc:
-            raise ValueError("prompt must contain valid Unicode scalar values") from exc
+        prompt = body.get("prompt")
+        if isinstance(prompt, str):
+            try:
+                prompt.encode("utf-8")
+            except UnicodeError as exc:
+                raise ValueError("prompt must contain valid Unicode scalar values") from exc
+        elif isinstance(prompt, list) and prompt and all(
+            type(token) is int and token >= 0 for token in prompt
+        ):
+            # Vocabulary bounds are checked by the engine before admission.
+            prompt = prompt.copy()
+        else:
+            raise ValueError("prompt must be one string or a nonempty list of token IDs")
         for key, default in neutral.items():
             value = body.get(key, default)
             valid_type = type(value) is type(default)
@@ -130,7 +137,7 @@ class CompletionRequest:
         trace_id = body.get("trace_id")
         if "trace_id" in body and (not isinstance(trace_id, str) or not trace_id):
             raise ValueError("trace_id must be a nonempty string")
-        return cls(body["prompt"], SamplingParams(**params), stream, include_usage, trace_id)
+        return cls(prompt, SamplingParams(**params), stream, include_usage, trace_id)
 
 
 class IncrementalText:
