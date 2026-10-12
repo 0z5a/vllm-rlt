@@ -1,4 +1,6 @@
-<h1 align="center">vllm-rlt</h1>
+<h1 align="center">
+  <img src="docs/assets/vllm-rlt-logo.png" alt="vLLM-RLT" width="640">
+</h1>
 
 <p align="center">
   <a href="https://arxiv.org/abs/2608.09444"><img src="https://img.shields.io/badge/arXiv-2608.09444-b31b1b?style=flat-square&amp;logo=arxiv&amp;logoColor=white" alt="Paper: arXiv 2608.09444"></a>
@@ -13,18 +15,25 @@
 
 <p align="center">
   <a href="https://arxiv.org/pdf/2608.09444">Paper</a> ·
+  <a href="#highlights">Highlights</a> ·
   <a href="#how-it-works">How It Works</a> ·
   <a href="#getting-started">Getting Started</a> ·
   <a href="docs/README.md">Documentation</a> ·
+  <a href="docs/developer-guide.md"><strong>Developer Must-Read</strong></a> ·
   <a href="#performance-baselines">Performance</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#contributing">Contributing</a>
 </p>
 
+> [!IMPORTANT]
+> **Contributing? Read the [Developer Must-Read](docs/developer-guide.md) first.**
+> Good code starts before coding. Follow the development workflow and completion criteria before marking your change ready.
+
 ## About
 
 **vllm-rlt** is a standalone inference and serving engine for recurrent language
-models with a shared native **Ouro** backend. See the checkpoint-specific
+models, with native support for **ByteDance/Ouro-1.4B** and
+**Nanbeige/Nanbeige4.2-3B**. See the checkpoint-specific
 [support matrix](#model-support) for validation scope. It brings continuous
 batching to individual recurrent loops, allowing requests at different loop
 depths to share a batch as they work toward their next token.
@@ -41,6 +50,34 @@ ideas from **Continuous Depth Batching (CDB)**, described in
 Batching](https://arxiv.org/pdf/2608.09444) by Kristian Schwethelm, Daniel
 Rückert, and Georgios Kaissis (2026). It runs independently and does not require
 vLLM to be installed. See [Citation](#citation) for the paper's BibTeX entry.
+
+## Highlights
+
+- **Two native models:** Ouro-1.4B with fixed-depth or learned early-exit
+  decoding, and Nanbeige4.2-3B with fixed two-loop inference.
+- **Measured decode speed:** synchronous self-speculation reached **236.45
+  committed tokens/s**, versus **154.23 tokens/s** for native fixed-depth async
+  decoding (**~1.53×**) on the historical Ouro-1.4B workload below.[^decode-benchmark]
+- **Loop-aware runtime:** continuous batching, depth-aware paged KV, and opt-in
+  prefix caching, CUDA Graphs, self-speculation, and single-host prefill/decode
+  disaggregation.
+- **Ready-to-use interfaces:** Python API, CLI, and streaming OpenAI-compatible
+  completions.
+
+**[v0.1.0 is experimental](https://github.com/ThinkFlowLab/vllm-rlt/releases/tag/v0.1.0).**
+Start with synchronous execution. Async execution with preemption can produce
+incorrect outputs ([#109](https://github.com/ThinkFlowLab/vllm-rlt/pull/109));
+async self-speculation has unresolved worker-failure and cleanup issues
+([#115](https://github.com/ThinkFlowLab/vllm-rlt/pull/115)). See the release notes
+for supported combinations and limitations.
+
+[^decode-benchmark]: Historical medians of five trials on one NVIDIA H20-3e:
+    Ouro-1.4B BF16, Triton 3.6.0, eager execution, LAST_EXITED KV,
+    64-token prompt / 32-token output, concurrency 8, draft depth 2 / target
+    depth 4, K=2. Committed-decode timing excludes prefill, the first output
+    token, and HTTP/client overhead. [Full protocol and measurements](https://github.com/ThinkFlowLab/vllm-rlt/blob/ea3f74c5cd9c280086195d996a4f9fbcf82bc04b/docs/async-speculative.md#matched-bf16-measurements)
+    used runtime `d977817d4e174cbc2fcc9aa7ef5893c35da2ec89`; these are
+    workload-specific results, not a fresh v0.1.0 benchmark or production guarantee.
 
 ## Features
 
@@ -62,7 +99,7 @@ vLLM to be installed. See [Citation](#citation) for the paper's BibTeX entry.
   across GPUs on one host, with NIXL KV transfer and overlap between chunked
   prefill computation and transfer.
 
-The default runtime uses synchronous execution and the original Ouro gate.
+The default runtime uses synchronous execution; Ouro uses its original gate.
 Advanced execution and cache features are opt-in; see the guides below for
 supported combinations.
 
@@ -211,6 +248,9 @@ for the target architecture, module breakdown, and implementation sequence.
 <a id="contributing"></a>
 
 ## 🤝 Contributing
+
+Start with the **[Developer Must-Read](docs/developer-guide.md)** for the development
+workflow, required evidence, and completion criteria.
 
 Help us build efficient inference for recurrent language models. vllm-rlt is
 open to contributors working on systems, models, evaluation, and documentation.

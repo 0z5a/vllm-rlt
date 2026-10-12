@@ -52,8 +52,8 @@ def test_prefix_refcounts_and_eviction():
     c.publish_prefix("a", [1, 2, 3, 4, 5], 5)
     hit = c.lookup_prefix([1, 2, 3, 4, 9])
     assert c.allocate("b", 5, prefix=hit)
-    a = c._get_allocation("a").block_tables
-    b = c._get_allocation("b").block_tables
+    a = c.plane_block_tables("a")
+    b = c.plane_block_tables("b")
     assert a[0][:2] == b[0][:2]
     c.free("a")
     assert c._refs[b[0][0]] == 2  # cache + live request
@@ -97,26 +97,23 @@ def test_lossless_preemption_preserves_looped_history():
         while len(e.scheduler.requests["a"].generated_token_ids) < 3:
             e.step()
         if suspend:
-            request = e.scheduler.requests["a"]
-            generator = request.generator
+            generator = e.rng.peek("a")
             assert generator is not None
             state = generator.get_state().clone()
             e.add_request("b", [5], SamplingParams(max_tokens=1))
-            e.scheduler.selected_request_ids.clear()
             assert e.preemption.preempt(e.scheduler.requests["b"])
             assert "a" in e.preemption.snapshots
-            # Suspension shares release() with termination, and the RNG survives
-            # only because the Request object is retained: it is not part of the
-            # KV/hidden snapshot.
-            assert request.generator is generator
+            # Preemption suspends rather than terminates, so the runner keeps the
+            # request's RNG slot: suspension is not a reset.
+            assert e.rng.peek("a") is generator
             assert torch.equal(generator.get_state(), state)
         results.append(finish(e)["a"])
         if suspend:
             assert e.preemption.resumptions == 1
             # Sampling continued from the preserved state instead of reseeding,
-            # and termination then released the RNG slot.
+            # and termination then dropped the RNG slot.
             assert not torch.equal(generator.get_state(), state)
-            assert request.generator is None
+            assert e.rng.peek("a") is None
     assert results[0].token_ids == results[1].token_ids
     assert results[0].exit_depths == results[1].exit_depths
 

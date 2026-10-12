@@ -12,7 +12,7 @@ from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace
 from vllm_rlt.worker.cuda_graph import RecurrentGraphs
-from vllm_rlt.worker.sampler import Sampler
+from vllm_rlt.worker.sampler import RngRegistry, Sampler
 
 
 @dataclass
@@ -74,12 +74,16 @@ class ModelRunner:
         exit_config=None,
         execution_config=None,
         scheduler_config=None,
+        rng: RngRegistry | None = None,
     ):
         self.model = model.eval()
         self.cache_manager = cache_manager
         parameter = next(model.parameters())
         self.device = parameter.device
-        self.sampler = Sampler(self.device)
+        self.sampler = Sampler()
+        # Sampling RNG state lives with the engine, which shares this registry
+        # between the CODA runner and the speculative runner.
+        self.rng = rng if rng is not None else RngRegistry()
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
         scheduler = scheduler_config or SchedulerConfig()
@@ -273,7 +277,7 @@ class ModelRunner:
 
     def _prefill_tokens(self, ids, positions, tokens):
         cache = self.cache_manager
-        if cache.layout == "last_exited" and getattr(cache.attention, "generation", None) == 4:
+        if cache.layout == "last_exited" and cache.attention_capabilities.packed_prefill:
             # Prefill has genuinely ragged query sequences. Do not pad token rows
             # or reuse decode's per-query, model-max-width static page tables.
             bank = None
@@ -421,9 +425,7 @@ class ModelRunner:
                 result = logits[: len(requests)].float().sigmoid() if logits is not None else None
             elif batch.stage == Stage.CODA:
                 logits = self.model.coda(hidden)
-                result = torch.stack(
-                    [self._sample_tensor(row, r) for row, r in zip(logits, requests)]
-                )
+                result = torch.stack([self._sample_row(row, r) for row, r in zip(logits, requests)])
                 if routing is not None:
                     routing.scatter(result, tokens=True)
             else:
@@ -516,10 +518,8 @@ class ModelRunner:
         copies = []
         for request in requests:
             depth = request.loops_done - 1
-            allocation = cache._get_allocation(request.request_id)
-            for layer in range(cache.num_layers):
-                if request.position not in allocation.written[depth][layer]:
-                    raise RuntimeError("cannot finalize before every layer has written KV")
+            if not cache.token_written(request.request_id, request.position, depth):
+                raise RuntimeError("cannot finalize before every layer has written KV")
             if depth + 1 < cache.max_loops:
                 copies.append(request)
         if not copies:
@@ -560,10 +560,7 @@ class ModelRunner:
             bank.record_done()
             for request in copies:
                 self.events[request.request_id] = bank.done
-                allocation = cache._get_allocation(request.request_id)
-                for depth in range(request.loops_done, cache.max_loops):
-                    for layer in range(cache.num_layers):
-                        allocation.written[depth][layer].add(request.position)
+                cache.mark_finalized(request.request_id, request.position, request.loops_done - 1)
 
     def finalize(self, request):
         # The final core event must precede copies and coda on the boundary stream.
@@ -580,7 +577,7 @@ class ModelRunner:
                 event.record(stream)
                 self.events[request.request_id] = event
 
-    def release(self, request_id):
+    def _free_runner_slot(self, request_id):
         # The latest submission or KV-finalization event follows earlier work
         # through stream dependencies. Wait before recycling this request's slot.
         event = self.events.pop(request_id, None)
@@ -593,14 +590,39 @@ class ModelRunner:
         if slot is not None:
             self.free_state_slots.append(slot)
 
+    def suspend(self, request_id):
+        """Free the request's runner resources but keep its sampling RNG.
+
+        Preemption suspends a request without terminating it, so its generator
+        must survive for the resumed token sequence to match an uninterrupted run.
+        """
+        self._free_runner_slot(request_id)
+
+    def release(self, request_id):
+        """Terminate the request: free its runner resources and drop its RNG.
+
+        A new request reusing the same ID must start from a fresh generator, so
+        termination drops the RNG slot while suspension keeps it.
+        """
+        self._free_runner_slot(request_id)
+        self.rng.drop(request_id)
+
     def synchronize(self):
         for stream in (self.core_stream, self.boundary_stream, self.copy_stream):
             if stream is not None:
                 stream.synchronize()
 
-    def _sample_tensor(self, logits: torch.Tensor, request: Request):
-        # Thin delegate kept for the async path and for tests that monkeypatch
-        # this method; the algorithm lives in Sampler.
-        token, generator = self.sampler.sample(logits, request.sampling_params, request.generator)
-        request.generator = generator
-        return token
+    def _sample_row(self, logits: torch.Tensor, request: Request) -> torch.Tensor:
+        """Sample one token for one logits row from the engine's RNG registry.
+
+        Greedy rows never acquire a generator. Otherwise the registry creates it on
+        the distribution's device, so the generator follows the logits row rather
+        than the device the model was loaded on.
+        """
+        params = request.sampling_params
+        generator = (
+            None
+            if params.temperature == 0
+            else self.rng.acquire(request.request_id, params, logits.device)
+        )
+        return self.sampler.sample(logits, params, generator)
