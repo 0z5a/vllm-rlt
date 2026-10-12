@@ -1,0 +1,248 @@
+{
+  "runnable_matrix_passed": true,
+  "full_seven_case_matrix_passed": false,
+  "scope": "Separate52GiB C4 original frozen workload, source and raw auditors unchanged; six fresh arms/two orders/five warm and five measured each; original48GiB capacity failures retained; no original full seven-case or quality pass",
+  "mode": "native",
+  "source_payloads_verified": 133,
+  "source_manifest_corrections": [
+    {
+      "path": "tests/test_serving.py",
+      "packet_expected": {
+        "bytes": 34131,
+        "sha256": "9493d1f03bc95ba54b207d7b1e0fbef8c04369a8149964ef6191432aec32f7f7"
+      },
+      "qualified_actual": {
+        "bytes": 30969,
+        "sha256": "2949c87f392fcc2135fc505fcc429915a41d71954998730a49692cf643901c2f"
+      },
+      "verified_git_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1"
+    },
+    {
+      "path": "vllm_rlt/entrypoints/runtime_args.py",
+      "packet_expected": {
+        "bytes": 6539,
+        "sha256": "b537141d2d6032e4da2c5d05451c42984466d76bdc2cbb22b9efa24a4601bad2"
+      },
+      "qualified_actual": {
+        "bytes": 6351,
+        "sha256": "0c4a64bf2e8f9d8b48726dc4de09e2ca0d7a1f9ae27b5d1e8ca55e9e227f70b9"
+      },
+      "verified_git_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1"
+    },
+    {
+      "path": "vllm_rlt/serving/protocol.py",
+      "packet_expected": {
+        "bytes": 7901,
+        "sha256": "5f0ecd6b3faf514a8d998c8b7cac161097c5cd5e758b1c1a032568796e1d9402"
+      },
+      "qualified_actual": {
+        "bytes": 7261,
+        "sha256": "c5b0e99f60c9a436b01576b004192c141ac5fae643ae4b0ad07f64638afd4101"
+      },
+      "verified_git_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1"
+    }
+  ],
+  "initial_whole_source_manifest_audit_return": 1,
+  "source_manifest_sha256": "1ecfaf54fd6f42ee10fb9c0baf9bbe0484516539f9f6e56b9eaec52ee1cb3df4",
+  "archive_sha256": "2a03c1fc9be58b5d1bd0dca7023299e329d507d7ba1c8626a5fb02061d3c4609",
+  "actual_producer_return": 0,
+  "raw_trials": 60,
+  "measured_trials": 30,
+  "requests": 960,
+  "generated_tokens": 122880,
+  "original48GiB_capacity_stops": [
+    {
+      "case": "C4_longer",
+      "status": "PLANNED_CAPACITY_EXCEEDED",
+      "required": 52344913920,
+      "pool": 51539607552
+    },
+    {
+      "case": "A32_large",
+      "status": "PLANNED_CAPACITY_EXCEEDED",
+      "required": 109521666048,
+      "pool": 51539607552
+    }
+  ],
+  "supplemental52GiB_capacity_stops": [
+    {
+      "case": "A32_large",
+      "status": "PLANNED_CAPACITY_EXCEEDED",
+      "required": 109521666048,
+      "pool": 55834574848
+    }
+  ],
+  "only_protocol_field_changed": "common_pool_bytes",
+  "original_pool_bytes": 51539607552,
+  "supplemental_pool_bytes": 55834574848,
+  "producer_archive_storage_failure_retained": false,
+  "prior56GiB_pretest_failure_retained": true,
+  "jobs": [
+    {
+      "label": "C4_longer-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C4_longer-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C4_longer-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C4_longer-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C4_longer-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C4_longer-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    }
+  ],
+  "summary": {
+    "C4_longer": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          8.823659975625546,
+          8.825797155729807,
+          8.826394109162354,
+          8.824992083355678,
+          8.826487823039221,
+          8.832064265285467,
+          8.834296753561732,
+          8.831737336167754,
+          8.832049014922086,
+          8.833704568097353
+        ],
+        "C_P4D3_off": [
+          9.440984355007167,
+          9.442323375430515,
+          9.441429930944224,
+          9.440115623890458,
+          9.441090582399282,
+          9.464846175638094,
+          9.466163258659261,
+          9.46495487560812,
+          9.464954046155325,
+          9.463431785942758
+        ],
+        "D_P4D3_on": [
+          9.459621817933357,
+          9.458914446224338,
+          9.460245578881489,
+          9.46067766870742,
+          9.459763324888998,
+          9.458820245578872,
+          9.45974098684829,
+          9.463920414910929,
+          9.46259682891776,
+          9.46281216661634
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 8.8291183084947,
+        "C_P4D3_off": 9.45302940096752,
+        "D_P4D3_on": 9.46071134795078
+      },
+      "same_depth_guidance_percent": 0.08126439321636258,
+      "shallower_guided_vs_full_percent": 7.153523346135371
+    }
+  },
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111
+  ],
+  "timing_limit": "CPU core groups isolated, other node diagnosis/archives may still share infrastructure; retain original constrained-affinity results",
+  "independent_auditor_actual_return": 0,
+  "original_GPU_trials_repeated": false,
+  "complete_archive": {
+    "bytes": 6853928,
+    "sha256": "2a03c1fc9be58b5d1bd0dca7023299e329d507d7ba1c8626a5fb02061d3c4609",
+    "files": 288,
+    "all_payloads_verified": true,
+    "RAM_stage_and_persistent_copy_verified": true,
+    "exact_compressed_write_budget_checked": true,
+    "all_runnable_jobs_passed": true,
+    "actual_producer_return": 0,
+    "original48GiB_capacity_failures_retained": true,
+    "original_full_seven_case_passed": false
+  }
+}

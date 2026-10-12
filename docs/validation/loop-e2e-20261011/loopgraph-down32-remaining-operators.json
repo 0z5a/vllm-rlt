@@ -1,0 +1,285 @@
+{
+  "scope": "Independent full read-only operator-observer raw integrity, unchanged parent private arithmetic/trajectories and actual BF16 selected row comparisons; no original serving or performance qualification",
+  "actual_GPU_producer_return": 1,
+  "actual_independent_CPU_return": 0,
+  "auditor_source_sha256": "cf36bf8072bea158eee50f3a8b48bf9307eb3479979ae5fb35ef60b0be876592",
+  "archive_bytes": 2015646817,
+  "archive_sha256": "42e788b75d166e69a6eef13c0131f0d695a7b7e71a09bc3744a2a4d286ff03b3",
+  "payloads_verified": 426,
+  "operator_records_per_owner": 5040,
+  "head_records_per_owner": 256,
+  "original_unmodified_nine_failures_retained": true,
+  "private_token_failures": [
+    {
+      "request_id": "request-39",
+      "first_different_token": 12
+    },
+    {
+      "request_id": "request-63",
+      "first_different_token": 95
+    }
+  ],
+  "cases": {
+    "author": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "all_tokens_depths_and_frozen_inputs_equal_to_parent": true
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "all_tokens_depths_and_frozen_inputs_equal_to_parent": true
+        }
+      ],
+      "operator_records": 5040,
+      "head_records": 256,
+      "all_parent_projection_call_metadata_unchanged": true,
+      "all_prior_selected_heads_unchanged": true
+    },
+    "candidate": {
+      "parent_and_observer_passed": false,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "all_tokens_depths_and_frozen_inputs_equal_to_parent": true
+        }
+      ],
+      "operator_records": 5040,
+      "head_records": 256,
+      "all_parent_projection_call_metadata_unchanged": true,
+      "all_prior_selected_heads_unchanged": true
+    }
+  },
+  "operator_point_summaries": [
+    {
+      "request_id": "request-39",
+      "index": 7,
+      "selected_operator_records": 336,
+      "different_operator_rows": 0,
+      "first_difference_in_actual_capture_order": null
+    },
+    {
+      "request_id": "request-39",
+      "index": 8,
+      "selected_operator_records": 1344,
+      "different_operator_rows": 1016,
+      "first_difference_in_actual_capture_order": {
+        "request_id": "request-39",
+        "index": 8,
+        "depth": 0,
+        "module": "layers.23.input_layernorm_2",
+        "key": "request-39:decode:8:0:layers.23.input_layernorm_2",
+        "author_ordinal": 664,
+        "native_ordinal": 664,
+        "author_input_shape": [
+          1,
+          1,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": true,
+          "different_elements": 0,
+          "elements": 2048,
+          "max_abs": 0.0
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 17,
+          "elements": 2048,
+          "max_abs": 0.0009765625
+        }
+      }
+    },
+    {
+      "request_id": "request-39",
+      "index": 11,
+      "selected_operator_records": 336,
+      "different_operator_rows": 0,
+      "first_difference_in_actual_capture_order": null
+    },
+    {
+      "request_id": "request-39",
+      "index": 12,
+      "selected_operator_records": 1344,
+      "different_operator_rows": 1004,
+      "first_difference_in_actual_capture_order": {
+        "request_id": "request-39",
+        "index": 12,
+        "depth": 1,
+        "module": "layers.0.self_attn.o_proj",
+        "key": "request-39:decode:12:1:layers.0.self_attn.o_proj",
+        "author_ordinal": 2356,
+        "native_ordinal": 2356,
+        "author_input_shape": [
+          1,
+          32,
+          2048
+        ],
+        "native_input_shape": [
+          16,
+          2048
+        ],
+        "input": {
+          "byte_equal": false,
+          "different_elements": 13,
+          "elements": 2048,
+          "max_abs": 0.0001220703125
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 24,
+          "elements": 2048,
+          "max_abs": 0.015625
+        }
+      }
+    },
+    {
+      "request_id": "request-63",
+      "index": 94,
+      "selected_operator_records": 1344,
+      "different_operator_rows": 1105,
+      "first_difference_in_actual_capture_order": {
+        "request_id": "request-63",
+        "index": 94,
+        "depth": 0,
+        "module": "layers.16.self_attn.o_proj",
+        "key": "request-63:decode:94:0:layers.16.self_attn.o_proj",
+        "author_ordinal": 3588,
+        "native_ordinal": 3588,
+        "author_input_shape": [
+          1,
+          6,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": false,
+          "different_elements": 2,
+          "elements": 2048,
+          "max_abs": 1.52587890625e-05
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 3,
+          "elements": 2048,
+          "max_abs": 1.52587890625e-05
+        }
+      }
+    },
+    {
+      "request_id": "request-63",
+      "index": 95,
+      "selected_operator_records": 336,
+      "different_operator_rows": 94,
+      "first_difference_in_actual_capture_order": {
+        "request_id": "request-63",
+        "index": 95,
+        "depth": 0,
+        "module": "layers.17.self_attn.o_proj",
+        "key": "request-63:decode:95:0:layers.17.self_attn.o_proj",
+        "author_ordinal": 4946,
+        "native_ordinal": 4946,
+        "author_input_shape": [
+          1,
+          23,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": false,
+          "different_elements": 345,
+          "elements": 2048,
+          "max_abs": 0.00390625
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 854,
+          "elements": 2048,
+          "max_abs": 0.001953125
+        }
+      }
+    }
+  ],
+  "first_head_drift": {
+    "request-39": {
+      "key": "request-39:8",
+      "request_id": "request-39",
+      "index": 8,
+      "hidden": {
+        "byte_equal": false,
+        "different_elements": 1783,
+        "elements": 2048,
+        "max_abs": 0.0625
+      },
+      "logits": {
+        "byte_equal": false,
+        "different_elements": 37703,
+        "elements": 49152,
+        "max_abs": 0.125
+      }
+    },
+    "request-63": {
+      "key": "request-63:64",
+      "request_id": "request-63",
+      "index": 64,
+      "hidden": {
+        "byte_equal": false,
+        "different_elements": 1337,
+        "elements": 2048,
+        "max_abs": 0.03125
+      },
+      "logits": {
+        "byte_equal": false,
+        "different_elements": 34739,
+        "elements": 49152,
+        "max_abs": 0.125
+      }
+    }
+  },
+  "author_clock_fields_retained_and_validated": [
+    "created_time",
+    "first_token_time",
+    "lifespan"
+  ],
+  "native_clock_fields_retained_and_validated": [
+    "submitted_at",
+    "output_times"
+  ],
+  "earlier_failures_retained": {
+    "recording_v1": {
+      "actual_GPU_return": 1,
+      "author_completed_waves": 0,
+      "candidate_status": "NOT_RUN",
+      "error": "Tuple module output was recorded as a tensor.",
+      "archive_bytes": 6561029,
+      "archive_sha256": "1403c60d97ae3848fa4226896b3f26c8025f22d2e2061550542eec05ebd00bfc"
+    },
+    "CPU_v2": {
+      "actual_return": 1,
+      "error": "Exclusive extraction directory collided with retained failed attempt."
+    },
+    "CPU_v3": {
+      "actual_return": 1,
+      "error": "Whole native output comparison incorrectly required wall-clock values from separate runs to match."
+    }
+  },
+  "limitations": [
+    "Attention output depends on cache, positions and other operands beyond the recorded hidden row; equal hidden rows alone do not identify an attention root cause.",
+    "Only selected decode indices/operators are covered.",
+    "This private shape control retains its two exact-token failures and makes no unmodified-serving or performance claim."
+  ]
+}
