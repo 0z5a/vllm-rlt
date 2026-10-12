@@ -403,9 +403,6 @@ class LLMEngine:
         total_depths = self.model.config.total_ut_steps
         start = item.token_start
         end = start + item.token_count
-        chunk_start = item.chunk_start
-        if chunk_start is None or start < chunk_start or end <= start:
-            raise RuntimeError("invalid split-prefill item span")
 
         if stage == Stage.PREFILLING_PRELUDE:
             request.prefill_chunk_start = start
@@ -416,20 +413,14 @@ class LLMEngine:
         # Assertion: stage == Stage.PREFILLING_RECURRENT
         depth = item.depth
         boundaries = request.running_depth_boundary
-        if depth is None or not 0 <= depth < len(boundaries):
-            raise RuntimeError("split-prefill recurrent item has no valid depth")
-        if boundaries[depth][0] != start:
-            raise RuntimeError("split-prefill recurrent item skips its depth frontier")
         boundaries[depth][0] = end
         if depth + 1 < total_depths:
-            deeper = boundaries[depth + 1]
-            deeper[1] = end
-            self.scheduler.enqueue(request, Stage.PREFILLING_RECURRENT)
-            return PrefillProgress(False, False)
+            boundaries[depth + 1][1] = end
+        else:
+            request.num_prefilled_tokens = end
 
-        request.num_prefilled_tokens = end
         chunk_complete = end == request.num_preluded_tokens
-        if not chunk_complete:
+        if depth + 1 < total_depths or not chunk_complete:
             self.scheduler.enqueue(request, Stage.PREFILLING_RECURRENT)
             return PrefillProgress(False, False)
 

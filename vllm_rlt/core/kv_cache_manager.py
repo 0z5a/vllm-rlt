@@ -698,13 +698,6 @@ class KVCacheManager:
             allocations.setdefault(request_id, allocation)
             prepared_spans.append(_PreparedKVSpan(allocation, int(depth), int(start), int(count)))
         spans = tuple(prepared_spans)
-        if not spans:
-            return self._prepare_row_sets(
-                ((),),
-                tuple(allocations.items()),
-                for_write=for_write,
-                packed_prefill=packed_prefill,
-            )[0]
         return self._prepare_span_rows(
             spans,
             tuple(allocations.items()),
@@ -740,19 +733,15 @@ class KVCacheManager:
             span_blocks = [table[position // self.block_size] for position in span_positions]
             blocks.extend(span_blocks)
             if for_write:
-                addresses = zip(span_blocks, offsets[-span.count :])
-                duplicate = any(
-                    address in seen_addresses or seen_addresses.add(address)
-                    for address in addresses
-                )
-                if duplicate:
-                    raise ValueError(
-                        "a write batch cannot contain duplicate request/depth/position addresses"
-                    )
+                seen_addresses.update(zip(span_blocks, offsets[-span.count :]))
             attention_spans.append(
                 AttentionSpan(table, span.start, span.count, (id(span.allocation), span.depth))
             )
 
+        if for_write and len(seen_addresses) != len(positions):
+            raise ValueError(
+                "a write batch cannot contain duplicate request/depth/position addresses"
+            )
         metadata = plan_attention_span_metadata(
             attention_spans,
             block_size=self.block_size,
@@ -778,9 +767,7 @@ class KVCacheManager:
             context_lengths=narrow[lengths_start : lengths_start + table_rows],
             writable=for_write,
             cu_seqlens_q=(
-                narrow[lengths_start + table_rows : lengths_start + table_rows + table_rows + 1]
-                if metadata.cu_seqlens_q is not None
-                else None
+                narrow[lengths_start + table_rows :] if metadata.cu_seqlens_q is not None else None
             ),
             max_seqlen_q=metadata.max_seqlen_q,
             spans=spans,
@@ -839,7 +826,6 @@ class KVCacheManager:
         *,
         for_write: bool,
         packed_prefill: bool,
-        spans=(),
     ):
         self._validate_packed_prefill(packed_prefill)
         first = row_sets[0]
@@ -918,7 +904,6 @@ class KVCacheManager:
                         narrow[lengths_start + t : lengths_start + 2 * t + 1] if packed else None
                     ),
                     max_seqlen_q=max_query,
-                    spans=spans,
                 )
             )
         return tuple(batches)

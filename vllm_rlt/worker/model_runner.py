@@ -305,9 +305,6 @@ class ModelRunner:
         return hidden
 
     def _scatter_prefill(self, hidden, prepared):
-        count = prepared.prefill_rows
-        if hidden.shape[0] != count:
-            raise RuntimeError("split-prefill hidden rows do not match the scheduled span")
         if self.device.type == "cuda":
             from vllm_rlt.kernels.routing import scatter_segments_kernel
 
@@ -456,7 +453,16 @@ class ModelRunner:
         requests = [i.request for i in batch.items]
         if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
             segments, rows, max_rows = self._prefill_segments(batch)
-            segment_indices = self._prefill_segment_tensors(segments)
+            prepared = PreparedExecution(
+                batch,
+                (),
+                (),
+                (),
+                prefill_segments=segments if self.device.type != "cuda" else (),
+                prefill_rows=rows,
+                prefill_max_rows=max_rows,
+                prefill_segment_indices=self._prefill_segment_tensors(segments),
+            )
             if batch.stage == Stage.PREFILLING_PRELUDE:
                 token_values = tuple(
                     token
@@ -469,17 +475,7 @@ class ModelRunner:
                     token_values, dtype=torch.long, pin_memory=self.device.type == "cuda"
                 )
                 token_device = token_host.to(self.device, non_blocking=self.device.type == "cuda")
-                return PreparedExecution(
-                    batch,
-                    (),
-                    (),
-                    (),
-                    prefill_segments=segments if self.device.type != "cuda" else (),
-                    prefill_rows=rows,
-                    prefill_max_rows=max_rows,
-                    prefill_segment_indices=segment_indices,
-                    prefill_token_ids=token_device,
-                )
+                return replace(prepared, prefill_token_ids=token_device)
             # Assertion: batch.stage == Stage.PREFILLING_RECURRENT
             spans = [
                 KVSpan(
@@ -494,18 +490,7 @@ class ModelRunner:
             kv = self.cache_manager._prepare_batch_spans(
                 spans, for_write=True, packed_prefill=packed
             )
-            prepared = PreparedExecution(
-                batch,
-                (),
-                (),
-                (),
-                kv=kv,
-                prefill_segments=segments if self.device.type != "cuda" else (),
-                prefill_rows=rows,
-                prefill_max_rows=max_rows,
-                prefill_segment_indices=segment_indices,
-            )
-            return replace(prepared, hidden=self._gather_prefill(prepared))
+            return replace(prepared, kv=kv, hidden=self._gather_prefill(prepared))
         depths = tuple(r.loops_done for r in requests)
         positions = tuple(r.position for r in requests)
         indices = tuple(r.num_scheduled_outputs for r in requests)
@@ -631,17 +616,12 @@ class ModelRunner:
             Stage.PREFILLING_PRELUDE,
             Stage.PREFILLING_RECURRENT,
         )
-        prepared = None
         try:
-            if split_prefilling:
-                prepared = self.prepare(batch)
-        except Exception:
-            if split_prefilling and self.device.type == "cuda":
-                torch.cuda.current_stream(self.device).synchronize()
-            raise
-        try:
+            prepared = self.prepare(batch) if split_prefilling else None
             result = self._execute(batch, prepared)
         except Exception:
+            # A failed traversal has no completion event. Drain its writes before
+            # engine error cleanup can recycle the request's KV pages and slot.
             if split_prefilling and self.device.type == "cuda":
                 torch.cuda.current_stream(self.device).synchronize()
             raise
@@ -674,12 +654,8 @@ class ModelRunner:
         if split_prefill and stream is not None:
             # Split metadata copies and staging gathers must be ordered with the
             # recurrent work that consumes them.
-            try:
-                with torch.cuda.stream(stream):
-                    prepared = self.prepare(batch)
-            except Exception:
-                stream.synchronize()
-                raise
+            with torch.cuda.stream(stream):
+                prepared = self.prepare(batch)
         else:
             prepared = self.prepare(batch)
         while self.submission_events and self.submission_events[0].query():
@@ -705,10 +681,6 @@ class ModelRunner:
                     hidden.record_stream(stream)
             try:
                 result = self._execute(batch, prepared)
-            except Exception:
-                if split_prefill and stream is not None:
-                    stream.synchronize()
-                raise
             finally:
                 if prepared.routing is not None:
                     prepared.routing.record_done()

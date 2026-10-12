@@ -233,6 +233,17 @@ def test_span_metadata_padding_matches_rows_for_unequal_allocations():
         )
 
 
+@pytest.mark.parametrize("packed", [False, True])
+def test_empty_span_batch_matches_rows_and_executes(packed):
+    cache = make_cache()
+    cache.attention = SimpleNamespace(capabilities=BackendCapabilities(packed_prefill=True))
+    batch = cache._prepare_batch_spans([], packed_prefill=packed)
+    assert_same_batch(cache._prepare_batch([], [], [], packed_prefill=packed), batch)
+    values = torch.empty(0, 1, 4)
+    cache._write_prepared(0, batch, values, values)
+    assert cache._attend_prepared(0, batch, values).shape == values.shape
+
+
 def test_span_and_row_batches_keep_prefix_hole_validation_identical():
     cache = make_cache()
     assert cache.allocate("a", 4)

@@ -541,6 +541,50 @@ def test_priority_admission_preempts_split_prefill_and_matches_reference():
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("async_scheduling", [False, True])
+@pytest.mark.parametrize("failure_site", ["prepare", "_execute"])
+def test_cuda_split_failure_drains_writes_before_request_id_reuse(
+    monkeypatch, async_scheduling, failure_site
+):
+    e = LLMEngine(
+        OuroForCausalLM(tiny_ouro_config()).to("cuda", torch.bfloat16),
+        cache_config=CacheConfig(64, 4),
+        scheduler_config=SchedulerConfig(max_num_seqs=1, max_num_batched_tokens=4),
+        execution_config=ExecutionConfig(atomic_prefill=False, async_scheduling=async_scheduling),
+        exit_config=ExitConfig("trace", depths_by_request={"reused": [4]}),
+        attention_backend="triton",
+    )
+    runner = e.model_runner
+    original = getattr(runner, failure_site)
+    completed = torch.cuda.Event()
+
+    def fail(batch, *args):
+        result = original(batch, *args)
+        if batch.stage == Stage.PREFILLING_RECURRENT:
+            torch.cuda._sleep(10_000_000)
+            completed.record(torch.cuda.current_stream(runner.device))
+            raise RuntimeError("injected split failure")
+        return result
+
+    try:
+        monkeypatch.setattr(runner, failure_site, fail)
+        e.add_request("reused", [1, 2, 3], SamplingParams(max_tokens=1, ignore_eos=True))
+        e.step()
+        with pytest.raises(RuntimeError, match="injected split failure"):
+            e.step()
+        assert completed.query()
+        assert e.cache_manager.num_used_blocks == 0
+        assert runner.state_slots == {}
+
+        monkeypatch.setattr(runner, failure_site, original)
+        result = run_request(e, [3, 2, 1], "reused")
+        assert len(result.token_ids) == 1
+        assert result.exit_depths == [4]
+    finally:
+        e.close()
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("async_scheduling", [False, True])
 def test_cuda_split_prefill_matches_atomic(async_scheduling):
     prompt = [1, 2, 3, 4, 5]
     params = SamplingParams(max_tokens=3, max_loops=2, ignore_eos=True)

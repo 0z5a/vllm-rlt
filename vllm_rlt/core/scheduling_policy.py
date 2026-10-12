@@ -150,21 +150,6 @@ class SplitPrefillPolicy(SchedulingPolicy):
         return None
 
 
-class SpeculativeSplitPrefillPolicy(SchedulingPolicy):
-    """Placeholder for split prefill with speculative decoding.
-
-    Speculation needs CODA/SPECULATIVE rounds ordered against staged prompt
-    depths, including one bounded output per request, so it stays unreachable
-    from the factory until that ordering exists.
-    """
-
-    def schedule(self, scheduler: "Scheduler", *, prefer_recurrent: bool = False):
-        raise NotImplementedError(
-            "split prefill does not support speculative decoding yet; "
-            "use ExecutionConfig(atomic_prefill=True)"
-        )
-
-
 class SchedulingPolicyFactory:
     @staticmethod
     def create_from_configs(
