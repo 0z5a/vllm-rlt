@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "scope": "Other-node CPU full raw-bit and independent original extrapolate arithmetic verification. Guidance component only with synthetic49152-column matrices; coda calls/ref checks verified semantically, no whole-model or E2E pass",
+  "observations": 14,
+  "elements_verified": 18038784,
+  "all_FP32_outputs_bit_equal_to_original_and_CPU_arithmetic": true,
+  "normalized_method_byte_equal": true,
+  "original_reference_checks_and_both_coda_calls_preserved": true,
+  "actual_GPU_component_qualification_return": 0,
+  "prior_import_failure_zero_observations_retained": true,
+  "model_runner_source_sha256": "9d4fa38bd29fe1891a1d885843d06adbb17b7f326927d25a3d7aa1c4f15474c0",
+  "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+  "method_provenance": {
+    "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+    "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+    "normalized_method_byte_equal": true,
+    "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+    "production_source_files_changed": false
+  },
+  "no_whole_model_or_performance_pass": true,
+  "CUDA_initialized": false,
+  "actual_independent_CPU_return": 0,
+  "archive": {
+    "passed": true,
+    "bytes": 265166724,
+    "sha256": "2032704ec50abded7c57bb553616c8a688037a79e864876595dd0b84cf1a9e57",
+    "payloads": 11,
+    "all_payloads_verified": true,
+    "fsync_verified": true
+  },
+  "qualification_type": "GUIDANCE_COMPONENT_ONLY_SYNTHETIC_MATRIX_BIT_QUALIFICATION",
+  "performance_comparison_completed": false,
+  "limits": [
+    "Synthetic FP32 matrices preserve real49152-vocabulary geometry; fake coda outputs validate reference-check/coda-input/stats semantics, and no actual model-coda numerical or whole-model E2E pass is implied.",
+    "All18038784 output elements match the original scalar loop and an independent CPU subtract/multiply/add reconstruction bit for bit; strengths.25/1/2, rows1/4/32/64, heterogeneous and partial guidance are included.",
+    "Only the final uniform all-two-head guided-row extrapolation loop is vectorized. Both original coda calls/reference checks remain; heterogeneous/partial guidance uses the original scalar fallback. Production source files are unchanged.",
+    "The first qualification failed before any bit observation due to an import-path typo; its actual1 result/source/zero-observation receipt is preserved. The successful import repair did not rerun a completed observation.",
+    "Fixed original-workload scalar/vector E2E pairing is a separate pending experiment with two counterbalanced orders and all raw/slow points retained."
+  ]
+}
