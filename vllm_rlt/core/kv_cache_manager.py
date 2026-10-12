@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from numbers import Integral
+from typing import NamedTuple
 
 import torch
 
@@ -25,6 +26,7 @@ from vllm_rlt.attention import (
     plan_attention_metadata,
     validate_backend_name,
 )
+from vllm_rlt.attention.metadata import AttentionSpan, plan_attention_span_metadata
 
 
 @dataclass
@@ -45,6 +47,20 @@ class _WrittenPositions:
             self.pending.remove(self.prefix)
             self.prefix += 1
 
+    def add_range(self, start: int, count: int) -> None:
+        end = start + count
+        if end <= self.prefix:
+            return
+        if start > self.prefix:
+            self.pending.update(range(start, end))
+            return
+        self.prefix = end
+        if self.pending:
+            self.pending = {position for position in self.pending if position >= end}
+        while self.prefix in self.pending:
+            self.pending.remove(self.prefix)
+            self.prefix += 1
+
     def __contains__(self, position: int) -> bool:
         return position < self.prefix or position in self.pending
 
@@ -56,6 +72,46 @@ class _Allocation:
     written: list[list[_WrittenPositions]]
     transfer_leases: set[str] = field(default_factory=set)
     release_requested: bool = False
+
+
+class _PreparedKVSpan(NamedTuple):
+    allocation: _Allocation
+    depth: int
+    start: int
+    count: int
+
+
+class _SpanRows(Sequence):
+    """Compatibility view over span rows without materializing every tuple."""
+
+    __slots__ = ("_spans", "_length")
+
+    def __init__(self, spans: tuple[_PreparedKVSpan, ...]):
+        self._spans = spans
+        self._length = sum(span.count for span in spans)
+
+    def __len__(self) -> int:
+        return self._length
+
+    def __iter__(self):
+        for span in self._spans:
+            yield from (
+                (span.allocation, span.depth, position)
+                for position in range(span.start, span.start + span.count)
+            )
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return tuple(self)[index]
+        if index < 0:
+            index += self._length
+        if index < 0 or index >= self._length:
+            raise IndexError(index)
+        for span in self._spans:
+            if index < span.count:
+                return span.allocation, span.depth, span.start + index
+            index -= span.count
+        raise IndexError(index)
 
 
 @dataclass(frozen=True)
@@ -95,7 +151,7 @@ class _PreparedKVBatch:
     """
 
     owner: "KVCacheManager"
-    rows: tuple[tuple[_Allocation, int, int], ...]
+    rows: Sequence[tuple[_Allocation, int, int]]
     allocations: tuple[tuple[str, _Allocation], ...]
     position_ids: torch.Tensor
     write_blocks: torch.Tensor
@@ -105,6 +161,7 @@ class _PreparedKVBatch:
     writable: bool
     cu_seqlens_q: torch.Tensor | None = None
     max_seqlen_q: int = 1
+    spans: tuple[_PreparedKVSpan, ...] = ()
 
 
 @dataclass(frozen=True, eq=False)
@@ -623,8 +680,8 @@ class KVCacheManager:
         Counts must be positive integers and each range must stay within its
         allocation. Span errors use the same depth/position errors as row input.
         """
-        rows = []
         allocations = {}
+        prepared_spans = []
         for span in spans:
             request_id, depth, start, count = (
                 span.request_id,
@@ -639,15 +696,95 @@ class KVCacheManager:
             self._validate_position(allocation, start)
             self._validate_position(allocation, start + count - 1)
             allocations.setdefault(request_id, allocation)
-            rows.extend(
-                (allocation, int(depth), position) for position in range(start, start + count)
-            )
-        return self._prepare_row_sets(
-            (tuple(rows),),
+            prepared_spans.append(_PreparedKVSpan(allocation, int(depth), int(start), int(count)))
+        spans = tuple(prepared_spans)
+        if not spans:
+            return self._prepare_row_sets(
+                ((),),
+                tuple(allocations.items()),
+                for_write=for_write,
+                packed_prefill=packed_prefill,
+            )[0]
+        return self._prepare_span_rows(
+            spans,
             tuple(allocations.items()),
             for_write=for_write,
             packed_prefill=packed_prefill,
-        )[0]
+        )
+
+    def _prepare_span_rows(
+        self,
+        spans: tuple[_PreparedKVSpan, ...],
+        allocations,
+        *,
+        for_write: bool,
+        packed_prefill: bool,
+    ) -> _PreparedKVBatch:
+        """Build metadata directly from contiguous spans.
+
+        Split-prefill batches are already contiguous per request/depth. Avoid
+        constructing one Python tuple for every token while retaining the lazy
+        ``rows`` view for compatibility callers.
+        """
+        self._validate_packed_prefill(packed_prefill)
+        positions = []
+        offsets = []
+        blocks = []
+        attention_spans = []
+        seen_addresses = set()
+        for span in spans:
+            table = span.allocation.block_tables[self._plane(span.depth)]
+            span_positions = range(span.start, span.start + span.count)
+            positions.extend(span_positions)
+            offsets.extend(position % self.block_size for position in span_positions)
+            span_blocks = [table[position // self.block_size] for position in span_positions]
+            blocks.extend(span_blocks)
+            if for_write:
+                addresses = zip(span_blocks, offsets[-span.count :])
+                duplicate = any(
+                    address in seen_addresses or seen_addresses.add(address)
+                    for address in addresses
+                )
+                if duplicate:
+                    raise ValueError(
+                        "a write batch cannot contain duplicate request/depth/position addresses"
+                    )
+            attention_spans.append(
+                AttentionSpan(table, span.start, span.count, (id(span.allocation), span.depth))
+            )
+
+        metadata = plan_attention_span_metadata(
+            attention_spans,
+            block_size=self.block_size,
+            packed_prefill=packed_prefill,
+        )
+        wide = self._stage(positions + offsets + blocks, torch.long)
+        narrow_values = metadata.block_tables + metadata.context_lengths
+        if metadata.cu_seqlens_q is not None:
+            narrow_values += metadata.cu_seqlens_q
+        narrow = self._stage(narrow_values, torch.int32)
+        n = len(positions)
+        table_rows = metadata.num_rows
+        width = metadata.table_width
+        lengths_start = len(metadata.block_tables)
+        return _PreparedKVBatch(
+            owner=self,
+            rows=_SpanRows(spans),
+            allocations=allocations,
+            position_ids=wide[:n],
+            write_blocks=wide[2 * n : 3 * n],
+            write_offsets=wide[n : 2 * n],
+            block_tables=narrow[: table_rows * width].reshape(table_rows, width),
+            context_lengths=narrow[lengths_start : lengths_start + table_rows],
+            writable=for_write,
+            cu_seqlens_q=(
+                narrow[lengths_start + table_rows : lengths_start + table_rows + table_rows + 1]
+                if metadata.cu_seqlens_q is not None
+                else None
+            ),
+            max_seqlen_q=metadata.max_seqlen_q,
+            spans=spans,
+        )
 
     def _validate_packed_prefill(self, packed_prefill: bool) -> None:
         if packed_prefill and (
@@ -702,6 +839,7 @@ class KVCacheManager:
         *,
         for_write: bool,
         packed_prefill: bool,
+        spans=(),
     ):
         self._validate_packed_prefill(packed_prefill)
         first = row_sets[0]
@@ -780,6 +918,7 @@ class KVCacheManager:
                         narrow[lengths_start + t : lengths_start + 2 * t + 1] if packed else None
                     ),
                     max_seqlen_q=max_query,
+                    spans=spans,
                 )
             )
         return tuple(batches)
@@ -893,8 +1032,14 @@ class KVCacheManager:
             return
         self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k[: len(batch.rows)]
         self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v[: len(batch.rows)]
-        for allocation, depth, position in batch.rows:
-            allocation.written[self._plane(depth)][layer].add(position)
+        if batch.spans:
+            for span in batch.spans:
+                span.allocation.written[self._plane(span.depth)][layer].add_range(
+                    span.start, span.count
+                )
+        else:
+            for allocation, depth, position in batch.rows:
+                allocation.written[self._plane(depth)][layer].add(position)
 
     def _require_prefix(self, allocation, layer, depth, length):
         written = allocation.written[self._plane(depth)][layer]
@@ -936,8 +1081,15 @@ class KVCacheManager:
             )
         if not batch.rows:
             return torch.empty_like(q)
-        for allocation, depth, position in batch.rows:
-            self._require_prefix(allocation, layer, depth, position + 1)
+        if batch.spans:
+            for span in batch.spans:
+                end = span.start + span.count
+                written = span.allocation.written[self._plane(span.depth)][layer]
+                first_missing = min(end, max(span.start, written.prefix) + 1)
+                self._require_prefix(span.allocation, layer, span.depth, first_missing)
+        else:
+            for allocation, depth, position in batch.rows:
+                self._require_prefix(allocation, layer, depth, position + 1)
         if batch.cu_seqlens_q is not None:
             return self.attention.prefill(
                 q,

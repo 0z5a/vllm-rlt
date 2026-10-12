@@ -882,6 +882,26 @@ def test_split_prefill_batches_stay_within_the_token_budget():
     assert len(batch.items) == 2
 
 
+def test_split_policy_honors_decode_due_before_split_prefill():
+    from collections import deque
+    from types import SimpleNamespace
+
+    e = split_engine(scheduler_config=SchedulerConfig(max_prefill_batches_before_decode=1))
+    policy = e.scheduler.policy
+    policy.prefill_batches_since_recurrent = 1
+    scheduler = SimpleNamespace(
+        queues={
+            Stage.RECURRENT: deque(["decode"]),
+            Stage.PRELUDE: deque(),
+            Stage.CODA: deque(),
+            Stage.PREFILLING_PRELUDE: deque(["prefill"]),
+        },
+        _take=lambda stage: stage,
+    )
+    assert policy.schedule(scheduler) is Stage.RECURRENT
+    e.close()
+
+
 def test_split_prefill_stages_after_a_reused_prompt_prefix():
     """A cached prefix is prefilled at every depth: the window opens past it."""
     e = split_engine()

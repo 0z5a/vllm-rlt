@@ -204,6 +204,35 @@ def test_span_frontend_matches_prefix_cache_and_incremental_growth():
     )
 
 
+def test_span_packed_metadata_merges_adjacent_runs_and_rejects_gaps():
+    cache = make_cache(num_blocks=128, block_size=4)
+    assert cache.allocate("a", 20) and cache.allocate("b", 20)
+    cache.attention = SimpleNamespace(capabilities=BackendCapabilities(packed_prefill=True))
+    spans = [kv_span("a", 1, 3, 2), kv_span("a", 1, 5, 3), kv_span("b", 2, 1, 4)]
+    ids, depths, positions = rows_from_spans(spans)
+    assert_same_batch(
+        cache._prepare_batch(ids, depths, positions, packed_prefill=True),
+        cache._prepare_batch_spans(spans, packed_prefill=True),
+    )
+    with pytest.raises(ValueError, match="packed prefill positions must be contiguous"):
+        cache._prepare_batch_spans(
+            [kv_span("a", 1, 3, 2), kv_span("a", 1, 6, 2)], packed_prefill=True
+        )
+
+
+def test_span_metadata_padding_matches_rows_for_unequal_allocations():
+    cache = make_cache(num_blocks=128, block_size=4)
+    assert cache.allocate("a", 4) and cache.allocate("b", 24)
+    spans = [kv_span("a", 0, 0, 3), kv_span("b", 2, 18, 4)]
+    ids, depths, positions = rows_from_spans(spans)
+    for packed in (False, True):
+        cache.attention = SimpleNamespace(capabilities=BackendCapabilities(packed_prefill=True))
+        assert_same_batch(
+            cache._prepare_batch(ids, depths, positions, packed_prefill=packed),
+            cache._prepare_batch_spans(spans, packed_prefill=packed),
+        )
+
+
 def test_span_and_row_batches_keep_prefix_hole_validation_identical():
     cache = make_cache()
     assert cache.allocate("a", 4)
@@ -236,6 +265,27 @@ def test_span_and_row_batches_keep_prefix_hole_validation_identical():
     cache.write(0, ["a"], [0], [2], values, values)
     for batch in long_batches:
         assert cache._attend_prepared(0, batch, torch.zeros(4, 1, 4)).shape == (4, 1, 4)
+
+
+@pytest.mark.parametrize("layout", ["last_exited", "shared"])
+def test_span_writes_advance_written_frontier_by_range(layout):
+    row_cache = make_cache(num_blocks=64, block_size=2, layout=layout)
+    span_cache = make_cache(num_blocks=64, block_size=2, layout=layout)
+    assert row_cache.allocate("a", 8) and span_cache.allocate("a", 8)
+
+    for start, count in ((4, 4), (0, 4)):
+        positions = list(range(start, start + count))
+        values = torch.ones(count, 1, 4)
+        row_cache.write(0, ["a"] * count, [0] * count, positions, values, values)
+        span_batch = span_cache._prepare_batch_spans([kv_span("a", 0, start, count)])
+        span_cache._write_prepared(0, span_batch, values, values)
+
+        row_written = row_cache._allocations["a"].written[0][0]
+        span_written = span_cache._allocations["a"].written[0][0]
+        assert span_written.prefix == row_written.prefix
+        assert span_written.pending == row_written.pending
+
+    assert span_cache._allocations["a"].written[0][0].prefix == 8
 
 
 def test_fragmented_mixed_depth_rows_match_dense_attention_without_layer_metadata(monkeypatch):
