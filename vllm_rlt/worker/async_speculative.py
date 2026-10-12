@@ -44,7 +44,7 @@ class SpeculativeRoundBuffer:
 @dataclass
 class SpeculativeRoundTicket:
     batch: SchedulerOutput
-    bank: SpeculativeRoundBuffer
+    buffer: SpeculativeRoundBuffer
     states: tuple[SpeculativeRequestState, ...]
     rounds: tuple[int, ...]
     rows: int
@@ -52,17 +52,17 @@ class SpeculativeRoundTicket:
     retired: bool = False
 
     def ready(self):
-        assert self.bank.copy_done is not None
-        return self.bank.copy_done.query()
+        assert self.buffer.copy_done is not None
+        return self.buffer.copy_done.query()
 
     def collect(self):
         if self.cached is None:
             if self.retired:
                 raise RuntimeError("cannot collect a retired speculative ticket")
-            assert self.bank.copy_done is not None
-            self.bank.copy_done.synchronize()
+            assert self.buffer.copy_done is not None
+            self.buffer.copy_done.synchronize()
             b = len(self.batch.items)
-            values = self.bank.host_result[: self.rows + 2 * b].tolist()
+            values = self.buffer.host_result[: self.rows + 2 * b].tolist()
             results, start = [], 0
             for i, item in enumerate(self.batch.items):
                 accepted = values[self.rows + i]
@@ -82,14 +82,14 @@ class SpeculativeRoundTicket:
             return
         if self.cached is None:
             if not discard:
-                raise RuntimeError("collect a speculative ticket before retiring its bank")
+                raise RuntimeError("collect a speculative ticket before retiring its buffer")
             # Discarding still waits for the final reader, but does not need to
             # interpret host data that may have caused the original failure.
-            assert self.bank.copy_done is not None
-            self.bank.copy_done.synchronize()
+            assert self.buffer.copy_done is not None
+            self.buffer.copy_done.synchronize()
         # collect() already waited for copy_done; normal delivery adds no wait.
-        self.bank.keepalive.clear()
-        self.bank.leased = False
+        self.buffer.keepalive.clear()
+        self.buffer.leased = False
         self.retired = True
 
 
@@ -107,13 +107,13 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             torch.cuda.Stream(device=self.device) if multi_stream else self.compute_stream
         )
         self.compute_stream.wait_stream(torch.cuda.current_stream(self.device))
-        self.banks = [SpeculativeRoundBuffer(self, scheduler) for _ in range(2)]
+        self.buffers = [SpeculativeRoundBuffer(self, scheduler) for _ in range(2)]
         self.states: dict[str, SpeculativeRequestState] = {}
         self.submitted_before_collect = 0
         self.discarded_rounds = 0
         self.readback_waits = 0
 
-    def _state(self, request, bank):
+    def _state(self, request, buffer):
         rid = request.request_id
         allocation = self.cache._get_allocation(rid)
         state = self.states.get(rid)
@@ -124,7 +124,7 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         # Bootstrap only: all later input IDs and positions stay on the GPU.
         host = torch.tensor([request.input_token_id, request.position], pin_memory=True)
         values = host.to(self.device, non_blocking=True)
-        bank.keepalive.extend((host, values))
+        buffer.keepalive.extend((host, values))
         state = SpeculativeRequestState(request, allocation, values[0], values[1])
         self.states[rid] = state
         return state
@@ -149,9 +149,9 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         return hidden
 
     def _prepare_round(self, batch):
-        bank = next((b for b in self.banks if not b.leased), None)
-        if bank is None:
-            raise RuntimeError("speculative banks exhausted; retire an earlier round")
+        buffer = next((b for b in self.buffers if not b.leased), None)
+        if buffer is None:
+            raise RuntimeError("speculative buffers exhausted; retire an earlier round")
         items = batch.items
         if not items or any(item.token_count <= 0 for item in items):
             raise ValueError("speculative round requires nonempty verification rows")
@@ -172,15 +172,15 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         # as request count/page width change. The previous copy must be retired.
         shape = (len(items), self.cache.max_loops, max(page_counts))
         size = math.prod(shape)
-        host_tables = bank.host_tables[:size].view(shape)
-        tables = bank.tables[:size].view(shape)
+        host_tables = buffer.host_tables[:size].view(shape)
+        tables = buffer.tables[:size].view(shape)
         table_view = host_tables.numpy()
         table_view.fill(0)
         for i, ((_, allocation), pages) in enumerate(zip(allocations, page_counts)):
             for depth, table in enumerate(allocation.block_tables):
                 table_view[i, depth, :pages] = table[:pages]
-        bank.leased = True
-        return bank, allocations, host_tables, tables
+        buffer.leased = True
+        return buffer, allocations, host_tables, tables
 
     def _draft(self, items, states, tables, allocations):
         starts = [s.position.clone() for s in states]
@@ -227,9 +227,9 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         target = self.model.coda(hidden).argmax(-1)
         return target
 
-    def _accept_and_update_state(self, items, states, starts, candidates, target, bank):
+    def _accept_and_update_state(self, items, states, starts, candidates, target, buffer):
         count = len(target)
-        bank.result[:count].copy_(target)
+        buffer.result[:count].copy_(target)
         start = 0
         for i, (item, state) in enumerate(zip(items, states)):
             rows = target[start : start + item.token_count]
@@ -242,8 +242,8 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             # candidates followed by the correction (or final bonus).
             state.token.copy_(rows.gather(0, accepted.reshape(1)).squeeze(0))
             state.position.copy_(starts[i] + accepted + 1)
-            bank.result[count + i].copy_(accepted)
-            bank.result[count + len(items) + i].copy_(state.position)
+            buffer.result[count + i].copy_(accepted)
+            buffer.result[count + len(items) + i].copy_(state.position)
             state.submitted += 1
             start += item.token_count
         return count
@@ -251,35 +251,35 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
     @torch.inference_mode()
     def submit_round(self, batch):
         # 1. Reserve a slot and prepare only the active CPU page tables.
-        bank, allocations, host_tables, tables = self._prepare_round(batch)
+        buffer, allocations, host_tables, tables = self._prepare_round(batch)
         items = batch.items
         # A partial submission may not record events. The engine drains both
         # owned streams before releasing allocations or recycling the slot.
         # 2. Submit computation; device state joins successive rounds.
         with torch.cuda.stream(self.compute_stream):
-            states = tuple(self._state(item.request, bank) for item in items)
+            states = tuple(self._state(item.request, buffer) for item in items)
             rounds = tuple(s.submitted for s in states)
             if any(s.submitted > s.delivered for s in states):
                 self.submitted_before_collect += 1
             tables.copy_(host_tables, non_blocking=True)
             starts, candidates, hidden_rows = self._draft(items, states, tables, allocations)
             target = self._verify(items, starts, hidden_rows, tables, allocations)
-            count = self._accept_and_update_state(items, states, starts, candidates, target, bank)
-            bank.compute_done = torch.cuda.Event()
-            bank.compute_done.record(self.compute_stream)
+            count = self._accept_and_update_state(items, states, starts, candidates, target, buffer)
+            buffer.compute_done = torch.cuda.Event()
+            buffer.compute_done.record(self.compute_stream)
             for state in states:
-                state.event = bank.compute_done
+                state.event = buffer.compute_done
         # 3. Transfer compact results after computation; collect waits here.
         with torch.cuda.stream(self.copy_stream):
-            self.copy_stream.wait_event(bank.compute_done)
+            self.copy_stream.wait_event(buffer.compute_done)
             n = count + 2 * len(items)
-            bank.host_result[:n].copy_(bank.result[:n], non_blocking=True)
-            bank.copy_done = torch.cuda.Event()
-            bank.copy_done.record(self.copy_stream)
+            buffer.host_result[:n].copy_(buffer.result[:n], non_blocking=True)
+            buffer.copy_done = torch.cuda.Event()
+            buffer.copy_done.record(self.copy_stream)
         self.stats.rounds += len(items)
         self.stats.drafted_tokens += sum(item.token_count - 1 for item in items)
         self.stats.verified_rows += count
-        return SpeculativeRoundTicket(batch, bank, states, rounds, count)
+        return SpeculativeRoundTicket(batch, buffer, states, rounds, count)
 
     def request_ready(self, request):
         state = self.states.get(request.request_id)

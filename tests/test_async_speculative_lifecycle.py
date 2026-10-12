@@ -40,8 +40,8 @@ class InvalidHostResult:
 
 
 class CompletionRunner:
-    def __init__(self, banks, *, retirement_ready=True):
-        self.banks = banks
+    def __init__(self, buffers, *, retirement_ready=True):
+        self.buffers = buffers
         self.retirement_ready = retirement_ready
         self.synchronizations = 0
         self.readback_waits = 0
@@ -89,7 +89,7 @@ def prepared_engine(*, bad_second=False, first_frontier=4, retirement_ready=True
         )
         if bad_second and round_id == 1:
             host = InvalidHostResult()
-        bank = SimpleNamespace(
+        buffer = SimpleNamespace(
             copy_done=Completion(),
             leased=True,
             keepalive=[torch.tensor([999])],
@@ -97,12 +97,12 @@ def prepared_engine(*, bad_second=False, first_frontier=4, retirement_ready=True
         )
         tickets.append(
             SpeculativeRoundTicket(
-                SchedulerOutput(Stage.SPECULATIVE, [item]), bank, (state,), (round_id,), rows
+                SchedulerOutput(Stage.SPECULATIVE, [item]), buffer, (state,), (round_id,), rows
             )
         )
     original_runner = engine.speculative_runner
     engine.speculative_runner = CompletionRunner(
-        [ticket.bank for ticket in tickets], retirement_ready=retirement_ready
+        [ticket.buffer for ticket in tickets], retirement_ready=retirement_ready
     )
     engine.execution_config = replace(engine.execution_config, async_scheduling=True)
     engine.async_speculative = True
@@ -118,19 +118,19 @@ def test_discard_waits_for_copy_without_interpreting_payload():
     ticket = tickets[1]
     with pytest.raises(RuntimeError, match="collect.*before retiring"):
         ticket.retire()
-    assert ticket.bank.copy_done.waits == 0 and ticket.bank.leased
+    assert ticket.buffer.copy_done.waits == 0 and ticket.buffer.leased
     ticket.retire(discard=True)
-    assert ticket.bank.copy_done.waits == 1 and ticket.bank.host_result.reads == 0
-    assert not ticket.bank.leased and not ticket.bank.keepalive
+    assert ticket.buffer.copy_done.waits == 1 and ticket.buffer.host_result.reads == 0
+    assert not ticket.buffer.leased and not ticket.buffer.keepalive
     with pytest.raises(RuntimeError, match="retired speculative ticket"):
         ticket.collect()
 
     # Repeated retirement must not release a subsequent user's lease.
-    ticket.bank.leased = True
-    ticket.bank.keepalive.append(torch.tensor([123]))
+    ticket.buffer.leased = True
+    ticket.buffer.keepalive.append(torch.tensor([123]))
     ticket.retire(discard=True)
-    assert ticket.bank.leased and len(ticket.bank.keepalive) == 1
-    assert ticket.bank.copy_done.waits == 1
+    assert ticket.buffer.leased and len(ticket.buffer.keepalive) == 1
+    assert ticket.buffer.copy_done.waits == 1
     engine.close()
 
 
@@ -189,7 +189,8 @@ def test_cuda_serving_two_completed_rounds_isolate_decode_failure(monkeypatch, d
         assert not worker.decoders and engine.cache_manager.num_used_blocks == 0
         assert not engine.speculative_runner.states
         assert all(
-            not bank.leased and not bank.keepalive for bank in engine.speculative_runner.banks
+            not buffer.leased and not buffer.keepalive
+            for buffer in engine.speculative_runner.buffers
         )
     finally:
         engine.close()
@@ -198,7 +199,7 @@ def test_cuda_serving_two_completed_rounds_isolate_decode_failure(monkeypatch, d
 @pytest.mark.gpu
 @pytest.mark.parametrize("bad_second", [False, True])
 @torch.inference_mode()
-def test_cuda_failure_cleanup_preserves_error_and_releases_real_banks(bad_second):
+def test_cuda_failure_cleanup_preserves_error_and_releases_real_buffers(bad_second):
     from tests.test_async_speculative import bootstrap, make_engine, tiny
 
     engine = make_engine(tiny("cuda"), k=2)
@@ -210,21 +211,22 @@ def test_cuda_failure_cleanup_preserves_error_and_releases_real_banks(bad_second
         assert len(tickets) == 2
         engine.speculative_runner.synchronize()
         # Corrupt only the completed host payload; the real compute/copy
-        # streams and pending bank leases retain their production lifecycle.
+        # streams and pending buffer leases retain their production lifecycle.
         first = tickets[0]
-        first.bank.host_result[first.rows + len(first.batch.items)] = 0
+        first.buffer.host_result[first.rows + len(first.batch.items)] = 0
         if bad_second:
-            tickets[1].bank.host_result = InvalidHostResult()
+            tickets[1].buffer.host_result = InvalidHostResult()
         with pytest.raises(RuntimeError, match="frontier disagrees with committed prefix"):
             engine.step()
         assert not engine._pending_speculative and not engine._retiring_speculative
         assert not engine.scheduler.requests and engine.cache_manager.num_used_blocks == 0
         assert not engine.speculative_runner.states
         assert all(
-            not bank.leased and not bank.keepalive for bank in engine.speculative_runner.banks
+            not buffer.leased and not buffer.keepalive
+            for buffer in engine.speculative_runner.buffers
         )
         if bad_second:
-            assert tickets[1].bank.host_result.reads == 0
+            assert tickets[1].buffer.host_result.reads == 0
         engine.close()
     finally:
         engine.close()
@@ -235,20 +237,20 @@ def test_collected_ticket_retirement_has_no_second_host_wait():
     engine, tickets, _ = prepared_engine()
     ticket = tickets[0]
     collected = ticket.collect()
-    assert ticket.bank.copy_done.waits == 1
+    assert ticket.buffer.copy_done.waits == 1
     ticket.retire()
     assert ticket.collect() is collected
-    ticket.bank.leased = True
-    ticket.bank.keepalive.append(torch.tensor([123]))
+    ticket.buffer.leased = True
+    ticket.buffer.keepalive.append(torch.tensor([123]))
     ticket.retire()
-    assert ticket.bank.leased and len(ticket.bank.keepalive) == 1
-    assert ticket.bank.copy_done.waits == 1
+    assert ticket.buffer.leased and len(ticket.buffer.keepalive) == 1
+    assert ticket.buffer.copy_done.waits == 1
     engine.close()
 
 
 @pytest.mark.parametrize("bad_second", [False, True])
 @torch.inference_mode()
-def test_failure_cleanup_preserves_primary_error_and_retires_all_banks(bad_second):
+def test_failure_cleanup_preserves_primary_error_and_retires_all_buffers(bad_second):
     engine, tickets, _ = prepared_engine(bad_second=bad_second, first_frontier=0)
     runner = engine.speculative_runner
     with pytest.raises(RuntimeError, match="frontier disagrees with committed prefix"):
@@ -256,9 +258,9 @@ def test_failure_cleanup_preserves_primary_error_and_retires_all_banks(bad_secon
     assert runner.synchronizations == 1
     assert not engine._pending_speculative and not engine._retiring_speculative
     assert not engine.scheduler.requests and engine.cache_manager.num_used_blocks == 0
-    assert all(not t.bank.leased and not t.bank.keepalive for t in tickets)
+    assert all(not t.buffer.leased and not t.buffer.keepalive for t in tickets)
     if bad_second:
-        assert tickets[1].bank.host_result.reads == 0
+        assert tickets[1].buffer.host_result.reads == 0
     engine.close()
     engine.close()
 
@@ -270,8 +272,8 @@ def test_close_discards_uncollected_payloads_and_is_repeatable():
     engine.close()
     assert not engine._pending_speculative and not engine._retiring_speculative
     assert not engine.scheduler.requests and engine.cache_manager.num_used_blocks == 0
-    assert all(not t.bank.leased and not t.bank.keepalive for t in tickets)
-    assert tickets[1].bank.host_result.reads == 0
+    assert all(not t.buffer.leased and not t.buffer.keepalive for t in tickets)
+    assert tickets[1].buffer.host_result.reads == 0
 
 
 class RecordingDecoder:
@@ -296,7 +298,7 @@ def test_serving_delivers_two_snapshots_or_isolates_failure(
     snapshots = engine._step_async_speculative()
     assert [len(o.token_ids) for o in snapshots] == [4, 6]
     assert [o.finished for o in snapshots] == [False, True]
-    assert all(not t.bank.leased for t in tickets)
+    assert all(not t.buffer.leased for t in tickets)
     if not retirement_ready:
         assert engine.scheduler.requests["r"].finish_reason == "length"
 

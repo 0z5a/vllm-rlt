@@ -69,7 +69,7 @@ class LLMEngine:
                 config.vocab_size * 24 + config.hidden_size * parameter.element_size() * 2
             )
             if self.async_speculative:
-                # Two in-flight rounds, plus device and pinned page-table banks.
+                # Two in-flight rounds, plus device and pinned page-table buffers.
                 width = (config.max_position_embeddings + cache_config.block_size - 1) // (
                     cache_config.block_size
                 )
@@ -254,10 +254,10 @@ class LLMEngine:
         for ticket in self._pending_speculative:
             ticket.retire(discard=True)
         self._pending_speculative.clear()
-        # A partial submission can lease a bank before returning its ticket.
-        for bank in cast("AsyncSpeculativeRunner", self.speculative_runner).banks:
-            bank.keepalive.clear()
-            bank.leased = False
+        # A partial submission can lease a buffer before returning its ticket.
+        for buffer in cast("AsyncSpeculativeRunner", self.speculative_runner).buffers:
+            buffer.keepalive.clear()
+            buffer.leased = False
 
     def abort_request(self, request_id: str) -> RequestOutput:
         if self.async_speculative:
@@ -529,7 +529,7 @@ class LLMEngine:
         self._retire_speculative()
         outputs = []
         # Submit ahead before collecting, even when a small round already
-        # completed. Two leased banks provide a hard global queue bound.
+        # completed. Two leased buffers provide a hard global queue bound.
         if len(self._pending_speculative) == 2:
             outputs.extend(self._collect_speculative())
         batch = self.scheduler.schedule()
