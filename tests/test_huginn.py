@@ -194,6 +194,7 @@ def test_request_seed_is_independent_of_batching_and_global_rng(model, temperatu
                     result[output.request_id] = (output.token_ids, output.exit_depths)
         torch.testing.assert_close(torch.random.get_rng_state(), before, rtol=0, atol=0)
         assert engine.cache_manager.num_used_blocks == 0
+        assert not engine.rng.generators
         return result
 
     separate = run(["first"], 1) | run(["second"], 999)

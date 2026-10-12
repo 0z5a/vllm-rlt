@@ -97,25 +97,23 @@ def test_lossless_preemption_preserves_looped_history():
         while len(e.scheduler.requests["a"].generated_token_ids) < 3:
             e.step()
         if suspend:
-            request = e.scheduler.requests["a"]
-            generator = request.generator
+            generator = e.rng.peek("a")
             assert generator is not None
             state = generator.get_state().clone()
             e.add_request("b", [5], SamplingParams(max_tokens=1))
             assert e.preemption.preempt(e.scheduler.requests["b"])
             assert "a" in e.preemption.snapshots
-            # Suspension shares release() with termination, and the RNG survives
-            # only because the Request object is retained: it is not part of the
-            # KV/hidden snapshot.
-            assert request.generator is generator
+            # Preemption suspends rather than terminates, so the runner keeps the
+            # request's RNG slot: suspension is not a reset.
+            assert e.rng.peek("a") is generator
             assert torch.equal(generator.get_state(), state)
         results.append(finish(e)["a"])
         if suspend:
             assert e.preemption.resumptions == 1
             # Sampling continued from the preserved state instead of reseeding,
-            # and termination then released the RNG slot.
+            # and termination then dropped the RNG slot.
             assert not torch.equal(generator.get_state(), state)
-            assert request.generator is None
+            assert e.rng.peek("a") is None
     assert results[0].token_ids == results[1].token_ids
     assert results[0].exit_depths == results[1].exit_depths
 
@@ -269,4 +267,51 @@ def test_async_pressure_preemption_with_resident_state():
         assert not e.preemption.snapshots and e.cache_manager.num_used_blocks == 0
         if blocks == 24:
             assert e.preemption.preemptions > 0
+    assert results[0] == results[1]
+
+
+@pytest.mark.gpu
+def test_async_preemption_restores_prelude_token_in_a_new_slot():
+    # A preempted request releases its async slot. A later arrival takes it
+    # (LIFO), so the victim resumes in another slot whose device token belongs
+    # to a different request. Distinct prompts make a stale token visible.
+    from vllm_rlt import ExecutionConfig, ExitConfig
+    from vllm_rlt.request import Stage
+
+    torch.manual_seed(72)
+    m = OuroForCausalLM(tiny_ouro_config(head_dim=64)).to(device="cuda", dtype=torch.bfloat16)
+    results, victim_stages = [], []
+    for blocks in [128, 24]:
+        e = LLMEngine(
+            m,
+            attention_backend="triton",
+            cache_config=CacheConfig(blocks, 2, incremental_allocation=True),
+            scheduler_config=SchedulerConfig(
+                max_num_seqs=2,
+                max_num_batched_tokens=2,
+                prefill_chunk_size=2,
+                enable_preemption=True,
+            ),
+            exit_config=ExitConfig("trace", depths_by_request={"t": [4, 1, 2, 3, 4, 1, 2, 3]}),
+            execution_config=ExecutionConfig(async_scheduling=True),
+        )
+        select = e.preemption._select_preemption_victim
+
+        def record_victim(*args, **kwargs):
+            victim = select(*args, **kwargs)
+            if victim is not None:
+                victim_stages.append(victim.stage)
+            return victim
+
+        e.preemption._select_preemption_victim = record_victim
+        for i in range(4):
+            e.add_request(
+                str(i),
+                [2 * i + 1, 2 * i + 2],
+                SamplingParams(max_tokens=8, min_loops=1, ignore_eos=True),
+                trace_id="t",
+            )
+        results.append({rid: out.token_ids for rid, out in finish(e).items()})
+        assert not e.preemption.snapshots and e.cache_manager.num_used_blocks == 0
+    assert Stage.PRELUDE in victim_stages
     assert results[0] == results[1]
