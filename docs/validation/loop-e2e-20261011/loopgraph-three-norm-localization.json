@@ -1,0 +1,159 @@
+{
+  "passed": true,
+  "original_unmodified_nine_failures_retained": true,
+  "scope": "Read-only all-layer capture just before/at first remaining head drift (request39 indices80/81; request63 indices63/64). All-down32 and single layer23 norm32 private arithmetic unchanged. Exact complete frozen tokens, depth, work and all256 heads must reproduce parent; original failures retained. No original serving/performance pass.",
+  "previous_CPU_v3_actual_return": 1,
+  "expected_complete_operator_records_per_owner": 1344,
+  "all256_heads_and_all_complete_parent_token_trajectories_exactly_reproduced": true,
+  "author_clock_fields_retained_but_not_required_equal_across_runs": [
+    "created_time",
+    "first_token_time",
+    "lifespan"
+  ],
+  "native_clock_fields_retained_but_not_required_equal_across_runs": [
+    "submitted_at",
+    "output_times"
+  ],
+  "actual_producer_return": 1,
+  "private_control_candidate_passed": false,
+  "previous_private_two_failures_retained": true,
+  "no_original_serving_or_performance_pass": true,
+  "cases": {
+    "author": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        }
+      ],
+      "operator_records": 1344,
+      "head_records": 256,
+      "single_norm_control_zero_padding_slicing_verified": true,
+      "norm_calls": 2826,
+      "padded_norm_calls": 1688,
+      "added_norm_rows": 42914
+    },
+    "candidate": {
+      "parent_and_observer_passed": false,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        }
+      ],
+      "operator_records": 1344,
+      "head_records": 256,
+      "single_norm_control_zero_padding_slicing_verified": true,
+      "norm_calls": 1272,
+      "padded_norm_calls": 483,
+      "added_norm_rows": 7776
+    }
+  },
+  "archive_sha256": "1f34ad65ff6d16fcb552f516c23b32abf16d0e84a30ffb085b617a5fb2b3289c",
+  "archive_bytes": 510603701,
+  "payloads_verified": 428,
+  "parent_archive_sha256": "b5cb055b3c6c6c896b09bcdf9e3c3e0eea77e679f5f701da52779d55f6003c63",
+  "no_GPU_trials_repeated_by_auditor": true,
+  "CUDA_initialized": false,
+  "actual_independent_CPU_return": 0,
+  "actual_collector_return": 0,
+  "selected_operator_first_differences": [
+    {
+      "request_id": "request-39",
+      "index": 80,
+      "operator_records": 336,
+      "all_observed_operators_equal": true,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-39",
+      "index": 81,
+      "operator_records": 336,
+      "all_observed_operators_equal": false,
+      "first_difference": {
+        "request_id": "request-39",
+        "index": 81,
+        "depth": 0,
+        "module": "layers.17.input_layernorm_2",
+        "key": "request-39:decode:81:0:layers.17.input_layernorm_2",
+        "author_ordinal": 580,
+        "native_ordinal": 1252,
+        "author_input_shape": [
+          1,
+          5,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": true,
+          "different_elements": 0,
+          "elements": 2048,
+          "max_abs": 0.0
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 17,
+          "elements": 2048,
+          "max_abs": 0.000244140625
+        }
+      }
+    },
+    {
+      "request_id": "request-63",
+      "index": 63,
+      "operator_records": 336,
+      "all_observed_operators_equal": true,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-63",
+      "index": 64,
+      "operator_records": 336,
+      "all_observed_operators_equal": false,
+      "first_difference": {
+        "request_id": "request-63",
+        "index": 64,
+        "depth": 0,
+        "module": "layers.15.input_layernorm_2",
+        "key": "request-63:decode:64:0:layers.15.input_layernorm_2",
+        "author_ordinal": 1224,
+        "native_ordinal": 552,
+        "author_input_shape": [
+          1,
+          3,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": true,
+          "different_elements": 0,
+          "elements": 2048,
+          "max_abs": 0.0
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 11,
+          "elements": 2048,
+          "max_abs": 0.00048828125
+        }
+      }
+    }
+  ]
+}

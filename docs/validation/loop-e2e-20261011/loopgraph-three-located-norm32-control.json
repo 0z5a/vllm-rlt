@@ -1,0 +1,4471 @@
+{
+  "passed": true,
+  "original_unmodified_nine_failures_retained": true,
+  "scope": "Only the three independently located input_layernorm_2 modules (layers15/17/23) use zero-pad/original-forward/slice minimum32 in both fresh owners; all24 MLP down32 retained. All other arithmetic/weights/seed1729/frozen W1/depth/work/exact token gates unchanged. Original unmodified nine failures and all prior private two-token failures preserved; no original serving/performance pass.",
+  "previous_CPU_v3_actual_return": 1,
+  "expected_complete_operator_records_per_owner": 1344,
+  "author_clock_fields_retained_but_not_required_equal_across_runs": [
+    "created_time",
+    "first_token_time",
+    "lifespan"
+  ],
+  "native_clock_fields_retained_but_not_required_equal_across_runs": [
+    "submitted_at",
+    "output_times"
+  ],
+  "actual_producer_return": 0,
+  "private_control_candidate_passed": true,
+  "previous_private_two_failures_retained": true,
+  "private_control_arithmetic_changed_only_at_two_additional_located_norms": true,
+  "no_original_serving_or_performance_pass": true,
+  "cases": {
+    "author": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": true
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": true
+        }
+      ],
+      "operator_records": 1344,
+      "head_records": 256,
+      "three_located_norm_controls_zero_padding_slicing_verified": true,
+      "norm_calls": 8478,
+      "padded_norm_calls": 5064,
+      "added_norm_rows": 128742
+    },
+    "candidate": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": null
+        }
+      ],
+      "operator_records": 1344,
+      "head_records": 256,
+      "three_located_norm_controls_zero_padding_slicing_verified": true,
+      "norm_calls": 7632,
+      "padded_norm_calls": 2898,
+      "added_norm_rows": 46656
+    }
+  },
+  "archive_sha256": "93113c878e144df2424a24a1df7d14fcf2e8ca285a8463c736bf00b92e945aaa",
+  "archive_bytes": 513122235,
+  "payloads_verified": 431,
+  "parent_archive_sha256": "1f34ad65ff6d16fcb552f516c23b32abf16d0e84a30ffb085b617a5fb2b3289c",
+  "no_GPU_trials_repeated_by_auditor": true,
+  "CUDA_initialized": false,
+  "actual_independent_CPU_return": 0,
+  "actual_collector_return": 0,
+  "all_observed_operator_inputs_and_outputs_exactly_equal": true,
+  "private_full_head_numerical_qualification_passed": false,
+  "head_summary": [
+    {
+      "request_id": "request-39",
+      "heads_verified_per_owner": 128,
+      "different_hidden_or_logit_heads": 0,
+      "first_difference": null,
+      "all_head_comparisons": [
+        {
+          "key": "request-39:0",
+          "request_id": "request-39",
+          "index": 0,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:1",
+          "request_id": "request-39",
+          "index": 1,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:2",
+          "request_id": "request-39",
+          "index": 2,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:3",
+          "request_id": "request-39",
+          "index": 3,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:4",
+          "request_id": "request-39",
+          "index": 4,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:5",
+          "request_id": "request-39",
+          "index": 5,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:6",
+          "request_id": "request-39",
+          "index": 6,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:7",
+          "request_id": "request-39",
+          "index": 7,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:8",
+          "request_id": "request-39",
+          "index": 8,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:9",
+          "request_id": "request-39",
+          "index": 9,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:10",
+          "request_id": "request-39",
+          "index": 10,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:11",
+          "request_id": "request-39",
+          "index": 11,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:12",
+          "request_id": "request-39",
+          "index": 12,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:13",
+          "request_id": "request-39",
+          "index": 13,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:14",
+          "request_id": "request-39",
+          "index": 14,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:15",
+          "request_id": "request-39",
+          "index": 15,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:16",
+          "request_id": "request-39",
+          "index": 16,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:17",
+          "request_id": "request-39",
+          "index": 17,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:18",
+          "request_id": "request-39",
+          "index": 18,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:19",
+          "request_id": "request-39",
+          "index": 19,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:20",
+          "request_id": "request-39",
+          "index": 20,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:21",
+          "request_id": "request-39",
+          "index": 21,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:22",
+          "request_id": "request-39",
+          "index": 22,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:23",
+          "request_id": "request-39",
+          "index": 23,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:24",
+          "request_id": "request-39",
+          "index": 24,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:25",
+          "request_id": "request-39",
+          "index": 25,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:26",
+          "request_id": "request-39",
+          "index": 26,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:27",
+          "request_id": "request-39",
+          "index": 27,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:28",
+          "request_id": "request-39",
+          "index": 28,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:29",
+          "request_id": "request-39",
+          "index": 29,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:30",
+          "request_id": "request-39",
+          "index": 30,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:31",
+          "request_id": "request-39",
+          "index": 31,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:32",
+          "request_id": "request-39",
+          "index": 32,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:33",
+          "request_id": "request-39",
+          "index": 33,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:34",
+          "request_id": "request-39",
+          "index": 34,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:35",
+          "request_id": "request-39",
+          "index": 35,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:36",
+          "request_id": "request-39",
+          "index": 36,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:37",
+          "request_id": "request-39",
+          "index": 37,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:38",
+          "request_id": "request-39",
+          "index": 38,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:39",
+          "request_id": "request-39",
+          "index": 39,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:40",
+          "request_id": "request-39",
+          "index": 40,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:41",
+          "request_id": "request-39",
+          "index": 41,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:42",
+          "request_id": "request-39",
+          "index": 42,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:43",
+          "request_id": "request-39",
+          "index": 43,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:44",
+          "request_id": "request-39",
+          "index": 44,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:45",
+          "request_id": "request-39",
+          "index": 45,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:46",
+          "request_id": "request-39",
+          "index": 46,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:47",
+          "request_id": "request-39",
+          "index": 47,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:48",
+          "request_id": "request-39",
+          "index": 48,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:49",
+          "request_id": "request-39",
+          "index": 49,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:50",
+          "request_id": "request-39",
+          "index": 50,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:51",
+          "request_id": "request-39",
+          "index": 51,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:52",
+          "request_id": "request-39",
+          "index": 52,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:53",
+          "request_id": "request-39",
+          "index": 53,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:54",
+          "request_id": "request-39",
+          "index": 54,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:55",
+          "request_id": "request-39",
+          "index": 55,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:56",
+          "request_id": "request-39",
+          "index": 56,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:57",
+          "request_id": "request-39",
+          "index": 57,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:58",
+          "request_id": "request-39",
+          "index": 58,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:59",
+          "request_id": "request-39",
+          "index": 59,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:60",
+          "request_id": "request-39",
+          "index": 60,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:61",
+          "request_id": "request-39",
+          "index": 61,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:62",
+          "request_id": "request-39",
+          "index": 62,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:63",
+          "request_id": "request-39",
+          "index": 63,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:64",
+          "request_id": "request-39",
+          "index": 64,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:65",
+          "request_id": "request-39",
+          "index": 65,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:66",
+          "request_id": "request-39",
+          "index": 66,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:67",
+          "request_id": "request-39",
+          "index": 67,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:68",
+          "request_id": "request-39",
+          "index": 68,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:69",
+          "request_id": "request-39",
+          "index": 69,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:70",
+          "request_id": "request-39",
+          "index": 70,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:71",
+          "request_id": "request-39",
+          "index": 71,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:72",
+          "request_id": "request-39",
+          "index": 72,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:73",
+          "request_id": "request-39",
+          "index": 73,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:74",
+          "request_id": "request-39",
+          "index": 74,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:75",
+          "request_id": "request-39",
+          "index": 75,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:76",
+          "request_id": "request-39",
+          "index": 76,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:77",
+          "request_id": "request-39",
+          "index": 77,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:78",
+          "request_id": "request-39",
+          "index": 78,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:79",
+          "request_id": "request-39",
+          "index": 79,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:80",
+          "request_id": "request-39",
+          "index": 80,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:81",
+          "request_id": "request-39",
+          "index": 81,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:82",
+          "request_id": "request-39",
+          "index": 82,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:83",
+          "request_id": "request-39",
+          "index": 83,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:84",
+          "request_id": "request-39",
+          "index": 84,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:85",
+          "request_id": "request-39",
+          "index": 85,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:86",
+          "request_id": "request-39",
+          "index": 86,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:87",
+          "request_id": "request-39",
+          "index": 87,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:88",
+          "request_id": "request-39",
+          "index": 88,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:89",
+          "request_id": "request-39",
+          "index": 89,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:90",
+          "request_id": "request-39",
+          "index": 90,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:91",
+          "request_id": "request-39",
+          "index": 91,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:92",
+          "request_id": "request-39",
+          "index": 92,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:93",
+          "request_id": "request-39",
+          "index": 93,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:94",
+          "request_id": "request-39",
+          "index": 94,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:95",
+          "request_id": "request-39",
+          "index": 95,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:96",
+          "request_id": "request-39",
+          "index": 96,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:97",
+          "request_id": "request-39",
+          "index": 97,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:98",
+          "request_id": "request-39",
+          "index": 98,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:99",
+          "request_id": "request-39",
+          "index": 99,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:100",
+          "request_id": "request-39",
+          "index": 100,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:101",
+          "request_id": "request-39",
+          "index": 101,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:102",
+          "request_id": "request-39",
+          "index": 102,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:103",
+          "request_id": "request-39",
+          "index": 103,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:104",
+          "request_id": "request-39",
+          "index": 104,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:105",
+          "request_id": "request-39",
+          "index": 105,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:106",
+          "request_id": "request-39",
+          "index": 106,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:107",
+          "request_id": "request-39",
+          "index": 107,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:108",
+          "request_id": "request-39",
+          "index": 108,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:109",
+          "request_id": "request-39",
+          "index": 109,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:110",
+          "request_id": "request-39",
+          "index": 110,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:111",
+          "request_id": "request-39",
+          "index": 111,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:112",
+          "request_id": "request-39",
+          "index": 112,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:113",
+          "request_id": "request-39",
+          "index": 113,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:114",
+          "request_id": "request-39",
+          "index": 114,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:115",
+          "request_id": "request-39",
+          "index": 115,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:116",
+          "request_id": "request-39",
+          "index": 116,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:117",
+          "request_id": "request-39",
+          "index": 117,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:118",
+          "request_id": "request-39",
+          "index": 118,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:119",
+          "request_id": "request-39",
+          "index": 119,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:120",
+          "request_id": "request-39",
+          "index": 120,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:121",
+          "request_id": "request-39",
+          "index": 121,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:122",
+          "request_id": "request-39",
+          "index": 122,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:123",
+          "request_id": "request-39",
+          "index": 123,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:124",
+          "request_id": "request-39",
+          "index": 124,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:125",
+          "request_id": "request-39",
+          "index": 125,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:126",
+          "request_id": "request-39",
+          "index": 126,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-39:127",
+          "request_id": "request-39",
+          "index": 127,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "request_id": "request-63",
+      "heads_verified_per_owner": 128,
+      "different_hidden_or_logit_heads": 20,
+      "first_difference": {
+        "key": "request-63:108",
+        "request_id": "request-63",
+        "index": 108,
+        "hidden": {
+          "byte_equal": false,
+          "different_elements": 1650,
+          "elements": 2048,
+          "max_abs": 0.046875
+        },
+        "logits": {
+          "byte_equal": false,
+          "different_elements": 40253,
+          "elements": 49152,
+          "max_abs": 0.125
+        }
+      },
+      "all_head_comparisons": [
+        {
+          "key": "request-63:0",
+          "request_id": "request-63",
+          "index": 0,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:1",
+          "request_id": "request-63",
+          "index": 1,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:2",
+          "request_id": "request-63",
+          "index": 2,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:3",
+          "request_id": "request-63",
+          "index": 3,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:4",
+          "request_id": "request-63",
+          "index": 4,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:5",
+          "request_id": "request-63",
+          "index": 5,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:6",
+          "request_id": "request-63",
+          "index": 6,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:7",
+          "request_id": "request-63",
+          "index": 7,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:8",
+          "request_id": "request-63",
+          "index": 8,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:9",
+          "request_id": "request-63",
+          "index": 9,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:10",
+          "request_id": "request-63",
+          "index": 10,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:11",
+          "request_id": "request-63",
+          "index": 11,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:12",
+          "request_id": "request-63",
+          "index": 12,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:13",
+          "request_id": "request-63",
+          "index": 13,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:14",
+          "request_id": "request-63",
+          "index": 14,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:15",
+          "request_id": "request-63",
+          "index": 15,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:16",
+          "request_id": "request-63",
+          "index": 16,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:17",
+          "request_id": "request-63",
+          "index": 17,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:18",
+          "request_id": "request-63",
+          "index": 18,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:19",
+          "request_id": "request-63",
+          "index": 19,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:20",
+          "request_id": "request-63",
+          "index": 20,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:21",
+          "request_id": "request-63",
+          "index": 21,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:22",
+          "request_id": "request-63",
+          "index": 22,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:23",
+          "request_id": "request-63",
+          "index": 23,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:24",
+          "request_id": "request-63",
+          "index": 24,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:25",
+          "request_id": "request-63",
+          "index": 25,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:26",
+          "request_id": "request-63",
+          "index": 26,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:27",
+          "request_id": "request-63",
+          "index": 27,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:28",
+          "request_id": "request-63",
+          "index": 28,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:29",
+          "request_id": "request-63",
+          "index": 29,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:30",
+          "request_id": "request-63",
+          "index": 30,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:31",
+          "request_id": "request-63",
+          "index": 31,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:32",
+          "request_id": "request-63",
+          "index": 32,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:33",
+          "request_id": "request-63",
+          "index": 33,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:34",
+          "request_id": "request-63",
+          "index": 34,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:35",
+          "request_id": "request-63",
+          "index": 35,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:36",
+          "request_id": "request-63",
+          "index": 36,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:37",
+          "request_id": "request-63",
+          "index": 37,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:38",
+          "request_id": "request-63",
+          "index": 38,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:39",
+          "request_id": "request-63",
+          "index": 39,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:40",
+          "request_id": "request-63",
+          "index": 40,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:41",
+          "request_id": "request-63",
+          "index": 41,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:42",
+          "request_id": "request-63",
+          "index": 42,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:43",
+          "request_id": "request-63",
+          "index": 43,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:44",
+          "request_id": "request-63",
+          "index": 44,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:45",
+          "request_id": "request-63",
+          "index": 45,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:46",
+          "request_id": "request-63",
+          "index": 46,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:47",
+          "request_id": "request-63",
+          "index": 47,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:48",
+          "request_id": "request-63",
+          "index": 48,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:49",
+          "request_id": "request-63",
+          "index": 49,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:50",
+          "request_id": "request-63",
+          "index": 50,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:51",
+          "request_id": "request-63",
+          "index": 51,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:52",
+          "request_id": "request-63",
+          "index": 52,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:53",
+          "request_id": "request-63",
+          "index": 53,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:54",
+          "request_id": "request-63",
+          "index": 54,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:55",
+          "request_id": "request-63",
+          "index": 55,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:56",
+          "request_id": "request-63",
+          "index": 56,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:57",
+          "request_id": "request-63",
+          "index": 57,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:58",
+          "request_id": "request-63",
+          "index": 58,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:59",
+          "request_id": "request-63",
+          "index": 59,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:60",
+          "request_id": "request-63",
+          "index": 60,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:61",
+          "request_id": "request-63",
+          "index": 61,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:62",
+          "request_id": "request-63",
+          "index": 62,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:63",
+          "request_id": "request-63",
+          "index": 63,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:64",
+          "request_id": "request-63",
+          "index": 64,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:65",
+          "request_id": "request-63",
+          "index": 65,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:66",
+          "request_id": "request-63",
+          "index": 66,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:67",
+          "request_id": "request-63",
+          "index": 67,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:68",
+          "request_id": "request-63",
+          "index": 68,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:69",
+          "request_id": "request-63",
+          "index": 69,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:70",
+          "request_id": "request-63",
+          "index": 70,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:71",
+          "request_id": "request-63",
+          "index": 71,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:72",
+          "request_id": "request-63",
+          "index": 72,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:73",
+          "request_id": "request-63",
+          "index": 73,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:74",
+          "request_id": "request-63",
+          "index": 74,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:75",
+          "request_id": "request-63",
+          "index": 75,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:76",
+          "request_id": "request-63",
+          "index": 76,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:77",
+          "request_id": "request-63",
+          "index": 77,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:78",
+          "request_id": "request-63",
+          "index": 78,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:79",
+          "request_id": "request-63",
+          "index": 79,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:80",
+          "request_id": "request-63",
+          "index": 80,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:81",
+          "request_id": "request-63",
+          "index": 81,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:82",
+          "request_id": "request-63",
+          "index": 82,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:83",
+          "request_id": "request-63",
+          "index": 83,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:84",
+          "request_id": "request-63",
+          "index": 84,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:85",
+          "request_id": "request-63",
+          "index": 85,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:86",
+          "request_id": "request-63",
+          "index": 86,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:87",
+          "request_id": "request-63",
+          "index": 87,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:88",
+          "request_id": "request-63",
+          "index": 88,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:89",
+          "request_id": "request-63",
+          "index": 89,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:90",
+          "request_id": "request-63",
+          "index": 90,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:91",
+          "request_id": "request-63",
+          "index": 91,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:92",
+          "request_id": "request-63",
+          "index": 92,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:93",
+          "request_id": "request-63",
+          "index": 93,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:94",
+          "request_id": "request-63",
+          "index": 94,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:95",
+          "request_id": "request-63",
+          "index": 95,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:96",
+          "request_id": "request-63",
+          "index": 96,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:97",
+          "request_id": "request-63",
+          "index": 97,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:98",
+          "request_id": "request-63",
+          "index": 98,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:99",
+          "request_id": "request-63",
+          "index": 99,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:100",
+          "request_id": "request-63",
+          "index": 100,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:101",
+          "request_id": "request-63",
+          "index": 101,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:102",
+          "request_id": "request-63",
+          "index": 102,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:103",
+          "request_id": "request-63",
+          "index": 103,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:104",
+          "request_id": "request-63",
+          "index": 104,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:105",
+          "request_id": "request-63",
+          "index": 105,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:106",
+          "request_id": "request-63",
+          "index": 106,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:107",
+          "request_id": "request-63",
+          "index": 107,
+          "hidden": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 2048,
+            "max_abs": 0.0
+          },
+          "logits": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "elements": 49152,
+            "max_abs": 0.0
+          }
+        },
+        {
+          "key": "request-63:108",
+          "request_id": "request-63",
+          "index": 108,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1650,
+            "elements": 2048,
+            "max_abs": 0.046875
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 40253,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:109",
+          "request_id": "request-63",
+          "index": 109,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1693,
+            "elements": 2048,
+            "max_abs": 0.09375
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 42633,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:110",
+          "request_id": "request-63",
+          "index": 110,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1448,
+            "elements": 2048,
+            "max_abs": 0.03125
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 36856,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:111",
+          "request_id": "request-63",
+          "index": 111,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1397,
+            "elements": 2048,
+            "max_abs": 0.03125
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 38096,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:112",
+          "request_id": "request-63",
+          "index": 112,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1389,
+            "elements": 2048,
+            "max_abs": 0.03125
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 37722,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:113",
+          "request_id": "request-63",
+          "index": 113,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1676,
+            "elements": 2048,
+            "max_abs": 0.0625
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 36903,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:114",
+          "request_id": "request-63",
+          "index": 114,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1858,
+            "elements": 2048,
+            "max_abs": 0.0625
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 45232,
+            "elements": 49152,
+            "max_abs": 0.1875
+          }
+        },
+        {
+          "key": "request-63:115",
+          "request_id": "request-63",
+          "index": 115,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1865,
+            "elements": 2048,
+            "max_abs": 0.083984375
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 44369,
+            "elements": 49152,
+            "max_abs": 0.14453125
+          }
+        },
+        {
+          "key": "request-63:116",
+          "request_id": "request-63",
+          "index": 116,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1534,
+            "elements": 2048,
+            "max_abs": 0.0390625
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 41336,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:117",
+          "request_id": "request-63",
+          "index": 117,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1475,
+            "elements": 2048,
+            "max_abs": 0.0625
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 39866,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:118",
+          "request_id": "request-63",
+          "index": 118,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1632,
+            "elements": 2048,
+            "max_abs": 0.0546875
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 42526,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:119",
+          "request_id": "request-63",
+          "index": 119,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1772,
+            "elements": 2048,
+            "max_abs": 0.021484375
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 36491,
+            "elements": 49152,
+            "max_abs": 0.0625
+          }
+        },
+        {
+          "key": "request-63:120",
+          "request_id": "request-63",
+          "index": 120,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1776,
+            "elements": 2048,
+            "max_abs": 0.078125
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 40656,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:121",
+          "request_id": "request-63",
+          "index": 121,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1728,
+            "elements": 2048,
+            "max_abs": 0.125
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 38689,
+            "elements": 49152,
+            "max_abs": 0.0625
+          }
+        },
+        {
+          "key": "request-63:122",
+          "request_id": "request-63",
+          "index": 122,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1730,
+            "elements": 2048,
+            "max_abs": 0.0234375
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 40417,
+            "elements": 49152,
+            "max_abs": 0.0625
+          }
+        },
+        {
+          "key": "request-63:123",
+          "request_id": "request-63",
+          "index": 123,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1669,
+            "elements": 2048,
+            "max_abs": 0.0625
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 41740,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:124",
+          "request_id": "request-63",
+          "index": 124,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1878,
+            "elements": 2048,
+            "max_abs": 0.0703125
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 44125,
+            "elements": 49152,
+            "max_abs": 0.15625
+          }
+        },
+        {
+          "key": "request-63:125",
+          "request_id": "request-63",
+          "index": 125,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1435,
+            "elements": 2048,
+            "max_abs": 0.0625
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 35257,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:126",
+          "request_id": "request-63",
+          "index": 126,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1594,
+            "elements": 2048,
+            "max_abs": 0.03125
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 36496,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        },
+        {
+          "key": "request-63:127",
+          "request_id": "request-63",
+          "index": 127,
+          "hidden": {
+            "byte_equal": false,
+            "different_elements": 1712,
+            "elements": 2048,
+            "max_abs": 0.0625
+          },
+          "logits": {
+            "byte_equal": false,
+            "different_elements": 41539,
+            "elements": 49152,
+            "max_abs": 0.125
+          }
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "All64 requests and both128-token waves match fresh private author tokens exactly, with original depth/work/drain. This declared private control changes author arithmetic, so it does not qualify unmodified serving or throughput.",
+    "The selected request39 heads all match, while request63 has20 remaining hidden/logit differences starting at108 even though greedy tokens match. This is explicitly retained, not hidden behind token parity.",
+    "Only three independently located norm modules were controlled; all other norms and original production sources are unchanged. Original nine failures and all previous private/observer/integrity failures remain.",
+    "Original exact gates and tolerances were not relaxed. Further complete head coverage is a separate read-only diagnostic, currently pending."
+  ]
+}

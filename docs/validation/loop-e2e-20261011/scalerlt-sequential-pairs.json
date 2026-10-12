@@ -1,6 +1,6 @@
 {
   "scope": "Sequential matched-storage confirmation, seed42 of the fixed five-seed queue42..46; same FP32, global32 samples, original checkpoint/fixture/depth/reward, seven complete updates (two warmup/five measured), paired identical response tokens. The two Scale arms do not overlap.",
-  "completion": "1 of 5 paired seeds independently audited; remaining seeds pending, not a complete scaling conclusion",
+  "completion": "Seeds42/43 independently audited. User stopped further ScaleRLT tests after seed43; seeds44/45/46 were not started and are not failed scientific runs. No complete five-pair confirmation or stable scaling conclusion.",
   "seed": 42,
   "execution_order": [
     "one_node_two_GPUs",
@@ -166,6 +166,182 @@
     "Original five paired pilot seeds and all failures/slow points remain; this fresh positive pair does not replace the original seed42 regression or establish stable node scaling.",
     "ReLoop HTTP still co-runs; CPU groups are assigned but shared host/storage and diagnostic activity remain. This is sequential Scale arm execution, not full-host isolation.",
     "Full-update timings include rollout, training, offload/onload, full weight publication and scheduled checkpoints. No slow update is discarded.",
-    "The existing per-pair archive and scientific auditor verified all original trace/checkpoint payloads. The encompassing five-pair auditor remains active, so no overall auditor completion is claimed."
-  ]
+    "Each completed pair archive and scientific audit verified all original trace/checkpoint payloads. Overall five-pair queue and auditor ended with actual1 at the user stop, so no overall five-pair completion is claimed."
+  ],
+  "seed43": {
+    "seed": 43,
+    "execution_order": [
+      "two_nodes_three_GPUs",
+      "one_node_two_GPUs"
+    ],
+    "independent_pair_audit_passed": true,
+    "paired_tokens_equal": true,
+    "paired_response_counts_equal": true,
+    "arms": [
+      {
+        "configuration": "one_node_two_GPUs",
+        "actual_scientific_CPU_return": 0,
+        "numerical_audit_passed": true,
+        "timings": [
+          {
+            "rollout_id": 0,
+            "start_ns": 523250706703374,
+            "end_ns": 523367359227826,
+            "elapsed_seconds": 116.652524452,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 1,
+            "start_ns": 523367359778070,
+            "end_ns": 523481061256584,
+            "elapsed_seconds": 113.701478514,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 2,
+            "start_ns": 523481061494409,
+            "end_ns": 523597223969230,
+            "elapsed_seconds": 116.162474821,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 3,
+            "start_ns": 523597224221449,
+            "end_ns": 523710767730113,
+            "elapsed_seconds": 113.543508664,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 4,
+            "start_ns": 523710767948288,
+            "end_ns": 523824162763244,
+            "elapsed_seconds": 113.394814956,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 5,
+            "start_ns": 523824163020547,
+            "end_ns": 523960878256870,
+            "elapsed_seconds": 136.715236323,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 6,
+            "start_ns": 523960878468375,
+            "end_ns": 524108277875390,
+            "elapsed_seconds": 147.399407015,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          }
+        ],
+        "response_tokens": [
+          822,
+          832,
+          855,
+          852,
+          780,
+          1042,
+          676
+        ],
+        "mean_measured_update_seconds": 125.4430883558,
+        "measured_response_tokens_per_second": 6.704235450698033,
+        "selected_logprob_max_abs_error": 0.0001239776611328125,
+        "unique_publication_digests": 7,
+        "auditor_sha256": "a904c3054cc4de10e26f2e4fb2cce0127fc0892aed63648814a01a50e29d4e9c",
+        "archive_sha256": "b33b77db73718438cee526bfdbf4832da135cb24281dd03ed982328b8d785655",
+        "archive_bytes": 9032373628,
+        "payloads_verified": 52,
+        "original_raw_and_durable_archive_retained": true
+      },
+      {
+        "configuration": "two_nodes_three_GPUs",
+        "actual_scientific_CPU_return": 0,
+        "numerical_audit_passed": true,
+        "timings": [
+          {
+            "rollout_id": 0,
+            "start_ns": 522321803316316,
+            "end_ns": 522425892206315,
+            "elapsed_seconds": 104.088889999,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 1,
+            "start_ns": 522425893888260,
+            "end_ns": 522515157700949,
+            "elapsed_seconds": 89.263812689,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 2,
+            "start_ns": 522515157844309,
+            "end_ns": 522606663507254,
+            "elapsed_seconds": 91.505662945,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 3,
+            "start_ns": 522606663649092,
+            "end_ns": 522695225720905,
+            "elapsed_seconds": 88.562071813,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 4,
+            "start_ns": 522695225864166,
+            "end_ns": 522805840023561,
+            "elapsed_seconds": 110.614159395,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 5,
+            "start_ns": 522805840148116,
+            "end_ns": 522901058192621,
+            "elapsed_seconds": 95.218044505,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          },
+          {
+            "rollout_id": 6,
+            "start_ns": 522901058327810,
+            "end_ns": 523009797527372,
+            "elapsed_seconds": 108.739199562,
+            "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+          }
+        ],
+        "response_tokens": [
+          822,
+          832,
+          855,
+          852,
+          780,
+          1042,
+          676
+        ],
+        "mean_measured_update_seconds": 98.927827644,
+        "measured_response_tokens_per_second": 8.501146947514185,
+        "selected_logprob_max_abs_error": 0.00015354156494140625,
+        "unique_publication_digests": 7,
+        "auditor_sha256": "a904c3054cc4de10e26f2e4fb2cce0127fc0892aed63648814a01a50e29d4e9c",
+        "archive_sha256": "3d29cd2ce1ef7f5471afb8ff19c9429bd8f40008ea8afdffffb39cc8ea77ad1a",
+        "archive_bytes": 9032375702,
+        "payloads_verified": 52,
+        "original_raw_and_durable_archive_retained": true
+      }
+    ],
+    "throughput_change_percent": 26.802631113277208,
+    "all_five_measured_updates_included": true
+  },
+  "user_requested_stop": {
+    "current_seed43_pair_complete_archived_and_independently_audited": true,
+    "actual_stop_controller_return": 0,
+    "actual_overall_queue_return": 1,
+    "actual_overall_auditor_return": 1,
+    "overall_incomplete_reason": "User-authorized stop at completed pair boundary; original queue KeyboardInterrupt and auditor failure when waiting for unstarted seed44 are retained. Both scientific per-pair audits passed.",
+    "unstarted_confirmation_seeds": [
+      44,
+      45,
+      46
+    ],
+    "further_ScaleRLT_testing_active": false,
+    "all_original_pilot_five_pairs_and_slow_points_retained": true
+  }
 }
