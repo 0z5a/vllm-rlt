@@ -14,6 +14,11 @@ After implementation, verify that the actual behavior matches the original requi
 
 ## 1. Before Implementation: Understand What You Are Building
 
+Before implementing a change, complete the human
+[contributor-intent gate](../.agents/skills/vllm-rlt-review-pr/SKILL.md#human-contributor-intent-gate).
+Reuse traceable human answers; ask only what is missing and wait. Recheck the
+gate before PR submission. See [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 Before implementing a change, be able to explain:
 
 - **The requirement:** What specific problem does the change solve, and what behavior is expected?
