@@ -1,0 +1,265 @@
+{
+  "runnable_matrix_passed": true,
+  "full_seven_case_matrix_passed": false,
+  "scope": "separate two-case CPU-isolated HTTP confirmation with unchanged frozen tokens/source/three arms/two fresh orders; original full matrix and capacity stops retained",
+  "mode": "http",
+  "source_payloads_verified": 133,
+  "source_manifest_sha256": "52e3532c4cab5db763ff3c18e41f5715e1216d6e4e676779688d10f31ce14921",
+  "archive_sha256": "e077f09d34bd15b6f3d538a6651b4e396693eed65e8cc133d64283ee2effffca",
+  "actual_producer_return": 0,
+  "raw_trials": 120,
+  "measured_trials": 60,
+  "requests": 9600,
+  "generated_tokens": 1228800,
+  "capacity_stops": [
+    {
+      "case": "C4_longer",
+      "required": 52344913920,
+      "pool": 51539607552
+    },
+    {
+      "case": "A32_large",
+      "required": 109521666048,
+      "pool": 51539607552
+    }
+  ],
+  "jobs": [
+    {
+      "label": "HTTP-T32-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    }
+  ],
+  "summary": {
+    "T32": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          295.13691079048897,
+          293.5212516796849,
+          293.9854546048348,
+          293.49704741078494,
+          294.1544713854946,
+          293.93450830387206,
+          292.8606989862717,
+          292.4884780921982,
+          292.61464322908773,
+          292.86019897760343
+        ],
+        "C_P4D3_off": [
+          341.41059285054047,
+          341.5207937767496,
+          341.83650474678757,
+          341.8429731775182,
+          341.6717833867932,
+          343.05052746524325,
+          342.779269865101,
+          343.20911811452567,
+          342.5376920835259,
+          343.1929229781946
+        ],
+        "D_P4D3_on": [
+          334.18825766821743,
+          333.60349243518,
+          330.01304043615914,
+          331.97304004527865,
+          332.1237229293219,
+          334.09527437921525,
+          332.5993139717159,
+          332.4566612292672,
+          332.15494895387343,
+          332.3110095244969
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 293.50536634603213,
+        "C_P4D3_off": 342.305217844498,
+        "D_P4D3_on": 332.5518761572726
+      },
+      "same_depth_guidance_percent": -2.8493114269897313,
+      "shallower_guided_vs_full_percent": 13.303507972391238
+    },
+    "C8_long": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          59.37584240980436,
+          59.34332555598623,
+          59.47476239436934,
+          59.48346960763136,
+          59.353429652041086,
+          59.89613738020814,
+          59.787910682977866,
+          59.85852485995342,
+          60.05393087549054,
+          60.020172872446516
+        ],
+        "C_P4D3_off": [
+          67.50131619180561,
+          67.31193213303342,
+          67.45034621099805,
+          67.50039107050334,
+          67.50102514454252,
+          67.73748233908138,
+          67.59128732190082,
+          67.73137322584626,
+          67.73746456476582,
+          67.84522742430215
+        ],
+        "D_P4D3_on": [
+          67.01931128616205,
+          67.01201281397485,
+          66.91167497536219,
+          67.10565897771454,
+          67.00623608212993,
+          66.88807037645631,
+          66.76527365444295,
+          66.89295787834745,
+          66.88612539477184,
+          66.90782216525984
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 59.66475062909089,
+        "C_P4D3_off": 67.59078456267794,
+        "D_P4D3_on": 66.9395143604622
+      },
+      "same_depth_guidance_percent": -0.963548812799786,
+      "shallower_guided_vs_full_percent": 12.19273298667629
+    }
+  },
+  "cpu_affinity": [
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140,
+    141,
+    142,
+    143
+  ],
+  "timing_limit": "disjoint CPU core groups; other GPU jobs and archival I/O retained, original restricted-affinity data preserved",
+  "independent_auditor_actual_return": 0,
+  "original_complete_matrix_retained": true
+}

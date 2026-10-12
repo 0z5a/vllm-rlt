@@ -1,0 +1,1321 @@
+{
+  "artifact_integrity_passed": true,
+  "raw_observation_reconstruction_passed": true,
+  "scope": "Isolated complete-original-matrix FP32/FP64 accumulation and GPU BF16 conversion observations. CPU auditor matches captured operands, qualified weights and all 36 raw observations, then checks every originally differing selected element by exact integer/rational arithmetic. Original serving math/gates and nine token failures remain unchanged; no serving or performance pass.",
+  "files": 166,
+  "archive_sha256": "c1bd5e97183a0b33d3de620d5979d0ba001a6be08e472b64516c6a11864e44f3",
+  "baseline_archive_sha256": "0a82fff30af72f52b0378f7bdaff3992ba14fce11642265b3a14d07317588644",
+  "inputs": 9,
+  "observations": 36,
+  "weight_sha256": "a3a3d26c4c1dc25bad535b1ea930e81e55f8fa012894c45d03d2e99eae94c22d",
+  "summary": [
+    {
+      "key": "request-13:decode:10:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    },
+    {
+      "key": "request-14:decode:2:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    },
+    {
+      "key": "request-20:decode:2:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    },
+    {
+      "key": "request-36:decode:1:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    },
+    {
+      "key": "request-39:decode:1:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    },
+    {
+      "key": "request-51:decode:1:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    },
+    {
+      "key": "request-58:decode:4:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    },
+    {
+      "key": "request-63:decode:5:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": false,
+          "different_selected_elements": 1,
+          "max_abs_selected_difference": 1.9073486328125e-06
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    },
+    {
+      "key": "request-7:decode:5:0:layers.0.mlp.down_proj",
+      "controls": {
+        "float32": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        },
+        "float64": {
+          "selected_author_native_byte_equal": true,
+          "different_selected_elements": 0,
+          "max_abs_selected_difference": 0.0
+        }
+      }
+    }
+  ],
+  "exact_dot_elements": 23,
+  "exact_dot_comparisons": [
+    {
+      "key": "request-13:decode:10:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 578,
+          "exact_integer": "4445303132",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 14468,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "542585/8589934592",
+                "float_absolute_error_exact": "111703/17592186044416",
+                "direct_rational_bf16_bits": 14468,
+                "gpu_bf16_bits": 14468,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "542585/8589934592",
+                "float_absolute_error_exact": "111703/17592186044416",
+                "direct_rational_bf16_bits": 14468,
+                "gpu_bf16_bits": 14468,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "1111325783/17592186044416",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14468,
+                "gpu_bf16_bits": 14468,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "1111325783/17592186044416",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14468,
+                "gpu_bf16_bits": 14468,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 1918,
+          "exact_integer": "9861266776194",
+          "binary_exponent": -47,
+          "nearest_even_bf16_bits": 15760,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "4702219/67108864",
+                "float_absolute_error_exact": "602047/70368744177664",
+                "direct_rational_bf16_bits": 15760,
+                "gpu_bf16_bits": 15760,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "4702219/67108864",
+                "float_absolute_error_exact": "602047/70368744177664",
+                "direct_rational_bf16_bits": 15760,
+                "gpu_bf16_bits": 15760,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "4930633388097/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 15760,
+                "gpu_bf16_bits": 15760,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "4930633388097/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 15760,
+                "gpu_bf16_bits": 15760,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "request-14:decode:2:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 197,
+          "exact_integer": "1372111903",
+          "binary_exponent": -47,
+          "nearest_even_bf16_bits": 14116,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "5233/536870912",
+                "float_absolute_error_exact": "312351/140737488355328",
+                "direct_rational_bf16_bits": 14116,
+                "gpu_bf16_bits": 14116,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "5233/536870912",
+                "float_absolute_error_exact": "312351/140737488355328",
+                "direct_rational_bf16_bits": 14116,
+                "gpu_bf16_bits": 14116,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "1372111903/140737488355328",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14116,
+                "gpu_bf16_bits": 14116,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "1372111903/140737488355328",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14116,
+                "gpu_bf16_bits": 14116,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 542,
+          "exact_integer": "-229243236400",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 47957,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-6995967/2147483648",
+                "float_absolute_error_exact": "38141/4398046511104",
+                "direct_rational_bf16_bits": 47957,
+                "gpu_bf16_bits": 47957,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-6995967/2147483648",
+                "float_absolute_error_exact": "38141/4398046511104",
+                "direct_rational_bf16_bits": 47957,
+                "gpu_bf16_bits": 47957,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-14327702275/4398046511104",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47957,
+                "gpu_bf16_bits": 47957,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-14327702275/4398046511104",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47957,
+                "gpu_bf16_bits": 47957,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 978,
+          "exact_integer": "-23661270114",
+          "binary_exponent": -50,
+          "nearest_even_bf16_bits": 47024,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-5643/268435456",
+                "float_absolute_error_exact": "3593679/562949953421312",
+                "direct_rational_bf16_bits": 47024,
+                "gpu_bf16_bits": 47024,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-5643/268435456",
+                "float_absolute_error_exact": "3593679/562949953421312",
+                "direct_rational_bf16_bits": 47024,
+                "gpu_bf16_bits": 47024,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-11830635057/562949953421312",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47024,
+                "gpu_bf16_bits": 47024,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-11830635057/562949953421312",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47024,
+                "gpu_bf16_bits": 47024,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "request-20:decode:2:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 502,
+          "exact_integer": "154068579114",
+          "binary_exponent": -48,
+          "nearest_even_bf16_bits": 14863,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "36733/67108864",
+                "float_absolute_error_exact": "394859/140737488355328",
+                "direct_rational_bf16_bits": 14863,
+                "gpu_bf16_bits": 14863,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "36733/67108864",
+                "float_absolute_error_exact": "394859/140737488355328",
+                "direct_rational_bf16_bits": 14863,
+                "gpu_bf16_bits": 14863,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "77034289557/140737488355328",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14863,
+                "gpu_bf16_bits": 14863,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "77034289557/140737488355328",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14863,
+                "gpu_bf16_bits": 14863,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 523,
+          "exact_integer": "56236804172",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 14929,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "858101/1073741824",
+                "float_absolute_error_exact": "74259/17592186044416",
+                "direct_rational_bf16_bits": 14929,
+                "gpu_bf16_bits": 14929,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "858101/1073741824",
+                "float_absolute_error_exact": "74259/17592186044416",
+                "direct_rational_bf16_bits": 14929,
+                "gpu_bf16_bits": 14929,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "14059201043/17592186044416",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14929,
+                "gpu_bf16_bits": 14929,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "14059201043/17592186044416",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14929,
+                "gpu_bf16_bits": 14929,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 1113,
+          "exact_integer": "37713664662",
+          "binary_exponent": -47,
+          "nearest_even_bf16_bits": 14732,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "143863/536870912",
+                "float_absolute_error_exact": "421195/70368744177664",
+                "direct_rational_bf16_bits": 14732,
+                "gpu_bf16_bits": 14732,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "143863/536870912",
+                "float_absolute_error_exact": "421195/70368744177664",
+                "direct_rational_bf16_bits": 14732,
+                "gpu_bf16_bits": 14732,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "18856832331/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14732,
+                "gpu_bf16_bits": 14732,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "18856832331/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14732,
+                "gpu_bf16_bits": 14732,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "request-36:decode:1:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 1456,
+          "exact_integer": "-9380226149687",
+          "binary_exponent": -47,
+          "nearest_even_bf16_bits": 48521,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-559105/8388608",
+                "float_absolute_error_exact": "798007/140737488355328",
+                "direct_rational_bf16_bits": 48521,
+                "gpu_bf16_bits": 48521,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-4472841/67108864",
+                "float_absolute_error_exact": "1299145/140737488355328",
+                "direct_rational_bf16_bits": 48521,
+                "gpu_bf16_bits": 48521,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-9380226149687/140737488355328",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 48521,
+                "gpu_bf16_bits": 48521,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-9380226149687/140737488355328",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 48521,
+                "gpu_bf16_bits": 48521,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "request-39:decode:1:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 113,
+          "exact_integer": "-1422615235",
+          "binary_exponent": -45,
+          "nearest_even_bf16_bits": 47146,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-43403/1073741824",
+                "float_absolute_error_exact": "385731/35184372088832",
+                "direct_rational_bf16_bits": 47146,
+                "gpu_bf16_bits": 47146,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-43403/1073741824",
+                "float_absolute_error_exact": "385731/35184372088832",
+                "direct_rational_bf16_bits": 47146,
+                "gpu_bf16_bits": 47146,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-1422615235/35184372088832",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47146,
+                "gpu_bf16_bits": 47146,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-1422615235/35184372088832",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47146,
+                "gpu_bf16_bits": 47146,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 314,
+          "exact_integer": "-2708833504",
+          "binary_exponent": -50,
+          "nearest_even_bf16_bits": 46625,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-649/268435456",
+                "float_absolute_error_exact": "414681/35184372088832",
+                "direct_rational_bf16_bits": 46626,
+                "gpu_bf16_bits": 46626,
+                "direct_rational_rounding_matches_exact_dot": false,
+                "gpu_bf16_matches_exact_dot": false,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-649/268435456",
+                "float_absolute_error_exact": "414681/35184372088832",
+                "direct_rational_bf16_bits": 46626,
+                "gpu_bf16_bits": 46626,
+                "direct_rational_rounding_matches_exact_dot": false,
+                "gpu_bf16_matches_exact_dot": false,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-84651047/35184372088832",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 46625,
+                "gpu_bf16_bits": 46625,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-84651047/35184372088832",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 46625,
+                "gpu_bf16_bits": 46625,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 1974,
+          "exact_integer": "18923085",
+          "binary_exponent": -48,
+          "nearest_even_bf16_bits": 13200,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "9/268435456",
+                "float_absolute_error_exact": "9485901/281474976710656",
+                "direct_rational_bf16_bits": 13072,
+                "gpu_bf16_bits": 13072,
+                "direct_rational_rounding_matches_exact_dot": false,
+                "gpu_bf16_matches_exact_dot": false,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "9/268435456",
+                "float_absolute_error_exact": "9485901/281474976710656",
+                "direct_rational_bf16_bits": 13072,
+                "gpu_bf16_bits": 13072,
+                "direct_rational_rounding_matches_exact_dot": false,
+                "gpu_bf16_matches_exact_dot": false,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "18923085/281474976710656",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 13200,
+                "gpu_bf16_bits": 13200,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "18923085/281474976710656",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 13200,
+                "gpu_bf16_bits": 13200,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "request-51:decode:1:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 115,
+          "exact_integer": "123718363329",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 15078,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "117989/67108864",
+                "float_absolute_error_exact": "2070335/70368744177664",
+                "direct_rational_bf16_bits": 15078,
+                "gpu_bf16_bits": 15078,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "117989/67108864",
+                "float_absolute_error_exact": "2070335/70368744177664",
+                "direct_rational_bf16_bits": 15078,
+                "gpu_bf16_bits": 15078,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "123718363329/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 15078,
+                "gpu_bf16_bits": 15078,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "123718363329/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 15078,
+                "gpu_bf16_bits": 15078,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 645,
+          "exact_integer": "135317398",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 13825,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "4121/2147483648",
+                "float_absolute_error_exact": "140235/35184372088832",
+                "direct_rational_bf16_bits": 13825,
+                "gpu_bf16_bits": 13825,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "4121/2147483648",
+                "float_absolute_error_exact": "140235/35184372088832",
+                "direct_rational_bf16_bits": 13825,
+                "gpu_bf16_bits": 13825,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "67658699/35184372088832",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 13825,
+                "gpu_bf16_bits": 13825,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "67658699/35184372088832",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 13825,
+                "gpu_bf16_bits": 13825,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 758,
+          "exact_integer": "-8104890679",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 47346,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-123685/1073741824",
+                "float_absolute_error_exact": "929481/70368744177664",
+                "direct_rational_bf16_bits": 47346,
+                "gpu_bf16_bits": 47346,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-123685/1073741824",
+                "float_absolute_error_exact": "929481/70368744177664",
+                "direct_rational_bf16_bits": 47346,
+                "gpu_bf16_bits": 47346,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-8104890679/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47346,
+                "gpu_bf16_bits": 47346,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-8104890679/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47346,
+                "gpu_bf16_bits": 47346,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 836,
+          "exact_integer": "-60531140246",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 47713,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-57727/67108864",
+                "float_absolute_error_exact": "3253/35184372088832",
+                "direct_rational_bf16_bits": 47713,
+                "gpu_bf16_bits": 47713,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-57727/67108864",
+                "float_absolute_error_exact": "3253/35184372088832",
+                "direct_rational_bf16_bits": 47713,
+                "gpu_bf16_bits": 47713,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-30265570123/35184372088832",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47713,
+                "gpu_bf16_bits": 47713,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-30265570123/35184372088832",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47713,
+                "gpu_bf16_bits": 47713,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 1836,
+          "exact_integer": "43568241867904",
+          "binary_exponent": -47,
+          "nearest_even_bf16_bits": 16031,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "2596869/8388608",
+                "float_absolute_error_exact": "76025/1099511627776",
+                "direct_rational_bf16_bits": 16031,
+                "gpu_bf16_bits": 16031,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "2596869/8388608",
+                "float_absolute_error_exact": "76025/1099511627776",
+                "direct_rational_bf16_bits": 16031,
+                "gpu_bf16_bits": 16031,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "340376889593/1099511627776",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 16031,
+                "gpu_bf16_bits": 16031,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "340376889593/1099511627776",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 16031,
+                "gpu_bf16_bits": 16031,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "request-58:decode:4:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 727,
+          "exact_integer": "-5652195086333",
+          "binary_exponent": -49,
+          "nearest_even_bf16_bits": 48165,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-5390357/536870912",
+                "float_absolute_error_exact": "3895299/562949953421312",
+                "direct_rational_bf16_bits": 48165,
+                "gpu_bf16_bits": 48165,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-5390357/536870912",
+                "float_absolute_error_exact": "3895299/562949953421312",
+                "direct_rational_bf16_bits": 48165,
+                "gpu_bf16_bits": 48165,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-5652195086333/562949953421312",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 48165,
+                "gpu_bf16_bits": 48165,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-5652195086333/562949953421312",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 48165,
+                "gpu_bf16_bits": 48165,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 2025,
+          "exact_integer": "-697901029384",
+          "binary_exponent": -49,
+          "nearest_even_bf16_bits": 47778,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-1331143/1073741824",
+                "float_absolute_error_exact": "158975/70368744177664",
+                "direct_rational_bf16_bits": 47778,
+                "gpu_bf16_bits": 47778,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-1331143/1073741824",
+                "float_absolute_error_exact": "158975/70368744177664",
+                "direct_rational_bf16_bits": 47778,
+                "gpu_bf16_bits": 47778,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-87237628673/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47778,
+                "gpu_bf16_bits": 47778,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-87237628673/70368744177664",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 47778,
+                "gpu_bf16_bits": 47778,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "request-63:decode:5:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 926,
+          "exact_integer": "20822067266518",
+          "binary_exponent": -50,
+          "nearest_even_bf16_bits": 15512,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "9928737/536870912",
+                "float_absolute_error_exact": "1695253/562949953421312",
+                "direct_rational_bf16_bits": 15512,
+                "gpu_bf16_bits": 15512,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "4964367/268435456",
+                "float_absolute_error_exact": "1450475/562949953421312",
+                "direct_rational_bf16_bits": 15512,
+                "gpu_bf16_bits": 15512,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "10411033633259/562949953421312",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 15512,
+                "gpu_bf16_bits": 15512,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "10411033633259/562949953421312",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 15512,
+                "gpu_bf16_bits": 15512,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 1321,
+          "exact_integer": "7954316961524",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 15848,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "7585829/67108864",
+                "float_absolute_error_exact": "316995/17592186044416",
+                "direct_rational_bf16_bits": 15848,
+                "gpu_bf16_bits": 15848,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "3792915/33554432",
+                "float_absolute_error_exact": "579139/17592186044416",
+                "direct_rational_bf16_bits": 15848,
+                "gpu_bf16_bits": 15848,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "1988579240381/17592186044416",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 15848,
+                "gpu_bf16_bits": 15848,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "1988579240381/17592186044416",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 15848,
+                "gpu_bf16_bits": 15848,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "request-7:decode:5:0:layers.0.mlp.down_proj",
+      "elements": [
+        {
+          "column": 853,
+          "exact_integer": "88595429147",
+          "binary_exponent": -51,
+          "nearest_even_bf16_bits": 14373,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "165/4194304",
+                "float_absolute_error_exact": "11728667/2251799813685248",
+                "direct_rational_bf16_bits": 14373,
+                "gpu_bf16_bits": 14373,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "165/4194304",
+                "float_absolute_error_exact": "11728667/2251799813685248",
+                "direct_rational_bf16_bits": 14373,
+                "gpu_bf16_bits": 14373,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "88595429147/2251799813685248",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14373,
+                "gpu_bf16_bits": 14373,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "88595429147/2251799813685248",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 14373,
+                "gpu_bf16_bits": 14373,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        },
+        {
+          "column": 1896,
+          "exact_integer": "-130947012",
+          "binary_exponent": -46,
+          "nearest_even_bf16_bits": 46586,
+          "controls": {
+            "float32": {
+              "author": {
+                "float_value_exact": "-497/268435456",
+                "float_absolute_error_exact": "165361/17592186044416",
+                "direct_rational_bf16_bits": 46584,
+                "gpu_bf16_bits": 46584,
+                "direct_rational_rounding_matches_exact_dot": false,
+                "gpu_bf16_matches_exact_dot": false,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-497/268435456",
+                "float_absolute_error_exact": "165361/17592186044416",
+                "direct_rational_bf16_bits": 46584,
+                "gpu_bf16_bits": 46584,
+                "direct_rational_rounding_matches_exact_dot": false,
+                "gpu_bf16_matches_exact_dot": false,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            },
+            "float64": {
+              "author": {
+                "float_value_exact": "-32736753/17592186044416",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 46586,
+                "gpu_bf16_bits": 46586,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              },
+              "candidate": {
+                "float_value_exact": "-32736753/17592186044416",
+                "float_absolute_error_exact": "0",
+                "direct_rational_bf16_bits": 46586,
+                "gpu_bf16_bits": 46586,
+                "direct_rational_rounding_matches_exact_dot": true,
+                "gpu_bf16_matches_exact_dot": true,
+                "gpu_bf16_equals_direct_rational_rounding": true
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "oracle_unit_checks": 12,
+  "CUDA_initialized": false,
+  "finished": 1791775004.7866204,
+  "independent_auditor_actual_return": 0,
+  "precision_control_counts": {
+    "selected_author_native_vectors_equal": {
+      "float32": 8,
+      "float64": 9
+    },
+    "correctly_rounded_original_different_elements": {
+      "float32": {
+        "author": 20,
+        "candidate": 20
+      },
+      "float64": {
+        "author": 23,
+        "candidate": 23
+      }
+    }
+  },
+  "original_serving_failures_retained": true
+}
