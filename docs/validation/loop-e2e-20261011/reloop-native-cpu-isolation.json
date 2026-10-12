@@ -1,0 +1,307 @@
+{
+  "runnable_matrix_passed": true,
+  "full_seven_case_matrix_passed": false,
+  "scope": "separate CPU-isolation confirmation: original T32/C8_long cases, unchanged three arms/two fresh orders/frozen inputs; original complete matrix and capacity stops retained; no quality claim",
+  "mode": "native",
+  "source_payloads_verified": 133,
+  "source_manifest_corrections": [
+    {
+      "path": "tests/test_serving.py",
+      "packet_expected": {
+        "bytes": 34131,
+        "sha256": "9493d1f03bc95ba54b207d7b1e0fbef8c04369a8149964ef6191432aec32f7f7"
+      },
+      "qualified_actual": {
+        "bytes": 30969,
+        "sha256": "2949c87f392fcc2135fc505fcc429915a41d71954998730a49692cf643901c2f"
+      },
+      "verified_git_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1"
+    },
+    {
+      "path": "vllm_rlt/entrypoints/runtime_args.py",
+      "packet_expected": {
+        "bytes": 6539,
+        "sha256": "b537141d2d6032e4da2c5d05451c42984466d76bdc2cbb22b9efa24a4601bad2"
+      },
+      "qualified_actual": {
+        "bytes": 6351,
+        "sha256": "0c4a64bf2e8f9d8b48726dc4de09e2ca0d7a1f9ae27b5d1e8ca55e9e227f70b9"
+      },
+      "verified_git_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1"
+    },
+    {
+      "path": "vllm_rlt/serving/protocol.py",
+      "packet_expected": {
+        "bytes": 7901,
+        "sha256": "5f0ecd6b3faf514a8d998c8b7cac161097c5cd5e758b1c1a032568796e1d9402"
+      },
+      "qualified_actual": {
+        "bytes": 7261,
+        "sha256": "c5b0e99f60c9a436b01576b004192c141ac5fae643ae4b0ad07f64638afd4101"
+      },
+      "verified_git_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1"
+    }
+  ],
+  "source_manifest_sha256": "1ecfaf54fd6f42ee10fb9c0baf9bbe0484516539f9f6e56b9eaec52ee1cb3df4",
+  "archive_sha256": "6079da9debbe03ba22b9555b2f76a5e9df0bd8aebf1b60ea3ddedb87ef14dc45",
+  "actual_producer_return": 0,
+  "raw_trials": 120,
+  "measured_trials": 60,
+  "requests": 9600,
+  "generated_tokens": 1228800,
+  "capacity_stops": [
+    {
+      "case": "C4_longer",
+      "status": "PLANNED_CAPACITY_EXCEEDED",
+      "required": 52344913920,
+      "pool": 51539607552
+    },
+    {
+      "case": "A32_large",
+      "status": "PLANNED_CAPACITY_EXCEEDED",
+      "required": 109521666048,
+      "pool": 51539607552
+    }
+  ],
+  "jobs": [
+    {
+      "label": "T32-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "T32-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "T32-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "T32-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "T32-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "T32-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C8_long-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C8_long-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C8_long-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C8_long-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C8_long-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "C8_long-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    }
+  ],
+  "summary": {
+    "T32": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          308.3153569916637,
+          308.22501755503754,
+          308.15100190538817,
+          308.3422640172516,
+          307.8597817254437,
+          305.6310862736382,
+          305.67706748458784,
+          305.43166926862483,
+          305.5815232515045,
+          305.18524719485185
+        ],
+        "C_P4D3_off": [
+          352.0139330846592,
+          351.72718211776714,
+          351.05965343035245,
+          351.07317890185976,
+          350.35215832774895,
+          356.1060258423738,
+          356.20018849910525,
+          356.14807794594276,
+          356.1214360413609,
+          355.45579872896104
+        ],
+        "D_P4D3_on": [
+          350.49269335384247,
+          350.3521409467639,
+          350.43908448472524,
+          350.8395031842325,
+          349.67144736871444,
+          346.6240806388086,
+          346.2285286937225,
+          346.59412889046087,
+          346.54704281144393,
+          345.55304869316467
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 306.8400015667992,
+        "C_P4D3_off": 353.6257632920131,
+        "D_P4D3_on": 348.33416990658793
+      },
+      "same_depth_guidance_percent": -1.49638231563336,
+      "shallower_guided_vs_full_percent": 13.52306352754189
+    },
+    "C8_long": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          61.00580727834312,
+          61.005849425609114,
+          61.00956465535384,
+          61.01932314793134,
+          60.987211348658185,
+          60.56227184324809,
+          60.55965015129566,
+          60.56787146259688,
+          60.576089336418036,
+          60.55606855101837
+        ],
+        "C_P4D3_off": [
+          69.10102562316602,
+          69.10297571317814,
+          69.08157887433322,
+          69.09177765703764,
+          69.05659065844576,
+          68.81735457082844,
+          68.83516961075524,
+          68.81485184358252,
+          68.84121823685192,
+          68.82058167461172
+        ],
+        "D_P4D3_on": [
+          68.91956434087976,
+          68.95761619310579,
+          68.93498771321732,
+          68.94157180861407,
+          68.90435645168151,
+          68.47780153531266,
+          68.50065700712112,
+          68.49188691518599,
+          68.49823478568335,
+          68.4738553419838
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 60.78497072004726,
+        "C_P4D3_off": 68.95631244627906,
+        "D_P4D3_on": 68.71005320927854
+      },
+      "same_depth_guidance_percent": -0.35712355876391655,
+      "shallower_guided_vs_full_percent": 13.037898012209691
+    }
+  },
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111
+  ],
+  "timing_limit": "CPU core groups isolated, other node diagnosis/archives may still share infrastructure; retain original constrained-affinity results",
+  "independent_auditor_actual_return": 0,
+  "original_complete_matrix_retained": true,
+  "prior_original_source_audit_return": 1,
+  "source_manifest_correction_scope": "The same three exact qualified-native file corrections from the original matrix are applied; every other packet hash, every qualified-native profile hash, and all original raw-trial checks remain unchanged. Earlier original-matrix integrity rejections are retained."
+}
