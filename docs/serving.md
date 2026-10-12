@@ -87,83 +87,16 @@ bytes between events. Completed text is never decoded again.
 
 ## Ouro-Thinking prompts
 
-For shared checkpoint setup, executable JSON/SSE examples and validation scope,
-see the [Ouro-Thinking recipe](recipes/ouro_thinking.md).
+For checkpoint setup, executable JSON/SSE examples, loop configuration,
+KV sizing and validation scope, see the
+[Ouro-Thinking recipe](recipes/ouro_thinking.md).
 
-Ouro-1.4B-Thinking and Ouro-2.6B-Thinking reuse the native Ouro loader and
-execution path. Use the checkpoint's own tokenizer/config, not the base model's
-assets or measured accuracy baseline. This frontend remains a raw completions
-API: it does not accept `messages` or `enable_thinking`, and does not apply a
-chat template automatically.
-
-Prepare one text-only conversation on the client with the shared helper:
-
-```python
-import json
-from urllib.request import Request, urlopen
-
-from transformers import AutoTokenizer
-from vllm_rlt.entrypoints.chat_template import render_chat_prompt
-
-checkpoint = "/path/to/prepared/Ouro-1.4B-Thinking"  # same recipe for 2.6B
-tokenizer = AutoTokenizer.from_pretrained(
-    checkpoint, local_files_only=True, trust_remote_code=False
-)
-prompt = render_chat_prompt(
-    tokenizer,
-    [{"role": "user", "content": "What is 2 + 2? Answer briefly."}],
-    enable_thinking=True,
-)
-body = {
-    "model": "ouro-thinking",  # match --served-model-name
-    "prompt": prompt,
-    "max_tokens": 8,  # bounded format smoke, not a complete Thinking answer
-    "min_loops": 4,
-    "max_loops": 4,
-    "exit_threshold": 1,
-}
-request = Request(
-    "http://127.0.0.1:8000/v1/completions",
-    data=json.dumps(body).encode("utf-8"),
-    headers={"Content-Type": "application/json"},
-)
-with urlopen(request, timeout=120) as response:
-    print(json.load(response))
-```
-
-The same prepared string can be passed to `LLM.generate` or the existing
-`--prompt` CLI argument. The helper accepts only `role`/`content` messages with
-system/user/assistant roles and string content (including empty strings).
-Tools, multimodal inputs, implicit batching and assistant continuation are not
-supported. `enable_thinking` must be a boolean or `None`; `None` omits the option
-and follows the official template default. It does not control loop depth.
-False only omits a prefilled opening marker; it does not prohibit reasoning or
-turn Thinking weights into base weights.
-
-Decoding remains unchanged: it hides both Thinking markers and other special
-tokens, but retains reasoning text. For offline inspection, decode returned
-`token_ids` with `skip_special_tokens=False`; this also exposes control tokens.
-An opening marker already in the prompt is not echoed in generated-only text.
-Do not treat `</think>` as EOS or append a closing marker after length truncation.
-
-`max_tokens` is a **request** field; only the offline CLI has `--max-tokens`.
-With four loops, LAST_EXITED KV and block size 16, a single request needs:
-
-```text
-positions = prompt_tokens + max_tokens - 1
-physical_blocks = 4 * ceil(positions / 16)
-```
-
-For a 33-token prompt and a 1024-token output budget, this requires at least
-264 physical blocks. Longer history or concurrent requests need additional
-capacity. Set `--request-timeout` for the selected device and workload.
-Increasing these budgets does not guarantee natural reasoning completion;
-report length-limited outputs separately from completed answers.
-
-Keep the client tokenizer/template revision aligned with the deployed weights
-and render each conversation once. Responses contain cleaned completion text,
-not separate reasoning and final-answer fields. Short smoke tests do not
-qualify model quality, full Thinking completion or official HF equivalence.
+The completions API contract here is unchanged for Thinking checkpoints: the
+server accepts a single pre-rendered `prompt` string, not `messages` or an
+`enable_thinking` field, and does not apply a chat template itself. Prepare the
+prompt on the client with the shared helper described in the recipe. Responses
+remain cleaned completion text with no separate reasoning field; decoding hides
+special tokens while retaining reasoning prose.
 
 ## Ownership, limits and errors
 

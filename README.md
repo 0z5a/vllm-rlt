@@ -75,11 +75,8 @@ supported combinations.
 | Ouro-1.4B-Thinking | Reuses Ouro | Bounded BF16, fixed-four-loop synchronous basic integration | [Shared recipe](docs/recipes/ouro_thinking.md) |
 | Ouro-2.6B-Thinking | Reuses Ouro | Bounded BF16, fixed-four-loop synchronous basic integration | [Shared recipe](docs/recipes/ouro_thinking.md) |
 
-Shared implementation does not qualify every checkpoint/feature combination.
-Thinking async, CUDA Graph, adaptive, PD, speculation and FlashAttention coverage
-cannot be inferred from Ouro-1.4B results. Basic checks are not general quality,
-strict numerical-equivalence or performance certification. The recipe separates
-historical evidence from current validation and blocked GPU checks. See
+Shared implementation does not qualify every checkpoint/feature combination;
+see the linked guides for validation scope and limitations. See
 [RFC #69](https://github.com/ThinkFlowLab/vllm-rlt/issues/69) for the broader roadmap.
 
 ## How It Works

@@ -154,16 +154,27 @@ for separately budgeted performance work.
 The prepared `prompt` can also be passed to the existing
 `llm.generate([prompt], sampling_params)` API, with four-loop sampling parameters.
 No `LLM.chat` method or HTTP `messages`/`enable_thinking` field is introduced.
+`max_tokens` is a **request** field; only the offline CLI has `--max-tokens`.
 
-- `enable_thinking=None` omits the option; True prefills the official opening;
-  False omits it but does not prohibit autonomous reasoning. It is not loop control.
+The helper accepts only `role`/`content` messages with system/user/assistant
+roles and string content (including empty strings). Tools, multimodal inputs,
+implicit batching and assistant continuation are not supported.
+
+- `enable_thinking` must be a boolean or `None`; `None` omits the option and
+  follows the official template default. It does not control loop depth.
+- `False` only omits a prefilled opening marker; it does not prohibit
+  autonomous reasoning or turn Thinking weights into base weights.
 - Default decoding hides Thinking/control tokens but retains reasoning text.
-  An opening in the prompt is not echoed; a closing is not EOS.
+  An opening in the prompt is not echoed; a closing is not EOS. Do not treat
+  `</think>` as a stop signal or append one after length truncation.
 - `length` does not mean reasoning completed. Never append a synthetic closing.
 - Usage counts actual token IDs, including hidden EOS/control tokens. SSE empty
   text events are valid and still count as sampled tokens.
 - Offline token-ID inspection can use `skip_special_tokens=False`, which exposes
   all special tokens, not just Thinking markers.
+- Keep the client tokenizer/template revision aligned with the deployed weights
+  and render each conversation once. Short smoke tests do not qualify model
+  quality, full Thinking completion or official HF equivalence.
 
 ## 5. Capacity and lightweight checks
 
@@ -191,14 +202,20 @@ official-template checks; otherwise those cases explicitly skip.
 
 ## 6. Evidence and limitations
 
-The JSON/SSE example was validated with both pinned Thinking checkpoints on
-NVIDIA H100 using BF16, Triton attention and fixed four-loop synchronous eager
-execution, against runtime baseline
-`ecb1f8b505b7e831815b40aec3b4598619cca23a` plus the adaptation. Each request
-generated eight tokens with complete usage and termination metadata, and both
-servers shut down cleanly. This verifies basic loading and transport, not
-complete reasoning or answer quality. The same example was also checked with
-a tiny BF16 model using the documented CPU/Torch substitution.
+Validation at commit `53a6ec5` on NVIDIA H100 (BF16, Triton attention, fixed
+four-loop synchronous eager execution, greedy):
+
+- The JSON/SSE example above completed for both pinned Thinking checkpoints
+  with complete usage and termination metadata; both servers shut down cleanly.
+  A tiny BF16 model also passed with the documented CPU/Torch substitution.
+- The [GSM8K Thinking evaluation](../accuracy.md#thinking-checkpoints) ran the
+  87 fixed question IDs from the Base fixture under zero-shot Thinking prompts
+  (3072 new tokens / 4096 total context) against each checkpoint's official
+  Hugging Face implementation. Native versus HF: 1.4B 77/87 vs 76/87, 2.6B
+  63/87 vs 62/87; both passed the at-most-1pp regression gate. The earlier
+  1024-token run had incomplete finals from length truncation and was retained
+  as a failed attempt, not as evidence. This selected cohort is a regression
+  screen, not a held-out or full-test accuracy estimate.
 
 This recipe does not qualify general accuracy, performance, strict official-HF
 or cross-backend numerical equivalence. BF16 backend decision differences remain
