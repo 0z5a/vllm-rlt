@@ -33,7 +33,7 @@
 
 **vllm-rlt** is a standalone inference and serving engine for recurrent language
 models, with native support for **ByteDance/Ouro-1.4B** and
-**Nanbeige/Nanbeige4.2-3B**. It brings continuous
+**Nanbeige/Nanbeige4.2-3B**, plus **tomg-group-umd/huginn-0125**. It brings continuous
 batching to individual recurrent loops, allowing requests at different loop
 depths to share a batch as they work toward their next token.
 
@@ -52,8 +52,9 @@ vLLM to be installed. See [Citation](#citation) for the paper's BibTeX entry.
 
 ## Highlights
 
-- **Two native models:** Ouro-1.4B with fixed-depth or learned early-exit
-  decoding, and Nanbeige4.2-3B with fixed two-loop inference.
+- **Three native models:** Ouro-1.4B with fixed-depth or learned early-exit
+  decoding, Nanbeige4.2-3B with fixed two-loop inference, and Huginn-0125 with
+  synchronous fixed-depth inference.
 - **Measured decode speed:** synchronous self-speculation reached **236.45
   committed tokens/s**, versus **154.23 tokens/s** for native fixed-depth async
   decoding (**~1.53×**) on the historical Ouro-1.4B workload below.[^decode-benchmark]
@@ -101,6 +102,10 @@ for supported combinations and limitations.
 The default runtime uses synchronous execution; Ouro uses its original gate.
 Advanced execution and cache features are opt-in; see the guides below for
 supported combinations.
+
+Huginn uses native checkpoint loading and depth-aware KV for its recurrent
+core, with separate prelude and coda KV. It supports synchronous fixed-depth
+inference and CUDA Graphs for the recurrent core and decode coda.
 
 ## How It Works
 
