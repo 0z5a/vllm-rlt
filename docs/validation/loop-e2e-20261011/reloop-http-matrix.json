@@ -1,0 +1,450 @@
+{
+  "runnable_matrix_passed": true,
+  "full_seven_case_matrix_passed": false,
+  "scope": "original five runnable cases, three arms, two fresh orders; two capacity stops retained; no candidate quality claim",
+  "mode": "http",
+  "source_payloads_verified": 133,
+  "source_manifest_sha256": "52e3532c4cab5db763ff3c18e41f5715e1216d6e4e676779688d10f31ce14921",
+  "archive_sha256": "5f41776a6fef31472ac894ad29fac9aee2a81e5da0ebf372f4b95bdd4177a388",
+  "actual_producer_return": 0,
+  "raw_trials": 300,
+  "measured_trials": 150,
+  "requests": 40560,
+  "generated_tokens": 5191680,
+  "capacity_stops": [
+    {
+      "case": "C4_longer",
+      "required": 52344913920,
+      "pool": 51539607552
+    },
+    {
+      "case": "A32_large",
+      "required": 109521666048,
+      "pool": 51539607552
+    }
+  ],
+  "jobs": [
+    {
+      "label": "HTTP-T32-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T32-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 128,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C8_long-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 32,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    }
+  ],
+  "summary": {
+    "T32": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          247.1650372080645,
+          235.7664245990745,
+          246.8476688257063,
+          229.3664468700451,
+          251.52842703677752,
+          291.4361963075235,
+          292.6143989699972,
+          293.1108866801385,
+          292.75153065159776,
+          291.9468396191735
+        ],
+        "C_P4D3_off": [
+          246.49981670162995,
+          255.16470360705523,
+          290.58739940475806,
+          268.49076343343654,
+          263.7978621931776,
+          252.71160827025193,
+          276.61357550062786,
+          257.98833956164526,
+          254.25996472471806,
+          255.6997343111775
+        ],
+        "D_P4D3_on": [
+          247.7027603858583,
+          253.61749367017197,
+          260.43051962222734,
+          259.9348383138414,
+          269.7256941923573,
+          247.09068472348915,
+          259.95757015626947,
+          282.0404024175349,
+          248.00083905731913,
+          262.92306345070523
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 267.25338567680984,
+        "C_P4D3_off": 262.1813767708478,
+        "D_P4D3_on": 259.1423865989774
+      },
+      "same_depth_guidance_percent": -1.1591174816838912,
+      "shallower_guided_vs_full_percent": -3.034947174679048
+    },
+    "L1": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          24.082048108710968,
+          24.065738296804454,
+          23.73780209704122,
+          23.88043913446146,
+          23.94118837835185,
+          23.686046317608383,
+          23.480157358782744,
+          23.280755161769353,
+          23.738129302550817,
+          23.67073643346073
+        ],
+        "C_P4D3_off": [
+          27.585273851437172,
+          27.56881859060317,
+          27.87334276896499,
+          27.821853784383986,
+          27.559198415866287,
+          28.29718711985628,
+          30.71227047276919,
+          30.38973970914761,
+          30.56565273220853,
+          30.933493871564032
+        ],
+        "D_P4D3_on": [
+          30.01494072876457,
+          29.854986618443345,
+          30.11270370423567,
+          30.395936024778663,
+          30.30994060892517,
+          29.761168332508888,
+          29.759118062190662,
+          29.31493537605837,
+          29.60999231699968,
+          28.921618248815303
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 23.7563040589542,
+        "C_P4D3_off": 28.930683131680123,
+        "D_P4D3_on": 29.80553400217203
+      },
+      "same_depth_guidance_percent": 3.0239551085259997,
+      "shallower_guided_vs_full_percent": 25.463682937404396
+    },
+    "T64_short": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          540.6716972991678,
+          543.799068860904,
+          543.5599665972047,
+          540.8839506080752,
+          544.1262108259215,
+          553.1259034638255,
+          550.6246765136697,
+          552.9979296862729,
+          549.9134267356876,
+          551.7316753686795
+        ],
+        "C_P4D3_off": [
+          631.8479108784966,
+          628.116714483079,
+          628.0268002279305,
+          630.2526009675767,
+          627.7255798154328,
+          630.1291011653674,
+          629.7339448033771,
+          632.2554843456462,
+          629.0507272293929,
+          630.4825578988294
+        ],
+        "D_P4D3_on": [
+          612.2779001402514,
+          607.832402043652,
+          611.7032610910928,
+          610.8269020405045,
+          611.3208241909587,
+          611.1218878839824,
+          608.1268666274066,
+          612.1027423849719,
+          607.6829591189999,
+          608.3992952154508
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 547.1434505959409,
+        "C_P4D3_off": 629.7621421815129,
+        "D_P4D3_on": 610.139504073727
+      },
+      "same_depth_guidance_percent": -3.1158808688963924,
+      "shallower_guided_vs_full_percent": 11.513626528686727
+    },
+    "C8_long": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          59.55548230453367,
+          59.458387113013174,
+          59.49713259658114,
+          59.50634341479833,
+          59.54326361223779,
+          59.69757817717512,
+          59.70127038924078,
+          59.70822066552855,
+          59.87779046844244,
+          59.77417411437391
+        ],
+        "C_P4D3_off": [
+          68.03882977521474,
+          68.11977945828762,
+          67.90783850727202,
+          68.12805017689968,
+          68.0998559288475,
+          67.33766358911825,
+          67.21693996285185,
+          67.48262913369746,
+          67.60141317355237,
+          67.52017353553948
+        ],
+        "D_P4D3_on": [
+          67.42563383995315,
+          67.3691224029236,
+          67.50918784005606,
+          67.59791515292642,
+          67.47141815772585,
+          67.05850757019654,
+          67.11597106010247,
+          67.25327060887588,
+          67.36429700926972,
+          67.23888278034643
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 59.63196428559249,
+        "C_P4D3_off": 67.7453173241281,
+        "D_P4D3_on": 67.3404206422376
+      },
+      "same_depth_guidance_percent": -0.5976747882857514,
+      "shallower_guided_vs_full_percent": 12.92671883107419
+    },
+    "Q64": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          110.57265898667391,
+          110.5391109142614,
+          110.5966740240267,
+          110.51378537227157,
+          109.84970066248168,
+          110.51129779312167,
+          110.20450610276775,
+          110.3877704719141,
+          110.44102068281225,
+          110.55056645178348
+        ],
+        "C_P4D3_off": [
+          123.3577778921898,
+          123.12874754866878,
+          123.32656320334998,
+          123.29106220489425,
+          123.24759137944203,
+          122.22719363843424,
+          122.24011007200137,
+          122.0034793783993,
+          122.03416397309722,
+          121.98809151169856
+        ],
+        "D_P4D3_on": [
+          121.57886126116685,
+          121.42565259349595,
+          121.48642793774808,
+          120.92887212321709,
+          121.30445244233329,
+          122.04542774618926,
+          121.82701194923206,
+          121.85942712191542,
+          122.05076643498623,
+          121.89010691936859
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 110.41670914621145,
+        "C_P4D3_off": 122.68447808021756,
+        "D_P4D3_on": 121.63970065296527
+      },
+      "same_depth_guidance_percent": -0.8515970753603885,
+      "shallower_guided_vs_full_percent": 10.164214812716965
+    }
+  },
+  "timing_limit": "co-running tasks, original restricted CPU affinity; repeat on isolated host before general speed claim",
+  "actual_independent_audit_return": 0,
+  "archive_payloads_verified": 705,
+  "archive_bytes": 165517269,
+  "initial_collector_storage_failures_retained": true
+}

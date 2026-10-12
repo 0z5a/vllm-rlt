@@ -1,6 +1,6 @@
 # Loop E2E supplements — 2026-10-11
 
-This update records completed, independently audited LoopCD and LoopGraph stages. ReLoop's native matrix and five ScaleRLT scaling pairs have completed; HTTP export and isolated timing confirmations are still being checked. These are stage results, not a claim that every requested E2E case is complete. This branch changes documentation and result metadata only.
+This update records completed, independently audited LoopCD and LoopGraph stages. ReLoop's native matrix and five ScaleRLT scaling pairs have completed; The HTTP matrix is now independently audited; isolated timing confirmations and further numerical diagnosis continue. These are stage results, not a claim that every requested E2E case is complete. This branch changes documentation and result metadata only.
 
 ## LoopCD: complete FP32 numerical evidence
 
@@ -98,9 +98,11 @@ The five runnable cases completed 30 fresh arm processes, 300 raw trials and 150
 
 The initial independent source check rejected three archived files because the packet manifest referenced a later source version. All three actual files were independently matched byte-for-byte to the qualified native revision; every remaining original hash check and all 30 raw-trial audits passed. The original integrity rejections remain recorded. See [reloop-native-matrix.json](reloop-native-matrix.json).
 
+The frozen token-ID HTTP matrix also completed 30 fresh arm processes, 300 raw trials and 150 measured trials. Its independent auditor verified all 705 archived payloads, the runtime/source manifest, original raw-trial checks, exact job order and natural producer return. Both original capacity stops remain; the full seven-case matrix is not a pass. Earlier collector storage failures are preserved, and the successful collector stages the complete archive in node RAM before a fully checked persistent copy. See [reloop-http-matrix.json](reloop-http-matrix.json). These co-running HTTP measurements retain the narrow CPU-affinity caveat.
+
 ## Remaining work
 
-- ReLoop: verify the completed HTTP export and repeat selected native cases with isolated CPU cores. The original native matrix is independently audited. The small token-ID HTTP input support is on `codex/reloop-http-tokenids-20261011` (`e4f504872975563b8f31e91f02996add158cf8c8`). Capacity-exceeded cases stay explicitly separate.
+- ReLoop: repeat selected native and HTTP cases with isolated CPU cores. Both original runnable matrices are independently audited; capacity stops and all timing slow points remain. The small token-ID HTTP input support is on `codex/reloop-http-tokenids-20261011` (`e4f504872975563b8f31e91f02996add158cf8c8`). Capacity-exceeded cases stay explicitly separate.
 - ScaleRLT: finish the remaining independent exports and repeated scaling pairs. The matched-storage single-node baseline and two-node actor-DP pilot completed seven updates and local numerical checks; all five seeds completed local numerical checks, with all ten complete archives independently verified. No node-scaling improvement is established yet.
 - The attempted two-rollout, four-GPU ScaleRLT configuration was rejected before training: the pinned native backend explicitly supports one rollout GPU/engine. The next supported comparison keeps one rollout engine and increases training data parallelism across nodes. No validator is bypassed.
 - Scaling measurements must hold checkpoint, dtype, depth, samples, reward fixture, seed and publication storage fixed. Record actual role placement, full-update wall time, response tokens, training/rollout/publication time, and GPU efficiency. Retain failures and regressions; one pilot does not establish improvement. Five matched-storage pairs are complete; all ten archive integrity audits passed; isolated confirmation remains.
