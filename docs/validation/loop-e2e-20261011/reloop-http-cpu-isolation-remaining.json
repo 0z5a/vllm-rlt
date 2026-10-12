@@ -1,0 +1,353 @@
+{
+  "runnable_matrix_passed": true,
+  "full_seven_case_matrix_passed": false,
+  "scope": "separate remaining-three-case CPU-isolated HTTP confirmation with unchanged frozen tokens/source/three arms/two fresh orders; original full matrix and capacity stops retained",
+  "mode": "http",
+  "source_payloads_verified": 133,
+  "source_manifest_sha256": "52e3532c4cab5db763ff3c18e41f5715e1216d6e4e676779688d10f31ce14921",
+  "archive_sha256": "aa2bc0a10d8bad33e5e2e493ae2a4e5526c2789fd2bd360632d3293915c4040b",
+  "actual_producer_return": 0,
+  "raw_trials": 180,
+  "measured_trials": 90,
+  "requests": 30960,
+  "generated_tokens": 3962880,
+  "capacity_stops": [
+    {
+      "case": "C4_longer",
+      "required": 52344913920,
+      "pool": 51539607552
+    },
+    {
+      "case": "A32_large",
+      "required": 109521666048,
+      "pool": 51539607552
+    }
+  ],
+  "jobs": [
+    {
+      "label": "HTTP-L1-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-L1-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 4,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-T64_short-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-Q64-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 256,
+      "actual_audit_return": 0
+    }
+  ],
+  "summary": {
+    "L1": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          24.198946546306292,
+          24.038589278435673,
+          23.94592508375355,
+          24.159354598638938,
+          24.104787728324332,
+          23.822577793438054,
+          23.831453010790487,
+          23.828168307412163,
+          23.846767205735816,
+          23.838985818332482
+        ],
+        "C_P4D3_off": [
+          31.486134168136495,
+          31.482115001405116,
+          31.507625432015335,
+          31.56344997540447,
+          31.428541986739813,
+          31.525827455591095,
+          31.482705780227885,
+          31.42256112549276,
+          31.416596801578216,
+          31.440260309254572
+        ],
+        "D_P4D3_on": [
+          31.070471493259166,
+          31.1854363365624,
+          31.262855351343205,
+          31.222686579057168,
+          31.23002841394491,
+          31.02880410588402,
+          31.27188851057732,
+          31.25477556905696,
+          31.295195318112075,
+          31.330308650900626
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 23.96155553711678,
+        "C_P4D3_off": 31.475581803584575,
+        "D_P4D3_on": 31.215245032869785
+      },
+      "same_depth_guidance_percent": -0.8271070963496552,
+      "shallower_guided_vs_full_percent": 30.272197831718152
+    },
+    "T64_short": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          556.9952273211284,
+          555.115471639336,
+          556.6746618673978,
+          556.1897777617962,
+          557.5644009994959,
+          555.594357861862,
+          552.7091183084386,
+          555.5701715335069,
+          553.4576291298433,
+          554.5591125097714
+        ],
+        "C_P4D3_off": [
+          631.0120960811622,
+          634.3142146475266,
+          631.3855607912673,
+          634.317858807865,
+          631.800278106003,
+          637.3769595008825,
+          636.270399671685,
+          638.6873095651595,
+          636.9948227264875,
+          638.8139739208732
+        ],
+        "D_P4D3_on": [
+          611.8909860852666,
+          609.7160757985906,
+          612.0332705941806,
+          609.910573910718,
+          611.7178816488413,
+          616.2586105950047,
+          616.2534191721314,
+          613.4951732891086,
+          611.467943563114,
+          614.8017048669806
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 555.4429928932576,
+        "C_P4D3_off": 635.0973473818912,
+        "D_P4D3_on": 612.7545639523936
+      },
+      "same_depth_guidance_percent": -3.518009250330345,
+      "shallower_guided_vs_full_percent": 10.318173384563668
+    },
+    "Q64": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          110.38328236591838,
+          110.41688481308357,
+          110.33671728499934,
+          110.4354033384592,
+          110.4044805732984,
+          110.34583161065211,
+          110.29619393804317,
+          110.28001742965745,
+          110.32392394511213,
+          110.3811151019946
+        ],
+        "C_P4D3_off": [
+          122.23160965141128,
+          122.26341085561742,
+          122.20858373000152,
+          122.21573925768188,
+          122.43397623538054,
+          123.39218087151839,
+          123.27833307968277,
+          123.4417995136051,
+          123.47379225336095,
+          123.45994026164696
+        ],
+        "D_P4D3_on": [
+          122.39646146787318,
+          122.37028895085469,
+          122.3922459772847,
+          122.34821563773612,
+          122.64925197534086,
+          121.58420977967873,
+          121.5073107909746,
+          121.69570207605032,
+          121.25733736524631,
+          121.62941761559108
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 110.36038504012183,
+        "C_P4D3_off": 122.83993657099069,
+        "D_P4D3_on": 121.98304416366307
+      },
+      "same_depth_guidance_percent": -0.6975682593522103,
+      "shallower_guided_vs_full_percent": 10.531549993519684
+    }
+  },
+  "cpu_affinity": [
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140,
+    141,
+    142,
+    143
+  ],
+  "timing_limit": "disjoint CPU core groups; other GPU jobs and archival I/O retained, original restricted-affinity data preserved",
+  "independent_auditor_actual_return": 0,
+  "independent_verification_location": "Other node in the existing allocation, CPU-only; unchanged original raw-trial auditor programs",
+  "all_original_GPU_trials_preserved_and_not_repeated_for_this_audit": true,
+  "complete_persistent_archive_fsync_verified": true,
+  "original_complete_matrix_retained": true,
+  "prior_original_source_audit_rejections_retained": null,
+  "original_HTTP_collector_failures_retained": true
+}

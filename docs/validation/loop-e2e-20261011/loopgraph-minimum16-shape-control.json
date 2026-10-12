@@ -1,0 +1,820 @@
+{
+  "passed": false,
+  "artifact_integrity_passed": true,
+  "complete_raw_reconstruction_passed": true,
+  "scope": "Test-only minimum16 layer0 down-projection counterfactual; original unmodified failures retained; no performance qualification",
+  "actual_producer_return": 1,
+  "archive_sha256": "15503c641868b83eda3d301803299fedc22c4093abad5717109ab427866f8876",
+  "payloads_verified": 422,
+  "cases": {
+    "W1-P256-B32-async0-graph0/bimodal_50": {
+      "author_passed": true,
+      "author_waves": 2,
+      "author_repeat_mismatches": [],
+      "candidate_status": "FAIL",
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "generated_tokens": 8192,
+          "mismatches": [
+            {
+              "request_id": "request-14",
+              "first_different_token": 57
+            },
+            {
+              "request_id": "request-23",
+              "first_different_token": 80
+            },
+            {
+              "request_id": "request-31",
+              "first_different_token": 2
+            },
+            {
+              "request_id": "request-34",
+              "first_different_token": 41
+            },
+            {
+              "request_id": "request-39",
+              "first_different_token": 12
+            },
+            {
+              "request_id": "request-47",
+              "first_different_token": 7
+            },
+            {
+              "request_id": "request-58",
+              "first_different_token": 7
+            },
+            {
+              "request_id": "request-63",
+              "first_different_token": 95
+            }
+          ],
+          "depth_work_parity": true,
+          "drained": true
+        }
+      ]
+    }
+  },
+  "whole_batch_observer": {
+    "W1-P256-B32-async0-graph0": {
+      "scope": "Counterfactual matrices at the prior boundaries compared to verified original vectors; explicit changed projection shape, original nine failures retained",
+      "by_owner": {
+        "author": {
+          "whole_matrices": [
+            {
+              "key": "request-14:decode:2:0:layers.0.mlp.down_proj",
+              "row_index": 4,
+              "actual_input_shape": [
+                1,
+                12,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                12,
+                2048
+              ],
+              "all_input_elements": 67584,
+              "all_output_elements": 24576,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 3,
+                "max_abs": 1.52587890625e-05,
+                "elements": 2048
+              },
+              "whole_input_sha256": "a1e011f9fc73b0c92dd7f23123cce48fdb2cb59013921903783fb95a90cc835e",
+              "whole_output_sha256": "6c0d796c52bae8284aa2a27d9cea5e563563c40059e9a9bdecba19b1d3298772"
+            },
+            {
+              "key": "request-20:decode:2:0:layers.0.mlp.down_proj",
+              "row_index": 5,
+              "actual_input_shape": [
+                1,
+                12,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                12,
+                2048
+              ],
+              "all_input_elements": 67584,
+              "all_output_elements": 24576,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 3,
+                "max_abs": 3.814697265625e-06,
+                "elements": 2048
+              },
+              "whole_input_sha256": "a1e011f9fc73b0c92dd7f23123cce48fdb2cb59013921903783fb95a90cc835e",
+              "whole_output_sha256": "6c0d796c52bae8284aa2a27d9cea5e563563c40059e9a9bdecba19b1d3298772"
+            },
+            {
+              "key": "request-7:decode:5:0:layers.0.mlp.down_proj",
+              "row_index": 8,
+              "actual_input_shape": [
+                1,
+                12,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                12,
+                2048
+              ],
+              "all_input_elements": 67584,
+              "all_output_elements": 24576,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 2,
+                "max_abs": 2.384185791015625e-07,
+                "elements": 2048
+              },
+              "whole_input_sha256": "7b06f837d8af7faf6b91d3fb9437a57846cff9de6ed67e0ef7be9483ff2fe28e",
+              "whole_output_sha256": "e4e8b5cab06328d9e4ba4ad6ca01f48d65d14b946284a28972b9361542e33a57"
+            },
+            {
+              "key": "request-13:decode:10:0:layers.0.mlp.down_proj",
+              "row_index": 10,
+              "actual_input_shape": [
+                1,
+                14,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                14,
+                2048
+              ],
+              "all_input_elements": 78848,
+              "all_output_elements": 28672,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 2,
+                "max_abs": 0.00048828125,
+                "elements": 2048
+              },
+              "whole_input_sha256": "e44aa56b1e3c1424475d7a7552c8cc6dc1af699d986481e7f990f72b569bcd64",
+              "whole_output_sha256": "57f011dda079c5bb6121290e428ff13d292d85ffa82db4128c1b4d3121f6fdd6"
+            },
+            {
+              "key": "request-36:decode:1:0:layers.0.mlp.down_proj",
+              "row_index": 5,
+              "actual_input_shape": [
+                1,
+                6,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                6,
+                2048
+              ],
+              "all_input_elements": 33792,
+              "all_output_elements": 12288,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 1,
+                "max_abs": 0.00048828125,
+                "elements": 2048
+              },
+              "whole_input_sha256": "08ec3813b41c7e93f709230bbd0e85dfde60b31c3375881e0528b9e8ab4a4f7e",
+              "whole_output_sha256": "811337828692a9b8f26a2f41e9226e0d216b26b330ebe196ef702275108a9266"
+            },
+            {
+              "key": "request-39:decode:1:0:layers.0.mlp.down_proj",
+              "row_index": 13,
+              "actual_input_shape": [
+                1,
+                14,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                14,
+                2048
+              ],
+              "all_input_elements": 78848,
+              "all_output_elements": 28672,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 3,
+                "max_abs": 2.384185791015625e-07,
+                "elements": 2048
+              },
+              "whole_input_sha256": "d4e900851d5e17f469e6a0e97aba2109325a4630e2de872c1073bb43893eb545",
+              "whole_output_sha256": "0ef58988c9299971109e0f2f66311acdf39bee2b2b6b41e26aa2e4ea24ccdca8"
+            },
+            {
+              "key": "request-51:decode:1:0:layers.0.mlp.down_proj",
+              "row_index": 13,
+              "actual_input_shape": [
+                1,
+                14,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                14,
+                2048
+              ],
+              "all_input_elements": 78848,
+              "all_output_elements": 28672,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 5,
+                "max_abs": 0.001953125,
+                "elements": 2048
+              },
+              "whole_input_sha256": "303f0ff1f1d060d2d773c4b49e78a0c13ac42c7c3d566155905f1ee2e1d9a068",
+              "whole_output_sha256": "193052c3986011e65e1bf3e6942ee578260d6025b7c177ea356622523d2b7230"
+            },
+            {
+              "key": "request-58:decode:4:0:layers.0.mlp.down_proj",
+              "row_index": 13,
+              "actual_input_shape": [
+                1,
+                15,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                15,
+                2048
+              ],
+              "all_input_elements": 84480,
+              "all_output_elements": 30720,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 2,
+                "max_abs": 6.103515625e-05,
+                "elements": 2048
+              },
+              "whole_input_sha256": "4a85e800025344f90c85c6de6ad38e581a0af872b0cca3bf316f8ef3ee9dc510",
+              "whole_output_sha256": "064e33a9c7b213c3122028a1976be81550eae3f9c057f5316114659c4f198176"
+            },
+            {
+              "key": "request-63:decode:5:0:layers.0.mlp.down_proj",
+              "row_index": 1,
+              "actual_input_shape": [
+                1,
+                6,
+                5632
+              ],
+              "actual_output_shape": [
+                1,
+                6,
+                2048
+              ],
+              "all_input_elements": 33792,
+              "all_output_elements": 12288,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": false,
+                "different_elements": 2,
+                "max_abs": 0.00048828125,
+                "elements": 2048
+              },
+              "whole_input_sha256": "68c9e0dca3b85d6b6839949ca871ff10c7e417d9399b12158fca0a8190f28eb7",
+              "whole_output_sha256": "931a036a76f7d77d03050ce84ba7b331e4022fb93974c55d7d7ba7d5b08b81d2"
+            }
+          ],
+          "head_invariants": {
+            "records": 432,
+            "hidden_equal": 55,
+            "logits_equal": 55
+          }
+        },
+        "candidate": {
+          "whole_matrices": [
+            {
+              "key": "request-14:decode:2:0:layers.0.mlp.down_proj",
+              "row_index": 14,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "58649f099d33479b65bc0897f5e1cc78aefb9c96ea07e4f2338fb577237be440",
+              "whole_output_sha256": "fb8375881b09b2b5c0cc6c6fcabd0508e3a79d6583e6352cdbef5700c878d6b9"
+            },
+            {
+              "key": "request-20:decode:2:0:layers.0.mlp.down_proj",
+              "row_index": 20,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "58649f099d33479b65bc0897f5e1cc78aefb9c96ea07e4f2338fb577237be440",
+              "whole_output_sha256": "fb8375881b09b2b5c0cc6c6fcabd0508e3a79d6583e6352cdbef5700c878d6b9"
+            },
+            {
+              "key": "request-7:decode:5:0:layers.0.mlp.down_proj",
+              "row_index": 7,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "85f4b7f12e6b2297882dad0901c411a021d25da41c1e02be635e993184e5c429",
+              "whole_output_sha256": "dd390616db3e2d8699aa359255bb802778be0d8f7d8bf6f9f5a77579478c2fcb"
+            },
+            {
+              "key": "request-13:decode:10:0:layers.0.mlp.down_proj",
+              "row_index": 13,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "5528d70f27f2d2f97555c5f3fba205ffc9c371a7259ac00dea0b3097fbec21ff",
+              "whole_output_sha256": "e9ac2974deaa188c039a8269709b81b545d68347072ed9283a45099b50c5b5db"
+            },
+            {
+              "key": "request-36:decode:1:0:layers.0.mlp.down_proj",
+              "row_index": 4,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "b670a70815beea135718ce69ea5f8103860ae90630dfaf21b2c7db98b59b6f8b",
+              "whole_output_sha256": "634b19c335a1727c4431b3b560f0e1549b205833a7b1db5f4146c0ead9816e5b"
+            },
+            {
+              "key": "request-39:decode:1:0:layers.0.mlp.down_proj",
+              "row_index": 7,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "b670a70815beea135718ce69ea5f8103860ae90630dfaf21b2c7db98b59b6f8b",
+              "whole_output_sha256": "634b19c335a1727c4431b3b560f0e1549b205833a7b1db5f4146c0ead9816e5b"
+            },
+            {
+              "key": "request-51:decode:1:0:layers.0.mlp.down_proj",
+              "row_index": 19,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "b670a70815beea135718ce69ea5f8103860ae90630dfaf21b2c7db98b59b6f8b",
+              "whole_output_sha256": "634b19c335a1727c4431b3b560f0e1549b205833a7b1db5f4146c0ead9816e5b"
+            },
+            {
+              "key": "request-58:decode:4:0:layers.0.mlp.down_proj",
+              "row_index": 26,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "7ba3e3fdf211e413d72e57487b3c8facbb3eb23323453a8b1d9ab45385cf7258",
+              "whole_output_sha256": "a8855a7d68e1eb3f8921a2a415c5a9b6024386c67a2ebe5d6efde182d752e385"
+            },
+            {
+              "key": "request-63:decode:5:0:layers.0.mlp.down_proj",
+              "row_index": 31,
+              "actual_input_shape": [
+                32,
+                5632
+              ],
+              "actual_output_shape": [
+                32,
+                2048
+              ],
+              "all_input_elements": 180224,
+              "all_output_elements": 65536,
+              "original_input": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 5632
+              },
+              "original_output": {
+                "byte_equal": true,
+                "different_elements": 0,
+                "max_abs": 0.0,
+                "elements": 2048
+              },
+              "whole_input_sha256": "9674e87d933b27f935e2c73c5c952842e9f125ba93b3fa2d7bd957865a8898a1",
+              "whole_output_sha256": "a26bac55a9b2e3c9b034cde84bd1b095099769e689a09ff6cd1ac9662c8324b1"
+            }
+          ],
+          "head_invariants": {
+            "records": 432,
+            "hidden_equal": 391,
+            "logits_equal": 391
+          }
+        }
+      },
+      "initial_row_comparisons": [
+        {
+          "key": "request-13:decode:10:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        },
+        {
+          "key": "request-14:decode:2:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        },
+        {
+          "key": "request-20:decode:2:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        },
+        {
+          "key": "request-36:decode:1:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        },
+        {
+          "key": "request-39:decode:1:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        },
+        {
+          "key": "request-51:decode:1:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        },
+        {
+          "key": "request-58:decode:4:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        },
+        {
+          "key": "request-63:decode:5:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        },
+        {
+          "key": "request-7:decode:5:0:layers.0.mlp.down_proj",
+          "input": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 5632
+          },
+          "output": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0,
+            "elements": 2048
+          }
+        }
+      ],
+      "all_prior_selected_vectors_unchanged": false,
+      "all_prior_head_records_unchanged": false
+    }
+  },
+  "CUDA_initialized": false,
+  "kind": "TEST_ONLY_MINIMUM_16_ROW_COUNTERFACTUAL",
+  "shape_control_reconstruction_passed": true,
+  "shape_control": {
+    "W1-P256-B32-async0-graph0/author": {
+      "calls": 2826,
+      "padded_calls": 1476,
+      "added_projection_rows": 16826,
+      "row_shape_histogram": {
+        "2048->2048": 32,
+        "32->32": 906,
+        "12->16": 42,
+        "5->16": 90,
+        "1->16": 454,
+        "20->20": 16,
+        "9->16": 70,
+        "2->16": 234,
+        "21->21": 16,
+        "7->16": 48,
+        "15->16": 52,
+        "8->16": 46,
+        "3->16": 140,
+        "17->17": 48,
+        "6->16": 78,
+        "14->16": 48,
+        "10->16": 28,
+        "4->16": 98,
+        "13->16": 20,
+        "16->16": 30,
+        "19->19": 20,
+        "11->16": 28,
+        "18->18": 28,
+        "22->22": 4,
+        "512->512": 24,
+        "256->256": 160,
+        "768->768": 16,
+        "31->31": 8,
+        "23->23": 4,
+        "30->30": 6,
+        "29->29": 8,
+        "28->28": 10,
+        "27->27": 6,
+        "25->25": 2,
+        "24->24": 6
+      },
+      "captured_effective_operators": 9,
+      "real_rows_and_zero_padding_verified": true
+    },
+    "W1-P256-B32-async0-graph0/candidate": {
+      "calls": 1272,
+      "padded_calls": 6,
+      "added_projection_rows": 48,
+      "row_shape_histogram": {
+        "256->256": 256,
+        "32->32": 533,
+        "16->16": 477,
+        "8->16": 6
+      },
+      "captured_effective_operators": 9,
+      "real_rows_and_zero_padding_verified": true
+    }
+  },
+  "original_unmodified_candidate_passed": false,
+  "original_unmodified_nine_failures_retained": true,
+  "no_performance_qualification": true,
+  "verified_parent_archive_sha256": "34d7d3af783a99eb24a21e7639aa1aae4bc12db875286d8c97c22df7bba340c9",
+  "complete_GPFS_archive_fsync_verified": true,
+  "archive_bytes": 85400577,
+  "independent_auditor_actual_return": 0,
+  "independent_verification_location": "Other node in the existing allocation, CPU-only",
+  "only_private_test_wrapper_changes": true,
+  "production_source_or_PR82_changed": false,
+  "original_serving_pass_claimed": false,
+  "original_GPU_trials_repeated_for_audit": false
+}
