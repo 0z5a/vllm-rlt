@@ -1,0 +1,713 @@
+{
+  "passed": true,
+  "scope": "Other-node full archive/source/declared private method/raw audit and paired scalar-vector original T64 trajectories/timing reconstruction. Only uniform guidance extrapolation is vectorized; two coda calls/reference checks/gates remain. All slow points retained, no quality or original-seven-case completion claim.",
+  "arms": [
+    {
+      "label": "T64_short-fresh0-D_P4D3_on-scalar",
+      "fresh": 0,
+      "mode": "scalar",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 52.95744716597255,
+          "TPS": 618.7609439953302
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 50.68398861400783,
+          "TPS": 646.5158109309439
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 50.52761585696135,
+          "TPS": 648.5166466742256
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 50.66403864696622,
+          "TPS": 646.7703893156208
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 50.59279150702059,
+          "TPS": 647.6812016876534
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 50.63872175000142,
+          "TPS": 647.0937430406027
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 50.61729555204511,
+          "TPS": 647.3676565020681
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 50.63805807905737,
+          "TPS": 647.10222396052
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 50.534342400031164,
+          "TPS": 648.4303236917117
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 50.7188454719726,
+          "TPS": 646.0714887153277
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "scalar",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        }
+      ],
+      "mean_measured_TPS": 647.213087182046
+    },
+    {
+      "label": "T64_short-fresh0-D_P4D3_on-vector",
+      "fresh": 0,
+      "mode": "vector",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 50.90904681896791,
+          "TPS": 643.6577003007482
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 50.32287354907021,
+          "TPS": 651.1551842930368
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 50.23688458302058,
+          "TPS": 652.2697470590197
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 50.30031886999495,
+          "TPS": 651.4471624860156
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 50.250451702973805,
+          "TPS": 652.0936407435478
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 50.33602207596414,
+          "TPS": 650.9850927542204
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 50.20612755604088,
+          "TPS": 652.6693372920234
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 50.34455237304792,
+          "TPS": 650.8747909245973
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 50.29609052394517,
+          "TPS": 651.5019290495287
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 50.29242400894873,
+          "TPS": 651.5494260958561
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "vector",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true,
+        "provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "private_counters": {
+          "uniform_batches": 16240,
+          "uniform_rows": 327680,
+          "fallback_batches": 0
+        }
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        }
+      ],
+      "mean_measured_TPS": 651.5161152232452
+    },
+    {
+      "label": "T64_short-fresh1-D_P4D3_on-vector",
+      "fresh": 1,
+      "mode": "vector",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 53.73760376498103,
+          "TPS": 609.7778409195423
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 49.85450558096636,
+          "TPS": 657.2725898722039
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 49.74017852707766,
+          "TPS": 658.7833210562702
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 49.920648355036974,
+          "TPS": 656.4017311424547
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 49.81503314396832,
+          "TPS": 657.7933995406283
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 49.87709140102379,
+          "TPS": 656.9749574316074
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 49.78809683897998,
+          "TPS": 658.149278249683
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 49.859685385017656,
+          "TPS": 657.2043073871153
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 49.763013168936595,
+          "TPS": 658.4810266363586
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 49.851785578997806,
+          "TPS": 657.3084518321631
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "vector",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true,
+        "provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "private_counters": {
+          "uniform_batches": 16240,
+          "uniform_rows": 327680,
+          "fallback_batches": 0
+        }
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        }
+      ],
+      "mean_measured_TPS": 657.6236043073854
+    },
+    {
+      "label": "T64_short-fresh1-D_P4D3_on-scalar",
+      "fresh": 1,
+      "mode": "scalar",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 51.144891467061825,
+          "TPS": 640.6895989036001
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 50.69643802696373,
+          "TPS": 646.3570474630151
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 50.63392417796422,
+          "TPS": 647.1550552714334
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 50.67144427204039,
+          "TPS": 646.6758639062673
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 50.58693463099189,
+          "TPS": 647.756189202356
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 50.703189605963416,
+          "TPS": 646.2709792944863
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 50.63408263295423,
+          "TPS": 647.1530300555612
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 50.77370604593307,
+          "TPS": 645.3734137578222
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 50.58656320697628,
+          "TPS": 647.7609452519803
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 50.699489066028036,
+          "TPS": 646.3181504122238
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "scalar",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 262144,
+          "prefill_submitted_rows": 262144,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 3248,
+          "head_rows": 65536
+        }
+      ],
+      "mean_measured_TPS": 646.5753037544148
+    }
+  ],
+  "archive_sha256": "5269db62330011c5f726d133178f800f29dede8236ce90242b04ea23b95f5a7e",
+  "archive_bytes": 9367855,
+  "payloads_verified": 250,
+  "raw_trials_verified": 40,
+  "measured_trials_verified": 20,
+  "complete_private_token_depth_identity_and_neutral_work_exactly_equal": true,
+  "counterbalanced_orders_verified": true,
+  "all_warmup_measured_and_slow_timings_retained": true,
+  "mean_measured_TPS": {
+    "scalar": 646.8941954682304,
+    "vector": 654.5698597653153
+  },
+  "throughput_change_percent": 1.186540913623313,
+  "production_sources_changed": false,
+  "no_GPU_trials_repeated_by_auditor": true,
+  "no_quality_or_original_seven_case_completion_claim": true,
+  "timing_limit": "Other GPU tasks and shared host/IO can affect timing; unprofiled private performance pair retains all slow points and both fresh orders, no predetermined gain.",
+  "actual_producer_return": 0,
+  "actual_collector_return": 0,
+  "actual_independent_CPU_return": 0,
+  "per_fresh_order_results": [
+    {
+      "fresh": 0,
+      "arm_order": [
+        "scalar",
+        "vector"
+      ],
+      "mean_measured_TPS": {
+        "scalar": 647.213087182046,
+        "vector": 651.5161152232452
+      },
+      "throughput_change_percent": 0.66485491817454
+    },
+    {
+      "fresh": 1,
+      "arm_order": [
+        "vector",
+        "scalar"
+      ],
+      "mean_measured_TPS": {
+        "vector": 657.6236043073854,
+        "scalar": 646.5753037544148
+      },
+      "throughput_change_percent": 1.708741501386979
+    }
+  ],
+  "limits": [
+    "Private runtime prototype only: equal FP32 guidance strengths vectorize the original subtraction/multiplication/addition for all weak rows. Production source files remain unchanged; both original coda calls, reference checks, sampling and same depth3 remain.",
+    "All40 original model trials, both fresh orders and slow/warm timings are retained. All paired complete tokens/depth/identity/neutral work match. The separate14-case component qualification establishes elementwise arithmetic equality; these E2E trials do not export complete model tensors.",
+    "Measured gain is specific to this unprofiled frozen T64_short256-request/P256/F128/48GiB run with other GPU tasks/shared host/IO. It is not a quality result, original-seven-case completion or a stable gain across workloads."
+  ]
+}

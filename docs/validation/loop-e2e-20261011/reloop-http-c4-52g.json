@@ -1,0 +1,217 @@
+{
+  "runnable_matrix_passed": true,
+  "full_seven_case_matrix_passed": false,
+  "scope": "Separate52GiB C4 HTTP original frozen workload; all820 original token records unchanged; original48GiB capacity failures and fullsevenfalse retained",
+  "mode": "http",
+  "source_payloads_verified": 133,
+  "source_manifest_sha256": "52e3532c4cab5db763ff3c18e41f5715e1216d6e4e676779688d10f31ce14921",
+  "archive_sha256": "cfc17a75389ef3de8b48f86769bc88b5aca63f26f2f4e9e635520b1007212e32",
+  "actual_producer_return": 0,
+  "raw_trials": 60,
+  "measured_trials": 30,
+  "requests": 960,
+  "generated_tokens": 122880,
+  "original48GiB_capacity_stops": [
+    {
+      "case": "C4_longer",
+      "required": 52344913920,
+      "pool": 51539607552
+    },
+    {
+      "case": "A32_large",
+      "required": 109521666048,
+      "pool": 51539607552
+    }
+  ],
+  "supplemental52GiB_capacity_stops": [
+    {
+      "case": "A32_large",
+      "required": 109521666048,
+      "pool": 55834574848
+    }
+  ],
+  "only_protocol_field_changed": "common_pool_bytes",
+  "original_pool_bytes": 51539607552,
+  "supplemental_pool_bytes": 55834574848,
+  "producer_archive_storage_failure_retained": false,
+  "prior56GiB_pretest_failure_retained": true,
+  "jobs": [
+    {
+      "label": "HTTP-C4_longer-fresh0-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C4_longer-fresh0-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C4_longer-fresh0-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C4_longer-fresh1-D_P4D3_on",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C4_longer-fresh1-C_P4D3_off",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    },
+    {
+      "label": "HTTP-C4_longer-fresh1-A_P4D4_off",
+      "raw_trials": 10,
+      "requests_per_trial": 16,
+      "actual_audit_return": 0
+    }
+  ],
+  "summary": {
+    "C4_longer": {
+      "measured_tps": {
+        "A_P4D4_off": [
+          8.762302525387751,
+          8.760329684816153,
+          8.771077828848712,
+          8.767018797755568,
+          8.766118712533094,
+          8.770046199152276,
+          8.770167113795575,
+          8.769818094269308,
+          8.769696453900798,
+          8.76995226996374
+        ],
+        "C_P4D3_off": [
+          9.447377736109177,
+          9.428956588250507,
+          9.413536482437193,
+          9.417291504713326,
+          9.435178077996124,
+          9.389745645801515,
+          9.389346672253012,
+          9.389257430773249,
+          9.391144832052962,
+          9.39072112600005
+        ],
+        "D_P4D3_on": [
+          9.438008128394774,
+          9.41513600885693,
+          9.427500062401588,
+          9.413515020171737,
+          9.423420410472001,
+          9.369109442707073,
+          9.369550397648943,
+          9.369795409858055,
+          9.369316754193829,
+          9.368975107690858
+        ]
+      },
+      "mean_tps": {
+        "A_P4D4_off": 8.767652768042298,
+        "C_P4D3_off": 9.409255609638711,
+        "D_P4D3_on": 9.396432674239579
+      },
+      "same_depth_guidance_percent": -0.1362800197073688,
+      "shallower_guided_vs_full_percent": 7.171587685237202
+    }
+  },
+  "cpu_affinity": [
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130,
+    131,
+    132,
+    133,
+    134,
+    135,
+    136,
+    137,
+    138,
+    139,
+    140,
+    141,
+    142,
+    143
+  ],
+  "timing_limit": "disjoint CPU core groups; other GPU jobs and archival I/O retained, original restricted-affinity data preserved",
+  "protocol_binding_correction": {
+    "original_v1_auditor_failure_retained": true,
+    "actual_preflight_and_six_GPU_arms_protocol": "CPU-52GiB/protocol-52g.json",
+    "whole_parsed_raw_protocol_byte_dump_semantically_identical": true,
+    "actual_preflight_protocol_bytes_bound_to_bridge_admission_and_frozen_HTTP_inputs": true,
+    "raw_protocol_copy_sha256": "a5bf85a3bb558d315621b0b69602fc013e9b8cf15b17c8efabf082b3ccc24fda",
+    "actual_preflight_protocol_sha256": "78037bb9af98ecc17ce0c5c5108be0c9625c2ef98c40e01e079b54e2872a41f9",
+    "no_scientific_gate_or_tolerance_changed": true,
+    "no_GPU_trials_repeated": true
+  },
+  "independent_auditor_actual_return": 0,
+  "original_GPU_trials_repeated": false,
+  "prior_v1_CPU_audit_actual_return": 1,
+  "prior_v1_failure_sha256": "fc1113c0f1b08ab75d3edb7ccd9395f9a15ea788322666404529aef4dc26a1a9",
+  "auditor_sha256": "b771bb1e96dab27cfe3f273e7f06173fbcf140474343ad4c896b0b5b0592a79c",
+  "actual_collector_return": 0,
+  "actual_independent_CPU_return": 0,
+  "archive_bytes": 11585806,
+  "payloads_verified": 317,
+  "limits": [
+    "Separate52GiB C4 variant only; original48GiB C4/A32 capacity failures and the failed56GiB pretest remain. Full original seven-case matrix is not complete.",
+    "Same-depth guidance changes throughput by -0.1363%; 7.17% versus depth4 includes depth reduction. All30 measured and60 raw trials, both orders and original820 frozen token records remain.",
+    "V1 CPU audit rejected a hash comparison to the controller-reserialized raw protocol copy. V2 verifies the exact archived CPU-preflight protocol actually passed to all6 GPU arms, its SHA256 bound to CPU admission/bridge/HTTP input records, and full parsed equality with the raw copy. No source/fixture/numerical tolerance/work gate changed and no GPU trials repeated.",
+    "Native and HTTP source qualification differ; these datasets do not isolate transport overhead. Shared host/GPU tasks/archive IO affect timing."
+  ]
+}
