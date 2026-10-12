@@ -1,0 +1,223 @@
+{
+  "passed": true,
+  "original_unmodified_nine_failures_retained": true,
+  "scope": "Read-only all-layer capture before/at four earliest remaining head differences after eleven located norm controls. All64 original frozen W1/P256/F128/seed/depth/work/exact token gates and eleven-norm/all24-down32 arithmetic unchanged; selected512 complete heads and full token trajectories must reproduce the independently verified parent. Original9 and all2694/2917/3253 private head failures retained. No original-serving/performance/global numerical pass.",
+  "previous_CPU_v3_actual_return": 1,
+  "CPU_audit_staging_resource_variant": {
+    "storage": "existing shared GPFS",
+    "independent_compute_node": "as03r1b28",
+    "shared_free_bytes_before": 192250118144,
+    "node_RAM_free_bytes_before": 8722706432,
+    "unchanged_8GiB_target_filesystem_reserve": 8589934592,
+    "reason": "Unique original node RAM data and complete parent audit dependencies retained; current b28 RAM filesystem cannot fit another full extraction plus reserve. No numerical/source/fixture/token gate changed."
+  },
+  "unstarted_GPU0_queue_retained": true,
+  "hardware_variant": {
+    "parent_seven_norm_GPU_index": 1,
+    "current_GPU_index": 1,
+    "existing_same_allocation": true,
+    "private_eleven_norm_arithmetic_unchanged_and512_parent_heads_must_reproduce": true
+  },
+  "unstarted_same_seven_norm_GPU2_queue_retained": true,
+  "GPU1_global_norm_qualification_passed": true,
+  "four_additional_real_norm_boundaries_independently_source_forward_replayed": true,
+  "expected_complete_operator_records_per_owner": 4704,
+  "author_clock_fields_retained_but_not_required_equal_across_runs": [
+    "created_time",
+    "first_token_time",
+    "lifespan"
+  ],
+  "native_clock_fields_retained_but_not_required_equal_across_runs": [
+    "submitted_at",
+    "output_times"
+  ],
+  "actual_producer_return": 0,
+  "private_control_candidate_passed": true,
+  "previous_private_two_failures_retained": true,
+  "private_arithmetic_unchanged_from_eleven_norm_control": true,
+  "full_parent_tokens_depth_work_and_all512_selected_heads_exactly_reproduced": true,
+  "no_original_serving_or_performance_pass": true,
+  "cases": {
+    "author": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        }
+      ],
+      "operator_records": 4704,
+      "head_records": 512,
+      "eleven_located_norm_controls_zero_padding_slicing_verified": true,
+      "norm_calls": 31086,
+      "padded_norm_calls": 18568,
+      "added_norm_rows": 472054
+    },
+    "candidate": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        }
+      ],
+      "operator_records": 4704,
+      "head_records": 512,
+      "eleven_located_norm_controls_zero_padding_slicing_verified": true,
+      "norm_calls": 27984,
+      "padded_norm_calls": 10626,
+      "added_norm_rows": 171072
+    }
+  },
+  "archive_sha256": "d09f3aad436b9f0c53801c606598e596e336771073ca0fe2d19cae047685e326",
+  "archive_bytes": 2120081419,
+  "payloads_verified": 442,
+  "parent_archive_sha256": "57e899c340ad6f2dbb9e1ab7671275877580a5073fe8dfe58a31af880e33182c",
+  "no_GPU_trials_repeated_by_auditor": true,
+  "CUDA_initialized": false,
+  "actual_collector_return": 0,
+  "actual_independent_CPU_return": 0,
+  "complete_selected_heads_per_owner": 512,
+  "first_identical_input_different_norm_output": [
+    {
+      "request_id": "request-0",
+      "index": 13,
+      "depth": 0,
+      "module": "layers.8.input_layernorm_2",
+      "key": "request-0:decode:13:0:layers.8.input_layernorm_2",
+      "author_ordinal": 454,
+      "native_ordinal": 572,
+      "author_input_shape": [
+        1,
+        5,
+        2048
+      ],
+      "native_input_shape": [
+        32,
+        2048
+      ],
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": false,
+        "different_elements": 12,
+        "elements": 2048,
+        "max_abs": 0.000244140625
+      }
+    },
+    {
+      "request_id": "request-15",
+      "index": 14,
+      "depth": 0,
+      "module": "layers.3.input_layernorm",
+      "key": "request-15:decode:14:0:layers.3.input_layernorm",
+      "author_ordinal": 2730,
+      "native_ordinal": 2100,
+      "author_input_shape": [
+        1,
+        14,
+        2048
+      ],
+      "native_input_shape": [
+        32,
+        2048
+      ],
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": false,
+        "different_elements": 60,
+        "elements": 2048,
+        "max_abs": 0.00390625
+      }
+    },
+    {
+      "request_id": "request-28",
+      "index": 15,
+      "depth": 0,
+      "module": "layers.8.input_layernorm_2",
+      "key": "request-28:decode:15:0:layers.8.input_layernorm_2",
+      "author_ordinal": 2134,
+      "native_ordinal": 2806,
+      "author_input_shape": [
+        1,
+        8,
+        2048
+      ],
+      "native_input_shape": [
+        32,
+        2048
+      ],
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": false,
+        "different_elements": 16,
+        "elements": 2048,
+        "max_abs": 0.000244140625
+      }
+    },
+    {
+      "request_id": "request-49",
+      "index": 15,
+      "depth": 0,
+      "module": "layers.18.input_layernorm",
+      "key": "request-49:decode:15:0:layers.18.input_layernorm",
+      "author_ordinal": 3612,
+      "native_ordinal": 3612,
+      "author_input_shape": [
+        1,
+        15,
+        2048
+      ],
+      "native_input_shape": [
+        32,
+        2048
+      ],
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": false,
+        "different_elements": 13,
+        "elements": 2048,
+        "max_abs": 0.0078125
+      }
+    }
+  ],
+  "limits": [
+    "Read-only observation retains eleven-norm/all24-down32 private arithmetic, all64 frozen trajectories/metadata and512 complete selected parent heads byte for byte. Full442-payload persistent archive verified on the other node.",
+    "Only four selected boundary locations are attributed. Requests0/28 share layer8.input_layernorm_2; request15 first differs at layer3.input_layernorm; request49 at layer18.input_layernorm. Original9 token failures and3253/2917/2694 private head differences remain; no original-serving, global numerical, quality or performance pass."
+  ]
+}
