@@ -142,11 +142,19 @@ class SplitPrefillPolicy(SchedulingPolicy):
         if self.decode_due and q[Stage.RECURRENT]:
             return scheduler._take(Stage.RECURRENT)
         scheduler._admit()
-        for stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT, Stage.RECURRENT):
+        for stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
             if q[stage]:
                 # A stage can hold only blocked requests: the staged-chunk window
                 # may still be busy, or KV growth may be waiting for capacity.
                 return scheduler._take(stage)
+        if q[Stage.PRELUDE]:
+            return scheduler._take(Stage.PRELUDE)
+        if q[Stage.CODA] and (
+            len(q[Stage.CODA]) >= self.config.min_coda_batch_size or not q[Stage.RECURRENT]
+        ):
+            return scheduler._take(Stage.CODA)
+        if q[Stage.RECURRENT]:
+            return scheduler._take(Stage.RECURRENT)
         return None
 
 
