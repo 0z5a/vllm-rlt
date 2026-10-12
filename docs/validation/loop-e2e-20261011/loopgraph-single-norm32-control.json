@@ -1,0 +1,232 @@
+{
+  "scope": "Private causal row-count control: all 24 MLP down projections retain minimum32, and only layer23.input_layernorm_2 gains minimum32. Zero-padding/original BF16 forward/real-row slicing in both fresh owners. Production/PR82 unchanged; frozen W1 64 requests, P256/F128, seed1729, original depths/work/exact gates unchanged.",
+  "independent_full_artifact_audit_passed": true,
+  "actual_producer_return": 1,
+  "actual_collector_return": 0,
+  "actual_independent_CPU_return": 0,
+  "private_candidate_token_gate_passed": false,
+  "token_failures": [
+    {
+      "request_id": "request-39",
+      "first_different_token": 91
+    },
+    {
+      "request_id": "request-63",
+      "first_different_token": 95
+    }
+  ],
+  "cases": {
+    "author": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": true
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": true
+        }
+      ],
+      "operator_records": 5040,
+      "head_records": 256,
+      "single_norm_control_zero_padding_slicing_verified": true,
+      "norm_calls": 2826,
+      "padded_norm_calls": 1688,
+      "added_norm_rows": 42914
+    },
+    "candidate": {
+      "parent_and_observer_passed": false,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        }
+      ],
+      "operator_records": 5040,
+      "head_records": 256,
+      "single_norm_control_zero_padding_slicing_verified": true,
+      "norm_calls": 1272,
+      "padded_norm_calls": 483,
+      "added_norm_rows": 7776
+    }
+  },
+  "selected_operator_comparisons": [
+    {
+      "request_id": "request-39",
+      "index": 7,
+      "all_observed_operators_equal": true,
+      "operator_records": 336,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-39",
+      "index": 8,
+      "all_observed_operators_equal": true,
+      "operator_records": 1344,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-39",
+      "index": 11,
+      "all_observed_operators_equal": true,
+      "operator_records": 336,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-39",
+      "index": 12,
+      "all_observed_operators_equal": true,
+      "operator_records": 1344,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-63",
+      "index": 94,
+      "all_observed_operators_equal": false,
+      "operator_records": 1344,
+      "first_difference": {
+        "request_id": "request-63",
+        "index": 94,
+        "depth": 0,
+        "module": "layers.16.self_attn.o_proj",
+        "key": "request-63:decode:94:0:layers.16.self_attn.o_proj",
+        "author_ordinal": 3588,
+        "native_ordinal": 3588,
+        "author_input_shape": [
+          1,
+          6,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": false,
+          "different_elements": 2,
+          "elements": 2048,
+          "max_abs": 1.52587890625e-05
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 3,
+          "elements": 2048,
+          "max_abs": 1.52587890625e-05
+        }
+      }
+    },
+    {
+      "request_id": "request-63",
+      "index": 95,
+      "all_observed_operators_equal": false,
+      "operator_records": 336,
+      "first_difference": {
+        "request_id": "request-63",
+        "index": 95,
+        "depth": 0,
+        "module": "layers.17.self_attn.o_proj",
+        "key": "request-63:decode:95:0:layers.17.self_attn.o_proj",
+        "author_ordinal": 4946,
+        "native_ordinal": 4946,
+        "author_input_shape": [
+          1,
+          23,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": false,
+          "different_elements": 345,
+          "elements": 2048,
+          "max_abs": 0.00390625
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 854,
+          "elements": 2048,
+          "max_abs": 0.001953125
+        }
+      }
+    }
+  ],
+  "first_head_differences": [
+    {
+      "request_id": "request-39",
+      "heads_per_owner": 128,
+      "first_hidden_or_logit_difference": {
+        "key": "request-39:81",
+        "request_id": "request-39",
+        "index": 81,
+        "hidden": {
+          "byte_equal": false,
+          "different_elements": 1308,
+          "elements": 2048,
+          "max_abs": 0.0625
+        },
+        "logits": {
+          "byte_equal": false,
+          "different_elements": 34181,
+          "elements": 49152,
+          "max_abs": 0.125
+        }
+      }
+    },
+    {
+      "request_id": "request-63",
+      "heads_per_owner": 128,
+      "first_hidden_or_logit_difference": {
+        "key": "request-63:64",
+        "request_id": "request-63",
+        "index": 64,
+        "hidden": {
+          "byte_equal": false,
+          "different_elements": 1337,
+          "elements": 2048,
+          "max_abs": 0.03125
+        },
+        "logits": {
+          "byte_equal": false,
+          "different_elements": 34739,
+          "elements": 49152,
+          "max_abs": 0.125
+        }
+      }
+    }
+  ],
+  "archive": {
+    "archive_sha256": "b5cb055b3c6c6c896b09bcdf9e3c3e0eea77e679f5f701da52779d55f6003c63",
+    "archive_bytes": 2020018693,
+    "payloads_verified": 427
+  },
+  "previous_private_first_token_failures": [
+    {
+      "request_id": "request-39",
+      "first_different_token": 12
+    },
+    {
+      "request_id": "request-63",
+      "first_different_token": 95
+    }
+  ],
+  "previous_private_first_head_differences": {
+    "request-39": 8,
+    "request-63": 64
+  },
+  "limits": [
+    "Both private author waves changed trajectory; native trajectory stayed equal to the previous all-down32 control. Moving a private first divergence does not qualify the unmodified model or establish throughput improvement.",
+    "Original unmodified nine failed requests and all earlier private/observer/audit failures remain. No tolerance or token gate is relaxed.",
+    "GPU0 was used for this control; the previous whole-model observer used GPU2. Isolated norm replay reproduced all eight original whole-matrix outputs across those cards.",
+    "The original collector metadata kept its broader all-MLP-down32 kind label. The archived helper variant and independent module/call/effective-tensor audit explicitly verify the added single norm control; original metadata is preserved.",
+    "Remaining selected attention-output projection differences already have unequal attention input rows; this does not establish the attention/KV root cause. All original raw inputs, outputs, depth/work and timestamps are preserved."
+  ]
+}

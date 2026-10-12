@@ -1,0 +1,171 @@
+{
+  "scope": "Sequential matched-storage confirmation, seed42 of the fixed five-seed queue42..46; same FP32, global32 samples, original checkpoint/fixture/depth/reward, seven complete updates (two warmup/five measured), paired identical response tokens. The two Scale arms do not overlap.",
+  "completion": "1 of 5 paired seeds independently audited; remaining seeds pending, not a complete scaling conclusion",
+  "seed": 42,
+  "execution_order": [
+    "one_node_two_GPUs",
+    "two_nodes_three_GPUs"
+  ],
+  "independent_pair_audit_passed": true,
+  "paired_tokens_equal": true,
+  "paired_response_counts_equal": true,
+  "arms": [
+    {
+      "configuration": "one_node_two_GPUs",
+      "actual_scientific_CPU_return": 0,
+      "numerical_audit_passed": true,
+      "timings": [
+        {
+          "rollout_id": 0,
+          "start_ns": 519532281551388,
+          "end_ns": 519647401574194,
+          "elapsed_seconds": 115.120022806,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 1,
+          "start_ns": 519647402377006,
+          "end_ns": 519760423727966,
+          "elapsed_seconds": 113.02135096,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 2,
+          "start_ns": 519760423940480,
+          "end_ns": 519876070798380,
+          "elapsed_seconds": 115.6468579,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 3,
+          "start_ns": 519876070990273,
+          "end_ns": 519988720072872,
+          "elapsed_seconds": 112.649082599,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 4,
+          "start_ns": 519988720296006,
+          "end_ns": 520100605368444,
+          "elapsed_seconds": 111.885072438,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 5,
+          "start_ns": 520100605562105,
+          "end_ns": 520219488816225,
+          "elapsed_seconds": 118.88325412,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 6,
+          "start_ns": 520219489021701,
+          "end_ns": 520386557066313,
+          "elapsed_seconds": 167.068044612,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        }
+      ],
+      "response_tokens": [
+        761,
+        824,
+        861,
+        842,
+        748,
+        1042,
+        713
+      ],
+      "mean_measured_update_seconds": 125.22646233380001,
+      "measured_response_tokens_per_second": 6.717430040926348,
+      "selected_logprob_max_abs_error": 0.00012874603271484375,
+      "unique_publication_digests": 7,
+      "auditor_sha256": "a904c3054cc4de10e26f2e4fb2cce0127fc0892aed63648814a01a50e29d4e9c",
+      "archive_sha256": "dcc41c1af227eb4fcf5185e0881c1a6ab1838f3faa62b0e76f34128966188e3f",
+      "archive_bytes": 9024758671,
+      "payloads_verified": 52,
+      "original_raw_and_durable_archive_retained": true
+    },
+    {
+      "configuration": "two_nodes_three_GPUs",
+      "actual_scientific_CPU_return": 0,
+      "numerical_audit_passed": true,
+      "timings": [
+        {
+          "rollout_id": 0,
+          "start_ns": 520697583302162,
+          "end_ns": 520786315543643,
+          "elapsed_seconds": 88.732241481,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 1,
+          "start_ns": 520786316925121,
+          "end_ns": 520873951293021,
+          "elapsed_seconds": 87.6343679,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 2,
+          "start_ns": 520873951503797,
+          "end_ns": 520965113672667,
+          "elapsed_seconds": 91.16216887,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 3,
+          "start_ns": 520965113818217,
+          "end_ns": 521077570034027,
+          "elapsed_seconds": 112.45621581,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 4,
+          "start_ns": 521077570166781,
+          "end_ns": 521162507751151,
+          "elapsed_seconds": 84.93758437,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 5,
+          "start_ns": 521162507874239,
+          "end_ns": 521257342439989,
+          "elapsed_seconds": 94.83456575,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        },
+        {
+          "rollout_id": 6,
+          "start_ns": 521257342574347,
+          "end_ns": 521366592571725,
+          "elapsed_seconds": 109.249997378,
+          "includes": "rollout, train, offload/onload, full weight publication, and any scheduled checkpoint"
+        }
+      ],
+      "response_tokens": [
+        761,
+        824,
+        861,
+        842,
+        748,
+        1042,
+        713
+      ],
+      "mean_measured_update_seconds": 98.52810643560001,
+      "measured_response_tokens_per_second": 8.537665346789401,
+      "selected_logprob_max_abs_error": 0.00011730194091796875,
+      "unique_publication_digests": 7,
+      "auditor_sha256": "a904c3054cc4de10e26f2e4fb2cce0127fc0892aed63648814a01a50e29d4e9c",
+      "archive_sha256": "40ad332dc9e04694ac6026a6ea5fcd6a6eef55851f222b82ee29dae2dbec6c5b",
+      "archive_bytes": 9024752551,
+      "payloads_verified": 52,
+      "original_raw_and_durable_archive_retained": true
+    }
+  ],
+  "throughput_change_percent": 27.097197808881667,
+  "all_five_measured_updates_included": true,
+  "original_seed42_pilot_throughput_change_percent": -10.855645592594087,
+  "limits": [
+    "Original five paired pilot seeds and all failures/slow points remain; this fresh positive pair does not replace the original seed42 regression or establish stable node scaling.",
+    "ReLoop HTTP still co-runs; CPU groups are assigned but shared host/storage and diagnostic activity remain. This is sequential Scale arm execution, not full-host isolation.",
+    "Full-update timings include rollout, training, offload/onload, full weight publication and scheduled checkpoints. No slow update is discarded.",
+    "The existing per-pair archive and scientific auditor verified all original trace/checkpoint payloads. The encompassing five-pair auditor remains active, so no overall auditor completion is claimed."
+  ]
+}
