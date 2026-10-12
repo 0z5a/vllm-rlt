@@ -1,0 +1,1427 @@
+{
+  "passed": true,
+  "scope": "Other-node full archive/source/declared private method/raw audit and paired scalar-vector original L1/Q64 trajectories/timing reconstruction. Only uniform guidance extrapolation is vectorized; two coda calls/reference checks/gates remain. All slow points retained, no quality or original-seven-case completion claim.",
+  "arms": [
+    {
+      "case_id": "L1",
+      "label": "L1-fresh0-D_P4D3_on-scalar",
+      "fresh": 0,
+      "mode": "scalar",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 20.11420150892809,
+          "TPS": 25.454652016523678
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 16.240819066064432,
+          "TPS": 31.525503604053803
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 16.25016808998771,
+          "TPS": 31.50736639551814
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 16.24089960800484,
+          "TPS": 31.525347262638377
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 16.410553588997573,
+          "TPS": 31.199434999150153
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 16.29458714602515,
+          "TPS": 31.421477292531197
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 16.32198710006196,
+          "TPS": 31.368729607564532
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 16.332397450925782,
+          "TPS": 31.348735024261725
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 16.218268855009228,
+          "TPS": 31.56933730580388
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 16.23471177893225,
+          "TPS": 31.53736308792505
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "scalar",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        }
+      ],
+      "mean_measured_TPS": 31.449128463617278
+    },
+    {
+      "case_id": "L1",
+      "label": "L1-fresh0-D_P4D3_on-vector",
+      "fresh": 0,
+      "mode": "vector",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 16.899359710048884,
+          "TPS": 30.297005850200875
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 16.150244481978007,
+          "TPS": 31.70230646175906
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 16.167246506898664,
+          "TPS": 31.668967240743587
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 16.16166898200754,
+          "TPS": 31.679896461807207
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 16.097274773055688,
+          "TPS": 31.806626104004117
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 16.14467334607616,
+          "TPS": 31.713246160191755
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 16.15066679008305,
+          "TPS": 31.701477508927493
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 16.131633663084358,
+          "TPS": 31.738880927581512
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 16.08734155294951,
+          "TPS": 31.82626528533722
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 16.216238279012032,
+          "TPS": 31.57329037663804
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "vector",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true,
+        "provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "private_counters": {
+          "uniform_batches": 5120,
+          "uniform_rows": 5120,
+          "fallback_batches": 0
+        }
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        }
+      ],
+      "mean_measured_TPS": 31.710632051735203
+    },
+    {
+      "case_id": "L1",
+      "label": "L1-fresh1-D_P4D3_on-vector",
+      "fresh": 1,
+      "mode": "vector",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 16.917254486004822,
+          "TPS": 30.264958207229398
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 16.080071881064214,
+          "TPS": 31.840653685318895
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 16.136963270953856,
+          "TPS": 31.728398423115184
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 16.125854925019667,
+          "TPS": 31.750254630259587
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 16.128576353075914,
+          "TPS": 31.74489730473672
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 16.140063692000695,
+          "TPS": 31.722303565242832
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 16.243063782923855,
+          "TPS": 31.521146924157232
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 16.13470711489208,
+          "TPS": 31.732835083658387
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 16.132284964085557,
+          "TPS": 31.73759954896893
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 16.15225227503106,
+          "TPS": 31.6983657314141
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "vector",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true,
+        "provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "private_counters": {
+          "uniform_batches": 5120,
+          "uniform_rows": 5120,
+          "fallback_batches": 0
+        }
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        }
+      ],
+      "mean_measured_TPS": 31.682450170688295
+    },
+    {
+      "case_id": "L1",
+      "label": "L1-fresh1-D_P4D3_on-scalar",
+      "fresh": 1,
+      "mode": "scalar",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 17.29110260400921,
+          "TPS": 29.61060446667437
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 16.657620841055177,
+          "TPS": 30.736682320088597
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 16.698068961966783,
+          "TPS": 30.662228139444338
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 16.719082638039254,
+          "TPS": 30.623689773211463
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 16.68352322699502,
+          "TPS": 30.688961380264743
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 16.708422890980728,
+          "TPS": 30.643227271700166
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 16.65721648791805,
+          "TPS": 30.73742845158842
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 16.633698866004124,
+          "TPS": 30.78088668819316
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 16.579951559077017,
+          "TPS": 30.880669233300363
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 16.548107855021954,
+          "TPS": 30.94009324121128
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "scalar",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        },
+        {
+          "prefill_core_rows": 8192,
+          "prefill_submitted_rows": 8192,
+          "decode_core_rows": 1524,
+          "decode_submitted_rows": 1524,
+          "head_calls": 1024,
+          "head_rows": 1024
+        }
+      ],
+      "mean_measured_TPS": 30.796460977198677
+    },
+    {
+      "case_id": "Q64",
+      "label": "Q64-fresh0-D_P4D3_on-scalar",
+      "fresh": 0,
+      "mode": "scalar",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 269.66207018704154,
+          "TPS": 121.51505021552211
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 264.8515586600406,
+          "TPS": 123.72213388428837
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 264.92025959689636,
+          "TPS": 123.69004941283052
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 264.9189424709184,
+          "TPS": 123.69066437594255
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 264.7850504380185,
+          "TPS": 123.75321018234905
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 265.13025930407457,
+          "TPS": 123.59207917651825
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 264.9502477099886,
+          "TPS": 123.676049685628
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 264.75227567809634,
+          "TPS": 123.76853009505966
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 264.9968017649371,
+          "TPS": 123.65432254939643
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 264.9490318839671,
+          "TPS": 123.67661722331016
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "scalar",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        }
+      ],
+      "mean_measured_TPS": 123.6735197459825
+    },
+    {
+      "case_id": "Q64",
+      "label": "Q64-fresh0-D_P4D3_on-vector",
+      "fresh": 0,
+      "mode": "vector",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 265.09555446601007,
+          "TPS": 123.6082591652869
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 264.3486844289582,
+          "TPS": 123.95749224470289
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 264.3318499469897,
+          "TPS": 123.9653867158704
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 264.2831894090632,
+          "TPS": 123.98821155923386
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 264.3198356750654,
+          "TPS": 123.97102138139368
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 264.12128872203175,
+          "TPS": 124.064213674521
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 264.3081903529819,
+          "TPS": 123.97648349920047
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 264.4290972930612,
+          "TPS": 123.91979678274178
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 264.43793380097486,
+          "TPS": 123.91565585542024
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 264.4321850180859,
+          "TPS": 123.9183497945185
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "vector",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true,
+        "provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "private_counters": {
+          "uniform_batches": 47860,
+          "uniform_rows": 327680,
+          "fallback_batches": 0
+        }
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        }
+      ],
+      "mean_measured_TPS": 123.9588999212804
+    },
+    {
+      "case_id": "Q64",
+      "label": "Q64-fresh1-D_P4D3_on-vector",
+      "fresh": 1,
+      "mode": "vector",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 265.2939068590058,
+          "TPS": 123.51584093265669
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 264.4627372249961,
+          "TPS": 123.90403405725199
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 264.5924490271136,
+          "TPS": 123.84329228020472
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 264.7384514390724,
+          "TPS": 123.77499309933569
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 264.7809292530874,
+          "TPS": 123.75513634019744
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 265.15553231793456,
+          "TPS": 123.58029913066099
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 264.8954681119649,
+          "TPS": 123.70162552629917
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 264.7372334509855,
+          "TPS": 123.7755625563217
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 264.903417690075,
+          "TPS": 123.69791332151507
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 264.75932861701585,
+          "TPS": 123.76523301809743
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "vector",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true,
+        "provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "private_counters": {
+          "uniform_batches": 47860,
+          "uniform_rows": 327680,
+          "fallback_batches": 0
+        }
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        }
+      ],
+      "mean_measured_TPS": 123.70412671057888
+    },
+    {
+      "case_id": "Q64",
+      "label": "Q64-fresh1-D_P4D3_on-scalar",
+      "fresh": 1,
+      "mode": "scalar",
+      "actual_independent_original_raw_audit_return": 0,
+      "all10_raw_timings": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 265.31377678806894,
+          "TPS": 123.50659056116368
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 264.4541802559979,
+          "TPS": 123.90804323183622
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 264.54356171097606,
+          "TPS": 123.8661783642283
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 264.3999618240632,
+          "TPS": 123.93345208500618
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 264.59642044105567,
+          "TPS": 123.84143347585365
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 264.49001599894837,
+          "TPS": 123.89125493542367
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 264.6365893239854,
+          "TPS": 123.82263572737962
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 265.41466019302607,
+          "TPS": 123.45964603526072
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 264.62029103701934,
+          "TPS": 123.83026211476687
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 264.70563226600643,
+          "TPS": 123.79033917597557
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "scalar",
+        "private_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true
+      },
+      "neutral_work_per_trial": [
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        },
+        {
+          "prefill_core_rows": 1310720,
+          "prefill_submitted_rows": 1310720,
+          "decode_core_rows": 97536,
+          "decode_submitted_rows": 97536,
+          "head_calls": 9572,
+          "head_rows": 65536
+        }
+      ],
+      "mean_measured_TPS": 123.7588275977613
+    }
+  ],
+  "archive_sha256": "2b87d58917512386c1f58caee59557a4bf3c904ce469cefdc7b3a9c307e91dcf",
+  "archive_bytes": 21820013,
+  "payloads_verified": 330,
+  "raw_trials_verified": 80,
+  "measured_trials_verified": 40,
+  "complete_private_token_depth_identity_and_neutral_work_exactly_equal": true,
+  "counterbalanced_orders_verified": true,
+  "all_warmup_measured_and_slow_timings_retained": true,
+  "per_case_results": {
+    "L1": {
+      "mean_measured_TPS": {
+        "scalar": 31.122794720407978,
+        "vector": 31.69654111121175
+      },
+      "throughput_change_percent": 1.8434925139533043
+    },
+    "Q64": {
+      "mean_measured_TPS": {
+        "scalar": 123.7161736718719,
+        "vector": 123.83151331592964
+      },
+      "throughput_change_percent": 0.09322923643246828
+    }
+  },
+  "production_sources_changed": false,
+  "no_GPU_trials_repeated_by_auditor": true,
+  "no_quality_or_original_seven_case_completion_claim": true,
+  "timing_limit": "Other GPU tasks and shared host/IO can affect timing; unprofiled private performance pair retains all slow points and both fresh orders, no predetermined gain.",
+  "actual_producer_return": 0,
+  "actual_collector_return": 0,
+  "actual_independent_CPU_return": 0,
+  "per_fresh_order_results": [
+    {
+      "case_id": "L1",
+      "fresh": 0,
+      "arm_order": [
+        "scalar",
+        "vector"
+      ],
+      "mean_measured_TPS": {
+        "scalar": 31.449128463617278,
+        "vector": 31.710632051735203
+      },
+      "throughput_change_percent": 0.8315129890497763
+    },
+    {
+      "case_id": "L1",
+      "fresh": 1,
+      "arm_order": [
+        "vector",
+        "scalar"
+      ],
+      "mean_measured_TPS": {
+        "vector": 31.682450170688295,
+        "scalar": 30.796460977198677
+      },
+      "throughput_change_percent": 2.8769188581298177
+    },
+    {
+      "case_id": "Q64",
+      "fresh": 0,
+      "arm_order": [
+        "scalar",
+        "vector"
+      ],
+      "mean_measured_TPS": {
+        "scalar": 123.6735197459825,
+        "vector": 123.9588999212804
+      },
+      "throughput_change_percent": 0.23075285306348725
+    },
+    {
+      "case_id": "Q64",
+      "fresh": 1,
+      "arm_order": [
+        "vector",
+        "scalar"
+      ],
+      "mean_measured_TPS": {
+        "vector": 123.70412671057888,
+        "scalar": 123.7588275977613
+      },
+      "throughput_change_percent": -0.04419958417851699
+    }
+  ],
+  "limits": [
+    "Private identical-strength extrapolation only; both original coda calls/reference checks/sampling/depth3 remain. All production source bytes unchanged. Separate synthetic component bit qualification is not a whole-model tensor export.",
+    "Original L1 four requests/P512 and Q64 256 requests/alternating P512/P2048 with64 outstanding/B32, FP32/48GiB/F128. Eight fresh arms/80 raw40 measured trials retain both counterbalanced orders and all warmups/slow points. Complete paired tokens/depth/identity/neutral work match exactly.",
+    "L1 +1.8435% and Q64 +0.0932% are separate original-load results. They do not establish a significant stable gain, quality, a pure HTTP transport effect or completion of the original seven-case matrix. Other GPU tasks/shared CPU/archive IO remain timing limits."
+  ],
+  "original_Q64_queued_rule_retained": "Exact original driver admits Q64 queued trace despite static first-B estimate; common48GiB pool, arrival, batch/outstanding limits, frozen alternating inputs and numerical gates unchanged.",
+  "prior_preparation_failure_retained": {
+    "actual_producer_return": 1,
+    "GPU_cases_started": 0,
+    "actual_collector_return": 0,
+    "actual_independent_scientific_return": 1,
+    "full_failed_archive_bytes": 3686164,
+    "full_failed_archive_sha256": "33f9344ba55e1df1e92854aa9fdc1298a0aeba812bc7653515ee6f550198843a",
+    "all167_failed_payloads_independently_verified": true,
+    "repair_scope": "Only correct prior T32/C8 proof path; original source/raw failure and all scientific gates retained. No GPU trials repeated."
+  }
+}
