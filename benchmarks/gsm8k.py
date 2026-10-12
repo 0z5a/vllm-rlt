@@ -12,6 +12,8 @@ import time
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from vllm_rlt.models import special_token_ids
+
 DATA_REVISION = "740312add88f781978c0658806c59bc2815b9866"
 PACKAGES = ("torch", "transformers", "lm-eval", "datasets", "tokenizers", "triton")
 DEFAULT_CASE = Path(__file__).parent / "fixtures/gsm8k-87.json"
@@ -54,7 +56,7 @@ def thinking_close_id(tokenizer):
         type(close_id) is not int
         or close_id < 0
         or close_id in forbidden
-        or close_id not in tokenizer.all_special_ids
+        or close_id not in special_token_ids(tokenizer)
         or tokenizer.convert_ids_to_tokens(close_id) != token
         or tokenizer.encode(token, add_special_tokens=False) != [close_id]
     ):

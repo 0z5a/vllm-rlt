@@ -30,6 +30,7 @@ from vllm_rlt.serving.worker import EngineWorker
 
 class TinyTokenizer:
     all_special_ids = [0]
+    added_tokens_decoder = {}
 
     def encode(self, text):
         return [1 + ord(c) % 63 for c in text]
@@ -188,6 +189,18 @@ def test_byte_decoder_unicode_special_tokens_and_final_flush(monkeypatch):
         deltas = [decoder.decode(token, False) for token in ids]
         deltas.append(decoder.decode(tokenizer.eos_token_id, True))
         assert "".join(deltas) == tokenizer.decode(ids)
+
+
+def test_incremental_text_uses_added_special_token_metadata():
+    tokenizer = SimpleNamespace(
+        all_special_ids=[0],
+        # Transformers 5.14.1 omits added special tokens from all_special_ids.
+        added_tokens_decoder={4: SimpleNamespace(special=True), 9: SimpleNamespace(special=False)},
+        convert_ids_to_tokens=lambda token: "</think>" if token == 4 else "x",
+    )
+    decoder = IncrementalText(tokenizer)
+    assert decoder.decode(4, False) == ""
+    assert decoder.decode(9, True) == "x"
 
 
 @pytest.mark.parametrize("byte_level", [False, True])

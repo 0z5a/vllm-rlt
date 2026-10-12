@@ -177,20 +177,39 @@ def test_score_thinking_extraction(text_tokenizer, final_text, gold, answer, cor
     assert result["unparseable"] is (answer is None)
 
 
-@pytest.mark.parametrize("candidate", [4, None, -1, 2, 99, True])
+@pytest.mark.parametrize("candidate", [None, -1, 2, 99, True])
 def test_thinking_scorer_validates_marker(candidate):
     tokenizer = SimpleNamespace(
         convert_tokens_to_ids=lambda _: candidate,
         eos_token_id=2,
         all_special_ids=[1, 2, 3, 4],
+        added_tokens_decoder={},
         convert_ids_to_tokens=lambda _: "</think>",
         encode=lambda *a, **kw: [4],
     )
-    if candidate == 4:
-        assert thinking_close_id(tokenizer) == 4
-    else:
+    with pytest.raises(ValueError, match="standalone"):
+        thinking_close_id(tokenizer)
+
+
+@pytest.mark.parametrize("metadata_case", ["complete", "legacy", "missing"])
+def test_thinking_scorer_combines_special_token_metadata(metadata_case):
+    # Transformers 5.14.1 omits special added tokens from all_special_ids.
+    added = {}
+    if metadata_case == "legacy":
+        added = {4: SimpleNamespace(special=True), 9: SimpleNamespace(special=False)}
+    tokenizer = SimpleNamespace(
+        convert_tokens_to_ids=lambda _: 4,
+        eos_token_id=2,
+        all_special_ids=[1, 2, 3] if metadata_case != "complete" else [1, 2, 3, 4],
+        added_tokens_decoder=added,
+        convert_ids_to_tokens=lambda _: "</think>",
+        encode=lambda *a, **kw: [4],
+    )
+    if metadata_case == "missing":
         with pytest.raises(ValueError, match="standalone"):
             thinking_close_id(tokenizer)
+    else:
+        assert thinking_close_id(tokenizer) == 4
 
 
 def test_three_shot_prompt_and_strict_scoring(task):
