@@ -380,3 +380,33 @@ def test_device_metadata_rejects_foreign_and_reused_allocations_without_host_rea
         cache._require_live_batch(batch)
     with pytest.raises(RuntimeError, match="stale"):
         cache._prepare_device_batch(**arguments)
+
+
+@pytest.mark.gpu
+def test_async_greedy_execution_never_acquires_a_generator(monkeypatch):
+    # Object identity does not prove the asynchronous greedy path leaves the RNG
+    # alone, so run a real request with a spy that fails on any acquire. This needs
+    # a reserved device because AsyncSpeculativeRunner allocates CUDA streams; the
+    # contract therefore stays pending for M7 3/3.
+    e = make_engine(tiny("cuda"))
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("greedy speculative sampling must not acquire a generator")
+
+    monkeypatch.setattr(e.rng, "acquire", forbidden)
+    e.add_request("r", [2, 3, 4], SamplingParams(max_tokens=6, ignore_eos=True))
+    outputs = drain(e)
+    assert outputs["r"].finish_reason == "length"
+    assert e.rng.peek("r") is None
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("multi_stream", [False, True])
+def test_async_speculative_engine_shares_its_registry(multi_stream):
+    # AsyncSpeculativeRunner allocates CUDA streams in its constructor, so this
+    # wiring is only verifiable on a reserved device; a CPU construction or mock
+    # would not exercise the object the engine actually holds.
+    e = make_engine(tiny("cuda"), multi_stream=multi_stream)
+    assert e.async_speculative
+    assert e.speculative_runner.rng is e.rng
+    assert e.model_runner.rng is e.rng

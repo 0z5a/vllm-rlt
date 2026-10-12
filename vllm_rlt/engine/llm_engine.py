@@ -13,6 +13,7 @@ from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
 from vllm_rlt.worker.model_runner import ModelRunner
+from vllm_rlt.worker.sampler import RngRegistry
 from vllm_rlt.worker.speculative import SpeculativeRunner
 
 if TYPE_CHECKING:
@@ -142,8 +143,18 @@ class LLMEngine:
             speculative_config,
             atomic_prefill=self.execution_config.atomic_prefill,
         )
+        # One RNG registry per engine, shared by both runners: the CODA and
+        # speculative paths must advance the same per-request slot, and only the
+        # engine knows when a request terminates.
+        self.rng = RngRegistry()
         self.speculative_runner = (
-            SpeculativeRunner(model, self.cache_manager, speculative_config, self.execution_config)
+            SpeculativeRunner(
+                model,
+                self.cache_manager,
+                speculative_config,
+                self.execution_config,
+                rng=self.rng,
+            )
             if speculative_config is not None
             else None
         )
@@ -153,6 +164,7 @@ class LLMEngine:
             exit_config=self.exit_config,
             execution_config=self.execution_config,
             scheduler_config=scheduler_config,
+            rng=self.rng,
         )
         if self.async_speculative:
             from vllm_rlt.worker.async_speculative import AsyncSpeculativeRunner
@@ -163,6 +175,7 @@ class LLMEngine:
                 speculative_config,
                 scheduler_config,
                 multi_stream=self.execution_config.multi_stream,
+                rng=self.rng,
             )
         self._pending_speculative = []
         self._retiring_speculative = {}

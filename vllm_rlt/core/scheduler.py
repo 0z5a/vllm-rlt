@@ -126,7 +126,6 @@ class Scheduler:
         request.input_token_tensor = None
         request.num_output_placeholders = 0
         request.num_speculative_rounds = 0
-        request.generator = None
         self.requests.pop(request.request_id)
 
     def abort(self, request_id: str) -> Request:

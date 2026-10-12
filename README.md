@@ -15,6 +15,7 @@
 
 <p align="center">
   <a href="https://arxiv.org/pdf/2608.09444">Paper</a> ·
+  <a href="#highlights">Highlights</a> ·
   <a href="#how-it-works">How It Works</a> ·
   <a href="#getting-started">Getting Started</a> ·
   <a href="docs/README.md">Documentation</a> ·
@@ -31,7 +32,8 @@
 ## About
 
 **vllm-rlt** is a standalone inference and serving engine for recurrent language
-models, currently supporting **ByteDance/Ouro-1.4B**. It brings continuous
+models, with native support for **ByteDance/Ouro-1.4B** and
+**Nanbeige/Nanbeige4.2-3B**. It brings continuous
 batching to individual recurrent loops, allowing requests at different loop
 depths to share a batch as they work toward their next token.
 
@@ -47,6 +49,34 @@ ideas from **Continuous Depth Batching (CDB)**, described in
 Batching](https://arxiv.org/pdf/2608.09444) by Kristian Schwethelm, Daniel
 Rückert, and Georgios Kaissis (2026). It runs independently and does not require
 vLLM to be installed. See [Citation](#citation) for the paper's BibTeX entry.
+
+## Highlights
+
+- **Two native models:** Ouro-1.4B with fixed-depth or learned early-exit
+  decoding, and Nanbeige4.2-3B with fixed two-loop inference.
+- **Measured decode speed:** synchronous self-speculation reached **236.45
+  committed tokens/s**, versus **154.23 tokens/s** for native fixed-depth async
+  decoding (**~1.53×**) on the historical Ouro-1.4B workload below.[^decode-benchmark]
+- **Loop-aware runtime:** continuous batching, depth-aware paged KV, and opt-in
+  prefix caching, CUDA Graphs, self-speculation, and single-host prefill/decode
+  disaggregation.
+- **Ready-to-use interfaces:** Python API, CLI, and streaming OpenAI-compatible
+  completions.
+
+**[v0.1.0 is experimental](https://github.com/ThinkFlowLab/vllm-rlt/releases/tag/v0.1.0).**
+Start with synchronous execution. Async execution with preemption can produce
+incorrect outputs ([#109](https://github.com/ThinkFlowLab/vllm-rlt/pull/109));
+async self-speculation has unresolved worker-failure and cleanup issues
+([#115](https://github.com/ThinkFlowLab/vllm-rlt/pull/115)). See the release notes
+for supported combinations and limitations.
+
+[^decode-benchmark]: Historical medians of five trials on one NVIDIA H20-3e:
+    Ouro-1.4B BF16, Triton 3.6.0, eager execution, LAST_EXITED KV,
+    64-token prompt / 32-token output, concurrency 8, draft depth 2 / target
+    depth 4, K=2. Committed-decode timing excludes prefill, the first output
+    token, and HTTP/client overhead. [Full protocol and measurements](https://github.com/ThinkFlowLab/vllm-rlt/blob/ea3f74c5cd9c280086195d996a4f9fbcf82bc04b/docs/async-speculative.md#matched-bf16-measurements)
+    used runtime `d977817d4e174cbc2fcc9aa7ef5893c35da2ec89`; these are
+    workload-specific results, not a fresh v0.1.0 benchmark or production guarantee.
 
 ## Features
 
@@ -68,7 +98,7 @@ vLLM to be installed. See [Citation](#citation) for the paper's BibTeX entry.
   across GPUs on one host, with NIXL KV transfer and overlap between chunked
   prefill computation and transfer.
 
-The default runtime uses synchronous execution and the original Ouro gate.
+The default runtime uses synchronous execution; Ouro uses its original gate.
 Advanced execution and cache features are opt-in; see the guides below for
 supported combinations.
 

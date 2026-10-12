@@ -9,6 +9,7 @@ from vllm_rlt.config import ExecutionConfig
 from vllm_rlt.core.kv_cache_manager import _Allocation
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request
+from vllm_rlt.worker.sampler import RngRegistry
 from vllm_rlt.worker.speculative import SpeculativeResult, SpeculativeRunner
 
 
@@ -90,8 +91,17 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
     reservation upper bound and must never be used as the actual write position.
     """
 
-    def __init__(self, model, cache, config, scheduler, *, multi_stream=True):
-        super().__init__(model, cache, config, ExecutionConfig())
+    def __init__(
+        self,
+        model,
+        cache,
+        config,
+        scheduler,
+        *,
+        multi_stream=True,
+        rng: RngRegistry | None = None,
+    ):
+        super().__init__(model, cache, config, ExecutionConfig(), rng=rng)
         self.compute_stream = torch.cuda.Stream(device=self.device)
         self.copy_stream = (
             torch.cuda.Stream(device=self.device) if multi_stream else self.compute_stream
