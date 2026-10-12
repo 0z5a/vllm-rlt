@@ -1,0 +1,272 @@
+{
+  "passed": true,
+  "original_unmodified_nine_failures_retained": true,
+  "scope": "Read-only all-layer capture at three earliest newly observed global head differences and the retained late request63 boundary. Same private all24-down32/three-norm32 arithmetic, all64 frozen requests/tokens/depth/work unchanged. Selected512 heads and overlapping residual operators must reproduce the independent all8192-head parent. No original-serving/performance or global numerical pass.",
+  "previous_CPU_v3_actual_return": 1,
+  "unstarted_GPU0_queue_retained": true,
+  "hardware_variant": {
+    "parent_all8192_head_GPU_index": 0,
+    "current_GPU_index": 2,
+    "existing_same_allocation": true,
+    "all_selected512_parent_heads_and_complete_parent_tokens_must_reproduce_exactly": true
+  },
+  "expected_complete_operator_records_per_owner": 4368,
+  "author_clock_fields_retained_but_not_required_equal_across_runs": [
+    "created_time",
+    "first_token_time",
+    "lifespan"
+  ],
+  "native_clock_fields_retained_but_not_required_equal_across_runs": [
+    "submitted_at",
+    "output_times"
+  ],
+  "actual_producer_return": 0,
+  "private_control_candidate_passed": true,
+  "previous_private_two_failures_retained": true,
+  "all64_complete_token_trajectories_and_selected512_parent_heads_reproduced": true,
+  "private_arithmetic_unchanged_from_three_norm_control": true,
+  "no_original_serving_or_performance_pass": true,
+  "cases": {
+    "author": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        }
+      ],
+      "operator_records": 4368,
+      "head_records": 512,
+      "three_located_norm_controls_zero_padding_slicing_verified": true,
+      "norm_calls": 8478,
+      "padded_norm_calls": 5064,
+      "added_norm_rows": 128742
+    },
+    "candidate": {
+      "parent_and_observer_passed": true,
+      "waves": [
+        {
+          "wave": 0,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        },
+        {
+          "wave": 1,
+          "requests": 64,
+          "real_frozen_depth_work_and_inputs_preserved": true,
+          "trajectory_changed_from_previous_private_control": false
+        }
+      ],
+      "operator_records": 4368,
+      "head_records": 512,
+      "three_located_norm_controls_zero_padding_slicing_verified": true,
+      "norm_calls": 7632,
+      "padded_norm_calls": 2898,
+      "added_norm_rows": 46656
+    }
+  },
+  "archive_sha256": "793e1c3f22d65086a8cd87b1f752a4f87a49e7ca5e65a09a4740ee5a2b6d13e7",
+  "archive_bytes": 1696682224,
+  "payloads_verified": 435,
+  "parent_archive_sha256": "47713f6df39d9590c616ecaccac79c0645beae7e5b56d7b5cdff6f111996355e",
+  "no_GPU_trials_repeated_by_auditor": true,
+  "CUDA_initialized": false,
+  "actual_collector_return": 0,
+  "actual_independent_CPU_return": 0,
+  "private_token_gate_passed": true,
+  "private_all_head_tensor_equality_passed": false,
+  "all8192_head_parent_different_pairs_retained": 3253,
+  "all8192_head_parent_requests_with_differences_retained": 44,
+  "selected_head_records_per_owner": 512,
+  "selected_different_hidden_or_logit_heads": 393,
+  "selected_operator_boundaries": [
+    {
+      "request_id": "request-8",
+      "index": 5,
+      "operator_records": 336,
+      "equal_complete_selected_input_and_output_pairs": 336,
+      "all_observed_operators_equal": true,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-8",
+      "index": 6,
+      "operator_records": 336,
+      "equal_complete_selected_input_and_output_pairs": 147,
+      "all_observed_operators_equal": false,
+      "first_difference": {
+        "request_id": "request-8",
+        "index": 6,
+        "depth": 0,
+        "module": "layers.10.post_attention_layernorm",
+        "key": "request-8:decode:6:0:layers.10.post_attention_layernorm",
+        "author_ordinal": 483,
+        "native_ordinal": 483,
+        "author_input_shape": [
+          1,
+          7,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": true,
+          "different_elements": 0,
+          "elements": 2048,
+          "max_abs": 0.0
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 24,
+          "elements": 2048,
+          "max_abs": 0.0009765625
+        }
+      }
+    },
+    {
+      "request_id": "request-38",
+      "index": 1,
+      "operator_records": 1344,
+      "equal_complete_selected_input_and_output_pairs": 301,
+      "all_observed_operators_equal": false,
+      "first_difference": {
+        "request_id": "request-38",
+        "index": 1,
+        "depth": 0,
+        "module": "layers.21.post_attention_layernorm",
+        "key": "request-38:decode:1:0:layers.21.post_attention_layernorm",
+        "author_ordinal": 973,
+        "native_ordinal": 973,
+        "author_input_shape": [
+          1,
+          14,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": true,
+          "different_elements": 0,
+          "elements": 2048,
+          "max_abs": 0.0
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 22,
+          "elements": 2048,
+          "max_abs": 0.0001220703125
+        }
+      }
+    },
+    {
+      "request_id": "request-50",
+      "index": 3,
+      "operator_records": 336,
+      "equal_complete_selected_input_and_output_pairs": 336,
+      "all_observed_operators_equal": true,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-50",
+      "index": 4,
+      "operator_records": 336,
+      "equal_complete_selected_input_and_output_pairs": 250,
+      "all_observed_operators_equal": false,
+      "first_difference": {
+        "request_id": "request-50",
+        "index": 4,
+        "depth": 0,
+        "module": "layers.17.post_attention_layernorm_2",
+        "key": "request-50:decode:4:0:layers.17.post_attention_layernorm_2",
+        "author_ordinal": 2602,
+        "native_ordinal": 2602,
+        "author_input_shape": [
+          1,
+          11,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": true,
+          "different_elements": 0,
+          "elements": 2048,
+          "max_abs": 0.0
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 17,
+          "elements": 2048,
+          "max_abs": 0.00048828125
+        }
+      }
+    },
+    {
+      "request_id": "request-63",
+      "index": 107,
+      "operator_records": 336,
+      "equal_complete_selected_input_and_output_pairs": 336,
+      "all_observed_operators_equal": true,
+      "first_difference": null
+    },
+    {
+      "request_id": "request-63",
+      "index": 108,
+      "operator_records": 1344,
+      "equal_complete_selected_input_and_output_pairs": 222,
+      "all_observed_operators_equal": false,
+      "first_difference": {
+        "request_id": "request-63",
+        "index": 108,
+        "depth": 0,
+        "module": "layers.15.post_attention_layernorm_2",
+        "key": "request-63:decode:108:0:layers.15.post_attention_layernorm_2",
+        "author_ordinal": 3246,
+        "native_ordinal": 3246,
+        "author_input_shape": [
+          1,
+          2,
+          2048
+        ],
+        "native_input_shape": [
+          32,
+          2048
+        ],
+        "input": {
+          "byte_equal": true,
+          "different_elements": 0,
+          "elements": 2048,
+          "max_abs": 0.0
+        },
+        "output": {
+          "byte_equal": false,
+          "different_elements": 13,
+          "elements": 2048,
+          "max_abs": 0.00048828125
+        }
+      }
+    }
+  ],
+  "full_raw_vector_retention": "All512 complete selected hidden/logit tensors and4368 selected operator matrices per owner are retained in the fully SHA256-verified persistent archive. The separate parent archive retains all8192 head pairs per owner and every one of the3253 differences.",
+  "limits": [
+    "Read-only observation uses the existing private all24-MLP-down32/three-located-norm32 arithmetic. Original unmodified nine token failures, all3253 parent head differences, prior private failures and aborted unstarted queue receipts remain.",
+    "All64 frozen requests completed two waves per owner with unchanged tokens/depth/work; all512 selected parent heads and overlapping request63 operators reproduced exactly on a separately qualified H100 in the same existing allocation.",
+    "These are first observed operator boundaries for the selected request/output positions. Identical selected inputs and differing outputs localize those boundaries; unobserved requests/operators and full recurrent numerical correctness remain unqualified.",
+    "The private diagnostic does not qualify original serving, throughput, or quality; no numerical threshold or tolerance was changed."
+  ]
+}
