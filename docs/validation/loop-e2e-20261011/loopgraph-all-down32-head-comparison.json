@@ -1,0 +1,359 @@
+{
+  "scope": "CPU comparison of existing independently verified private all-down32 counterfactual captures; no new serving or performance result",
+  "actual_CPU_auditor_return": 0,
+  "auditor_source_sha256": "a3a7483bb13c26695da73d670bb6c9044825e20007b7ca9d7833278458e3e2ec",
+  "complete_parent_archive_sha256": "775ec061cf87211c41755f7dc7cccf93e3853469c9e7bd11ed124289f26da851",
+  "summary": {
+    "captured_core_rows": 9,
+    "all_core_inputs_and_outputs_equal": true,
+    "captured_heads": 432,
+    "hidden_equal": 324,
+    "logits_equal": 324,
+    "argmax_equal": 398
+  },
+  "selected_layer0_core_comparisons": [
+    {
+      "key": "request-13:decode:10:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    },
+    {
+      "key": "request-14:decode:2:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    },
+    {
+      "key": "request-20:decode:2:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    },
+    {
+      "key": "request-36:decode:1:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    },
+    {
+      "key": "request-39:decode:1:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    },
+    {
+      "key": "request-51:decode:1:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    },
+    {
+      "key": "request-58:decode:4:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    },
+    {
+      "key": "request-63:decode:5:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    },
+    {
+      "key": "request-7:decode:5:0:layers.0.mlp.down_proj",
+      "input": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 5632,
+        "max_abs": 0.0
+      },
+      "output": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "elements": 2048,
+        "max_abs": 0.0
+      }
+    }
+  ],
+  "head_comparison_by_request": [
+    {
+      "request_id": "request-7",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 38,
+      "logits_equal": 38,
+      "earliest_captured_hidden_or_logit_difference": {
+        "output_index": 27,
+        "hidden": {
+          "byte_equal": false,
+          "different_elements": 1673,
+          "elements": 2048,
+          "max_abs": 0.0625
+        },
+        "logits": {
+          "byte_equal": false,
+          "different_elements": 42049,
+          "elements": 49152,
+          "max_abs": 0.125
+        },
+        "author_argmax": 198,
+        "native_argmax": 198
+      }
+    },
+    {
+      "request_id": "request-13",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 48,
+      "logits_equal": 48,
+      "earliest_captured_hidden_or_logit_difference": null
+    },
+    {
+      "request_id": "request-14",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 33,
+      "logits_equal": 33,
+      "earliest_captured_hidden_or_logit_difference": {
+        "output_index": 33,
+        "hidden": {
+          "byte_equal": false,
+          "different_elements": 1829,
+          "elements": 2048,
+          "max_abs": 0.15625
+        },
+        "logits": {
+          "byte_equal": false,
+          "different_elements": 42233,
+          "elements": 49152,
+          "max_abs": 0.1328125
+        },
+        "author_argmax": 19662,
+        "native_argmax": 19662
+      }
+    },
+    {
+      "request_id": "request-20",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 20,
+      "logits_equal": 20,
+      "earliest_captured_hidden_or_logit_difference": {
+        "output_index": 20,
+        "hidden": {
+          "byte_equal": false,
+          "different_elements": 1693,
+          "elements": 2048,
+          "max_abs": 0.078125
+        },
+        "logits": {
+          "byte_equal": false,
+          "different_elements": 42254,
+          "elements": 49152,
+          "max_abs": 0.125
+        },
+        "author_argmax": 198,
+        "native_argmax": 198
+      }
+    },
+    {
+      "request_id": "request-36",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 48,
+      "logits_equal": 48,
+      "earliest_captured_hidden_or_logit_difference": null
+    },
+    {
+      "request_id": "request-39",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 10,
+      "logits_equal": 10,
+      "earliest_captured_hidden_or_logit_difference": {
+        "output_index": 8,
+        "hidden": {
+          "byte_equal": false,
+          "different_elements": 1783,
+          "elements": 2048,
+          "max_abs": 0.0625
+        },
+        "logits": {
+          "byte_equal": false,
+          "different_elements": 37703,
+          "elements": 49152,
+          "max_abs": 0.125
+        },
+        "author_argmax": 3446,
+        "native_argmax": 3446
+      }
+    },
+    {
+      "request_id": "request-51",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 31,
+      "logits_equal": 31,
+      "earliest_captured_hidden_or_logit_difference": {
+        "output_index": 10,
+        "hidden": {
+          "byte_equal": false,
+          "different_elements": 1701,
+          "elements": 2048,
+          "max_abs": 0.125
+        },
+        "logits": {
+          "byte_equal": false,
+          "different_elements": 36067,
+          "elements": 49152,
+          "max_abs": 0.125
+        },
+        "author_argmax": 3446,
+        "native_argmax": 3446
+      }
+    },
+    {
+      "request_id": "request-58",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 48,
+      "logits_equal": 48,
+      "earliest_captured_hidden_or_logit_difference": null
+    },
+    {
+      "request_id": "request-63",
+      "captured_output_indices": [
+        0,
+        47
+      ],
+      "records": 48,
+      "hidden_equal": 48,
+      "logits_equal": 48,
+      "earliest_captured_hidden_or_logit_difference": null
+    }
+  ],
+  "raw_tensor_references": {
+    "run/W1-P256-B32-async0-graph0/bimodal_50/author/core-state-snapshots.pt": {
+      "bytes": 6198541,
+      "sha256": "a78d1efecfa8cfe614fed641d07cce687c3941143869ba8e2908843146f239bb"
+    },
+    "run/W1-P256-B32-async0-graph0/bimodal_50/author/coda-snapshots.pt": {
+      "bytes": 44490761,
+      "sha256": "476f4a49c9b09c9f30c6b10cca8148d61035a93a1128b3b18ef3d2313445b6b6"
+    },
+    "run/W1-P256-B32-async0-graph0/bimodal_50/candidate/core-state-snapshots.pt": {
+      "bytes": 9013069,
+      "sha256": "4a7612f1d7884dc80ea88c4d0c19a646e5fe01b8769b5ae9e8cdcc6d06dcf6e1"
+    },
+    "run/W1-P256-B32-async0-graph0/bimodal_50/candidate/coda-snapshots.pt": {
+      "bytes": 44490761,
+      "sha256": "24fcdc91ad736df5a1cc94915f14e49073d363d2021dae8286d0e8d7565b3f18"
+    }
+  },
+  "limitations": [
+    "Only the nine selected layer0 boundaries and output indices0..47 are covered; this does not prove complete-core or KV equality.",
+    "request39 hidden/logit drift first appears at observed output8; the private-control token mismatch occurs at12.",
+    "request63 has equal captured heads0..47 but its private-control token mismatch at95 is beyond these captures.",
+    "Private counterfactual trajectories changed; original unmodified nine failures and private-control two token failures remain."
+  ],
+  "original_unmodified_nine_failures_retained": true,
+  "private_control_two_token_failures_retained": true,
+  "CUDA_initialized": false
+}
