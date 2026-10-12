@@ -1,0 +1,192 @@
+{
+  "scope": "Independent second-node CPU original-operand verification and regenerated Nsight kernel/NVTX reports; no E2E or cuBLAS API timing claim",
+  "artifact_integrity_passed": true,
+  "operand_and_original_output_reconstruction_passed": true,
+  "independent_stats_actual_return": 0,
+  "actual_producer_return": 0,
+  "archive_sha256": "94866eb4cd051e659bb39bd62b6d77988af8c65b8eb00b2384b822e88026a960",
+  "archive_bytes": 47585954,
+  "payloads": 27,
+  "projection": {
+    "passed": true,
+    "scope": "Focused isolated saved projection batch dispatch trace only; no E2E throughput or serving pass",
+    "key": "request-7:decode:5:0:layers.0.mlp.down_proj",
+    "warmup_per_variant": 3,
+    "captured_iterations_per_variant": 5,
+    "variants": {
+      "author": [
+        1,
+        12,
+        5632
+      ],
+      "candidate": [
+        32,
+        5632
+      ],
+      "author_padded_16": [
+        1,
+        16,
+        5632
+      ],
+      "author_padded_32": [
+        1,
+        32,
+        5632
+      ]
+    },
+    "original_full_outputs_byte_equal": true,
+    "weight_sha256": "a3a3d26c4c1dc25bad535b1ea930e81e55f8fa012894c45d03d2e99eae94c22d",
+    "baseline_raw_sha256": "e39320bd442d27885c37d0997cb2faa7b9e61a9e3627a7a84747f3f18f4575e1",
+    "baseline_weight_CPU_qualified": true,
+    "torch": "2.11.0+cu129",
+    "allow_bf16_reduced_precision_reduction": true,
+    "allow_tf32": false,
+    "raw_payload_sha256": "981f8b66ccd7fe3311d7c3c62c2620a85947a85703016ac723b5734078115c8e"
+  },
+  "cuBLAS_API_trace_available": false,
+  "cuBLAS_API_limitation": "Installed nsys has no cublas_api_sum report and exported trace has no cuBLAS API table. Kernel/NVTX attribution only; no cuBLAS host API timing claim.",
+  "CUDA_initialized": false,
+  "original_unmodified_serving_failures_retained": true,
+  "prior_audit_v2_actual_failure_retained": true,
+  "report_input": "Already exported fully hashed original SQLite database; no trace re-export or GPU rerun",
+  "kernel_attribution": {
+    ":layer0_down_proj_BF16_author_M12": {
+      "main_kernel": "nvjet_tst_64x16_64x16_2x1_v_bz_splitK_TNT",
+      "reduction_kernel": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)",
+      "raw_nsys_stats_rows": [
+        {
+          "NVTX Range": ":layer0_down_proj_BF16_author_M12",
+          "Style": "PushPop",
+          "NVTX Inst": "5",
+          "Kern Inst": "5",
+          "Total Time (ns)": "36352",
+          "Avg (ns)": "7270.4",
+          "Med (ns)": "7104.0",
+          "Min (ns)": "7040",
+          "Max (ns)": "8032",
+          "StdDev (ns)": "427.8",
+          "Kernel Name": "nvjet_tst_64x16_64x16_2x1_v_bz_splitK_TNT"
+        },
+        {
+          "NVTX Range": ":layer0_down_proj_BF16_author_M12",
+          "Style": "PushPop",
+          "NVTX Inst": "5",
+          "Kern Inst": "5",
+          "Total Time (ns)": "7936",
+          "Avg (ns)": "1587.2",
+          "Med (ns)": "1568.0",
+          "Min (ns)": "1568",
+          "Max (ns)": "1664",
+          "StdDev (ns)": "42.9",
+          "Kernel Name": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)"
+        }
+      ]
+    },
+    ":layer0_down_proj_BF16_author_padded_16_M16": {
+      "main_kernel": "nvjet_tst_64x16_64x16_4x1_v_bz_splitK_TNT",
+      "reduction_kernel": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)",
+      "raw_nsys_stats_rows": [
+        {
+          "NVTX Range": ":layer0_down_proj_BF16_author_padded_16_M16",
+          "Style": "PushPop",
+          "NVTX Inst": "5",
+          "Kern Inst": "5",
+          "Total Time (ns)": "32480",
+          "Avg (ns)": "6496.0",
+          "Med (ns)": "6336.0",
+          "Min (ns)": "6336",
+          "Max (ns)": "7104",
+          "StdDev (ns)": "340.2",
+          "Kernel Name": "nvjet_tst_64x16_64x16_4x1_v_bz_splitK_TNT"
+        },
+        {
+          "NVTX Range": ":layer0_down_proj_BF16_author_padded_16_M16",
+          "Style": "PushPop",
+          "NVTX Inst": "5",
+          "Kern Inst": "5",
+          "Total Time (ns)": "8320",
+          "Avg (ns)": "1664.0",
+          "Med (ns)": "1664.0",
+          "Min (ns)": "1664",
+          "Max (ns)": "1664",
+          "StdDev (ns)": "0.0",
+          "Kernel Name": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)"
+        }
+      ]
+    },
+    ":layer0_down_proj_BF16_author_padded_32_M32": {
+      "main_kernel": "nvjet_tst_64x32_64x16_4x1_v_bz_splitK_TNT",
+      "reduction_kernel": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)",
+      "raw_nsys_stats_rows": [
+        {
+          "NVTX Range": ":layer0_down_proj_BF16_author_padded_32_M32",
+          "Style": "PushPop",
+          "NVTX Inst": "5",
+          "Kern Inst": "5",
+          "Total Time (ns)": "32992",
+          "Avg (ns)": "6598.4",
+          "Med (ns)": "6560.0",
+          "Min (ns)": "6528",
+          "Max (ns)": "6784",
+          "StdDev (ns)": "104.7",
+          "Kernel Name": "nvjet_tst_64x32_64x16_4x1_v_bz_splitK_TNT"
+        },
+        {
+          "NVTX Range": ":layer0_down_proj_BF16_author_padded_32_M32",
+          "Style": "PushPop",
+          "NVTX Inst": "5",
+          "Kern Inst": "5",
+          "Total Time (ns)": "8544",
+          "Avg (ns)": "1708.8",
+          "Med (ns)": "1696.0",
+          "Min (ns)": "1696",
+          "Max (ns)": "1760",
+          "StdDev (ns)": "28.6",
+          "Kernel Name": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)"
+        }
+      ]
+    },
+    ":layer0_down_proj_BF16_candidate_M32": {
+      "main_kernel": "nvjet_tst_64x32_64x16_4x1_v_bz_splitK_TNT",
+      "reduction_kernel": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)",
+      "raw_nsys_stats_rows": [
+        {
+          "NVTX Range": ":layer0_down_proj_BF16_candidate_M32",
+          "Style": "PushPop",
+          "NVTX Inst": "5",
+          "Kern Inst": "5",
+          "Total Time (ns)": "35328",
+          "Avg (ns)": "7065.6",
+          "Med (ns)": "6592.0",
+          "Min (ns)": "6592",
+          "Max (ns)": "8928",
+          "StdDev (ns)": "1041.2",
+          "Kernel Name": "nvjet_tst_64x32_64x16_4x1_v_bz_splitK_TNT"
+        },
+        {
+          "NVTX Range": ":layer0_down_proj_BF16_candidate_M32",
+          "Style": "PushPop",
+          "NVTX Inst": "5",
+          "Kern Inst": "5",
+          "Total Time (ns)": "8575",
+          "Avg (ns)": "1715.0",
+          "Med (ns)": "1727.0",
+          "Min (ns)": "1696",
+          "Max (ns)": "1728",
+          "StdDev (ns)": "17.3",
+          "Kernel Name": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bool)0, (bool)0, (bool)0>(cublasLt::cublasSplitKParams<T6>, const T4 *, const T10 *, T9 *, T5 *, const T6 *, const T6 *, const T11 *, const T4 *, T11 *, void *, long, T6 *, int *, T6 *, T6 *, const T6 *, const T6 *, const T6 *, const T6 *, const T6 *)"
+        }
+      ]
+    }
+  },
+  "independent_auditor_actual_return": 0,
+  "independent_verification": "Other existing node, CPU only; saved original operands/output bytes and regenerated Nsight reports checked",
+  "original_CPU_postprocessing_failures_retained": true,
+  "original_serving_pass_claimed": false,
+  "E2E_performance_pass_claimed": false,
+  "co_running_jobs_and_profile_overhead": "Focused diagnostic only; these kernel timings do not establish E2E improvement",
+  "recorded_commands_with_paths_shortened": [
+    "nsys profile --trace=cuda,nvtx,cublas --sample=none --cpuctxsw=none --capture-range=cudaProfilerApi --capture-range-end=stop --force-overwrite=false --output projection python -B profile_projection.py OUTPUT",
+    "nsys stats --report cuda_gpu_kern_sum,nvtx_kern_sum --format csv projection.sqlite"
+  ]
+}
