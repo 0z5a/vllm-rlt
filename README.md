@@ -33,7 +33,8 @@
 
 **vllm-rlt** is a standalone inference and serving engine for recurrent language
 models, with native support for **ByteDance/Ouro-1.4B** and
-**Nanbeige/Nanbeige4.2-3B**, plus **tomg-group-umd/huginn-0125**. It brings continuous
+**Nanbeige/Nanbeige4.2-3B**, plus **tomg-group-umd/huginn-0125**. See the checkpoint-specific
+[support matrix](#model-support) for validation scope. It brings continuous
 batching to individual recurrent loops, allowing requests at different loop
 depths to share a batch as they work toward their next token.
 
@@ -102,6 +103,21 @@ for supported combinations and limitations.
 The default runtime uses synchronous execution; Ouro uses its original gate.
 Advanced execution and cache features are opt-in; see the guides below for
 supported combinations.
+
+## Model Support
+
+| Checkpoint | Implementation | Documented validation scope | Guide |
+| --- | --- | --- | --- |
+| Ouro-1.4B | Native Ouro | Existing runtime and benchmark coverage under their recorded configurations | [Runtime](docs/cdb_runtime.md), [accuracy](docs/accuracy.md) |
+| Ouro-2.6B | Shared Ouro | Shares the Ouro implementation; not separately qualified, and 1.4B quality/performance results are not inherited | [Scope notes](docs/recipes/ouro_thinking.md#6-evidence-and-limitations) |
+| Ouro-1.4B-Thinking | Reuses Ouro | Bounded BF16, fixed-four-loop synchronous basic integration | [Shared recipe](docs/recipes/ouro_thinking.md) |
+| Ouro-2.6B-Thinking | Reuses Ouro | Bounded BF16, fixed-four-loop synchronous basic integration | [Shared recipe](docs/recipes/ouro_thinking.md) |
+| Nanbeige4.2-3B | Native Nanbeige | Fixed two-loop inference | [Runtime](docs/cdb_runtime.md) |
+| Huginn-0125 | Native Huginn | Synchronous fixed-depth, LAST_EXITED KV, CUDA Graph decode core and coda | [Runtime](docs/cdb_runtime.md) |
+
+Shared implementation does not qualify every checkpoint/feature combination;
+see the linked guides for validation scope and limitations. See
+[RFC #69](https://github.com/ThinkFlowLab/vllm-rlt/issues/69) for the broader roadmap.
 
 Huginn uses native checkpoint loading and depth-aware KV for its recurrent
 core, with separate prelude and coda KV. It supports synchronous fixed-depth

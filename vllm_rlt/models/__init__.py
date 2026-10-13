@@ -99,6 +99,21 @@ def resolve_model_config(path_or_repo, *, revision=None):
     return str(local), revision, config
 
 
+def special_token_ids(tokenizer):
+    """IDs whose tokens are marked special, including added-token metadata.
+
+    Transformers 5.14.1 can retain the special attribute while omitting a
+    checkpoint's added special tokens from ``all_special_ids``.
+    """
+    ids = set(tokenizer.all_special_ids)
+    ids.update(
+        token_id
+        for token_id, token in getattr(tokenizer, "added_tokens_decoder", {}).items()
+        if token.special
+    )
+    return ids
+
+
 def load_tokenizer(source, *, revision=None):
     """Load cached tokenizer assets, asking before any missing Hub download."""
     from transformers import AutoTokenizer
@@ -166,5 +181,6 @@ __all__ = [
     "resolve_local_model_path",
     "resolve_model_source",
     "resolve_model_config",
+    "special_token_ids",
     "load_tokenizer",
 ]
