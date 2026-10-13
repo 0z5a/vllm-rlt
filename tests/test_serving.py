@@ -30,6 +30,7 @@ from vllm_rlt.serving.worker import EngineWorker
 
 class TinyTokenizer:
     all_special_ids = [0]
+    added_tokens_decoder = {}
 
     def encode(self, text):
         return [1 + ord(c) % 63 for c in text]
@@ -188,6 +189,18 @@ def test_byte_decoder_unicode_special_tokens_and_final_flush(monkeypatch):
         deltas = [decoder.decode(token, False) for token in ids]
         deltas.append(decoder.decode(tokenizer.eos_token_id, True))
         assert "".join(deltas) == tokenizer.decode(ids)
+
+
+def test_incremental_text_uses_added_special_token_metadata():
+    tokenizer = SimpleNamespace(
+        all_special_ids=[0],
+        # Transformers 5.14.1 omits added special tokens from all_special_ids.
+        added_tokens_decoder={4: SimpleNamespace(special=True), 9: SimpleNamespace(special=False)},
+        convert_ids_to_tokens=lambda token: "</think>" if token == 4 else "x",
+    )
+    decoder = IncrementalText(tokenizer)
+    assert decoder.decode(4, False) == ""
+    assert decoder.decode(9, True) == "x"
 
 
 @pytest.mark.parametrize("byte_level", [False, True])
@@ -751,12 +764,16 @@ def test_http_trace_selection_and_concurrent_reuse(asynchronous):
     asyncio.run(run())
 
 
-def test_speculative_http_and_stream_deliver_entire_committed_suffix():
-    from vllm_rlt import SpeculativeConfig
+@pytest.mark.parametrize("asynchronous", [False, pytest.param(True, marks=pytest.mark.gpu)])
+def test_speculative_http_and_stream_deliver_entire_committed_suffix(asynchronous):
+    from vllm_rlt import ExecutionConfig, SpeculativeConfig
 
     def load():
         torch.manual_seed(123)
-        m = OuroForCausalLM(tiny_ouro_config())
+        m = OuroForCausalLM(tiny_ouro_config()).to(
+            device="cuda" if asynchronous else "cpu",
+            dtype=torch.bfloat16 if asynchronous else torch.float32,
+        )
 
         # Force full acceptance of a printable token so this test exercises
         # multi-token chunks regardless of random tiny-model draft quality.
@@ -766,7 +783,13 @@ def test_speculative_http_and_stream_deliver_entire_committed_suffix():
             return logits
 
         m.coda = coda
-        return LLMEngine(m, speculative_config=SpeculativeConfig(4)), TinyTokenizer()
+        return LLMEngine(
+            m,
+            speculative_config=SpeculativeConfig(4),
+            execution_config=ExecutionConfig(async_scheduling=asynchronous),
+            attention_backend="triton" if asynchronous else "torch",
+            cache_config=CacheConfig(128, 2),
+        ), TinyTokenizer()
 
     direct, tokenizer = load()
     direct.add_request("r", tokenizer.encode("abc"), SamplingParams(max_tokens=12, ignore_eos=True))

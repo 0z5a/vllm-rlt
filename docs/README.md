@@ -6,10 +6,10 @@ an environment to receiving the first generated response. The
 
 | Guide | Topics |
 | --- | --- |
+| [Developer Must-Read](developer-guide.md) | Requirement understanding, correctness, performance analysis, refactoring rules, and completion criteria |
 | [First-run user guide](launching.md) | Environment setup, model download, server startup, first request, CLI, Python API, and troubleshooting |
 | [Engine design](design.md) | Model stages, scheduling, and KV ownership |
 | [Scheduler walkthrough](scheduler_walkthrough.md) | Responsibilities, admission cases, control flow, and refactoring checklist |
-| [Sampling walkthrough](sampling_walkthrough.md) | Sampling algorithm, RNG lifecycle across preemption and termination, and known limits |
 | [KV layout examples](kv_layout_computation.md) | SHARED and LAST_EXITED semantics and worked attention examples |
 | [KV cache walkthrough](kv_cache_walkthrough.md) | Allocation state, contracts, cross-module dependencies, and the M4 migration plan |
 | [Runtime configuration](cdb_runtime.md) | Exit policies, KV layouts, execution options, and CUDA Graphs |
@@ -19,12 +19,19 @@ an environment to receiving the first generated response. The
 | [Prefill/decode disaggregation](https://github.com/hsliuustc0106/vllm-rlt/pull/31) | Single-host GPU worker pools and NIXL transfer |
 | [HTTP serving](serving.md) | Completions API, streaming, and service lifecycle |
 | [Profiling](profiling.md) | Core profiler options, Python/HTTP controls, PD collection, and per-rank archives |
+| [Ouro-Thinking recipe](recipes/ouro_thinking.md) | Shared 1.4B/2.6B setup, JSON/SSE client, budgets and validation limits |
 | [Accuracy evaluation](accuracy.md) | GSM8K regression setup and comparison methodology |
 
 ## Support and Runtime Notes
 
-Current model support is limited to Ouro-1.4B. CPU execution provides a Torch
-reference backend. FlashAttention hardware validation is currently documented
+Supported models are Ouro-1.4B, Nanbeige4.2-3B and Huginn-0125. See the
+[checkpoint support matrix](../README.md#model-support) and the
+[Thinking recipe](recipes/ouro_thinking.md) for model-specific coverage.
+Huginn currently uses synchronous execution, LAST_EXITED KV, and fixed
+recurrent depth; prefix caching, asynchronous execution, and speculative
+decoding are rejected. Its CUDA Graphs capture the recurrent decode core
+and coda, including the LM head.
+CPU execution provides a Torch reference backend. FlashAttention hardware validation is currently documented
 for FA4 on B300; FA2/FA3 require validation on their target devices. Disaggregated
 serving currently targets multiple GPUs on a single host.
 

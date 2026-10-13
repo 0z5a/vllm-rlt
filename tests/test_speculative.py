@@ -20,8 +20,8 @@ from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Request, Stage
-from vllm_rlt.worker.sampling import probabilities, rejection_sample
-from vllm_rlt.worker.speculative import greedy_accept
+from vllm_rlt.worker.sampler import Sampler
+from vllm_rlt.worker.speculative import greedy_accept, rejection_sample
 
 
 def model(seed=123, dtype=torch.float32):
@@ -297,6 +297,98 @@ def test_sampling_seeded_replay_and_request_isolation(top_k, top_p):
     assert [run([p])[0].token_ids for p in prompts] == [o.token_ids for o in batched]
 
 
+def test_both_runners_share_the_engine_rng_registry():
+    # The registry belongs to the engine because LLMEngine builds SpeculativeRunner
+    # before ModelRunner and passes neither to the other. If the two runners held
+    # separate registries, preemption and termination would stop covering the
+    # speculative path's RNG.
+    e = engine(model())
+    assert e.model_runner.rng is e.rng
+    assert e.speculative_runner.rng is e.rng
+
+    plain = LLMEngine(model())
+    assert plain.model_runner.rng is plain.rng
+    assert plain.speculative_runner is None
+    # The asynchronous configuration holds AsyncSpeculativeRunner instead; its
+    # constructor allocates CUDA streams, so that case is covered by
+    # test_async_speculative.py::test_async_speculative_engine_shares_its_registry.
+
+
+def test_acquire_generator_uses_the_logits_device(monkeypatch):
+    # The speculative helper must hand acquire() the logits row's device, not the
+    # model's. A different runner device makes the two sources distinguishable on a
+    # CPU-only machine; the spy returns a real CPU generator so the fake device is
+    # never allocated.
+    e = engine(model())
+    runner = e.speculative_runner
+    runner.device = torch.device("meta")
+    recorded = []
+    real_acquire = e.rng.acquire
+
+    def spy(request_id, params, device):
+        recorded.append(device)
+        return real_acquire(request_id, params, torch.device("cpu"))
+
+    monkeypatch.setattr(e.rng, "acquire", spy)
+    logits = torch.linspace(1.0, -1.0, 8)
+    request = Request("r", [2, 3], SamplingParams(temperature=0.7, seed=5))
+    generator = runner._acquire_generator(request, logits)
+    assert recorded == [logits.device]
+    assert runner.device != logits.device
+    assert generator.device == logits.device
+
+
+def test_speculative_greedy_execution_never_acquires_a_generator(monkeypatch):
+    # The CODA path has the same check in test_engine.py; this one proves the
+    # contract on a request that really executes through Stage.SPECULATIVE, so a
+    # generator that is created but unused would still be caught.
+    e = engine(model())
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("greedy speculative sampling must not acquire a generator")
+
+    monkeypatch.setattr(e.rng, "acquire", forbidden)
+    e.add_request("r", [2, 3, 4], SamplingParams(max_tokens=6, ignore_eos=True))
+    stages = []
+    for _ in range(2000):
+        if not e.has_unfinished_requests():
+            break
+        e.step()
+        stages.append(e.last_schedule.stage)
+    else:
+        pytest.fail("speculative engine did not drain")
+    assert Stage.SPECULATIVE in stages
+    assert e.rng.peek("r") is None
+
+
+def test_speculative_path_advances_the_registry_generator():
+    # Sharing the registry is not enough: the speculative path must actually draw
+    # from the stored generator. Rebuilding or reseeding one per call would keep
+    # the slot frozen and silently change every sampled token after the first.
+    e = engine(model())
+    params = SamplingParams(
+        max_tokens=24, temperature=0.8, top_k=7, top_p=0.8, seed=42, ignore_eos=True
+    )
+    e.add_request("r", [2, 3, 4], params)
+
+    def step_until_speculative():
+        for _ in range(10):
+            e.step()
+            if e.last_schedule.stage == Stage.SPECULATIVE:
+                return True
+        return False
+
+    assert step_until_speculative()
+    generator = e.rng.peek("r")
+    assert generator is not None
+    state = generator.get_state().clone()
+
+    assert step_until_speculative()
+    assert e.has_unfinished_requests()
+    assert e.rng.peek("r") is generator
+    assert not torch.equal(generator.get_state(), state)
+
+
 @pytest.mark.parametrize(
     "p,q",
     [
@@ -316,14 +408,18 @@ def test_rejection_sampling_recovers_target_distribution(p, q):
     torch.testing.assert_close(counts / counts.sum(), p, atol=0.016, rtol=0)
 
 
-def test_probability_filters_match_expected_and_keep_boundary_ties():
+def test_probability_filters_match_expected_and_apply_strict_top_k():
     logits = torch.tensor([0.50, 0.25, 0.15, 0.10]).log()
-    p = probabilities(logits, SamplingParams(temperature=1, top_p=0.8))
+    p = Sampler.probabilities(logits, SamplingParams(temperature=1, top_p=0.8))
     torch.testing.assert_close(p, torch.tensor([0.50, 0.25, 0.15, 0]) / 0.9)
-    p = probabilities(logits, SamplingParams(temperature=0.5, top_k=2))
+    p = Sampler.probabilities(logits, SamplingParams(temperature=0.5, top_k=2))
     torch.testing.assert_close(p, torch.tensor([0.8, 0.2, 0, 0]))
-    p = probabilities(torch.zeros(4), SamplingParams(temperature=1, top_k=1))
-    torch.testing.assert_close(p, torch.full((4,), 0.25))
+    # All four logits are tied, so the threshold mask used to keep all of them
+    # (a uniform 0.25). Strict top-k keeps exactly one; which index survives a tie
+    # is not guaranteed across devices, so only the count and weight are asserted.
+    p = Sampler.probabilities(torch.zeros(4), SamplingParams(temperature=1, top_k=1))
+    assert int((p > 0).sum()) == 1
+    torch.testing.assert_close(p[p > 0], torch.ones(1))
 
 
 @pytest.mark.parametrize(
@@ -560,6 +656,7 @@ def test_speculative_preemption_preserves_request_rng(temperature):
         rid: out.exit_depths for rid, out in expected.items()
     }
     assert not e.preemption.snapshots
+    assert not e.rng.generators
     assert e.cache_manager.num_used_blocks == 0
 
 

@@ -97,6 +97,27 @@ class _PreparedKVBatch:
     max_seqlen_q: int = 1
 
 
+@dataclass(frozen=True, eq=False)
+class _DeviceKVBatch:
+    """Stream-ordered decode metadata with device-owned positions.
+
+    Created and validated by KVCacheManager; it contains borrowed allocation
+    identities and read-only tensor metadata, never a manager reference. Tensor
+    storage and completion events belong to the runner.
+
+    The caller reserves all pages before submission and retains allocations until
+    the final GPU reader completes. Unlike _PreparedKVBatch, this descriptor does
+    not claim that CPU written-position bookkeeping describes in-flight decode.
+    """
+
+    allocations: tuple[tuple[str, _Allocation], ...]
+    position_ids: torch.Tensor
+    write_blocks: torch.Tensor
+    write_offsets: torch.Tensor
+    block_tables: torch.Tensor
+    context_lengths: torch.Tensor
+
+
 class KVCacheManager:
     """Own a fixed physical page pool shared by request/depth allocations.
 
@@ -120,6 +141,7 @@ class KVCacheManager:
         enable_prefix_caching: bool = False,
         incremental_allocation: bool = False,
         watermark_ratio: float = 0.0,
+        recurrent_layers: Sequence[int] | None = None,
         *,
         attention: AttentionBackend | None = None,
     ):
@@ -140,6 +162,17 @@ class KVCacheManager:
         if layout not in {"last_exited", "shared"}:
             raise ValueError("unsupported KV layout")
         self.layout = layout
+        self.recurrent_layers = (
+            tuple(range(num_layers)) if recurrent_layers is None else tuple(recurrent_layers)
+        )
+        if not self.recurrent_layers or len(set(self.recurrent_layers)) != len(
+            self.recurrent_layers
+        ):
+            raise ValueError("recurrent_layers must be nonempty and unique")
+        if any(
+            type(layer) is not int or not 0 <= layer < num_layers for layer in self.recurrent_layers
+        ):
+            raise ValueError("recurrent_layers must be valid cache layer indices")
         self.storage_depths = max_loops if layout == "last_exited" else 1
         self.device = torch.device(device)
         self.dtype = dtype
@@ -457,7 +490,10 @@ class KVCacheManager:
         allocation = self._get_allocation(request_id)
         self._validate_depth(exit_depth)
         self._validate_position(allocation, position)
-        if not self._token_written(allocation, position, exit_depth):
+        if any(
+            position not in allocation.written[self._plane(exit_depth)][layer]
+            for layer in self.recurrent_layers
+        ):
             raise RuntimeError(
                 "cannot finalize a token before every layer has written its exit depth"
             )
@@ -467,7 +503,7 @@ class KVCacheManager:
         if self.layout == "shared":
             return
         for depth in range(exit_depth + 1, self.max_loops):
-            for layer in range(self.num_layers):
+            for layer in self.recurrent_layers:
                 allocation.written[self._plane(depth)][layer].add(position)
 
     def snapshot(self, request_id: str) -> KVSnapshot:
@@ -700,8 +736,54 @@ class KVCacheManager:
         host = torch.tensor(values, dtype=dtype, pin_memory=self.device.type == "cuda")
         return host.to(self.device, non_blocking=True)
 
-    def _require_live_batch(self, batch: _PreparedKVBatch) -> None:
-        if batch.owner is not self:
+    def _prepare_device_batch(
+        self,
+        *,
+        allocations,
+        position_ids,
+        write_blocks,
+        write_offsets,
+        block_tables,
+        context_lengths,
+    ) -> _DeviceKVBatch:
+        """Borrow stream-ordered metadata without reading device positions on CPU.
+
+        The runner reserves the upper bound and retains these allocation objects
+        until GPU completion. This does not advance host written-position state.
+        Allocation identity also rejects descriptors from another cache manager.
+        """
+        batch = _DeviceKVBatch(
+            tuple(allocations),
+            position_ids,
+            write_blocks,
+            write_offsets,
+            block_tables,
+            context_lengths,
+        )
+        self._require_live_batch(batch)
+        rows = len(position_ids)
+        for name, tensor, dtype in (
+            ("position_ids", position_ids, torch.int64),
+            ("write_blocks", write_blocks, torch.int64),
+            ("write_offsets", write_offsets, torch.int64),
+            ("context_lengths", context_lengths, torch.int32),
+        ):
+            if tensor.shape != (rows,) or tensor.dtype != dtype or tensor.device != self.device:
+                raise ValueError(f"{name} must have shape [rows] and use {dtype} on {self.device}")
+        if (
+            not allocations
+            or block_tables.ndim != 2
+            or block_tables.shape[0] != rows
+            or block_tables.shape[1] == 0
+            or block_tables.dtype != torch.int32
+            or block_tables.device != self.device
+            or not block_tables.is_contiguous()
+        ):
+            raise ValueError("device block tables must be contiguous int32 [rows, pages]")
+        return batch
+
+    def _require_live_batch(self, batch: _PreparedKVBatch | _DeviceKVBatch) -> None:
+        if isinstance(batch, _PreparedKVBatch) and batch.owner is not self:
             raise ValueError("prepared KV batch belongs to a different cache manager")
         for request_id, allocation in batch.allocations:
             if self._allocations.get(request_id) is not allocation:
@@ -741,10 +823,16 @@ class KVCacheManager:
 
     @torch.no_grad()
     def _write_prepared(
-        self, layer: int, batch: _PreparedKVBatch, k: torch.Tensor, v: torch.Tensor
+        self, layer: int, batch: _PreparedKVBatch | _DeviceKVBatch, k: torch.Tensor, v: torch.Tensor
     ) -> None:
         self._validate_layer(layer)
         self._require_live_batch(batch)
+        if isinstance(batch, _DeviceKVBatch):
+            self._validate_tensor(k, len(batch.position_ids), "k")
+            self._validate_tensor(v, len(batch.position_ids), "v")
+            self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k
+            self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v
+            return
         if not batch.writable:
             raise ValueError("a read-only prepared KV batch cannot be written")
         self._validate_tensor(k, len(batch.position_ids), "k")
@@ -781,11 +869,19 @@ class KVCacheManager:
 
     @torch.no_grad()
     def _attend_prepared(
-        self, layer: int, batch: _PreparedKVBatch, q: torch.Tensor
+        self, layer: int, batch: _PreparedKVBatch | _DeviceKVBatch, q: torch.Tensor
     ) -> torch.Tensor:
         self._validate_layer(layer)
         self._require_live_batch(batch)
         self._validate_tensor(q, len(batch.position_ids), "q", query=True)
+        if isinstance(batch, _DeviceKVBatch):
+            return self.attention(
+                q,
+                self.key_cache[:, layer],
+                self.value_cache[:, layer],
+                batch.block_tables,
+                batch.context_lengths,
+            )
         if not batch.rows:
             return torch.empty_like(q)
         for allocation, depth, position in batch.rows:
@@ -823,8 +919,17 @@ class KVCacheManager:
         # Basic-index copies avoid a blocking host->device index tensor on the
         # boundary stream. That transfer would serialize final core and routing.
         for destination in destinations:
-            self.key_cache[destination, :, offset].copy_(self.key_cache[source, :, offset])
-            self.value_cache[destination, :, offset].copy_(self.value_cache[source, :, offset])
+            if len(self.recurrent_layers) == self.num_layers:
+                self.key_cache[destination, :, offset].copy_(self.key_cache[source, :, offset])
+                self.value_cache[destination, :, offset].copy_(self.value_cache[source, :, offset])
+            else:
+                for layer in self.recurrent_layers:
+                    self.key_cache[destination, layer, offset].copy_(
+                        self.key_cache[source, layer, offset]
+                    )
+                    self.value_cache[destination, layer, offset].copy_(
+                        self.value_cache[source, layer, offset]
+                    )
         self._record_finalized(allocation, position, exit_depth)
 
     @torch.no_grad()
