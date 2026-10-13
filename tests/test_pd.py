@@ -61,7 +61,7 @@ def test_segment_ranges_cover_only_valid_tokens_and_all_layers_depths():
         key_ptr=0,
         value_ptr=10**9,
     )
-    tables = c._get_allocation("a").block_tables
+    tables = c.plane_block_tables("a")
     expected = set()
     for table in tables:
         for token in range(2, 9):
@@ -239,6 +239,8 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
     from vllm_rlt.request import Request, Stage
 
     engine = object.__new__(LLMEngine)
+    engine.async_speculative = False
+    engine._update_version = None
     engine.profiling = Profiler("cpu")
     engine.preemption = PreemptionManager(engine)
     engine.execution_config = ExecutionConfig(async_scheduling=async_scheduling)

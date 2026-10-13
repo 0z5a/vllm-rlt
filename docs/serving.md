@@ -85,6 +85,19 @@ tokens, rather than from re-tokenizing the displayed text.
 The decoder processes each sampled token once, retaining only incomplete UTF-8
 bytes between events. Completed text is never decoded again.
 
+## Ouro-Thinking prompts
+
+For checkpoint setup, executable JSON/SSE examples, loop configuration,
+KV sizing and validation scope, see the
+[Ouro-Thinking recipe](recipes/ouro_thinking.md).
+
+The completions API contract here is unchanged for Thinking checkpoints: the
+server accepts a single pre-rendered `prompt` string, not `messages` or an
+`enable_thinking` field, and does not apply a chat template itself. Prepare the
+prompt on the client with the shared helper described in the recipe. Responses
+remain cleaned completion text with no separate reasoning field; decoding hides
+special tokens while retaining reasoning prose.
+
 ## Ownership, limits and errors
 
 One worker thread owns initialization, tokenization, engine admission, every
@@ -170,8 +183,14 @@ for its measurement scope.
 CPU tests use small models and real loopback sockets:
 
 ```bash
-OMP_NUM_THREADS=1 python -m pytest -q tests/test_serving.py tests/test_engine.py
+OMP_NUM_THREADS=1 python -m pytest -q \
+  tests/test_serving.py tests/test_engine.py tests/test_chat_template.py
 ```
+
+Chat-template tests cover input validation and forwarding of template options.
+Set `OURO_BASE_TOKENIZER`, `OURO_14B_THINKING_TOKENIZER` and
+`OURO_26B_THINKING_TOKENIZER` to prepared local checkpoint directories to also
+check their official templates; these opt-in tests never download assets.
 
 For real-model checks, validate the first inference after readiness and
 overlapping requests against direct engine execution for text, usage and finish
