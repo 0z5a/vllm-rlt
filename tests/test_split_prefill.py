@@ -607,19 +607,19 @@ def test_cuda_submit_readback_failure_releases_metadata_leases():
 
 
 def advance_chunk(request, item):
-    """Apply one completed depth run to the request's depth frontiers.
+    """Apply one submitted depth run to the request's logical frontiers.
 
-    The run leaves `running_depth_boundary[depth]` and extends the right edge of
+    The run leaves `prefill_depth_ranges[depth]` and extends the right edge of
     the next frontier, or joins the finished prefix at the last depth.
     """
     depth = request.prefill_depth(item.token_start)
-    boundary = request.running_depth_boundary[depth]
+    boundary = request.prefill_depth_ranges[depth]
     assert item.token_start == boundary[0], "a depth run must start at its frontier"
     end = item.token_start + item.token_count
-    request.running_depth_boundary[depth] = [end, boundary[1]]
+    request.prefill_depth_ranges[depth] = [end, boundary[1]]
     if depth + 1 < TOTAL_DEPTHS:
-        deeper = request.running_depth_boundary[depth + 1]
-        request.running_depth_boundary[depth + 1] = [deeper[0], end]
+        deeper = request.prefill_depth_ranges[depth + 1]
+        request.prefill_depth_ranges[depth + 1] = [deeper[0], end]
     else:
         request.num_prefilled_tokens = end
     return depth
@@ -678,7 +678,7 @@ def test_split_prefill_steps_one_depth_per_chunk_and_keeps_the_prompt_ordered():
         (Stage.PREFILLING_RECURRENT, 4, 1, 3),
     ]
     assert request.num_prefilled_tokens == 5
-    assert all(left == right for left, right in request.running_depth_boundary)
+    assert all(left == right for left, right in request.prefill_depth_ranges)
 
 
 def test_engine_split_prefill_transition_advances_the_same_frontier_contract():
@@ -693,7 +693,7 @@ def test_engine_split_prefill_transition_advances_the_same_frontier_contract():
             break
         assert len(batch.items) == 1
         item = batch.items[0]
-        progress = e._advance_prefill(request, batch.stage, item)
+        progress = e._apply_split_prefill_progress(request, batch.stage, item)
         trace.append((batch.stage, item.token_start, item.token_count, item.depth))
         if progress.prompt_complete:
             break
@@ -778,7 +778,7 @@ def test_sync_split_prefill_abort_releases_slot_before_request_id_reuse():
     split.step()  # Complete depth zero, leaving the chunk resident.
     request = split.scheduler.requests["reused"]
     assert request.num_prefilled_tokens == 0
-    assert request.running_depth_boundary[0] == [2, 4]
+    assert request.prefill_depth_ranges[0] == [2, 4]
     assert split.model_runner.state_slots == {"reused": 0}
 
     split.abort_request("reused")
@@ -825,6 +825,8 @@ def test_cpu_async_split_frontier_advances_once_per_submission():
         if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
             ticket.event = HeldEvent()
             held.append(ticket.event)
+            for item in batch.items:
+                e.model_runner.events[item.request.request_id] = ticket.event
         return ticket
 
     e.model_runner.submit = hold_split_ticket
@@ -835,9 +837,10 @@ def test_cpu_async_split_frontier_advances_once_per_submission():
 
     assert request.stage is Stage.CODA
     assert request.num_prefilled_tokens == len(prompt)
-    assert all(left == right for left, right in request.running_depth_boundary)
+    assert all(left == right for left, right in request.prefill_depth_ranges)
     assert len(held) == 15  # Three chunks, each with prelude plus four depths.
     assert e.model_runner.split_prefill_submissions == len(held)
+    assert all(not event.complete for event in held)
     for event in held:
         event.complete = True
 
@@ -873,7 +876,7 @@ def test_runner_slot_release_waits_for_last_request_event():
     e.scheduler._admit()
     request = e.scheduler.requests["slot"]
     runner = e.model_runner
-    slot = runner._slot(request)
+    slot = runner._ensure_request_slot(request)
 
     def verify_slot_is_still_owned():
         assert runner.state_slots["slot"] == slot
@@ -913,7 +916,7 @@ def test_split_preemption_rewinds_and_recomputes_the_resident_chunk(completed_de
     assert e.preemption.snapshots["victim"]["stage"] is Stage.PREFILLING_PRELUDE
     assert request.num_preluded_tokens == request.num_prefilled_tokens
     assert request.prefill_chunk_start == request.num_prefilled_tokens
-    assert all(left == request.num_prefilled_tokens for left, _ in request.running_depth_boundary)
+    assert all(left == request.num_prefilled_tokens for left, _ in request.prefill_depth_ranges)
     assert e.cache_manager.num_used_blocks == 0
 
     e.scheduler._admit()
@@ -1109,7 +1112,7 @@ def test_cuda_split_prefill_survives_decode_graph_capture_and_replay():
             e.step()
             split_request = e.scheduler.requests["split"]
             assert split_request.stage is Stage.PREFILLING_RECURRENT
-            assert split_request.running_depth_boundary[0] == [2, 4]
+            assert split_request.prefill_depth_ranges[0] == [2, 4]
             # Keep the staged chunk resident while decode triggers graph capture.
             e.scheduler.queues[Stage.PREFILLING_RECURRENT].remove("split")
 
@@ -1393,7 +1396,7 @@ def test_split_prefill_stages_after_a_reused_prompt_prefix():
         "a",
         [1, 2, 3, 4, 5],
         SamplingParams(max_tokens=2, ignore_eos=True),
-        running_depth_boundary=Request.prefill_boundaries(5, TOTAL_DEPTHS),
+        prefill_depth_ranges=Request.prefill_boundaries(5, TOTAL_DEPTHS),
     )
     # Admission sets both frontiers to the cached token count.
     request.num_prefilled_tokens = 2
@@ -1404,19 +1407,19 @@ def test_split_prefill_stages_after_a_reused_prompt_prefix():
     assert request.prefill_depth(item.token_start) == 0
 
 
-def test_prefill_boundaries_track_completed_depths():
+def test_prefill_depth_ranges_track_logical_depths():
     request = Request(
         "a",
         [1, 2, 3],
         SamplingParams(),
-        running_depth_boundary=Request.prefill_boundaries(3, TOTAL_DEPTHS),
+        prefill_depth_ranges=Request.prefill_boundaries(3, TOTAL_DEPTHS),
     )
-    assert request.running_depth_boundary == [[0, 3], [0, 0], [0, 0], [0, 0]]
+    assert request.prefill_depth_ranges == [[0, 3], [0, 0], [0, 0], [0, 0]]
     assert request.prefill_depth(0) == 0
     assert request.prefill_depth(2) == 0
 
-    request.running_depth_boundary[0] = [2, 3]
-    request.running_depth_boundary[1] = [0, 2]
+    request.prefill_depth_ranges[0] = [2, 3]
+    request.prefill_depth_ranges[1] = [0, 2]
     assert request.prefill_depth(1) == 1
     assert request.prefill_depth(2) == 0
 
@@ -1425,7 +1428,7 @@ def test_prefill_boundaries_track_completed_depths():
             "b",
             [1],
             SamplingParams(),
-            running_depth_boundary=Request.prefill_boundaries(1, 1),
+            prefill_depth_ranges=Request.prefill_boundaries(1, 1),
         ).prefill_depth(5)
 
 

@@ -44,9 +44,9 @@ class Request:
     # Start of the resident chunk. It stays fixed while the final depth advances
     # a partial chunk and is used for runner pool row addressing.
     prefill_chunk_start: int = 0
-    # Split prefill only: per-depth written frontiers, see prefill_boundaries.
-    running_depth_boundary: list[list[int]] = field(default_factory=list, repr=False)
-    # Host progress; in async mode an event confirms submitted GPU work is done.
+    # Split prefill only: per-depth logical prompt frontiers.
+    prefill_depth_ranges: list[list[int]] = field(default_factory=list, repr=False)
+    # Host-side decode progress; ModelRunner events track pending device work.
     loops_done: int = 0
     pending_exit_depth: int | None = None
     admission_bypasses: int = 0
@@ -59,23 +59,23 @@ class Request:
     def prefill_boundaries(
         num_tokens: int, total_depths: int, *, start: int = 0
     ) -> list[list[int]]:
-        """Per-depth written frontiers of a freshly admitted split-prefill prompt.
+        """Per-depth logical frontiers of a freshly admitted split-prefill prompt.
 
-        ``running_depth_boundary[d] == [X[d + 1], X[d])`` holds the prompt tokens
-        that have completed exactly ``d`` depths, where ``X[d]`` counts the tokens
-        that completed at least ``d`` depths. A new request has ``X[0]`` at the
-        full prompt and every deeper frontier at zero. Advancing a run
+        ``prefill_depth_ranges[d] == [X[d + 1], X[d])`` gives the prompt tokens
+        at logical depth ``d``, where ``X[d]`` counts tokens logically advanced
+        through at least ``d`` depths. A new request has ``X[0]`` at the full
+        prompt and every deeper frontier at zero. Advancing a submitted run
         ``[left, right)`` from depth ``d`` to ``d + 1`` sets ``X[d + 1] = right``:
         the run leaves ``boundary[d]`` and extends the right edge of
         ``boundary[d + 1]``. A run may start only at ``X[d + 1]`` so no depth
-        frontier ever has a hole. Every interval is empty once prefill completes,
-        and ``num_prefilled_tokens`` then holds the finished prefix.
+        frontier ever has a hole. Every interval is empty once logical prefill
+        completes, and ``num_prefilled_tokens`` then holds the finished prefix.
         """
         return [[start, num_tokens]] + [[start, start] for _ in range(total_depths - 1)]
 
     def prefill_depth(self, token_index: int) -> int:
-        """Completed recurrence depth of the prompt token at ``token_index``."""
-        for depth, (left, right) in enumerate(self.running_depth_boundary):
+        """Logical recurrence depth of the prompt token at ``token_index``."""
+        for depth, (left, right) in enumerate(self.prefill_depth_ranges):
             if left <= token_index < right:
                 return depth
         raise RuntimeError(

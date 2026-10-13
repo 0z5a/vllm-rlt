@@ -45,7 +45,11 @@ class SchedulerOutput:
 
 @dataclass(frozen=True)
 class PrefillProgress:
-    """Host-side result of applying one completed split-prefill batch."""
+    """Logical host-side progress for submitted split-prefill work.
+
+    These flags describe request frontiers, not GPU completion. Device work may
+    still be pending when the chunk or prompt becomes logically complete.
+    """
 
     chunk_complete: bool
     prompt_complete: bool
@@ -198,7 +202,7 @@ class Scheduler:
                 Stage.PREFILL,
                 Stage.PREFILLING_PRELUDE,
                 Stage.PREFILLING_RECURRENT,
-              ) and not (reserve_outputs and active):
+            ) and not (reserve_outputs and active):
                 continue
             tokens = len(request.prompt_token_ids)
             if reserve_outputs:
@@ -270,10 +274,10 @@ class Scheduler:
         # staged window starts closed at that frontier and opens for the rest.
         request.num_preluded_tokens = plan.cached_tokens
         request.prefill_chunk_start = plan.cached_tokens
-        if request.running_depth_boundary:
-            request.running_depth_boundary[:] = Request.prefill_boundaries(
+        if request.prefill_depth_ranges:
+            request.prefill_depth_ranges[:] = Request.prefill_boundaries(
                 len(request.prompt_token_ids),
-                len(request.running_depth_boundary),
+                len(request.prefill_depth_ranges),
                 start=plan.cached_tokens,
             )
         if self.atomic_prefill:
@@ -367,7 +371,7 @@ class Scheduler:
             # this depth, and no earlier token is missing a shallower one, so the
             # plane's causal prefix covers the run. Tokens past num_preluded_tokens
             # have no resident prelude and cannot run yet.
-            boundary = request.running_depth_boundary[first_token_depth]
+            boundary = request.prefill_depth_ranges[first_token_depth]
             count = min(
                 token_budget,
                 self.config.prefill_chunk_size,
@@ -382,7 +386,7 @@ class Scheduler:
                 depth=first_token_depth,
                 chunk_start=request.prefill_chunk_start,
                 completes_prompt=(
-                    first_token_depth == len(request.running_depth_boundary) - 1
+                    first_token_depth == len(request.prefill_depth_ranges) - 1
                     and start + count == len(request.prompt_token_ids)
                 ),
             )

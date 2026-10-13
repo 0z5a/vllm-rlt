@@ -4,6 +4,7 @@ import math
 from collections import deque
 from contextlib import nullcontext
 from dataclasses import dataclass, replace
+from typing import NamedTuple
 
 import torch
 
@@ -33,6 +34,14 @@ class PrefillMetadataLease:
     host_token_ids_array: object
     event: object = None
     in_use: bool = False
+
+
+class PrefillSegment(NamedTuple):
+    state_slot: int
+    chunk_offset: int
+    token_count: int
+    batch_row_start: int
+    keep_intermediate: bool
 
 
 class PrefillMetadataPool:
@@ -332,13 +341,11 @@ class ModelRunner:
         ):
             request.hidden_state = state.clone()
         else:
-            rid = request.request_id
-            if rid not in self.state_slots:
-                self.state_slots[rid] = self.free_state_slots.pop()
-            request.hidden_state = self.states[self.state_slots[rid]]
+            slot = self._ensure_request_slot(request)
+            request.hidden_state = self.states[slot]
             request.hidden_state.copy_(state)
 
-    def _slot(self, request):
+    def _ensure_request_slot(self, request):
         if self.async_state is not None:
             return self.async_state.reserve_slot(request)
         rid = request.request_id
@@ -350,18 +357,24 @@ class ModelRunner:
         row_start = 0
         max_rows = 0
         for index, item in enumerate(batch.items):
-            slot = self._slot(item.request)
-            offset = item.token_start - item.chunk_start
+            state_slot = self._ensure_request_slot(item.request)
+            chunk_offset = item.token_start - item.chunk_start
             keep_intermediate = batch.stage == Stage.PREFILLING_PRELUDE or (
                 item.depth + 1 < self.model.config.total_ut_steps
             )
-            # Packed fields: slot, chunk offset, count, batch row, keep flag.
-            lease.host_segments_array[index] = (
-                slot,
-                offset,
+            segment = PrefillSegment(
+                state_slot,
+                chunk_offset,
                 item.token_count,
                 row_start,
-                int(keep_intermediate),
+                keep_intermediate,
+            )
+            lease.host_segments_array[index] = (
+                segment.state_slot,
+                segment.chunk_offset,
+                segment.token_count,
+                segment.batch_row_start,
+                int(segment.keep_intermediate),
             )
             row_start += item.token_count
             max_rows = max(max_rows, item.token_count)
@@ -396,11 +409,15 @@ class ModelRunner:
                 256,
             )
             return hidden
-        for slot, offset, rows, row_start, _ in metadata.lease.host_segments_array[
-            : len(prepared.batch.items)
-        ]:
-            hidden[row_start : row_start + rows].copy_(
-                self.prefill_states[slot, offset : offset + rows]
+        for values in metadata.lease.host_segments_array[: len(prepared.batch.items)]:
+            segment = PrefillSegment(*values)
+            start = segment.batch_row_start
+            end = start + segment.token_count
+            hidden[start:end].copy_(
+                self.prefill_states[
+                    segment.state_slot,
+                    segment.chunk_offset : segment.chunk_offset + segment.token_count,
+                ]
             )
         return hidden
 
@@ -428,17 +445,15 @@ class ModelRunner:
                 256,
             )
         else:
-            for (
-                slot,
-                offset,
-                rows,
-                row_start,
-                keep_intermediate,
-            ) in metadata.lease.host_segments_array[: len(prepared.batch.items)]:
-                if not keep_intermediate:
+            for values in metadata.lease.host_segments_array[: len(prepared.batch.items)]:
+                segment = PrefillSegment(*values)
+                if not segment.keep_intermediate:
                     continue
-                self.prefill_states[slot, offset : offset + rows].copy_(
-                    hidden[row_start : row_start + rows]
+                self.prefill_states[
+                    segment.state_slot,
+                    segment.chunk_offset : segment.chunk_offset + segment.token_count,
+                ].copy_(
+                    hidden[segment.batch_row_start : segment.batch_row_start + segment.token_count]
                 )
 
     def _store_split_prefill_outputs(self, hidden, prepared):

@@ -167,7 +167,7 @@ class PDWorker:
             request.num_prefilled_tokens = hit
             request.num_preluded_tokens = hit
             request.prefill_chunk_start = hit
-            request.running_depth_boundary[:] = request.prefill_boundaries(
+            request.prefill_depth_ranges[:] = request.prefill_boundaries(
                 len(request.prompt_token_ids),
                 self.model.config.total_ut_steps,
                 start=hit,
@@ -360,7 +360,9 @@ class PDWorker:
                     self.prefill_tokens += item.token_count
                     continue
 
-                progress = self.engine._advance_prefill(request, stage, item, event=ticket.event)
+                progress = self.engine._apply_split_prefill_progress(
+                    request, stage, item, event=ticket.event
+                )
                 if stage == Stage.PREFILLING_PRELUDE:
                     w.transfer_overlaps += self.connector.busy(w.tid)
                 if not progress.chunk_complete:

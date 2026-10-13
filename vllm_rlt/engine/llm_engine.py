@@ -261,7 +261,7 @@ class LLMEngine:
                 exit_trace=trace,
                 # Prefill always runs the model's full depth, whatever decode
                 # loop bound the request asks for.
-                running_depth_boundary=Request.prefill_boundaries(
+                prefill_depth_ranges=Request.prefill_boundaries(
                     len(prompt_token_ids), config.total_ut_steps
                 ),
             )
@@ -398,8 +398,12 @@ class LLMEngine:
             outputs.append(RequestOutput.from_request(request))
         return outputs
 
-    def _advance_prefill(self, request, stage, item, *, event=None) -> PrefillProgress:
-        """Apply one completed split-prefill item to host-side request state."""
+    def _apply_split_prefill_progress(self, request, stage, item, *, event=None) -> PrefillProgress:
+        """Advance host-side logical progress for a submitted prefill item.
+
+        The device work may still be pending. The event orders prefix publication
+        and consumers with that work; this transition does not wait for it.
+        """
         total_depths = self.model.config.total_ut_steps
         start = item.token_start
         end = start + item.token_count
@@ -412,7 +416,7 @@ class LLMEngine:
 
         # Assertion: stage == Stage.PREFILLING_RECURRENT
         depth = item.depth
-        boundaries = request.running_depth_boundary
+        boundaries = request.prefill_depth_ranges
         boundaries[depth][0] = end
         if depth + 1 < total_depths:
             boundaries[depth + 1][1] = end
@@ -450,7 +454,7 @@ class LLMEngine:
         frontier = request.num_prefilled_tokens
         request.num_preluded_tokens = frontier
         request.prefill_chunk_start = frontier
-        request.running_depth_boundary[:] = Request.prefill_boundaries(
+        request.prefill_depth_ranges[:] = Request.prefill_boundaries(
             len(request.prompt_token_ids),
             self.model.config.total_ut_steps,
             start=frontier,
@@ -469,7 +473,7 @@ class LLMEngine:
             params = request.sampling_params
             if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
                 event = self.model_runner.events.get(request.request_id)
-                self._advance_prefill(request, batch.stage, item, event=event)
+                self._apply_split_prefill_progress(request, batch.stage, item, event=event)
             elif batch.stage == Stage.PREFILL:
                 request.num_prefilled_tokens += item.token_count
                 event = self.model_runner.events.get(request.request_id)
