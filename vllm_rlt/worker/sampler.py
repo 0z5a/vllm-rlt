@@ -86,9 +86,10 @@ class RngRegistry:
 
     The engine owns one registry and injects the same instance into every runner,
     so the CODA and speculative paths share a request's RNG slot. This registry is
-    the single creator of generators; greedy requests never get a slot, suspension
-    keeps one, and termination drops it so a request ID that is reused later starts
-    from a fresh stream.
+    the single creator of generators. Greedy token sampling needs no slot, but
+    a model's random recurrent-state initialization can acquire one. Suspension
+    keeps a slot, and termination drops it so a reused request ID starts from a
+    fresh stream.
     """
 
     def __init__(self):

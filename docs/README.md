@@ -24,8 +24,13 @@ an environment to receiving the first generated response. The
 
 ## Support and Runtime Notes
 
-See the [checkpoint support matrix](../README.md#model-support) and the
+Supported models are Ouro-1.4B, Nanbeige4.2-3B and Huginn-0125. See the
+[checkpoint support matrix](../README.md#model-support) and the
 [Thinking recipe](recipes/ouro_thinking.md) for model-specific coverage.
+Huginn currently uses synchronous execution, LAST_EXITED KV, and fixed
+recurrent depth; prefix caching, asynchronous execution, and speculative
+decoding are rejected. Its CUDA Graphs capture the recurrent decode core
+and coda, including the LM head.
 CPU execution provides a Torch reference backend. FlashAttention hardware validation is currently documented
 for FA4 on B300; FA2/FA3 require validation on their target devices. Disaggregated
 serving currently targets multiple GPUs on a single host.
