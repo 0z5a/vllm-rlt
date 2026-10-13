@@ -1,0 +1,842 @@
+{
+  "schema": "reloop-private-reference-copy-cpu-qualification-v1",
+  "status": "CPU_COMPONENT_QUALIFIED_ONLY",
+  "scope": "Private batched eligible decode reference copies into separate owned per-reference storage. Original prefill and mixed/partial fallback, both coda calls and reference checks remain. No production source files changed.",
+  "original_native_source_head": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "original_model_runner_sha256": "9d4fa38bd29fe1891a1d885843d06adbb17b7f326927d25a3d7aa1c4f15474c0",
+  "private_helper_sha256": "d3b167c8ec13faee62b1340621f10a79d67d13b8a2dfd86ab2b475727b864319",
+  "runtime": {
+    "torch": "2.12.1+cu130",
+    "triton": "3.7.1",
+    "transformers": "4.54.1"
+  },
+  "actual_CPU_returns": {
+    "primary": 0,
+    "different_node": 0,
+    "full_comparison_and_collector": 0,
+    "Mac_complete_payload_backup": 0
+  },
+  "distinct_compute_nodes": 2,
+  "cases_per_node": 30,
+  "original_source_files_verified": 133,
+  "all_case_result_observations_and_metadata_exact_across_nodes": true,
+  "full_saved_tensor_comparison": {
+    "tensors": 657,
+    "bytes": 7692340,
+    "every_tensor_full_bytes_dtype_shape_stride_verified": true,
+    "per_tensor_byte_hashes_retained_in_full_archive": true
+  },
+  "cases": [
+    {
+      "name": "uniform-1",
+      "rows": 1,
+      "batched_path": true,
+      "private_copy_counters": {
+        "batched_calls": 1,
+        "copied_rows": 1,
+        "fallback_calls": 0
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 8,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "uniform-4",
+      "rows": 4,
+      "batched_path": true,
+      "private_copy_counters": {
+        "batched_calls": 1,
+        "copied_rows": 4,
+        "fallback_calls": 0
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "uniform-16",
+      "rows": 16,
+      "batched_path": true,
+      "private_copy_counters": {
+        "batched_calls": 1,
+        "copied_rows": 16,
+        "fallback_calls": 0
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 23,
+            "reference_peak_bytes": 131072
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "uniform-32",
+      "rows": 32,
+      "batched_path": true,
+      "private_copy_counters": {
+        "batched_calls": 1,
+        "copied_rows": 32,
+        "fallback_calls": 0
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 39,
+            "reference_peak_bytes": 262144
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "uniform-64",
+      "rows": 64,
+      "batched_path": true,
+      "private_copy_counters": {
+        "batched_calls": 1,
+        "copied_rows": 64,
+        "fallback_calls": 0
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 71,
+            "reference_peak_bytes": 524288
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "disabled",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 0
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 7,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "prefill",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "prefill-duplicate",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 9,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "inactive",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 7,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "partial-active",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 9,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "partial-depth",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 10,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "heterogeneous-reference",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "heterogeneous-strength",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "strong-head",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "duplicate-id",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "noncontiguous",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "float16",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "bfloat16",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "float64",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "grad-enabled",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "depths-short",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 10,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "positions-short",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 10,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "indices-short",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 10,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "depth-generator",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "rank1",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 11,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "rank0",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 7,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": "IndexError"
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "hidden-none",
+      "rows": 4,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 7,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": "TypeError"
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "empty",
+      "rows": 0,
+      "batched_path": false,
+      "private_copy_counters": {
+        "batched_calls": 0,
+        "copied_rows": 0,
+        "fallback_calls": 1
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 7,
+            "reference_peak_bytes": 65536
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "bit-patterns",
+      "rows": 32,
+      "batched_path": true,
+      "private_copy_counters": {
+        "batched_calls": 1,
+        "copied_rows": 32,
+        "fallback_calls": 0
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 39,
+            "reference_peak_bytes": 262144
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    },
+    {
+      "name": "lifecycle-three-captures",
+      "rows": 32,
+      "batched_path": true,
+      "private_copy_counters": {
+        "batched_calls": 3,
+        "copied_rows": 96,
+        "fallback_calls": 0
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "original_reference_counters": {
+            "captures": 39,
+            "reference_peak_bytes": 262144
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        },
+        {
+          "round": 1,
+          "original_reference_counters": {
+            "captures": 71,
+            "reference_peak_bytes": 262144
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        },
+        {
+          "round": 2,
+          "original_reference_counters": {
+            "captures": 103,
+            "reference_peak_bytes": 262144
+          },
+          "full_reference_bytes_exact": true,
+          "separate_destination_storage": true,
+          "original_identity_position_output_index_loop_checks_retained": true,
+          "source_input_unchanged": true,
+          "expected_original_exception_type": null
+        }
+      ],
+      "input_and_reference_mutation_independence_verified": true
+    }
+  ],
+  "retained_preparation_failure": {
+    "stage": "CPU runtime pin before any synthetic observation",
+    "actual_return": 1,
+    "incorrect_assumed_torch": "2.12.0+cu130",
+    "verified_native_interpreter_torch": "2.12.1+cu130",
+    "executed_synthetic_cases": 0,
+    "GPU_cases": 0,
+    "repair": "Pin observed qualified native interpreter; all tensor, storage, reference and fallback gates unchanged"
+  },
+  "archive": {
+    "passed": true,
+    "scope": "Complete synthetic CPU two-node exact-byte/source/reference/storage qualification and preservation only; no CUDA, whole-model, E2E or performance claim.",
+    "payloads": 172,
+    "archive_bytes": 11833583,
+    "archive_sha256": "a9d518f6bac0180ad7c1eaf8a913a44ce796eea745046d54d7a506c924793dd9",
+    "manifest_sha256": "dc09fca7004cfb1d085748ce2671ac69c4ef7f038dddc6b117582e4677001407",
+    "full_payload_integrity_verified": true,
+    "fsync_complete": true,
+    "source_originals_retained": true
+  },
+  "backup": {
+    "full_archive_SHA256": "a9d518f6bac0180ad7c1eaf8a913a44ce796eea745046d54d7a506c924793dd9",
+    "all_payloads_verified": 172,
+    "full_compressed_and_every_payload_bytes_SHA256_verified": true,
+    "fsync_complete": true,
+    "first_copy_timeout_retained": true,
+    "recovery": "Resume retained partial copy; verify full compressed SHA256 and all payloads after actual return0"
+  },
+  "limitations": [
+    "Synthetic CPU copy/reference component only; CUDA component, full-model numerical gate and E2E remain unqualified for this new helper.",
+    "Signed-zero and NaN/Inf bit-pattern cases exercise raw copy semantics; original real-model finite/numerical gates are unchanged.",
+    "No new GPU tests, throughput measurements, quality claim or expected improvement.",
+    "Original reference views are not shared across destinations; unsupported and nonuniform cases use the original per-row method.",
+    "Previous vector-readout E2E results and C8 regression remain unchanged."
+  ],
+  "new_GPU_allocation_submitted": false,
+  "submission_ready": false
+}
