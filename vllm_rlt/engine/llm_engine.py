@@ -80,7 +80,7 @@ class LLMEngine:
                 config.vocab_size * 24 + config.hidden_size * parameter.element_size() * 2
             )
             if self.async_speculative:
-                # Two in-flight rounds, plus device and pinned page-table banks.
+                # Two in-flight rounds, plus device and pinned page-table buffers.
                 width = (config.max_position_embeddings + cache_config.block_size - 1) // (
                     cache_config.block_size
                 )
@@ -270,11 +270,18 @@ class LLMEngine:
         for rid in list(self.scheduler.requests):
             self.abort_request(rid)
         if self.async_speculative:
-            self._retire_speculative(wait=True)
-            for ticket in self._pending_speculative:
-                ticket.collect()
-                ticket.retire()
-            self._pending_speculative.clear()
+            self._discard_speculative()
+
+    def _discard_speculative(self):
+        """Release speculative owners after the caller has drained both streams."""
+        self._retire_speculative(wait=True)
+        for ticket in self._pending_speculative:
+            ticket.retire(discard=True)
+        self._pending_speculative.clear()
+        # A partial submission can lease a buffer before returning its ticket.
+        for buffer in cast("AsyncSpeculativeRunner", self.speculative_runner).buffers:
+            buffer.keepalive.clear()
+            buffer.leased = False
 
     def abort_request(self, request_id: str) -> RequestOutput:
         if self.async_speculative:
@@ -324,16 +331,7 @@ class LLMEngine:
                 for rid in list(self.scheduler.requests):
                     self.abort_request(rid)
                 if self.async_speculative:
-                    self._retire_speculative(wait=True)
-                    for ticket in self._pending_speculative:
-                        ticket.collect()
-                        ticket.retire()
-                    self._pending_speculative.clear()
-                    # Also release a bank whose submission failed before it
-                    # could return a ticket. Both streams were drained above.
-                    for bank in cast("AsyncSpeculativeRunner", self.speculative_runner).banks:
-                        bank.keepalive.clear()
-                        bank.leased = False
+                    self._discard_speculative()
                 self._pending_exit_signals.clear()
                 self._pending_coda.clear()
                 self._inflight.clear()
@@ -492,7 +490,7 @@ class LLMEngine:
 
     def _collect_speculative(self):
         assert self.speculative_config is not None
-        ticket = self._pending_speculative.pop(0)
+        ticket = self._pending_speculative[0]
         runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
         if not ticket.ready():
             runner.readback_waits += 1
@@ -546,6 +544,7 @@ class LLMEngine:
                     self.scheduler.enqueue(request, Stage.SPECULATIVE)
             outputs.append(RequestOutput.from_request(request))
         ticket.retire()
+        self._pending_speculative.pop(0)
         self._retire_speculative()
         return outputs
 
@@ -554,7 +553,7 @@ class LLMEngine:
         self._retire_speculative()
         outputs = []
         # Submit ahead before collecting, even when a small round already
-        # completed. Two leased banks provide a hard global queue bound.
+        # completed. Two leased buffers provide a hard global queue bound.
         if len(self._pending_speculative) == 2:
             outputs.extend(self._collect_speculative())
         batch = self.scheduler.schedule()
