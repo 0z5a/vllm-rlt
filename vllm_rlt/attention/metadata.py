@@ -45,57 +45,6 @@ class AttentionMetadataValues:
     max_seqlen_q: int
 
 
-@dataclass(frozen=True)
-class AttentionSpan:
-    """A consecutive query range after the physical KV plane is selected."""
-
-    block_table: tuple[int, ...]
-    start: int
-    count: int
-    sequence_key: tuple[object, int]
-
-
-def plan_attention_span_metadata(
-    spans: Sequence[AttentionSpan], *, block_size: int, packed_prefill: bool = False
-) -> AttentionMetadataValues:
-    """Pack contiguous ranges without expanding their table/key references per row."""
-    width = max(((span.start + span.count - 1) // block_size + 1 for span in spans), default=0)
-    tables, lengths = [], []
-    cumulative = [0] if packed_prefill else None
-    if packed_prefill:
-        sequences = []
-        seen = set()
-        total = 0
-        for span in spans:
-            total += span.count
-            if sequences and span.sequence_key == sequences[-1].sequence_key:
-                previous = sequences[-1]
-                if span.start != previous.start + previous.count:
-                    raise ValueError("packed prefill positions must be contiguous")
-                sequences[-1] = AttentionSpan(
-                    span.block_table, previous.start, previous.count + span.count, span.sequence_key
-                )
-                cumulative[-1] = total
-            else:
-                if span.sequence_key in seen:
-                    raise ValueError("packed prefill request/depth must form one sequence")
-                seen.add(span.sequence_key)
-                sequences.append(span)
-                cumulative.append(total)
-        for span in sequences:
-            table = list(span.block_table[:width])
-            tables.extend(table + [-1] * (width - len(table)))
-            lengths.append(span.start + span.count)
-        max_query = max((span.count for span in sequences), default=1)
-    else:
-        for span in spans:
-            table = list(span.block_table[:width])
-            tables.extend((table + [-1] * (width - len(table))) * span.count)
-            lengths.extend(range(span.start + 1, span.start + span.count + 1))
-        max_query = 1
-    return AttentionMetadataValues(tables, len(lengths), width, lengths, cumulative, max_query)
-
-
 def plan_attention_metadata(
     rows: AttentionRows,
     *,

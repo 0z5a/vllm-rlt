@@ -9,7 +9,6 @@ from typing import NamedTuple
 import torch
 
 from vllm_rlt.config import ExecutionConfig, ExitConfig, SchedulerConfig
-from vllm_rlt.core.kv_cache_manager import KVSpan, _PreparedKVBatch
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace, prefill_stage_rows
@@ -543,20 +542,13 @@ class ModelRunner:
         )
         if not rows:
             return
-        lease = self.cache_manager.acquire_metadata_lease()
-        try:
-            boundary = self.cache_manager._prepare_batch(
-                [ids[row] for row in rows],
-                [0] * len(rows),
-                [positions[row] for row in rows],
-                packed_prefill=self.cache_manager.attention_capabilities.packed_prefill,
-                metadata_lease=lease,
-            )
-            self.model.coda_prepared(
-                hidden[rows], boundary, self.cache_manager, compute_logits=False
-            )
-        finally:
-            self.cache_manager.release_metadata_lease(lease)
+        boundary = self.cache_manager._prepare_batch(
+            [ids[row] for row in rows],
+            [0] * len(rows),
+            [positions[row] for row in rows],
+            packed_prefill=self.cache_manager.attention_capabilities.packed_prefill,
+        )
+        self.model.coda_prepared(hidden[rows], boundary, self.cache_manager, compute_logits=False)
 
     def _prefill_tokens(self, ids, positions, tokens, requests=()):
         cache = self.cache_manager
@@ -587,20 +579,12 @@ class ModelRunner:
                 )
                 boundary = None
                 if getattr(self.model, "requires_boundary_kv", False):
-                    boundary_lease = cache.acquire_metadata_lease()
-                    try:
-                        boundary = cache._prepare_batch(
-                            ids,
-                            [0] * len(ids),
-                            positions,
-                            packed_prefill=True,
-                            metadata_lease=boundary_lease,
-                        )
-                        hidden = self.model.prelude_prepared(
-                            tensor, boundary, cache, generators=generators
-                        )
-                    finally:
-                        cache.release_metadata_lease(boundary_lease)
+                    boundary = cache._prepare_batch(
+                        ids, [0] * len(ids), positions, packed_prefill=True
+                    )
+                    hidden = self.model.prelude_prepared(
+                        tensor, boundary, cache, generators=generators
+                    )
                 else:
                     hidden = self.model.prelude(tensor)
 
@@ -611,20 +595,12 @@ class ModelRunner:
                             hidden, metadata, cache, compute_gate=False
                         )
                     else:
-                        lease = cache.acquire_metadata_lease()
-                        try:
-                            metadata = cache._prepare_batch(
-                                ids,
-                                [depth] * len(ids),
-                                positions,
-                                packed_prefill=True,
-                                metadata_lease=lease,
-                            )
-                            hidden, _ = self.model.recurrent_prepared(
-                                hidden, metadata, cache, compute_gate=False
-                            )
-                        finally:
-                            cache.release_metadata_lease(lease)
+                        metadata = cache._prepare_batch(
+                            ids, [depth] * len(ids), positions, packed_prefill=True
+                        )
+                        hidden, _ = self.model.recurrent_prepared(
+                            hidden, metadata, cache, compute_gate=False
+                        )
                 if boundary is not None:
                     self._populate_coda(hidden, ids, positions, requests)
                 return hidden
@@ -640,19 +616,10 @@ class ModelRunner:
         )
         boundary = None
         if getattr(self.model, "requires_boundary_kv", False):
-            boundary_lease = cache.acquire_metadata_lease()
-            try:
-                boundary = cache._prepare_batch(
-                    ids,
-                    [0] * len(ids),
-                    positions,
-                    metadata_lease=boundary_lease,
-                )
-                hidden = self.model.prelude_prepared(
-                    tensor[: len(ids)], boundary, cache, generators=generators
-                )
-            finally:
-                cache.release_metadata_lease(boundary_lease)
+            boundary = cache._prepare_batch(ids, [0] * len(ids), positions)
+            hidden = self.model.prelude_prepared(
+                tensor[: len(ids)], boundary, cache, generators=generators
+            )
             if workspace:
                 workspace.hidden[:size].zero_()
                 workspace.hidden[: len(ids)].copy_(hidden)
@@ -675,7 +642,6 @@ class ModelRunner:
         requests = [i.request for i in batch.items]
         if batch.stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
             prefill_lease = self.prefill_metadata_pool.acquire()
-            kv_lease = None
             try:
                 rows, max_rows = self._prefill_segments(batch, prefill_lease)
                 metadata = PrefillMetadata(prefill_lease, rows, max_rows)
@@ -702,22 +668,22 @@ class ModelRunner:
                         )
                     metadata = replace(metadata, token_ids=prefill_lease.device_token_ids[:rows])
                     return replace(prepared, prefill_metadata=metadata)
-                spans = [
-                    KVSpan(
-                        request_id=item.request.request_id,
-                        depth=item.depth,
-                        start=item.token_start,
-                        count=item.token_count,
-                    )
+                request_ids = [
+                    item.request.request_id for item in batch.items for _ in range(item.token_count)
+                ]
+                depths = [item.depth for item in batch.items for _ in range(item.token_count)]
+                positions = [
+                    position
                     for item in batch.items
+                    for position in range(item.token_start, item.token_start + item.token_count)
                 ]
                 packed = self.cache_manager.attention_capabilities.packed_prefill
-                kv_lease = self.cache_manager.acquire_metadata_lease()
-                kv = self.cache_manager._prepare_batch_spans(
-                    spans,
+                kv = self.cache_manager._prepare_batch(
+                    request_ids,
+                    depths,
+                    positions,
                     for_write=True,
                     packed_prefill=packed,
-                    metadata_lease=kv_lease,
                 )
                 hidden = self._gather_prefill(prepared)
                 return replace(
@@ -728,7 +694,7 @@ class ModelRunner:
             except Exception:
                 if self.device.type == "cuda":
                     torch.cuda.current_stream(self.device).synchronize()
-                self._release_metadata_leases(prefill_lease, kv_lease)
+                self.prefill_metadata_pool.release(prefill_lease)
                 raise
         depths = tuple(r.loops_done for r in requests)
         positions = tuple(r.position for r in requests)
@@ -749,38 +715,19 @@ class ModelRunner:
             return PreparedExecution(batch, depths, positions, indices, tokens, kv, routing=routing)
         kv = None
         if batch.stage == Stage.RECURRENT and (not self.workspaces or self.graphs is not None):
-            metadata_lease = self.cache_manager.acquire_metadata_lease()
-            try:
-                kv = self.cache_manager._prepare_batch(
-                    [r.request_id for r in requests],
-                    depths,
-                    positions,
-                    metadata_lease=metadata_lease,
-                )
-            except Exception:
-                if self.device.type == "cuda":
-                    torch.cuda.current_stream(self.device).synchronize()
-                self._release_metadata_leases(None, metadata_lease)
-                raise
+            kv = self.cache_manager._prepare_batch(
+                [r.request_id for r in requests], depths, positions
+            )
         return PreparedExecution(batch, depths, positions, indices, tokens, kv)
 
-    def _release_metadata_leases(self, prefill_lease, kv_lease, event=None):
-        if prefill_lease is not None:
-            if event is None:
-                self.prefill_metadata_pool.release(prefill_lease)
-            else:
-                self.prefill_metadata_pool.release_after(prefill_lease, event)
-        if kv_lease is not None:
-            self.cache_manager.release_metadata_lease(kv_lease, event)
-
     def _release_prepared_metadata(self, prepared, event=None):
-        if prepared is None:
+        if prepared is None or prepared.prefill_metadata is None:
             return
-        prefill_lease = (
-            prepared.prefill_metadata.lease if prepared.prefill_metadata is not None else None
-        )
-        kv_lease = prepared.kv.metadata_lease if isinstance(prepared.kv, _PreparedKVBatch) else None
-        self._release_metadata_leases(prefill_lease, kv_lease, event)
+        lease = prepared.prefill_metadata.lease
+        if event is None:
+            self.prefill_metadata_pool.release(lease)
+        else:
+            self.prefill_metadata_pool.release_after(lease, event)
 
     @torch.inference_mode()
     def _execute(self, batch, prepared=None):
@@ -830,27 +777,20 @@ class ModelRunner:
                     else torch.tensor(ids, device=self.device, dtype=torch.long)
                 )
             if getattr(self.model, "requires_boundary_kv", False):
-                boundary_lease = self.cache_manager.acquire_metadata_lease()
-                try:
-                    boundary = self.cache_manager._prepare_batch(
-                        [r.request_id for r in requests],
-                        [0] * len(requests),
-                        [r.position for r in requests],
-                        metadata_lease=boundary_lease,
-                    )
-                    hidden = self.model.prelude_prepared(
-                        tokens[: len(requests)],
-                        boundary,
-                        self.cache_manager,
-                        generators=[
-                            self.rng.acquire(
-                                request.request_id, request.sampling_params, self.device
-                            )
-                            for request in requests
-                        ],
-                    )
-                finally:
-                    self.cache_manager.release_metadata_lease(boundary_lease)
+                boundary = self.cache_manager._prepare_batch(
+                    [r.request_id for r in requests],
+                    [0] * len(requests),
+                    [r.position for r in requests],
+                )
+                hidden = self.model.prelude_prepared(
+                    tokens[: len(requests)],
+                    boundary,
+                    self.cache_manager,
+                    generators=[
+                        self.rng.acquire(request.request_id, request.sampling_params, self.device)
+                        for request in requests
+                    ],
+                )
             else:
                 hidden = self.model.prelude(tokens)
             self._save_batch(requests, hidden, routing)
@@ -863,17 +803,12 @@ class ModelRunner:
                 if self.graphs is not None:
                     kv = prepared.kv if prepared is not None else None
                     if kv is None:
-                        lease = self.cache_manager.acquire_metadata_lease()
-                        try:
-                            kv = self.cache_manager._prepare_batch(
-                                [r.request_id for r in requests],
-                                [r.loops_done for r in requests],
-                                [r.position for r in requests],
-                                metadata_lease=lease,
-                            )
-                            hidden, logits = self.graphs.run(hidden[: len(requests)], kv)
-                        finally:
-                            self.cache_manager.release_metadata_lease(lease)
+                        kv = self.cache_manager._prepare_batch(
+                            [r.request_id for r in requests],
+                            [r.loops_done for r in requests],
+                            [r.position for r in requests],
+                        )
+                        hidden, logits = self.graphs.run(hidden[: len(requests)], kv)
                     else:
                         hidden, logits = self.graphs.run(hidden[: len(requests)], kv)
                 elif prepared is not None and prepared.kv is not None:
@@ -899,23 +834,18 @@ class ModelRunner:
                 result = logits[: len(requests)].float().sigmoid() if logits is not None else None
             elif batch.stage == Stage.CODA:
                 if getattr(self.model, "requires_boundary_kv", False):
-                    boundary_lease = self.cache_manager.acquire_metadata_lease()
-                    try:
-                        boundary = self.cache_manager._prepare_batch(
-                            [r.request_id for r in requests],
-                            [0] * len(requests),
-                            [r.position for r in requests],
-                            metadata_lease=boundary_lease,
+                    boundary = self.cache_manager._prepare_batch(
+                        [r.request_id for r in requests],
+                        [0] * len(requests),
+                        [r.position for r in requests],
+                    )
+                    logits = (
+                        self.coda_graphs.run(hidden[: len(requests)], boundary)
+                        if self.coda_graphs is not None
+                        else self.model.coda_prepared(
+                            hidden[: len(requests)], boundary, self.cache_manager
                         )
-                        logits = (
-                            self.coda_graphs.run(hidden[: len(requests)], boundary)
-                            if self.coda_graphs is not None
-                            else self.model.coda_prepared(
-                                hidden[: len(requests)], boundary, self.cache_manager
-                            )
-                        )
-                    finally:
-                        self.cache_manager.release_metadata_lease(boundary_lease)
+                    )
                 else:
                     logits = self.model.coda(hidden)
                 result = torch.stack([self._sample_row(row, r) for row, r in zip(logits, requests)])

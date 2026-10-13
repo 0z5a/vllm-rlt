@@ -106,7 +106,7 @@ def test_cpu_prefill_segments_gather_and_scatter_contiguous_spans():
     e.close()
 
 
-def test_recurrent_prepare_uses_absolute_token_start_for_kv_span():
+def test_recurrent_prepare_uses_absolute_token_start_for_kv_rows():
     from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
 
     e = split_engine()
@@ -338,45 +338,6 @@ def test_cuda_prefill_submit_keeps_host_and_device_buffers_until_event():
         e.close()
 
 
-@pytest.mark.gpu
-def test_cuda_kv_metadata_lease_reuses_buffers_after_consumer_event():
-    from vllm_rlt.core.kv_cache_manager import KVCacheManager, KVSpan
-
-    cache = KVCacheManager(
-        1, 1, 64, 32, 16, 4, device="cuda", dtype=torch.bfloat16, backend="triton"
-    )
-    assert cache.allocate("a", 4)
-    first = cache.acquire_metadata_lease()
-    batch = cache._prepare_batch_spans([KVSpan("a", 0, 1, 2)], metadata_lease=first)
-    wide_ptr = first.device_wide.data_ptr()
-    narrow_ptr = first.device_narrow.data_ptr()
-    assert first.host_wide.is_pinned() and first.host_narrow.is_pinned()
-    consumed = first.device_wide[:6].sum() + first.device_narrow.sum()
-    event = torch.cuda.Event()
-    event.record(torch.cuda.current_stream())
-    cache.release_metadata_lease(batch.metadata_lease, event)
-
-    second = cache.acquire_metadata_lease()
-    assert second is not first
-    second_done = torch.cuda.Event()
-    second_done.record(torch.cuda.current_stream())
-    cache.release_metadata_lease(second, second_done)
-    third = cache.acquire_metadata_lease()
-    third_done = torch.cuda.Event()
-    third_done.record(torch.cuda.current_stream())
-    cache.release_metadata_lease(third, third_done)
-
-    event.synchronize()
-    assert torch.equal(first.device_wide[:6].cpu(), first.host_wide[:6])
-    assert torch.isfinite(consumed)
-    reused = cache.acquire_metadata_lease()
-    assert reused is first
-    assert reused.device_wide.data_ptr() == wide_ptr
-    assert reused.device_narrow.data_ptr() == narrow_ptr
-    cache.release_metadata_lease(reused)
-    torch.cuda.synchronize()
-
-
 class HeldEvent:
     def __init__(self, before_sync=None):
         self.complete = False
@@ -480,7 +441,6 @@ def test_submit_transfer_failure_releases_only_prepared_prefill_lease():
         with pytest.raises(RuntimeError, match="injected metadata transfer failure"):
             runner.submit(batch)
         assert all(not lease.in_use for lease in runner.prefill_metadata_pool.slots)
-        assert all(not lease.in_use for lease in runner.cache_manager.metadata_pool.slots)
         runner.prepare = original_prepare
         prepared = runner.prepare(batch)
         torch.cuda.synchronize()
@@ -488,31 +448,6 @@ def test_submit_transfer_failure_releases_only_prepared_prefill_lease():
     finally:
         runner.prepare = original_prepare
         e.close()
-
-
-def test_metadata_pool_full_failure_does_not_release_existing_leases():
-    from vllm_rlt.core.kv_cache_manager import KVMetadataPool
-
-    pool = KVMetadataPool(torch.device("cpu"), slots=2)
-    first, second = pool.acquire(), pool.acquire()
-    first.stage([1, 2], torch.long)
-    second.stage([3, 4], torch.long)
-    first_ptr, second_ptr = first.device_wide.data_ptr(), second.device_wide.data_ptr()
-    first_event, second_event = HeldEvent(), HeldEvent()
-    first.event, second.event = first_event, second_event
-    try:
-        with pytest.raises(RuntimeError, match="all KV metadata leases are in use"):
-            pool.acquire()
-        assert first.in_use and second.in_use
-        assert first.event is first_event and second.event is second_event
-        assert first.device_wide.data_ptr() == first_ptr
-        assert second.device_wide.data_ptr() == second_ptr
-        pool.release(first)
-        third = pool.acquire()
-        assert third is first
-        pool.release(third)
-    finally:
-        pool.release(second)
 
 
 def test_submit_does_not_retry_failed_routing_cleanup(monkeypatch):
@@ -572,7 +507,7 @@ def test_submit_does_not_retry_failed_routing_cleanup(monkeypatch):
 
 
 @pytest.mark.gpu
-def test_cuda_submit_readback_failure_releases_metadata_leases():
+def test_cuda_submit_readback_failure_releases_prefill_metadata_lease():
     from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
 
     e = LLMEngine(

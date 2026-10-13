@@ -253,7 +253,6 @@ def test_prefill_uva_metadata_matches_reference_and_waits_for_consumer():
         ]:
             assert torch.equal(getattr(actual, name), getattr(expected, name)), name
         assert actual.max_seqlen_q == expected.max_seqlen_q
-        c.release_metadata_lease(expected.metadata_lease)
     stream = torch.cuda.Stream()
     stream.wait_stream(torch.cuda.current_stream())
     saved = torch.empty_like(bank.tokens)

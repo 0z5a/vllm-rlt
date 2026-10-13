@@ -80,42 +80,26 @@ class SpeculativeRunner:
 
     def _cores(self, hidden, ids, positions, depths, *, packed=False):
         # Depth-independent metadata is prepared and copied once for all depths.
-        lease = self.cache.acquire_metadata_lease()
-        try:
-            batches = self.cache._prepare_batches(
-                ids,
-                [[depth] * len(ids) for depth in depths],
-                positions,
-                packed_prefill=self._packed(packed),
-                metadata_lease=lease,
-            )
-            for depth, batch in zip(depths, batches):
-                hidden = self._core(hidden, ids, positions, depth, packed=packed, batch=batch)
-            return hidden
-        finally:
-            self.cache.release_metadata_lease(lease)
+        batches = self.cache._prepare_batches(
+            ids,
+            [[depth] * len(ids) for depth in depths],
+            positions,
+            packed_prefill=self._packed(packed),
+        )
+        for depth, batch in zip(depths, batches):
+            hidden = self._core(hidden, ids, positions, depth, packed=packed, batch=batch)
+        return hidden
 
     def _core(self, hidden, ids, positions, depth, *, packed=False, batch=None):
-        lease = self.cache.acquire_metadata_lease() if batch is None else None
-        try:
-            if batch is None:
-                batch = self.cache._prepare_batch(
-                    ids,
-                    [depth] * len(ids),
-                    positions,
-                    packed_prefill=self._packed(packed),
-                    metadata_lease=lease,
-                )
-            if self.graphs is not None:
-                hidden, _ = self.graphs.run(hidden, batch)
-            else:
-                hidden, _ = self.model.recurrent_prepared(
-                    hidden, batch, self.cache, compute_gate=False
-                )
-            return hidden
-        finally:
-            if lease is not None:
-                self.cache.release_metadata_lease(lease)
+        if batch is None:
+            batch = self.cache._prepare_batch(
+                ids, [depth] * len(ids), positions, packed_prefill=self._packed(packed)
+            )
+        if self.graphs is not None:
+            hidden, _ = self.graphs.run(hidden, batch)
+        else:
+            hidden, _ = self.model.recurrent_prepared(hidden, batch, self.cache, compute_gate=False)
+        return hidden
 
     def _acquire_generator(self, request, logits):
         """Resolve this request's generator from the shared engine registry.
@@ -140,11 +124,7 @@ class SpeculativeRunner:
         # Draft IDs stay on the device: each offset's IDs are the next offset's
         # prelude input, and all of them are read back once after verification.
         drafted = []
-        inputs = torch.tensor(
-            [item.request.input_token_id for item in items],
-            device=self.device,
-            dtype=torch.long,
-        )
+        inputs = self.cache._stage([item.request.input_token_id for item in items], torch.long)
         # Each item includes the final shallow input needed for the bonus row.
         # Drafting batches independent requests at every autoregressive step.
         for offset in range(max(item.token_count for item in items)):

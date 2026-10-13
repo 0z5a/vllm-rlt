@@ -13,7 +13,6 @@ from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from numbers import Integral
-from typing import NamedTuple
 
 import torch
 
@@ -26,7 +25,6 @@ from vllm_rlt.attention import (
     plan_attention_metadata,
     validate_backend_name,
 )
-from vllm_rlt.attention.metadata import AttentionSpan, plan_attention_span_metadata
 
 
 @dataclass
@@ -47,20 +45,6 @@ class _WrittenPositions:
             self.pending.remove(self.prefix)
             self.prefix += 1
 
-    def add_range(self, start: int, count: int) -> None:
-        end = start + count
-        if end <= self.prefix:
-            return
-        if start > self.prefix:
-            self.pending.update(range(start, end))
-            return
-        self.prefix = end
-        if self.pending:
-            self.pending = {position for position in self.pending if position >= end}
-        while self.prefix in self.pending:
-            self.pending.remove(self.prefix)
-            self.prefix += 1
-
     def __contains__(self, position: int) -> bool:
         return position < self.prefix or position in self.pending
 
@@ -72,56 +56,6 @@ class _Allocation:
     written: list[list[_WrittenPositions]]
     transfer_leases: set[str] = field(default_factory=set)
     release_requested: bool = False
-
-
-class _PreparedKVSpan(NamedTuple):
-    allocation: _Allocation
-    depth: int
-    start: int
-    count: int
-
-
-class _SpanRows(Sequence):
-    """Compatibility view over span rows without materializing every tuple."""
-
-    __slots__ = ("_spans", "_length")
-
-    def __init__(self, spans: tuple[_PreparedKVSpan, ...]):
-        self._spans = spans
-        self._length = sum(span.count for span in spans)
-
-    def __len__(self) -> int:
-        return self._length
-
-    def __iter__(self):
-        for span in self._spans:
-            yield from (
-                (span.allocation, span.depth, position)
-                for position in range(span.start, span.start + span.count)
-            )
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            return tuple(self)[index]
-        if index < 0:
-            index += self._length
-        if index < 0 or index >= self._length:
-            raise IndexError(index)
-        for span in self._spans:
-            if index < span.count:
-                return span.allocation, span.depth, span.start + index
-            index -= span.count
-        raise IndexError(index)
-
-
-@dataclass(frozen=True)
-class KVSpan:
-    """A logical KV range; ``start`` is an absolute prompt token position."""
-
-    request_id: str
-    depth: int
-    start: int
-    count: int
 
 
 @dataclass(frozen=True)
@@ -142,84 +76,16 @@ class KVSnapshot:
     values: torch.Tensor
 
 
-@dataclass
-class KVMetadataLease:
-    device: torch.device
-    event: object = None
-    in_use: bool = False
-    host_wide: torch.Tensor | None = None
-    device_wide: torch.Tensor | None = None
-    host_wide_array: object = None
-    host_narrow: torch.Tensor | None = None
-    device_narrow: torch.Tensor | None = None
-    host_narrow_array: object = None
-
-    def stage(self, values, dtype):
-        wide = dtype == torch.long
-        host = self.host_wide if wide else self.host_narrow
-        capacity = 0 if host is None else host.numel()
-        count = len(values)
-        if host is None or count > capacity:
-            capacity = max(64, 1 << max(0, count - 1).bit_length(), capacity * 2)
-            with torch.inference_mode(False):
-                host = torch.empty(capacity, dtype=dtype, pin_memory=self.device.type == "cuda")
-                device = torch.empty(capacity, dtype=dtype, device=self.device)
-            array = host.numpy()
-            if wide:
-                self.host_wide, self.device_wide, self.host_wide_array = host, device, array
-            else:
-                self.host_narrow, self.device_narrow, self.host_narrow_array = host, device, array
-        else:
-            device = self.device_wide if wide else self.device_narrow
-            array = self.host_wide_array if wide else self.host_narrow_array
-        array[:count] = values
-        device[:count].copy_(host[:count], non_blocking=self.device.type == "cuda")
-        return device[:count]
-
-
-class KVMetadataPool:
-    def __init__(self, device, slots=3):
-        self.slots = [KVMetadataLease(device) for _ in range(slots)]
-        self.next_slot = 0
-
-    def acquire(self):
-        pending = None
-        for offset in range(len(self.slots)):
-            index = (self.next_slot + offset) % len(self.slots)
-            lease = self.slots[index]
-            if lease.in_use:
-                continue
-            if lease.event is None or lease.event.query():
-                lease.event = None
-                lease.in_use = True
-                self.next_slot = (index + 1) % len(self.slots)
-                return lease
-            if pending is None:
-                pending = index, lease
-        if pending is not None:
-            index, lease = pending
-            lease.event.synchronize()
-            lease.event = None
-            lease.in_use = True
-            self.next_slot = (index + 1) % len(self.slots)
-            return lease
-        raise RuntimeError("all KV metadata leases are in use")
-
-    def release(self, lease, event=None):
-        lease.event = event
-        lease.in_use = False
-
-
 @dataclass(frozen=True, eq=False)
 class _PreparedKVBatch:
-    """Borrowed metadata for one recurrent traversal.
+    """Borrowed metadata for one synchronous traversal, never a cross-step cache.
 
     Host rows and allocation identities are captured independently of caller
-    lists. A metadata lease, when present, stays owned until its consumer event.
+    lists. Device tensors are private, read-only inputs to the cache operations.
     """
 
     owner: "KVCacheManager"
-    rows: Sequence[tuple[_Allocation, int, int]]
+    rows: tuple[tuple[_Allocation, int, int], ...]
     allocations: tuple[tuple[str, _Allocation], ...]
     position_ids: torch.Tensor
     write_blocks: torch.Tensor
@@ -229,8 +95,6 @@ class _PreparedKVBatch:
     writable: bool
     cu_seqlens_q: torch.Tensor | None = None
     max_seqlen_q: int = 1
-    spans: tuple[_PreparedKVSpan, ...] = ()
-    metadata_lease: KVMetadataLease | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -322,7 +186,6 @@ class KVCacheManager:
         self.value_cache = torch.empty_like(self.key_cache)
         # Resolve an implicit CUDA index to the actual storage device once.
         self.device = self.key_cache.device
-        self.metadata_pool = KVMetadataPool(self.device)
         self._free_blocks = list(reversed(range(num_blocks)))
         self._allocations: dict[str, _Allocation] = {}
         self.enable_prefix_caching = enable_prefix_caching
@@ -334,17 +197,6 @@ class KVCacheManager:
         self.prefix_hits = self.prefix_queries = 0
         if enable_prefix_caching and layout != "last_exited":
             raise ValueError("prefix caching requires last_exited KV")
-
-    def acquire_metadata_lease(self):
-        return self.metadata_pool.acquire() if self.device.type == "cuda" else None
-
-    def release_metadata_lease(self, lease, event=None):
-        if lease is None:
-            return
-        if self.device.type == "cuda" and event is None:
-            event = torch.cuda.Event()
-            event.record(torch.cuda.current_stream(self.device))
-        self.metadata_pool.release(lease, event)
 
     @property
     def attention_capabilities(self) -> BackendCapabilities:
@@ -754,7 +606,6 @@ class KVCacheManager:
         *,
         for_write: bool = True,
         packed_prefill: bool = False,
-        metadata_lease: KVMetadataLease | None = None,
     ) -> _PreparedKVBatch:
         """Build layer-independent addresses once; do not initialize any KV slot."""
         return self._prepare_batches(
@@ -763,124 +614,7 @@ class KVCacheManager:
             positions,
             for_write=for_write,
             packed_prefill=packed_prefill,
-            metadata_lease=metadata_lease,
         )[0]
-
-    def _prepare_batch_spans(
-        self,
-        spans: Sequence[KVSpan],
-        *,
-        for_write: bool = True,
-        packed_prefill: bool = False,
-        metadata_lease: KVMetadataLease | None = None,
-    ) -> _PreparedKVBatch:
-        """Prepare logical KV ranges; an empty sequence produces an empty batch.
-
-        Counts must be positive integers and each range must stay within its
-        allocation. Span errors use the same depth/position errors as row input.
-        """
-        allocations = {}
-        prepared_spans = []
-        for span in spans:
-            request_id, depth, start, count = (
-                span.request_id,
-                span.depth,
-                span.start,
-                span.count,
-            )
-            if not isinstance(count, Integral) or isinstance(count, bool) or count <= 0:
-                raise ValueError("span token counts must be positive integers")
-            allocation = self._get_allocation(request_id)
-            self._validate_depth(depth)
-            self._validate_position(allocation, start)
-            self._validate_position(allocation, start + count - 1)
-            allocations.setdefault(request_id, allocation)
-            prepared_spans.append(_PreparedKVSpan(allocation, int(depth), int(start), int(count)))
-        spans = tuple(prepared_spans)
-        return self._prepare_span_rows(
-            spans,
-            tuple(allocations.items()),
-            for_write=for_write,
-            packed_prefill=packed_prefill,
-            metadata_lease=metadata_lease,
-        )
-
-    def _prepare_span_rows(
-        self,
-        spans: tuple[_PreparedKVSpan, ...],
-        allocations,
-        *,
-        for_write: bool,
-        packed_prefill: bool,
-        metadata_lease: KVMetadataLease | None,
-    ) -> _PreparedKVBatch:
-        """Build metadata directly from contiguous spans.
-
-        Split-prefill batches are already contiguous per request/depth. Avoid
-        constructing one Python tuple for every token while retaining the lazy
-        ``rows`` view for compatibility callers.
-        """
-        self._validate_packed_prefill(packed_prefill)
-        positions = []
-        offsets = []
-        blocks = []
-        attention_spans = []
-        seen_addresses = set()
-        for span in spans:
-            table = span.allocation.block_tables[self._plane(span.depth)]
-            span_positions = range(span.start, span.start + span.count)
-            positions.extend(span_positions)
-            offsets.extend(position % self.block_size for position in span_positions)
-            span_blocks = [table[position // self.block_size] for position in span_positions]
-            blocks.extend(span_blocks)
-            if for_write:
-                seen_addresses.update(zip(span_blocks, offsets[-span.count :]))
-            attention_spans.append(
-                AttentionSpan(table, span.start, span.count, (id(span.allocation), span.depth))
-            )
-
-        if for_write and len(seen_addresses) != len(positions):
-            raise ValueError(
-                "a write batch cannot contain duplicate request/depth/position addresses"
-            )
-        metadata = plan_attention_span_metadata(
-            attention_spans,
-            block_size=self.block_size,
-            packed_prefill=packed_prefill,
-        )
-        narrow_values = metadata.block_tables + metadata.context_lengths
-        if metadata.cu_seqlens_q is not None:
-            narrow_values += metadata.cu_seqlens_q
-        wide, narrow, metadata_lease = self._stage_metadata_pair(
-            positions + offsets + blocks, narrow_values, metadata_lease
-        )
-        n = len(positions)
-        table_rows = metadata.num_rows
-        width = metadata.table_width
-        lengths_start = len(metadata.block_tables)
-        return _PreparedKVBatch(
-            owner=self,
-            rows=_SpanRows(spans),
-            allocations=allocations,
-            position_ids=wide[:n],
-            write_blocks=wide[2 * n : 3 * n],
-            write_offsets=wide[n : 2 * n],
-            block_tables=narrow[: table_rows * width].reshape(table_rows, width),
-            context_lengths=narrow[lengths_start : lengths_start + table_rows],
-            writable=for_write,
-            cu_seqlens_q=(
-                narrow[lengths_start + table_rows :] if metadata.cu_seqlens_q is not None else None
-            ),
-            max_seqlen_q=metadata.max_seqlen_q,
-            spans=spans,
-            metadata_lease=metadata_lease,
-        )
-
-    def _validate_packed_prefill(self, packed_prefill: bool) -> None:
-        if packed_prefill and (
-            self.layout != "last_exited" or not self.attention_capabilities.packed_prefill
-        ):
-            raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
 
     def _prepare_batches(
         self,
@@ -890,7 +624,6 @@ class KVCacheManager:
         *,
         for_write: bool = True,
         packed_prefill: bool = False,
-        metadata_lease: KVMetadataLease | None = None,
     ) -> tuple[_PreparedKVBatch, ...]:
         """Prepare one batch per depth assignment of the same request/position rows.
 
@@ -902,6 +635,10 @@ class KVCacheManager:
         """
         if not depth_sets:
             raise ValueError("at least one depth assignment is required")
+        if packed_prefill and (
+            self.layout != "last_exited" or not self.attention_capabilities.packed_prefill
+        ):
+            raise ValueError("packed prefill requires LAST_EXITED and FlashAttention-4")
         first = tuple(self._validate_rows(request_ids, depth_sets[0], positions))
         row_sets = [first]
         for depths in depth_sets[1:]:
@@ -915,30 +652,12 @@ class KVCacheManager:
                     for (allocation, _, position), depth in zip(first, depths)
                 )
             )
-        allocations = tuple(dict(zip(request_ids, (a for a, _, _ in first))).items())
-        return self._prepare_row_sets(
-            row_sets,
-            allocations,
-            for_write=for_write,
-            packed_prefill=packed_prefill,
-            metadata_lease=metadata_lease,
-        )
-
-    def _prepare_row_sets(
-        self,
-        row_sets,
-        allocations,
-        *,
-        for_write: bool,
-        packed_prefill: bool,
-        metadata_lease: KVMetadataLease | None,
-    ):
-        self._validate_packed_prefill(packed_prefill)
-        first = row_sets[0]
         n = len(first)
         position_list = [position for _, _, position in first]
         offsets = [position % self.block_size for position in position_list]
-        # Runtime callers retain the pinned staging lease through the consumer event.
+        # Stage all metadata in two pinned host tensors and copy them without
+        # blocking: a pageable H2D copy would wait for all queued GPU work. The
+        # caching host allocator keeps each staging block alive until its copy ends.
         wide = position_list + offsets
         narrow = []
         shared = {}
@@ -989,7 +708,9 @@ class KVCacheManager:
                     metadata.max_seqlen_q,
                 )
             )
-        wide, narrow, metadata_lease = self._stage_metadata_pair(wide, narrow, metadata_lease)
+        wide = self._stage(wide, torch.long)
+        narrow = self._stage(narrow, torch.int32)
+        allocations = tuple(dict(zip(request_ids, (a for a, _, _ in first))).items())
         batches = []
         for rows, block_start, table_start, t, width, lengths_start, packed, max_query in plans:
             batches.append(
@@ -1007,32 +728,13 @@ class KVCacheManager:
                         narrow[lengths_start + t : lengths_start + 2 * t + 1] if packed else None
                     ),
                     max_seqlen_q=max_query,
-                    metadata_lease=metadata_lease,
                 )
             )
         return tuple(batches)
 
-    def _stage_metadata_pair(self, wide_values, narrow_values, metadata_lease):
-        owns_lease = metadata_lease is None and self.device.type == "cuda"
-        if owns_lease:
-            metadata_lease = self.metadata_pool.acquire()
-        try:
-            return (
-                self._stage(wide_values, torch.long, metadata_lease),
-                self._stage(narrow_values, torch.int32, metadata_lease),
-                metadata_lease,
-            )
-        except Exception:
-            if owns_lease:
-                self.release_metadata_lease(metadata_lease)
-            raise
-
-    def _stage(self, values, dtype, metadata_lease=None):
-        if metadata_lease is not None:
-            return metadata_lease.stage(values, dtype)
-        if self.device.type == "cuda":
-            raise RuntimeError("CUDA KV metadata staging requires a lease")
-        return torch.tensor(values, dtype=dtype)
+    def _stage(self, values, dtype):
+        host = torch.tensor(values, dtype=dtype, pin_memory=self.device.type == "cuda")
+        return host.to(self.device, non_blocking=True)
 
     def _prepare_device_batch(
         self,
@@ -1116,12 +818,8 @@ class KVCacheManager:
         Address/ownership validation intentionally precedes tensor validation.
         """
         self._validate_layer(layer)
-        lease = self.acquire_metadata_lease()
-        try:
-            batch = self._prepare_batch(request_ids, depths, positions, metadata_lease=lease)
-            self._write_prepared(layer, batch, k, v)
-        finally:
-            self.release_metadata_lease(lease)
+        batch = self._prepare_batch(request_ids, depths, positions)
+        self._write_prepared(layer, batch, k, v)
 
     @torch.no_grad()
     def _write_prepared(
@@ -1143,14 +841,8 @@ class KVCacheManager:
             return
         self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k[: len(batch.rows)]
         self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v[: len(batch.rows)]
-        if batch.spans:
-            for span in batch.spans:
-                span.allocation.written[self._plane(span.depth)][layer].add_range(
-                    span.start, span.count
-                )
-        else:
-            for allocation, depth, position in batch.rows:
-                allocation.written[self._plane(depth)][layer].add(position)
+        for allocation, depth, position in batch.rows:
+            allocation.written[self._plane(depth)][layer].add(position)
 
     def _require_prefix(self, allocation, layer, depth, length):
         written = allocation.written[self._plane(depth)][layer]
@@ -1172,14 +864,8 @@ class KVCacheManager:
     ) -> torch.Tensor:
         """Apply causal GQA at each row's own position and recurrence depth."""
         self._validate_layer(layer)
-        lease = self.acquire_metadata_lease()
-        try:
-            batch = self._prepare_batch(
-                request_ids, depths, positions, for_write=False, metadata_lease=lease
-            )
-            return self._attend_prepared(layer, batch, q)
-        finally:
-            self.release_metadata_lease(lease)
+        batch = self._prepare_batch(request_ids, depths, positions, for_write=False)
+        return self._attend_prepared(layer, batch, q)
 
     @torch.no_grad()
     def _attend_prepared(
@@ -1198,15 +884,8 @@ class KVCacheManager:
             )
         if not batch.rows:
             return torch.empty_like(q)
-        if batch.spans:
-            for span in batch.spans:
-                end = span.start + span.count
-                written = span.allocation.written[self._plane(span.depth)][layer]
-                first_missing = min(end, max(span.start, written.prefix) + 1)
-                self._require_prefix(span.allocation, layer, span.depth, first_missing)
-        else:
-            for allocation, depth, position in batch.rows:
-                self._require_prefix(allocation, layer, depth, position + 1)
+        for allocation, depth, position in batch.rows:
+            self._require_prefix(allocation, layer, depth, position + 1)
         if batch.cu_seqlens_q is not None:
             return self.attention.prefill(
                 q,

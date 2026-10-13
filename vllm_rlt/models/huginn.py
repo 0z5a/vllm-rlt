@@ -288,12 +288,8 @@ class HuginnForCausalLM(nn.Module):
         return torch.cat((state, injection), dim=-1), gate
 
     def recurrent(self, hidden, request_ids, depths, positions, cache, *, compute_gate=True):
-        lease = cache.acquire_metadata_lease()
-        try:
-            batch = cache._prepare_batch(request_ids, depths, positions, metadata_lease=lease)
-            return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
-        finally:
-            cache.release_metadata_lease(lease)
+        batch = cache._prepare_batch(request_ids, depths, positions)
+        return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
 
     def coda_prepared(
         self, hidden, batch: "_PreparedKVBatch", cache: "KVCacheManager", *, compute_logits=True

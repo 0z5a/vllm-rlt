@@ -167,30 +167,26 @@ def test_flash_prefill_ragged_prefixes_depths_and_causal_mask(dtype):
         positions.extend(range(prefix, prefix + count))
     batch = cache._prepare_batch(ids, depths, positions, packed_prefill=True)
     flat = cache._prepare_batch(ids, depths, positions)
-    try:
-        assert batch.block_tables.shape[0] == 3
-        assert flat.block_tables.shape[0] == len(ids)
-        for layer in range(2):
-            k = torch.randn(len(ids), 2, 64, device="cuda", dtype=dtype)
-            v = torch.randn_like(k)
-            q = torch.randn(len(ids), 4, 64, device="cuda", dtype=dtype)
-            cache._write_prepared(layer, batch, k, v)
-            # All chunk keys (including future positions) exist before attention.
-            # A per-token prefix oracle detects wrong causal/prefix alignment.
-            expected = torch_paged_attention(
-                q,
-                cache.key_cache[:, layer],
-                cache.value_cache[:, layer],
-                flat.block_tables,
-                flat.context_lengths,
-            )
-            actual = cache._attend_prepared(layer, batch, q)
-            torch.testing.assert_close(
-                actual, expected, atol=0.015 if dtype == torch.bfloat16 else 0.002, rtol=0.02
-            )
-    finally:
-        cache.release_metadata_lease(batch.metadata_lease)
-        cache.release_metadata_lease(flat.metadata_lease)
+    assert batch.block_tables.shape[0] == 3
+    assert flat.block_tables.shape[0] == len(ids)
+    for layer in range(2):
+        k = torch.randn(len(ids), 2, 64, device="cuda", dtype=dtype)
+        v = torch.randn_like(k)
+        q = torch.randn(len(ids), 4, 64, device="cuda", dtype=dtype)
+        cache._write_prepared(layer, batch, k, v)
+        # All chunk keys (including future positions) exist before attention.
+        # A per-token prefix oracle detects wrong causal/prefix alignment.
+        expected = torch_paged_attention(
+            q,
+            cache.key_cache[:, layer],
+            cache.value_cache[:, layer],
+            flat.block_tables,
+            flat.context_lengths,
+        )
+        actual = cache._attend_prepared(layer, batch, q)
+        torch.testing.assert_close(
+            actual, expected, atol=0.015 if dtype == torch.bfloat16 else 0.002, rtol=0.02
+        )
 
 
 @pytest.mark.gpu
