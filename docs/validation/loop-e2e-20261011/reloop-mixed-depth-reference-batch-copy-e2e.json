@@ -1,0 +1,1594 @@
+{
+  "schema_version": 1,
+  "scope": "Completed private mixed-depth selected-row reference batch-copy E2E against the same qualified uniform vector readout. Original native source e8aa1ee; no production/PR82 changes and no current PR86 source-head, official-model quality or full-seven-case qualification.",
+  "original_source_head": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "copy_helper_sha256": "92fd69e3590a27f9f49db7a71c18ba52b8941a1ec8282e1c9c17c1560864b723",
+  "protocol": {
+    "case": "T64_short",
+    "requests_per_trial": 256,
+    "prompt_tokens": 256,
+    "output_tokens": 128,
+    "depth": 3,
+    "prefill_depth": 4,
+    "dtype": "FP32",
+    "KV_pool_GiB": 48,
+    "raw_trials": 40,
+    "measured_trials": 20,
+    "warmups_per_arm": 5,
+    "measured_per_arm": 5,
+    "fresh_order0": [
+      "readout",
+      "readout_copy"
+    ],
+    "fresh_order1": [
+      "readout_copy",
+      "readout"
+    ],
+    "both_original_heads_and_reference_checks_retained": true,
+    "full_input_token_depth_ID_neutral_work_parity": true
+  },
+  "mean_measured_TPS": {
+    "readout": 649.4643090471807,
+    "readout_copy": 651.3222782904626
+  },
+  "additional_copy_throughput_change_percent": 0.28607718967770257,
+  "per_fresh_order_means": [
+    {
+      "fresh_order": 0,
+      "mean_measured_TPS": {
+        "readout": 651.0736419641048,
+        "readout_copy": 649.1193810008648
+      },
+      "additional_copy_change_percent": -0.30015974189103733
+    },
+    {
+      "fresh_order": 1,
+      "mean_measured_TPS": {
+        "readout_copy": 653.5251755800602,
+        "readout": 647.8549761302565
+      },
+      "additional_copy_change_percent": 0.8752266570016598
+    }
+  ],
+  "interpretation": "The measured additional-copy difference is +0.2861%, insufficient to establish a substantial or stable speedup. Each ten-trial copy arm now performs15600 batched method calls covering325120 rows with5170 fallback calls, versus10/40/20760 in the earlier uniform-depth-only candidate. Method counters alone do not establish fewer CUDA kernels or lower GPU copy time; a new complete trace is needed before choosing another code change. The two fresh-order differences are -0.3002% and +0.8752%, with opposite signs.",
+  "all_four_arms": [
+    {
+      "fresh": 0,
+      "mode": "readout",
+      "mean_measured_TPS": 651.0736419641048,
+      "all10_raw_trials": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 53.050423603039235,
+          "TPS": 617.6765004779855,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 50.40138364105951,
+          "TPS": 650.1408817139205,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 50.31163235998247,
+          "TPS": 651.3006726862523,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 50.40510305506177,
+          "TPS": 650.092907541618,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 50.312307079089805,
+          "TPS": 651.2919383420333,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 50.43498516594991,
+          "TPS": 649.7077354574619,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 50.25173136906233,
+          "TPS": 652.0770351043814,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 50.35497435799334,
+          "TPS": 650.7400791635675,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 50.269056551973335,
+          "TPS": 651.8522973694775,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 50.33556046499871,
+          "TPS": 650.9910627256356,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "readout",
+        "readout_provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "readout_counters": {
+          "uniform_batches": 16240,
+          "uniform_rows": 327680,
+          "fallback_batches": 0
+        },
+        "readout_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "copy_helper_sha256": "92fd69e3590a27f9f49db7a71c18ba52b8941a1ec8282e1c9c17c1560864b723",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true
+      },
+      "actual_original_raw_audit_return": 0
+    },
+    {
+      "fresh": 0,
+      "mode": "readout_copy",
+      "mean_measured_TPS": 649.1193810008648,
+      "all10_raw_trials": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 50.949503855081275,
+          "TPS": 643.1465965439818,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 50.505835262010805,
+          "TPS": 648.7963188809442,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 50.40934120200109,
+          "TPS": 650.0382512179948,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 50.516897652996704,
+          "TPS": 648.6542428849285,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 50.41648178698961,
+          "TPS": 649.9461850282472,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 50.51958325901069,
+          "TPS": 648.6197606183833,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 50.42088001198135,
+          "TPS": 649.8894900726335,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 50.527365087065846,
+          "TPS": 648.5198652954903,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 50.416843389044516,
+          "TPS": 649.9415234536565,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 50.51907660800498,
+          "TPS": 648.6262655641603,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "readout_copy",
+        "readout_provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "readout_counters": {
+          "uniform_batches": 16240,
+          "uniform_rows": 327680,
+          "fallback_batches": 0
+        },
+        "readout_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "copy_helper_sha256": "92fd69e3590a27f9f49db7a71c18ba52b8941a1ec8282e1c9c17c1560864b723",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true,
+        "copy_provenance": {
+          "original_method_source_sha256": "7fecbcd68e1324cf88015d82cbbe7daefaee04d742d648aa3274748ee2982ed4",
+          "private_method_source_sha256": "8be965d4337567d915036757b1dca2073d7304826a49f5a646ade422e1c983e5",
+          "inverse_patch_recovers_original_source_exactly": true,
+          "separate_per_reference_destination_storage": true,
+          "original_capture_conditions_identity_counters_peak_rules_and_prefill_mixed_policy_partial_grad_unsupported_fallback_preserved": true,
+          "both_head_computations_and_readout_reference_checks_unchanged": true,
+          "production_source_files_changed": false
+        },
+        "copy_counters": {
+          "batched_calls": 15600,
+          "copied_rows": 325120,
+          "fallback_calls": 5170
+        }
+      },
+      "actual_original_raw_audit_return": 0
+    },
+    {
+      "fresh": 1,
+      "mode": "readout_copy",
+      "mean_measured_TPS": 653.5251755800602,
+      "all10_raw_trials": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 50.59889365802519,
+          "TPS": 647.603092302056,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 50.14288983703591,
+          "TPS": 653.4924514022986,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 50.07509426004253,
+          "TPS": 654.3772005666948,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 50.169041067012586,
+          "TPS": 653.151810420905,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 50.062892748974264,
+          "TPS": 654.5366877680352,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 50.18842873501126,
+          "TPS": 652.8994994645283,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 50.07563542597927,
+          "TPS": 654.370128731306,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 50.16729326895438,
+          "TPS": 653.1745658336765,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 50.09800897806417,
+          "TPS": 654.0778898887527,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 50.172729513957165,
+          "TPS": 653.103793982038,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "readout_copy",
+        "readout_provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "readout_counters": {
+          "uniform_batches": 16240,
+          "uniform_rows": 327680,
+          "fallback_batches": 0
+        },
+        "readout_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "copy_helper_sha256": "92fd69e3590a27f9f49db7a71c18ba52b8941a1ec8282e1c9c17c1560864b723",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true,
+        "copy_provenance": {
+          "original_method_source_sha256": "7fecbcd68e1324cf88015d82cbbe7daefaee04d742d648aa3274748ee2982ed4",
+          "private_method_source_sha256": "8be965d4337567d915036757b1dca2073d7304826a49f5a646ade422e1c983e5",
+          "inverse_patch_recovers_original_source_exactly": true,
+          "separate_per_reference_destination_storage": true,
+          "original_capture_conditions_identity_counters_peak_rules_and_prefill_mixed_policy_partial_grad_unsupported_fallback_preserved": true,
+          "both_head_computations_and_readout_reference_checks_unchanged": true,
+          "production_source_files_changed": false
+        },
+        "copy_counters": {
+          "batched_calls": 15600,
+          "copied_rows": 325120,
+          "fallback_calls": 5170
+        }
+      },
+      "actual_original_raw_audit_return": 0
+    },
+    {
+      "fresh": 1,
+      "mode": "readout",
+      "mean_measured_TPS": 647.8549761302565,
+      "all10_raw_trials": [
+        {
+          "index": 0,
+          "phase": "warmup",
+          "elapsed_seconds": 51.03705466899555,
+          "TPS": 642.0433195551584,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 1,
+          "phase": "warmup",
+          "elapsed_seconds": 50.60533337609377,
+          "TPS": 647.520682384829,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 2,
+          "phase": "warmup",
+          "elapsed_seconds": 50.495588165009394,
+          "TPS": 648.9279794686377,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 3,
+          "phase": "warmup",
+          "elapsed_seconds": 50.619788964046165,
+          "TPS": 647.3357686906637,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 4,
+          "phase": "warmup",
+          "elapsed_seconds": 50.52038865000941,
+          "TPS": 648.6094203868303,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 5,
+          "phase": "measured",
+          "elapsed_seconds": 50.61600625701249,
+          "TPS": 647.3841463037244,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 6,
+          "phase": "measured",
+          "elapsed_seconds": 50.527896477957256,
+          "TPS": 648.5130449531974,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 7,
+          "phase": "measured",
+          "elapsed_seconds": 50.62534104601946,
+          "TPS": 647.2647753664163,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 8,
+          "phase": "measured",
+          "elapsed_seconds": 50.504858291940764,
+          "TPS": 648.8088692494937,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        },
+        {
+          "index": 9,
+          "phase": "measured",
+          "elapsed_seconds": 50.622269804007374,
+          "TPS": 647.3040447784507,
+          "neutral_core_head_work": {
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536,
+            "head_calls": 3248,
+            "head_rows": 65536
+          },
+          "loopcd_work": {
+            "captures": 33024,
+            "guided_rows": 32768,
+            "head_calls": 3248,
+            "head_rows": 65536,
+            "skipped_prompt_head_calls": 0,
+            "skipped_prompt_head_rows": 0,
+            "prefill_core_rows": 262144,
+            "prefill_submitted_rows": 262144,
+            "decode_core_rows": 97536,
+            "decode_submitted_rows": 97536
+          },
+          "KV_pool_bytes": 51539607552,
+          "reference_peak_bytes": 524288,
+          "peak_allocated_bytes": 57370022912,
+          "peak_reserved_bytes": 57399050240,
+          "drained": true
+        }
+      ],
+      "private_method_proof": {
+        "passed": true,
+        "mode": "readout",
+        "readout_provenance": {
+          "original_method_source_sha256": "ab464a9a513fd738f969ad787d0c54b16db1d19641878f2b99eecf45831f1f6d",
+          "private_method_source_sha256": "4356c65b8dfb36fd3909f21f1cd290f556076ec874b161418973224573f0d36d",
+          "normalized_method_byte_equal": true,
+          "only_change": "Replace only the final uniform all-two-head guided-row extrapolation loop with the original extrapolate function on the complete logits matrix; heterogeneous/partial rows retain original loop; both original coda calls/reference checks/stats remain",
+          "production_source_files_changed": false
+        },
+        "readout_counters": {
+          "uniform_batches": 16240,
+          "uniform_rows": 327680,
+          "fallback_batches": 0
+        },
+        "readout_helper_sha256": "00bfac2830ba440baaf228ea47cccc43c8e412a93e382e8b01914e081e304f4d",
+        "copy_helper_sha256": "92fd69e3590a27f9f49db7a71c18ba52b8941a1ec8282e1c9c17c1560864b723",
+        "production_sources_changed": false,
+        "both_original_coda_calls_and_reference_checks_retained": true
+      },
+      "actual_original_raw_audit_return": 0
+    }
+  ],
+  "independent_original_math": {
+    "passed": true,
+    "phase": "math",
+    "scope": "Different-node complete archived original checks; no GPU trials repeated.",
+    "phases": {
+      "public": {
+        "phase": "public",
+        "records": 293,
+        "all_elements_checked": 1435254791,
+        "category_counts": {
+          "parameter_exact": 269,
+          "public_numeric": 18,
+          "public_full_log_softmax": 6
+        },
+        "raw_sha256": "dd1a53420269e9f473210fd38a2cb6cfdadf1825304b88077d078d446a843eec"
+      },
+      "w2": {
+        "phase": "w2",
+        "records": 167196,
+        "all_elements_checked": 350773356,
+        "category_counts": {
+          "state": 108,
+          "key": 82944,
+          "value": 82944,
+          "logits": 108,
+          "full_log_softmax": 108,
+          "selected_lp": 108,
+          "readout_state": 96,
+          "lifecycle_hidden_state": 58,
+          "lifecycle_reference_hidden": 50,
+          "lifecycle_owned_key_block": 336,
+          "lifecycle_owned_value_block": 336
+        },
+        "raw_sha256": "028cd98f157d15a36593ae05387d76cfa18c080adf0f5eedf8e0f3fabdc8abd2"
+      }
+    },
+    "source_head": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+    "original_category_and_lifecycle_AST_unchanged": true,
+    "gpu_imported": false,
+    "archive_bytes": 8884243380,
+    "archive_sha256": "dab53f59e15b606c683e2fa3a70853272d6a6030f8e6a755c410a39ceca1aff9",
+    "complete_archive_payloads": 343
+  },
+  "independent_CUDA_components": {
+    "passed": true,
+    "started": 1791903962.5082114,
+    "phase": "components",
+    "node": "as03r1b29",
+    "independent_boot": "d61b4ed9-11fa-4024-aa8a-1f2b1e047982",
+    "scope": "Different-node complete archived original checks; no GPU trials repeated.",
+    "copy_cases": 35,
+    "readout_cases": 14,
+    "readout_elements": 18038784,
+    "full_reference_bytes_and_CPU_arithmetic_passed": true,
+    "both_heads_and_original_reference_checks_preserved": true,
+    "CUDA_initialized": false,
+    "archive_bytes": 282464737,
+    "archive_sha256": "5898c5493e74778ec7220420867dd315603440af6d6785c27ee7bb6cf6a48c1c",
+    "complete_archive_payloads": 345,
+    "finished": 1791903968.0807652,
+    "saved_copy_tensor_records_verified": 828
+  },
+  "archives": {
+    "math": {
+      "passed": true,
+      "phase": "math",
+      "bytes": 8884243380,
+      "sha256": "dab53f59e15b606c683e2fa3a70853272d6a6030f8e6a755c410a39ceca1aff9",
+      "manifest_sha256": "3065ae53cadde9607f7bcf755c930441131f90b6cb7f326268283a0d86182703",
+      "payloads": 343,
+      "all_payloads_verified": true,
+      "fsync_complete": true,
+      "source_originals_retained": true
+    },
+    "components": {
+      "passed": true,
+      "phase": "components",
+      "bytes": 282464737,
+      "sha256": "5898c5493e74778ec7220420867dd315603440af6d6785c27ee7bb6cf6a48c1c",
+      "manifest_sha256": "dd24482d5842091855eefcdcf315c4e0d579f434e2c1b970e2b35e0dc2babb3f",
+      "payloads": 345,
+      "all_payloads_verified": true,
+      "fsync_complete": true,
+      "source_originals_retained": true
+    },
+    "e2e": {
+      "passed": true,
+      "phase": "e2e",
+      "bytes": 17110247,
+      "sha256": "b7bcb9507d9637f487b29a5513c5a1061c7c1676b8fe2d8d43b1e0d0afdde9c0",
+      "manifest_sha256": "c67b483cb92a948da05cd22fa93e77133b3e9cd934379e4260da894e20eec4a7",
+      "payloads": 427,
+      "all_payloads_verified": true,
+      "fsync_complete": true,
+      "source_originals_retained": true
+    }
+  },
+  "Mac_integrity": {
+    "passed": true,
+    "archives": [
+      {
+        "phase": "e2e",
+        "bytes": 17110247,
+        "sha256": "b7bcb9507d9637f487b29a5513c5a1061c7c1676b8fe2d8d43b1e0d0afdde9c0",
+        "payloads": 427,
+        "fsync_verified": true
+      },
+      {
+        "phase": "final",
+        "bytes": 11560909,
+        "sha256": "7073f55dc5eecbb1e88555b44ca5ef0ff23e60ec233992f996a78bb0a225fc09",
+        "payloads": 384,
+        "fsync_verified": true
+      }
+    ],
+    "complete_original_large_math_and_component_archives_retained_and_full_payload_checked_on_cluster": true
+  },
+  "actual_execution": {
+    "existing_job_id": 47086932,
+    "existing_name": "1",
+    "existing_node_reused": true,
+    "new_allocation_submitted": false,
+    "owned_GPU_step_seconds": 3140.92090344429,
+    "own_GPU_lanes_held_for_timing_isolation": 4,
+    "independent_CPU_actual_returns": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "producer_actual_returns": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "owned_step_actual_return": 0,
+    "owned_step_natural_join": true,
+    "all_owned_children_joined": true,
+    "owned_contexts_absent": true,
+    "all_four_original_GPU_locks_reacquired_and_released": true,
+    "existing_allocation_holder_preserved": true,
+    "complete_CPU_and_retirement_archive_verified": true,
+    "step_receipt_transitional_passed_field": false,
+    "step_receipt_qualification": "The step receipt retained its initial passed=false field; actual_return0/natural_wait and the final producer, dispatch and watcher results establish execution and retirement. The original receipt remains unchanged."
+  },
+  "failures_retained": {
+    "prior_uniform_copy_extra_gain_percent": 0.19851152250709436,
+    "prior_C8_vector_readout_regression_retained": true,
+    "original_BF16_mixed_depth_full_model_gate_still_failed": true,
+    "original_quality_noninferiority_still_uncertain": true,
+    "current_PR86_original_native_74_pass_33_fail_7_skip_retained": true,
+    "no_scientific_threshold_or_input_shortened": true
+  },
+  "next_diagnostic": "Prepare actual CUDA API/kernel/memory trace evidence for these mixed-depth method counters, with all original loads, heads and reference checks retained; no next GPU trace has been submitted or executed."
+}
