@@ -2,10 +2,11 @@ import pytest
 import torch
 
 from tests.helpers import tiny_ouro_config
-from vllm_rlt import CacheConfig, SamplingParams, SchedulerConfig
+from vllm_rlt import CacheConfig, ExecutionConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
+from vllm_rlt.request import Stage
 
 
 def model():
@@ -81,6 +82,37 @@ def test_incremental_growth_matches_reserved_generation():
         outputs.append(finish(e)["r"])
     assert outputs[0].token_ids == outputs[1].token_ids
     assert outputs[0].exit_depths == outputs[1].exit_depths
+
+
+@pytest.mark.parametrize("stage", [Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT])
+def test_incremental_split_prefill_reserves_prompt_growth(stage):
+    prompt = list(range(1, 9))
+    e = LLMEngine(
+        model(),
+        cache_config=CacheConfig(64, 2, incremental_allocation=True),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2,
+            max_num_batched_tokens=2,
+            prefill_chunk_size=2,
+            enable_preemption=True,
+        ),
+        execution_config=ExecutionConfig(atomic_prefill=False),
+    )
+    try:
+        e.add_request("split", prompt, SamplingParams(max_tokens=1, ignore_eos=True))
+        e.scheduler._admit()
+        request = e.scheduler.requests["split"]
+        assert request.stage is Stage.PREFILLING_PRELUDE
+        if stage is Stage.PREFILLING_RECURRENT:
+            e.step()
+            assert request.stage is Stage.PREFILLING_RECURRENT
+
+        allocated = e.cache_manager.allocated_blocks(request.request_id)
+        expected = max(0, e.cache_manager.required_blocks(len(prompt)) - allocated)
+        assert expected > 0
+        assert e.scheduler._reserved_growth_blocks(reserve_outputs=False) == expected
+    finally:
+        e.close()
 
 
 def test_lossless_preemption_preserves_looped_history():
@@ -221,6 +253,7 @@ def test_prefill_uva_metadata_matches_reference_and_waits_for_consumer():
         ]:
             assert torch.equal(getattr(actual, name), getattr(expected, name)), name
         assert actual.max_seqlen_q == expected.max_seqlen_q
+        c.release_metadata_lease(expected.metadata_lease)
     stream = torch.cuda.Stream()
     stream.wait_stream(torch.cuda.current_stream())
     saved = torch.empty_like(bank.tokens)

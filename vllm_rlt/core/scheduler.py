@@ -194,7 +194,11 @@ class Scheduler:
         reserved = 0
         for request in self.requests.values():
             active = request.stage not in (Stage.WAITING, Stage.RECEIVING)
-            if request.stage != Stage.PREFILL and not (reserve_outputs and active):
+            if request.stage not in (
+                Stage.PREFILL,
+                Stage.PREFILLING_PRELUDE,
+                Stage.PREFILLING_RECURRENT,
+              ) and not (reserve_outputs and active):
                 continue
             tokens = len(request.prompt_token_ids)
             if reserve_outputs:

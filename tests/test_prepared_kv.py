@@ -9,7 +9,7 @@ import torch
 
 from tests.helpers import tiny_ouro_config
 from vllm_rlt.attention import BackendCapabilities
-from vllm_rlt.core.kv_cache_manager import KVCacheManager, KVSpan
+from vllm_rlt.core.kv_cache_manager import KVCacheManager, KVMetadataPool, KVSpan
 from vllm_rlt.models import OuroForCausalLM
 
 
@@ -89,6 +89,26 @@ def test_span_frontend_matches_row_frontend(block_size, layout, for_write, shape
     row_batch = cache._prepare_batch(ids, depths, positions, for_write=for_write)
     span_batch = cache._prepare_batch_spans(spans, for_write=for_write)
     assert_same_batch(row_batch, span_batch)
+
+
+def test_row_and_span_frontends_reuse_one_kv_metadata_lease():
+    cache = make_cache()
+    assert cache.allocate("a", 8)
+    pool = KVMetadataPool(torch.device("cpu"), slots=2)
+    lease = pool.acquire()
+
+    row_batch = cache._prepare_batch(["a", "a"], [0, 0], [0, 1], metadata_lease=lease)
+    wide_ptr = lease.device_wide.data_ptr()
+    narrow_ptr = lease.device_narrow.data_ptr()
+    assert row_batch.metadata_lease is lease
+    assert row_batch.position_ids.tolist() == [0, 1]
+
+    span_batch = cache._prepare_batch_spans([kv_span("a", 0, 0, 2)], metadata_lease=lease)
+    assert span_batch.metadata_lease is lease
+    assert lease.device_wide.data_ptr() == wide_ptr
+    assert lease.device_narrow.data_ptr() == narrow_ptr
+    assert span_batch.position_ids.tolist() == [0, 1]
+    pool.release(lease)
 
 
 def test_span_frontend_preserves_mixed_depth_and_packed_sequence_order():

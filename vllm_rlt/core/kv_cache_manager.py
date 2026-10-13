@@ -142,12 +142,79 @@ class KVSnapshot:
     values: torch.Tensor
 
 
+@dataclass
+class KVMetadataLease:
+    device: torch.device
+    event: object = None
+    in_use: bool = False
+    host_wide: torch.Tensor | None = None
+    device_wide: torch.Tensor | None = None
+    host_wide_array: object = None
+    host_narrow: torch.Tensor | None = None
+    device_narrow: torch.Tensor | None = None
+    host_narrow_array: object = None
+
+    def stage(self, values, dtype):
+        wide = dtype == torch.long
+        host = self.host_wide if wide else self.host_narrow
+        capacity = 0 if host is None else host.numel()
+        count = len(values)
+        if host is None or count > capacity:
+            capacity = max(64, 1 << max(0, count - 1).bit_length(), capacity * 2)
+            host = torch.empty(capacity, dtype=dtype, pin_memory=self.device.type == "cuda")
+            device = torch.empty(capacity, dtype=dtype, device=self.device)
+            array = host.numpy()
+            if wide:
+                self.host_wide, self.device_wide, self.host_wide_array = host, device, array
+            else:
+                self.host_narrow, self.device_narrow, self.host_narrow_array = host, device, array
+        else:
+            device = self.device_wide if wide else self.device_narrow
+            array = self.host_wide_array if wide else self.host_narrow_array
+        array[:count] = values
+        device[:count].copy_(host[:count], non_blocking=self.device.type == "cuda")
+        return device[:count]
+
+
+class KVMetadataPool:
+    def __init__(self, device, slots=3):
+        self.slots = [KVMetadataLease(device) for _ in range(slots)]
+        self.next_slot = 0
+
+    def acquire(self):
+        pending = None
+        for offset in range(len(self.slots)):
+            index = (self.next_slot + offset) % len(self.slots)
+            lease = self.slots[index]
+            if lease.in_use:
+                continue
+            if lease.event is None or lease.event.query():
+                lease.event = None
+                lease.in_use = True
+                self.next_slot = (index + 1) % len(self.slots)
+                return lease
+            if pending is None:
+                pending = index, lease
+        if pending is not None:
+            index, lease = pending
+            lease.event.synchronize()
+            lease.event = None
+            lease.in_use = True
+            self.next_slot = (index + 1) % len(self.slots)
+            return lease
+        raise RuntimeError("all KV metadata leases are in use")
+
+    def release(self, lease, event=None):
+        lease.event = event
+        lease.in_use = False
+
+
 @dataclass(frozen=True, eq=False)
 class _PreparedKVBatch:
-    """Borrowed metadata for one synchronous traversal, never a cross-step cache.
+    """Borrowed metadata for one recurrent traversal.
 
     Host rows and allocation identities are captured independently of caller
-    lists. Device tensors are private, read-only inputs to the cache operations.
+    lists. A metadata lease, when present, stays owned until its consumer event.
     """
 
     owner: "KVCacheManager"
@@ -162,6 +229,7 @@ class _PreparedKVBatch:
     cu_seqlens_q: torch.Tensor | None = None
     max_seqlen_q: int = 1
     spans: tuple[_PreparedKVSpan, ...] = ()
+    metadata_lease: KVMetadataLease | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -241,6 +309,7 @@ class KVCacheManager:
         self.value_cache = torch.empty_like(self.key_cache)
         # Resolve an implicit CUDA index to the actual storage device once.
         self.device = self.key_cache.device
+        self.metadata_pool = KVMetadataPool(self.device)
         self._free_blocks = list(reversed(range(num_blocks)))
         self._allocations: dict[str, _Allocation] = {}
         self.enable_prefix_caching = enable_prefix_caching
@@ -252,6 +321,17 @@ class KVCacheManager:
         self.prefix_hits = self.prefix_queries = 0
         if enable_prefix_caching and layout != "last_exited":
             raise ValueError("prefix caching requires last_exited KV")
+
+    def acquire_metadata_lease(self):
+        return self.metadata_pool.acquire() if self.device.type == "cuda" else None
+
+    def release_metadata_lease(self, lease, event=None):
+        if lease is None:
+            return
+        if self.device.type == "cuda" and event is None:
+            event = torch.cuda.Event()
+            event.record(torch.cuda.current_stream(self.device))
+        self.metadata_pool.release(lease, event)
 
     @property
     def attention_capabilities(self) -> BackendCapabilities:
@@ -658,6 +738,7 @@ class KVCacheManager:
         *,
         for_write: bool = True,
         packed_prefill: bool = False,
+        metadata_lease: KVMetadataLease | None = None,
     ) -> _PreparedKVBatch:
         """Build layer-independent addresses once; do not initialize any KV slot."""
         return self._prepare_batches(
@@ -666,6 +747,7 @@ class KVCacheManager:
             positions,
             for_write=for_write,
             packed_prefill=packed_prefill,
+            metadata_lease=metadata_lease,
         )[0]
 
     def _prepare_batch_spans(
@@ -674,6 +756,7 @@ class KVCacheManager:
         *,
         for_write: bool = True,
         packed_prefill: bool = False,
+        metadata_lease: KVMetadataLease | None = None,
     ) -> _PreparedKVBatch:
         """Prepare logical KV ranges; an empty sequence produces an empty batch.
 
@@ -703,6 +786,7 @@ class KVCacheManager:
             tuple(allocations.items()),
             for_write=for_write,
             packed_prefill=packed_prefill,
+            metadata_lease=metadata_lease,
         )
 
     def _prepare_span_rows(
@@ -712,6 +796,7 @@ class KVCacheManager:
         *,
         for_write: bool,
         packed_prefill: bool,
+        metadata_lease: KVMetadataLease | None,
     ) -> _PreparedKVBatch:
         """Build metadata directly from contiguous spans.
 
@@ -747,11 +832,12 @@ class KVCacheManager:
             block_size=self.block_size,
             packed_prefill=packed_prefill,
         )
-        wide = self._stage(positions + offsets + blocks, torch.long)
         narrow_values = metadata.block_tables + metadata.context_lengths
         if metadata.cu_seqlens_q is not None:
             narrow_values += metadata.cu_seqlens_q
-        narrow = self._stage(narrow_values, torch.int32)
+        wide, narrow, metadata_lease = self._stage_metadata_pair(
+            positions + offsets + blocks, narrow_values, metadata_lease
+        )
         n = len(positions)
         table_rows = metadata.num_rows
         width = metadata.table_width
@@ -771,6 +857,7 @@ class KVCacheManager:
             ),
             max_seqlen_q=metadata.max_seqlen_q,
             spans=spans,
+            metadata_lease=metadata_lease,
         )
 
     def _validate_packed_prefill(self, packed_prefill: bool) -> None:
@@ -787,6 +874,7 @@ class KVCacheManager:
         *,
         for_write: bool = True,
         packed_prefill: bool = False,
+        metadata_lease: KVMetadataLease | None = None,
     ) -> tuple[_PreparedKVBatch, ...]:
         """Prepare one batch per depth assignment of the same request/position rows.
 
@@ -817,6 +905,7 @@ class KVCacheManager:
             allocations,
             for_write=for_write,
             packed_prefill=packed_prefill,
+            metadata_lease=metadata_lease,
         )
 
     def _prepare_row_sets(
@@ -826,15 +915,14 @@ class KVCacheManager:
         *,
         for_write: bool,
         packed_prefill: bool,
+        metadata_lease: KVMetadataLease | None,
     ):
         self._validate_packed_prefill(packed_prefill)
         first = row_sets[0]
         n = len(first)
         position_list = [position for _, _, position in first]
         offsets = [position % self.block_size for position in position_list]
-        # Stage all metadata in two pinned host tensors and copy them without
-        # blocking: a pageable H2D copy would wait for all queued GPU work. The
-        # caching host allocator keeps each staging block alive until its copy ends.
+        # Runtime callers retain the pinned staging lease through the consumer event.
         wide = position_list + offsets
         narrow = []
         shared = {}
@@ -885,8 +973,7 @@ class KVCacheManager:
                     metadata.max_seqlen_q,
                 )
             )
-        wide = self._stage(wide, torch.long)
-        narrow = self._stage(narrow, torch.int32)
+        wide, narrow, metadata_lease = self._stage_metadata_pair(wide, narrow, metadata_lease)
         batches = []
         for rows, block_start, table_start, t, width, lengths_start, packed, max_query in plans:
             batches.append(
@@ -904,13 +991,32 @@ class KVCacheManager:
                         narrow[lengths_start + t : lengths_start + 2 * t + 1] if packed else None
                     ),
                     max_seqlen_q=max_query,
+                    metadata_lease=metadata_lease,
                 )
             )
         return tuple(batches)
 
-    def _stage(self, values, dtype):
-        host = torch.tensor(values, dtype=dtype, pin_memory=self.device.type == "cuda")
-        return host.to(self.device, non_blocking=True)
+    def _stage_metadata_pair(self, wide_values, narrow_values, metadata_lease):
+        owns_lease = metadata_lease is None and self.device.type == "cuda"
+        if owns_lease:
+            metadata_lease = self.metadata_pool.acquire()
+        try:
+            return (
+                self._stage(wide_values, torch.long, metadata_lease),
+                self._stage(narrow_values, torch.int32, metadata_lease),
+                metadata_lease,
+            )
+        except Exception:
+            if owns_lease:
+                self.release_metadata_lease(metadata_lease)
+            raise
+
+    def _stage(self, values, dtype, metadata_lease=None):
+        if metadata_lease is not None:
+            return metadata_lease.stage(values, dtype)
+        if self.device.type == "cuda":
+            raise RuntimeError("CUDA KV metadata staging requires a lease")
+        return torch.tensor(values, dtype=dtype)
 
     def _prepare_device_batch(
         self,
@@ -994,8 +1100,12 @@ class KVCacheManager:
         Address/ownership validation intentionally precedes tensor validation.
         """
         self._validate_layer(layer)
-        batch = self._prepare_batch(request_ids, depths, positions)
-        self._write_prepared(layer, batch, k, v)
+        lease = self.acquire_metadata_lease()
+        try:
+            batch = self._prepare_batch(request_ids, depths, positions, metadata_lease=lease)
+            self._write_prepared(layer, batch, k, v)
+        finally:
+            self.release_metadata_lease(lease)
 
     @torch.no_grad()
     def _write_prepared(
@@ -1046,8 +1156,14 @@ class KVCacheManager:
     ) -> torch.Tensor:
         """Apply causal GQA at each row's own position and recurrence depth."""
         self._validate_layer(layer)
-        batch = self._prepare_batch(request_ids, depths, positions, for_write=False)
-        return self._attend_prepared(layer, batch, q)
+        lease = self.acquire_metadata_lease()
+        try:
+            batch = self._prepare_batch(
+                request_ids, depths, positions, for_write=False, metadata_lease=lease
+            )
+            return self._attend_prepared(layer, batch, q)
+        finally:
+            self.release_metadata_lease(lease)
 
     @torch.no_grad()
     def _attend_prepared(

@@ -276,8 +276,12 @@ class OuroForCausalLM(nn.Module):
             raise ValueError("recurrent requires matching, nonempty packed metadata")
         # Internal model/cache traversal contract: descriptor ownership and
         # allocation identity are checked again by every prepared layer call.
-        batch = cache._prepare_batch(request_ids, depths, positions)
-        return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
+        lease = cache.acquire_metadata_lease()
+        try:
+            batch = cache._prepare_batch(request_ids, depths, positions, metadata_lease=lease)
+            return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
+        finally:
+            cache.release_metadata_lease(lease)
 
     def recurrent_prepared(self, hidden, batch, cache, *, compute_gate=True):
         """Run core with runner-owned metadata, including inactive padding rows."""

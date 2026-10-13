@@ -242,8 +242,12 @@ class NanbeigeForCausalLM(nn.Module):
         count = hidden.shape[0]
         if count == 0 or not (len(request_ids) == len(depths) == len(positions) == count):
             raise ValueError("recurrent requires matching, nonempty packed metadata")
-        batch = cache._prepare_batch(request_ids, depths, positions)
-        return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
+        lease = cache.acquire_metadata_lease()
+        try:
+            batch = cache._prepare_batch(request_ids, depths, positions, metadata_lease=lease)
+            return self.recurrent_prepared(hidden, batch, cache, compute_gate=compute_gate)
+        finally:
+            cache.release_metadata_lease(lease)
 
     def recurrent_prepared(self, hidden, batch, cache, *, compute_gate=True):
         """Run recurrent core with runner-owned metadata."""

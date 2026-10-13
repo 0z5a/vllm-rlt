@@ -140,9 +140,9 @@ def test_depth_batches_stage_metadata_twice_and_preserve_shared_views(monkeypatc
     original_stage = cache._stage
     stages = []
 
-    def stage(values, dtype):
+    def stage(values, dtype, metadata_lease=None):
         stages.append(dtype)
-        return original_stage(values, dtype)
+        return original_stage(values, dtype, metadata_lease)
 
     monkeypatch.setattr(cache, "_stage", stage)
     batches = cache._prepare_batches(

@@ -42,6 +42,7 @@ def execution_buffer_bytes(config, scheduler, cache, execution, element_size):
     # Split recurrent batches gather staged rows into a contiguous model input.
     if not execution.atomic_prefill:
         total += rows * hidden
+        total += 3 * (scheduler.max_num_seqs * 4 * 8 + max(rows, scheduler.prefill_chunk_size) * 8)
     return total
 
 

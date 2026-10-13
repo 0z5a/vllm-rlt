@@ -85,13 +85,22 @@ def test_cpu_prefill_segments_gather_and_scatter_contiguous_spans():
     )
     prepared = e.model_runner.prepare(batch)
     slots = e.model_runner.state_slots
-    assert prepared.prefill_segments == ((slots["a"], 1, 2, 0), (slots["b"], 1, 1, 2))
-    assert prepared.prefill_segment_indices is None
+    metadata = prepared.prefill_metadata
+    assert metadata.lease.host_segments[:2].tolist() == [
+        [slots["a"], 1, 2, 0],
+        [slots["b"], 1, 1, 2],
+    ]
+    assert metadata.token_ids.tolist() == [2, 3, 7]
+    assert metadata.lease.host_segments.data_ptr() == metadata.lease.device_segments.data_ptr()
 
-    hidden = torch.arange(3 * e.model.config.hidden_size, dtype=e.model_runner.prefill_states.dtype)
-    hidden = hidden.view(3, e.model.config.hidden_size)
-    e.model_runner._scatter_prefill(hidden, prepared)
-    assert torch.equal(e.model_runner._gather_prefill(prepared), hidden)
+    try:
+        hidden = torch.arange(
+            3 * e.model.config.hidden_size, dtype=e.model_runner.prefill_states.dtype
+        ).view(3, e.model.config.hidden_size)
+        e.model_runner._scatter_prefill(hidden, prepared)
+        assert torch.equal(e.model_runner._gather_prefill(prepared), hidden)
+    finally:
+        e.model_runner._release_prepared_metadata(prepared)
     e.close()
 
 
@@ -111,8 +120,10 @@ def test_recurrent_prepare_uses_absolute_token_start_for_kv_span():
         assert prepared.kv.position_ids.tolist() == [2]
         assert prepared.kv.rows[0][2] == 2
         slot = e.model_runner.state_slots["a"]
-        assert prepared.prefill_segments == ((slot, 1, 1, 0),)
+        assert prepared.prefill_metadata.lease.host_segments[0].tolist() == [slot, 1, 1, 0]
     finally:
+        if "prepared" in locals():
+            e.model_runner._release_prepared_metadata(prepared)
         e.close()
 
 
@@ -141,8 +152,10 @@ def test_cuda_prefill_segments_gather_and_scatter_variable_spans():
             ],
         )
         prepared = e.model_runner.prepare(batch)
-        assert prepared.prefill_segments == ()
-        assert tuple(prepared.prefill_segment_indices.shape) == (2, 4)
+        assert tuple(prepared.prefill_metadata.lease.device_segments.shape) == (2, 4)
+        assert prepared.prefill_metadata.lease.host_segments.is_pinned()
+        assert prepared.prefill_metadata.lease.host_token_ids.is_pinned()
+        assert prepared.prefill_metadata.token_ids.tolist() == [2, 3, 7]
         hidden = torch.arange(
             3 * e.model.config.hidden_size, device="cuda", dtype=torch.bfloat16
         ).view(3, e.model.config.hidden_size)
@@ -150,7 +163,117 @@ def test_cuda_prefill_segments_gather_and_scatter_variable_spans():
         torch.cuda.synchronize()
         assert torch.equal(e.model_runner._gather_prefill(prepared), hidden)
     finally:
+        if "prepared" in locals():
+            torch.cuda.synchronize()
+            e.model_runner._release_prepared_metadata(prepared)
         e.close()
+
+
+@pytest.mark.gpu
+def test_cuda_prefill_submit_keeps_host_and_device_buffers_until_event():
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+    from vllm_rlt.worker.model_runner import PrefillMetadataPool
+
+    e = LLMEngine(
+        OuroForCausalLM(tiny_ouro_config()).to("cuda", torch.bfloat16),
+        cache_config=CacheConfig(64, 4),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=4
+        ),
+        execution_config=ExecutionConfig(atomic_prefill=False),
+        attention_backend="triton",
+    )
+
+    class HeldCudaEvent:
+        def __init__(self, event):
+            self.event = event
+            self.released = False
+
+        def query(self):
+            return self.released and self.event.query()
+
+        def synchronize(self):
+            self.event.synchronize()
+            self.released = True
+
+    try:
+        e.add_request("a", [1, 2, 3, 4], SamplingParams(max_tokens=1))
+        e.add_request("b", [5, 6, 7, 8], SamplingParams(max_tokens=1))
+        a, b = (e.scheduler.requests[rid] for rid in ("a", "b"))
+        batches = [
+            SchedulerOutput(
+                Stage.PREFILLING_PRELUDE,
+                [ScheduledItem(request, 0, 2, chunk_start=0)],
+            )
+            for request in (a, b)
+        ]
+        runner = e.model_runner
+        runner.prefill_metadata_pool = PrefillMetadataPool(2, 4, runner.device, slots=2)
+
+        first_ticket = runner.submit(batches[0])
+        first_lease = runner.prefill_metadata_pool.slots[0]
+        first_segments = first_lease.host_segments[:1].clone()
+        first_tokens = first_lease.host_token_ids[:2].clone()
+        held = HeldCudaEvent(first_ticket.event)
+        first_lease.event = held
+
+        second_ticket = runner.submit(batches[1])
+        second_lease = runner.prefill_metadata_pool.slots[1]
+        assert second_lease.host_segments.data_ptr() != first_lease.host_segments.data_ptr()
+        assert second_lease.host_token_ids.data_ptr() != first_lease.host_token_ids.data_ptr()
+        assert torch.equal(first_lease.host_segments[:1], first_segments)
+        assert torch.equal(first_lease.host_token_ids[:2], first_tokens)
+
+        second_ticket.event.synchronize()
+        third_ticket = runner.submit(batches[1])
+        assert runner.prefill_metadata_pool.slots[1].event is third_ticket.event
+        held.synchronize()
+        assert torch.equal(first_lease.device_segments[:1].cpu(), first_segments)
+        assert torch.equal(first_lease.device_token_ids[:2].cpu(), first_tokens)
+        fourth_ticket = runner.submit(batches[0])
+        assert runner.prefill_metadata_pool.slots[0].event is fourth_ticket.event
+    finally:
+        torch.cuda.synchronize()
+        e.close()
+
+
+@pytest.mark.gpu
+def test_cuda_kv_metadata_lease_reuses_buffers_after_consumer_event():
+    from vllm_rlt.core.kv_cache_manager import KVCacheManager, KVSpan
+
+    cache = KVCacheManager(
+        1, 1, 64, 32, 16, 4, device="cuda", dtype=torch.bfloat16, backend="triton"
+    )
+    assert cache.allocate("a", 4)
+    first = cache.acquire_metadata_lease()
+    batch = cache._prepare_batch_spans([KVSpan("a", 0, 1, 2)], metadata_lease=first)
+    wide_ptr = first.device_wide.data_ptr()
+    narrow_ptr = first.device_narrow.data_ptr()
+    assert first.host_wide.is_pinned() and first.host_narrow.is_pinned()
+    consumed = first.device_wide[:6].sum() + first.device_narrow.sum()
+    event = torch.cuda.Event()
+    event.record(torch.cuda.current_stream())
+    cache.release_metadata_lease(batch.metadata_lease, event)
+
+    second = cache.acquire_metadata_lease()
+    assert second is not first
+    second_done = torch.cuda.Event()
+    second_done.record(torch.cuda.current_stream())
+    cache.release_metadata_lease(second, second_done)
+    third = cache.acquire_metadata_lease()
+    third_done = torch.cuda.Event()
+    third_done.record(torch.cuda.current_stream())
+    cache.release_metadata_lease(third, third_done)
+
+    event.synchronize()
+    assert torch.equal(first.device_wide[:6].cpu(), first.host_wide[:6])
+    assert torch.isfinite(consumed)
+    reused = cache.acquire_metadata_lease()
+    assert reused is first
+    assert reused.device_wide.data_ptr() == wide_ptr
+    assert reused.device_narrow.data_ptr() == narrow_ptr
+    cache.release_metadata_lease(reused)
+    torch.cuda.synchronize()
 
 
 class HeldEvent:
@@ -165,6 +288,223 @@ class HeldEvent:
         if self.before_sync is not None:
             self.before_sync()
         self.complete = True
+
+
+def test_prefill_metadata_pool_reuses_slots_after_their_events_complete():
+    from vllm_rlt.worker.model_runner import PrefillMetadataPool
+
+    pool = PrefillMetadataPool(2, 4, torch.device("cpu"), slots=2)
+    first = pool.acquire()
+    first_ptr = first.host_segments.data_ptr()
+    first_token_ptr = first.host_token_ids.data_ptr()
+    pending = HeldEvent()
+    pool.release_after(first, pending)
+
+    second = pool.acquire()
+    second_ptr = second.host_segments.data_ptr()
+    assert second_ptr != first_ptr
+    assert second.host_token_ids.data_ptr() != first_token_ptr
+    second_done = HeldEvent()
+    second_done.complete = True
+    pool.release_after(second, second_done)
+
+    reused_second = pool.acquire()
+    assert reused_second.host_segments.data_ptr() == second_ptr
+    assert reused_second.host_segments.data_ptr() != first_ptr
+    pool.release(reused_second)
+
+    pending.complete = True
+    reused_first = pool.acquire()
+    assert reused_first.host_segments.data_ptr() == first_ptr
+    assert reused_first.host_token_ids.data_ptr() == first_token_ptr
+    pool.release(reused_first)
+
+
+def test_prefill_metadata_pool_waits_only_when_all_slots_are_in_flight():
+    from vllm_rlt.worker.model_runner import PrefillMetadataPool
+
+    pool = PrefillMetadataPool(1, 1, torch.device("cpu"), slots=2)
+    first = pool.acquire()
+    first_pending = HeldEvent()
+    pool.release_after(first, first_pending)
+    second = pool.acquire()
+    second_pending = HeldEvent()
+    pool.release_after(second, second_pending)
+
+    reused = pool.acquire()
+    assert reused is first
+    assert first_pending.complete
+    assert not second_pending.complete
+    pool.release(reused)
+
+
+@pytest.mark.gpu
+def test_submit_transfer_failure_releases_only_prepared_prefill_lease():
+    from dataclasses import replace
+
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+
+    e = LLMEngine(
+        OuroForCausalLM(tiny_ouro_config()).to("cuda", torch.bfloat16),
+        cache_config=CacheConfig(64, 4),
+        scheduler_config=SchedulerConfig(max_num_seqs=1, max_num_batched_tokens=4),
+        execution_config=ExecutionConfig(async_scheduling=True, atomic_prefill=False),
+        attention_backend="triton",
+    )
+    e.add_request("a", [1, 2, 3, 4], SamplingParams(max_tokens=1))
+    assert e.cache_manager.allocate("a", 4)
+    request = e.scheduler.requests["a"]
+    batch = SchedulerOutput(
+        Stage.PREFILLING_RECURRENT,
+        [ScheduledItem(request, token_start=0, token_count=2, depth=0, chunk_start=0)],
+    )
+    runner = e.model_runner
+    original_prepare = runner.prepare
+
+    class FailingRouting:
+        imports = ()
+
+        def transfer(self, batch):
+            raise RuntimeError("injected metadata transfer failure")
+
+        def record_done(self):
+            return None
+
+    def prepare_with_failing_transfer(value):
+        prepared = original_prepare(value)
+        return replace(prepared, routing=FailingRouting())
+
+    runner.prepare = prepare_with_failing_transfer
+    try:
+        with pytest.raises(RuntimeError, match="injected metadata transfer failure"):
+            runner.submit(batch)
+        assert all(not lease.in_use for lease in runner.prefill_metadata_pool.slots)
+        assert all(not lease.in_use for lease in runner.cache_manager.metadata_pool.slots)
+        runner.prepare = original_prepare
+        prepared = runner.prepare(batch)
+        torch.cuda.synchronize()
+        runner._release_prepared_metadata(prepared)
+    finally:
+        runner.prepare = original_prepare
+        e.close()
+
+
+def test_metadata_pool_full_failure_does_not_release_existing_leases():
+    from vllm_rlt.core.kv_cache_manager import KVMetadataPool
+
+    pool = KVMetadataPool(torch.device("cpu"), slots=2)
+    first, second = pool.acquire(), pool.acquire()
+    first.stage([1, 2], torch.long)
+    second.stage([3, 4], torch.long)
+    first_ptr, second_ptr = first.device_wide.data_ptr(), second.device_wide.data_ptr()
+    first_event, second_event = HeldEvent(), HeldEvent()
+    first.event, second.event = first_event, second_event
+    try:
+        with pytest.raises(RuntimeError, match="all KV metadata leases are in use"):
+            pool.acquire()
+        assert first.in_use and second.in_use
+        assert first.event is first_event and second.event is second_event
+        assert first.device_wide.data_ptr() == first_ptr
+        assert second.device_wide.data_ptr() == second_ptr
+        pool.release(first)
+        third = pool.acquire()
+        assert third is first
+        pool.release(third)
+    finally:
+        pool.release(second)
+
+
+def test_submit_does_not_retry_failed_routing_cleanup(monkeypatch):
+    from contextlib import nullcontext
+    from dataclasses import replace
+
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+
+    e = split_engine()
+    e.add_request("a", [1, 2], SamplingParams(max_tokens=1))
+    request = e.scheduler.requests["a"]
+    batch = SchedulerOutput(
+        Stage.PREFILLING_PRELUDE,
+        [ScheduledItem(request, token_start=0, token_count=2, chunk_start=0)],
+    )
+    runner = e.model_runner
+
+    class FakeStream:
+        def wait_event(self, event):
+            return None
+
+    class FailingRouting:
+        imports = ()
+        ready_event = object()
+
+        def __init__(self):
+            self.record_done_calls = 0
+
+        def transfer(self, value):
+            return value
+
+        def record_done(self):
+            self.record_done_calls += 1
+            raise RuntimeError("injected routing cleanup failure")
+
+    routing = FailingRouting()
+    original_prepare = runner.prepare
+    original_execute = runner._execute
+
+    def fail_execute(batch, prepared):
+        raise RuntimeError("injected execute failure")
+
+    runner.core_stream = FakeStream()
+    runner.prepare = lambda value: replace(original_prepare(value), routing=routing)
+    runner._execute = fail_execute
+    monkeypatch.setattr(torch.cuda, "stream", lambda stream: nullcontext())
+    try:
+        with pytest.raises(RuntimeError, match="injected routing cleanup failure"):
+            runner.submit(batch)
+        assert routing.record_done_calls == 1
+        assert all(not lease.in_use for lease in runner.prefill_metadata_pool.slots)
+    finally:
+        runner.prepare = original_prepare
+        runner._execute = original_execute
+        runner.core_stream = None
+        e.close()
+
+
+@pytest.mark.gpu
+def test_cuda_submit_readback_failure_releases_metadata_leases():
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+
+    e = LLMEngine(
+        OuroForCausalLM(tiny_ouro_config()).to("cuda", torch.bfloat16),
+        cache_config=CacheConfig(64, 4),
+        scheduler_config=SchedulerConfig(max_num_seqs=1, max_num_batched_tokens=4),
+        execution_config=ExecutionConfig(atomic_prefill=False),
+        attention_backend="triton",
+    )
+    e.add_request("a", [1, 2, 3, 4], SamplingParams(max_tokens=1))
+    request = e.scheduler.requests["a"]
+    batch = SchedulerOutput(
+        Stage.PREFILLING_PRELUDE,
+        [ScheduledItem(request, token_start=0, token_count=2, chunk_start=0)],
+    )
+    runner = e.model_runner
+    original_readback = runner._readback_slot
+
+    def fail_readback(result):
+        raise RuntimeError("injected readback failure")
+
+    runner._readback_slot = fail_readback
+    try:
+        with pytest.raises(RuntimeError, match="injected readback failure"):
+            runner.submit(batch)
+        torch.cuda.synchronize()
+        assert all(not lease.in_use for lease in runner.prefill_metadata_pool.slots)
+        runner._readback_slot = original_readback
+        runner.submit(batch)
+    finally:
+        runner._readback_slot = original_readback
+        torch.cuda.synchronize()
+        e.close()
 
 
 def advance_chunk(request, item):
@@ -576,7 +916,8 @@ def test_cuda_split_failure_drains_writes_before_request_id_reuse(
         assert runner.state_slots == {}
 
         monkeypatch.setattr(runner, failure_site, original)
-        result = run_request(e, [3, 2, 1], "reused")
+        e.add_request("reused", [3, 2, 1], SamplingParams(max_tokens=1, ignore_eos=True))
+        result = drain_request(e)
         assert len(result.token_ids) == 1
         assert result.exit_depths == [4]
     finally:
