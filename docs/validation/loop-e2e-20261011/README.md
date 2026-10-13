@@ -168,6 +168,13 @@ The same archived C/D traces now have four additional CPU-generated CUDA API, la
 
 A private prototype vectorizes only the uniform guided-row extrapolation while preserving both original coda calls, reference checks and heterogeneous/partial fallback. **14 synthetic matrix cases /18038784 FP32 output elements** match the scalar implementation and independent CPU arithmetic bit for bit. This is a guidance-component qualification; actual model/E2E performance requires the separate comparison below, and quality remains unqualified. See [reloop-vector-readout-bit-qualification.json](reloop-vector-readout-bit-qualification.json).
 
+
+## LoopCD: captured PR86 native GPU regressions
+
+At source pin `48932b2360f6ee750c154b268dae71fef8701782`, the complete original114-case native GPU suite returned **1:74 passed,33 failed,7 skipped**. A separate node verified every original archive payload, the140-file source manifest, JUnit and all114 outcomes. The complete original archive and independent CPU closure also passed a full compressed-SHA/member/fsync backup check. Archive integrity passing does not make the original tests pass.
+
+Of the33 failures, **28 require missing official FlashAttention packages** (22 FA3,6 FA4), **3 PD cases require device1 while this execution exposed one GPU**, and **2 tiny Coda request-reuse cases fail the original `fallbacks > 0` counter assertion**. The latter captured once, replayed36/18 times and reported0 fallbacks for `two_head`/`linear_fused`; the later original eager/graph token-depth comparison was not reached. All failed/skipped reports and assertions remain. This is current-pin native regression data, with no official-checkpoint, quality, full numerical-parity or throughput claim. See [loopcd-current-pr86-native-gpu-regressions.json](loopcd-current-pr86-native-gpu-regressions.json).
+
 ## Remaining work
 
 - ReLoop: the selected native and HTTP CPU-isolation confirmations are independently audited; both interfaces completed and independently audited the remaining L1/T64_short/Q64 cases with the same frozen inputs and disjoint CPU sets. Both original runnable matrices are independently audited; capacity stops and all timing slow points remain. The small token-ID HTTP input support is on `codex/reloop-http-tokenids-20261011` (`e4f504872975563b8f31e91f02996add158cf8c8`). Capacity-exceeded cases stay explicitly separate.
