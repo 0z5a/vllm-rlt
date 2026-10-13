@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from vllm_rlt.config import SchedulerConfig
-from vllm_rlt.core.scheduling_policy import SchedulingPolicyFactory
+from vllm_rlt.core.scheduling_policy import create_scheduling_policy
 from vllm_rlt.request import FinishReason, Request, Stage
 
 # Items of these stages cover a contiguous span of prompt tokens, so their KV
@@ -104,9 +104,7 @@ class Scheduler:
         # One scheduling boundary per chunk (atomic) or per recurrence depth (split).
         # The policy is derived from the same flag so the two cannot disagree.
         self.atomic_prefill = atomic_prefill
-        self.policy = SchedulingPolicyFactory.create_from_configs(
-            config, speculative_config, atomic_prefill
-        )
+        self.policy = create_scheduling_policy(config, speculative_config, atomic_prefill)
 
     def add_request(self, request: Request):
         if request.request_id in self.requests:

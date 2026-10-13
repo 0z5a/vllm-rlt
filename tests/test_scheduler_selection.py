@@ -10,7 +10,7 @@ import pytest
 import torch
 
 from tests.helpers import tiny_ouro_config
-from vllm_rlt import CacheConfig, SamplingParams, SchedulerConfig
+from vllm_rlt import CacheConfig, ExecutionConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Stage
@@ -21,7 +21,7 @@ def model():
     return OuroForCausalLM(tiny_ouro_config())
 
 
-def engine(max_num_seqs=2, **scheduler_options):
+def engine(max_num_seqs=2, atomic_prefill=True, **scheduler_options):
     return LLMEngine(
         model(),
         cache_config=CacheConfig(64, 2),
@@ -30,6 +30,7 @@ def engine(max_num_seqs=2, **scheduler_options):
             enable_preemption=True,
             **scheduler_options,
         ),
+        execution_config=ExecutionConfig(atomic_prefill=atomic_prefill),
     )
 
 
@@ -101,9 +102,10 @@ def test_reused_request_id_is_not_protected_by_the_previous_request():
 
 
 @pytest.mark.parametrize("boundary", [Stage.PRELUDE, Stage.CODA])
-def test_refill_runs_boundary_restored_during_admission(boundary):
+@pytest.mark.parametrize("atomic_prefill", [True, False], ids=["atomic", "split"])
+def test_refill_runs_boundary_restored_during_admission(boundary, atomic_prefill):
     """A sole resumed boundary must run in the admission step that restores it."""
-    e = engine(max_num_seqs=1)
+    e = engine(max_num_seqs=1, atomic_prefill=atomic_prefill)
     e.add_request("resumed", [1, 2], params(max_tokens=3))
     request = e.scheduler.requests["resumed"]
     for _ in range(20):

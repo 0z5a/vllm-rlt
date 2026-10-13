@@ -42,6 +42,9 @@ class SchedulingPolicy:
 
 
 class RefillPolicy(SchedulingPolicy):
+    # Split refill specializes prompt work without duplicating refill ordering.
+    prompt_prefill_stages = (Stage.PREFILL,)
+
     def schedule(
         self, scheduler: "Scheduler", *, prefer_recurrent: bool = False
     ) -> "SchedulerOutput | None":
@@ -58,8 +61,9 @@ class RefillPolicy(SchedulingPolicy):
         if self.decode_due and q[Stage.RECURRENT]:
             return scheduler._take(Stage.RECURRENT)
         scheduler._admit()
-        if q[Stage.PREFILL]:
-            return scheduler._take(Stage.PREFILL)
+        for stage in self.prompt_prefill_stages: # PREFILL for atomic
+            if q[stage]: # PREFILLING_PRELUDE and PREFILLING_RECURRENT for split prefill
+                return scheduler._take(stage)
         # Admission can restore a snapshot directly to a boundary stage.
         if q[Stage.PRELUDE]:
             return scheduler._take(Stage.PRELUDE)
@@ -126,60 +130,32 @@ class SpeculativePolicy(SchedulingPolicy):
         return None
 
 
-class SplitPrefillPolicy(SchedulingPolicy):
+class SplitPrefillPolicy(RefillPolicy):
     """Refill ordering where each recurrence depth is its own batch boundary."""
-
-    def schedule(self, scheduler: "Scheduler", *, prefer_recurrent: bool = False):
-        q = scheduler.queues
-        if prefer_recurrent and q[Stage.RECURRENT]:
-            return scheduler._take(Stage.RECURRENT)
-        if q[Stage.PRELUDE]:
-            return scheduler._take(Stage.PRELUDE)
-        if q[Stage.CODA] and (
-            len(q[Stage.CODA]) >= self.config.min_coda_batch_size or not q[Stage.RECURRENT]
-        ):
-            return scheduler._take(Stage.CODA)
-        if self.decode_due and q[Stage.RECURRENT]:
-            return scheduler._take(Stage.RECURRENT)
-        scheduler._admit()
-        for stage in (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT):
-            if q[stage]:
-                # A stage can hold only blocked requests: the staged-chunk window
-                # may still be busy, or KV growth may be waiting for capacity.
-                return scheduler._take(stage)
-        if q[Stage.PRELUDE]:
-            return scheduler._take(Stage.PRELUDE)
-        if q[Stage.CODA] and (
-            len(q[Stage.CODA]) >= self.config.min_coda_batch_size or not q[Stage.RECURRENT]
-        ):
-            return scheduler._take(Stage.CODA)
-        if q[Stage.RECURRENT]:
-            return scheduler._take(Stage.RECURRENT)
-        return None
+    # override BasePolicy's prefill stages
+    prompt_prefill_stages = (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT)
 
 
-class SchedulingPolicyFactory:
-    @staticmethod
-    def create_from_configs(
-        scheduler_config: SchedulerConfig,
-        speculative_config: SpeculativeConfig | None,
-        atomic_prefill: bool = True,
-    ) -> SchedulingPolicy:
-        """Pick one policy; reject combinations no policy implements yet.
+def create_scheduling_policy(
+    scheduler_config: SchedulerConfig,
+    speculative_config: SpeculativeConfig | None,
+    atomic_prefill: bool = True,
+) -> SchedulingPolicy:
+    """Pick one policy; reject combinations no policy implements yet.
 
-        Failing here keeps an unimplemented mode from silently changing
-        semantics or returning an empty schedule forever.
-        """
-        if speculative_config is not None:
-            if not atomic_prefill:
-                raise ValueError(
-                    "speculative decoding requires atomic prefill; "
-                    "set ExecutionConfig(atomic_prefill=True)"
-                )
-            return SpeculativePolicy(scheduler_config)
-        if atomic_prefill:
-            policy_cls = RefillPolicy if scheduler_config.mode == "refill" else NoRefillPolicy
-            return policy_cls(scheduler_config)
-        if scheduler_config.mode != "refill":
-            raise ValueError("split prefill currently implements refill scheduling only")
-        return SplitPrefillPolicy(scheduler_config)
+    Failing here keeps an unimplemented mode from silently changing
+    semantics or returning an empty schedule forever.
+    """
+    if speculative_config is not None:
+        if not atomic_prefill:
+            raise ValueError(
+                "speculative decoding requires atomic prefill; "
+                "set ExecutionConfig(atomic_prefill=True)"
+            )
+        return SpeculativePolicy(scheduler_config)
+    if atomic_prefill:
+        policy_cls = RefillPolicy if scheduler_config.mode == "refill" else NoRefillPolicy
+        return policy_cls(scheduler_config)
+    if scheduler_config.mode != "refill":
+        raise ValueError("split prefill currently implements refill scheduling only")
+    return SplitPrefillPolicy(scheduler_config)
