@@ -91,10 +91,10 @@ def gather_segments_kernel(
     segment = tl.program_id(0)
     rows = tl.program_id(1) * ROWS + tl.arange(0, ROWS)
     cols = tl.program_id(2) * TILE + tl.arange(0, TILE)
-    slot = tl.load(Segments + segment * 4)
-    offset = tl.load(Segments + segment * 4 + 1)
-    count = tl.load(Segments + segment * 4 + 2)
-    out_start = tl.load(Segments + segment * 4 + 3)
+    slot = tl.load(Segments + segment * 5)
+    offset = tl.load(Segments + segment * 5 + 1)
+    count = tl.load(Segments + segment * 5 + 2)
+    out_start = tl.load(Segments + segment * 5 + 3)
     mask = (rows[:, None] < count) & (cols[None, :] < H)
     source = tl.load(
         Pool + (slot * POOL_ROWS + offset + rows[:, None]) * IN_STRIDE + cols[None, :],
@@ -119,11 +119,12 @@ def scatter_segments_kernel(
     segment = tl.program_id(0)
     rows = tl.program_id(1) * ROWS + tl.arange(0, ROWS)
     cols = tl.program_id(2) * TILE + tl.arange(0, TILE)
-    slot = tl.load(Segments + segment * 4)
-    offset = tl.load(Segments + segment * 4 + 1)
-    count = tl.load(Segments + segment * 4 + 2)
-    in_start = tl.load(Segments + segment * 4 + 3)
-    mask = (rows[:, None] < count) & (cols[None, :] < H)
+    slot = tl.load(Segments + segment * 5)
+    offset = tl.load(Segments + segment * 5 + 1)
+    count = tl.load(Segments + segment * 5 + 2)
+    in_start = tl.load(Segments + segment * 5 + 3)
+    keep_intermediate = tl.load(Segments + segment * 5 + 4) != 0
+    mask = (rows[:, None] < count) & (cols[None, :] < H) & keep_intermediate
     value = tl.load(
         In + (in_start + rows[:, None]) * IN_STRIDE + cols[None, :],
         mask,

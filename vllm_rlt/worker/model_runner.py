@@ -41,7 +41,7 @@ class PrefillMetadataPool:
         self.next_slot = 0
         for _ in range(slots):
             host = torch.empty(
-                (max_num_seqs, 4),
+                (max_num_seqs, 5),
                 dtype=torch.int64,
                 pin_memory=device.type == "cuda",
             )
@@ -352,7 +352,17 @@ class ModelRunner:
         for index, item in enumerate(batch.items):
             slot = self._slot(item.request)
             offset = item.token_start - item.chunk_start
-            lease.host_segments_array[index] = (slot, offset, item.token_count, row_start)
+            keep_intermediate = batch.stage == Stage.PREFILLING_PRELUDE or (
+                item.depth + 1 < self.model.config.total_ut_steps
+            )
+            # Packed fields: slot, chunk offset, count, batch row, keep flag.
+            lease.host_segments_array[index] = (
+                slot,
+                offset,
+                item.token_count,
+                row_start,
+                int(keep_intermediate),
+            )
             row_start += item.token_count
             max_rows = max(max_rows, item.token_count)
         count = len(batch.items)
@@ -386,7 +396,7 @@ class ModelRunner:
                 256,
             )
             return hidden
-        for slot, offset, rows, row_start in metadata.lease.host_segments_array[
+        for slot, offset, rows, row_start, _ in metadata.lease.host_segments_array[
             : len(prepared.batch.items)
         ]:
             hidden[row_start : row_start + rows].copy_(
@@ -418,12 +428,20 @@ class ModelRunner:
                 256,
             )
         else:
-            for slot, offset, rows, row_start in metadata.lease.host_segments_array[
-                : len(prepared.batch.items)
-            ]:
+            for (
+                slot,
+                offset,
+                rows,
+                row_start,
+                keep_intermediate,
+            ) in metadata.lease.host_segments_array[: len(prepared.batch.items)]:
+                if not keep_intermediate:
+                    continue
                 self.prefill_states[slot, offset : offset + rows].copy_(
                     hidden[row_start : row_start + rows]
                 )
+
+    def _store_split_prefill_outputs(self, hidden, prepared):
         row = 0
         for item in prepared.batch.items:
             if item.completes_prompt:
@@ -676,6 +694,7 @@ class ModelRunner:
                     compute_gate=False,
                 )
             self._scatter_prefill(hidden, prepared)
+            self._store_split_prefill_outputs(hidden, prepared)
             return None
         size = self._size(len(requests))
         group = "core" if batch.stage == Stage.RECURRENT else "boundary"

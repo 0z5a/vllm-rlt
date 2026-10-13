@@ -87,8 +87,8 @@ def test_cpu_prefill_segments_gather_and_scatter_contiguous_spans():
     slots = e.model_runner.state_slots
     metadata = prepared.prefill_metadata
     assert metadata.lease.host_segments[:2].tolist() == [
-        [slots["a"], 1, 2, 0],
-        [slots["b"], 1, 1, 2],
+        [slots["a"], 1, 2, 0, 1],
+        [slots["b"], 1, 1, 2, 1],
     ]
     assert metadata.token_ids.tolist() == [2, 3, 7]
     assert metadata.lease.host_segments.data_ptr() == metadata.lease.device_segments.data_ptr()
@@ -120,10 +120,58 @@ def test_recurrent_prepare_uses_absolute_token_start_for_kv_span():
         assert prepared.kv.position_ids.tolist() == [2]
         assert prepared.kv.rows[0][2] == 2
         slot = e.model_runner.state_slots["a"]
-        assert prepared.prefill_metadata.lease.host_segments[0].tolist() == [slot, 1, 1, 0]
+        assert prepared.prefill_metadata.lease.host_segments[0].tolist() == [slot, 1, 1, 0, 1]
     finally:
         if "prepared" in locals():
             e.model_runner._release_prepared_metadata(prepared)
+        e.close()
+
+
+def test_final_depth_prefill_scatter_retains_only_coda_hidden_per_item():
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+
+    e = split_engine(
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=2
+        )
+    )
+    e.add_request("mid", [1, 2], SamplingParams(max_tokens=1))
+    e.add_request("final", [3, 4], SamplingParams(max_tokens=1))
+    for request_id in ("mid", "final"):
+        assert e.cache_manager.allocate(request_id, 2)
+    mid, final = (e.scheduler.requests[rid] for rid in ("mid", "final"))
+    batch = SchedulerOutput(
+        Stage.PREFILLING_RECURRENT,
+        [
+            ScheduledItem(mid, 0, 2, depth=1, chunk_start=0),
+            ScheduledItem(final, 0, 2, depth=3, chunk_start=0, completes_prompt=True),
+        ],
+    )
+    runner = e.model_runner
+    prepared = None
+    try:
+        prepared = runner.prepare(batch)
+        mid_slot, final_slot = runner.state_slots["mid"], runner.state_slots["final"]
+        runner.prefill_states[mid_slot, :2].fill_(9)
+        runner.prefill_states[final_slot, :2].fill_(7)
+        hidden = torch.arange(
+            4 * e.model.config.hidden_size, dtype=runner.prefill_states.dtype
+        ).view(4, e.model.config.hidden_size)
+
+        runner._scatter_prefill(hidden, prepared)
+        runner._store_split_prefill_outputs(hidden, prepared)
+
+        assert prepared.prefill_metadata.lease.host_segments[:2].tolist() == [
+            [mid_slot, 0, 2, 0, 1],
+            [final_slot, 0, 2, 2, 0],
+        ]
+        assert torch.equal(runner.prefill_states[mid_slot, :2], hidden[:2])
+        assert torch.equal(runner.prefill_states[final_slot, :2], torch.full_like(hidden[2:], 7))
+        assert torch.equal(final.hidden_state, hidden[-1])
+        assert mid.hidden_state is None
+    finally:
+        if prepared is not None:
+            runner._release_prepared_metadata(prepared)
         e.close()
 
 
@@ -152,7 +200,7 @@ def test_cuda_prefill_segments_gather_and_scatter_variable_spans():
             ],
         )
         prepared = e.model_runner.prepare(batch)
-        assert tuple(prepared.prefill_metadata.lease.device_segments.shape) == (2, 4)
+        assert tuple(prepared.prefill_metadata.lease.device_segments.shape) == (2, 5)
         assert prepared.prefill_metadata.lease.host_segments.is_pinned()
         assert prepared.prefill_metadata.lease.host_token_ids.is_pinned()
         assert prepared.prefill_metadata.token_ids.tolist() == [2, 3, 7]
@@ -164,6 +212,57 @@ def test_cuda_prefill_segments_gather_and_scatter_variable_spans():
         assert torch.equal(e.model_runner._gather_prefill(prepared), hidden)
     finally:
         if "prepared" in locals():
+            torch.cuda.synchronize()
+            e.model_runner._release_prepared_metadata(prepared)
+        e.close()
+
+
+@pytest.mark.gpu
+def test_cuda_final_depth_prefill_scatter_retains_only_coda_hidden_per_item():
+    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+
+    e = LLMEngine(
+        OuroForCausalLM(tiny_ouro_config()).to("cuda", torch.bfloat16),
+        cache_config=CacheConfig(64, 4),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=2
+        ),
+        execution_config=ExecutionConfig(atomic_prefill=False),
+        attention_backend="triton",
+    )
+    prepared = None
+    try:
+        e.add_request("mid", [1, 2], SamplingParams(max_tokens=1))
+        e.add_request("final", [3, 4], SamplingParams(max_tokens=1))
+        for request_id in ("mid", "final"):
+            assert e.cache_manager.allocate(request_id, 2)
+        mid, final = (e.scheduler.requests[rid] for rid in ("mid", "final"))
+        batch = SchedulerOutput(
+            Stage.PREFILLING_RECURRENT,
+            [
+                ScheduledItem(mid, 0, 2, depth=1, chunk_start=0),
+                ScheduledItem(final, 0, 2, depth=3, chunk_start=0, completes_prompt=True),
+            ],
+        )
+        runner = e.model_runner
+        prepared = runner.prepare(batch)
+        mid_slot, final_slot = runner.state_slots["mid"], runner.state_slots["final"]
+        runner.prefill_states[mid_slot, :2].fill_(9)
+        runner.prefill_states[final_slot, :2].fill_(7)
+        hidden = torch.arange(
+            4 * e.model.config.hidden_size, device="cuda", dtype=torch.bfloat16
+        ).view(4, e.model.config.hidden_size)
+
+        runner._scatter_prefill(hidden, prepared)
+        runner._store_split_prefill_outputs(hidden, prepared)
+        torch.cuda.synchronize()
+
+        assert torch.equal(runner.prefill_states[mid_slot, :2], hidden[:2])
+        assert torch.equal(runner.prefill_states[final_slot, :2], torch.full_like(hidden[2:], 7))
+        assert torch.equal(final.hidden_state, hidden[-1])
+        assert mid.hidden_state is None
+    finally:
+        if prepared is not None:
             torch.cuda.synchronize()
             e.model_runner._release_prepared_metadata(prepared)
         e.close()
