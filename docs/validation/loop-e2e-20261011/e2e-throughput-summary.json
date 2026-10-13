@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "snapshot_UTC": "2026-10-13T16:11:32.363824+00:00",
+  "scope": "Full native/HTTP serving throughput and full training-update wall time, with inference-depth changes, code-only increments and resource scaling kept distinct. No kernel timings are substituted for E2E.",
+  "PR82_accepted_Coda_only_E2E_percent": {
+    "B1": 0.34,
+    "B4": 0.85,
+    "source": "README.md accepted PR82 summary; broader7.36/8.02 changes excluded"
+  },
+  "LoopCD_48GiB_cost_cases": {
+    "B16C32": {
+      "mean_measured_tokens_per_second": {
+        "A": 178.8389747898088,
+        "B": 209.3061375708328,
+        "C": 206.93825893988543
+      },
+      "C_vs_A_percent": 15.71205839392784,
+      "C_vs_B_percent": -1.13129918617223
+    },
+    "B32C64": {
+      "mean_measured_tokens_per_second": {
+        "A": 246.2145466363516,
+        "B": 277.6836071623977,
+        "C": 274.1573629864094
+      },
+      "C_vs_A_percent": 11.34897053476216,
+      "C_vs_B_percent": -1.2698784101886407
+    }
+  },
+  "LoopCD_current_PR86_native_outcomes": {
+    "source_head": "48932b2360f6ee750c154b268dae71fef8701782",
+    "passed": 74,
+    "failed": 33,
+    "skipped": 7,
+    "original_tests_all_passed": false,
+    "current_source_full_model_perf_qualified": false
+  },
+  "LoopGraph": {
+    "qualified_formal_W1_E2E_speedup_percent": null,
+    "reason": "Original numerical/token gates remain failed. Private18Norm job47244713 was pending at last verified15:43UTC; this is not an observed0% result."
+  },
+  "ReLoop_cases": [
+    {
+      "case": "L1",
+      "native_same_depth_guidance_percent": -1.0940862344660185,
+      "HTTP_same_depth_guidance_percent": -0.8271070963496552,
+      "native_guided_depth3_vs_depth4_percent": 27.894910582544718,
+      "HTTP_guided_depth3_vs_depth4_percent": 30.272197831718152,
+      "private_vector_vs_scalar_guidance_percent": 1.8434925139533043
+    },
+    {
+      "case": "T32",
+      "native_same_depth_guidance_percent": -1.49638231563336,
+      "HTTP_same_depth_guidance_percent": -2.8493114269897313,
+      "native_guided_depth3_vs_depth4_percent": 13.52306352754189,
+      "HTTP_guided_depth3_vs_depth4_percent": 13.303507972391238,
+      "private_vector_vs_scalar_guidance_percent": 0.762856146007973
+    },
+    {
+      "case": "T64_short",
+      "native_same_depth_guidance_percent": -3.363083154722124,
+      "HTTP_same_depth_guidance_percent": -3.518009250330345,
+      "native_guided_depth3_vs_depth4_percent": 11.401075716466202,
+      "HTTP_guided_depth3_vs_depth4_percent": 10.318173384563668,
+      "private_vector_vs_scalar_guidance_percent": 1.186540913623313
+    },
+    {
+      "case": "C8_long",
+      "native_same_depth_guidance_percent": -0.35712355876391655,
+      "HTTP_same_depth_guidance_percent": -0.963548812799786,
+      "native_guided_depth3_vs_depth4_percent": 13.037898012209691,
+      "HTTP_guided_depth3_vs_depth4_percent": 12.19273298667629,
+      "private_vector_vs_scalar_guidance_percent": -0.04133880199617135
+    },
+    {
+      "case": "Q64",
+      "native_same_depth_guidance_percent": -0.8286862399553452,
+      "HTTP_same_depth_guidance_percent": -0.6975682593522103,
+      "native_guided_depth3_vs_depth4_percent": 10.241350342770318,
+      "HTTP_guided_depth3_vs_depth4_percent": 10.531549993519684,
+      "private_vector_vs_scalar_guidance_percent": 0.09322923643246828
+    }
+  ],
+  "ReLoop_52GiB_C4_resource_variant": {
+    "native": {
+      "source": "reloop-native-c4-52g.json",
+      "scope": "Separate52GiB C4 original frozen workload, source and raw auditors unchanged; six fresh arms/two orders/five warm and five measured each; original48GiB capacity failures retained; no original full seven-case or quality pass",
+      "summary": {
+        "C4_longer": {
+          "measured_tps": {
+            "A_P4D4_off": [
+              8.823659975625546,
+              8.825797155729807,
+              8.826394109162354,
+              8.824992083355678,
+              8.826487823039221,
+              8.832064265285467,
+              8.834296753561732,
+              8.831737336167754,
+              8.832049014922086,
+              8.833704568097353
+            ],
+            "C_P4D3_off": [
+              9.440984355007167,
+              9.442323375430515,
+              9.441429930944224,
+              9.440115623890458,
+              9.441090582399282,
+              9.464846175638094,
+              9.466163258659261,
+              9.46495487560812,
+              9.464954046155325,
+              9.463431785942758
+            ],
+            "D_P4D3_on": [
+              9.459621817933357,
+              9.458914446224338,
+              9.460245578881489,
+              9.46067766870742,
+              9.459763324888998,
+              9.458820245578872,
+              9.45974098684829,
+              9.463920414910929,
+              9.46259682891776,
+              9.46281216661634
+            ]
+          },
+          "mean_tps": {
+            "A_P4D4_off": 8.8291183084947,
+            "C_P4D3_off": 9.45302940096752,
+            "D_P4D3_on": 9.46071134795078
+          },
+          "same_depth_guidance_percent": 0.08126439321636258,
+          "shallower_guided_vs_full_percent": 7.153523346135371
+        }
+      }
+    },
+    "HTTP": {
+      "source": "reloop-http-c4-52g.json",
+      "scope": "Separate52GiB C4 HTTP original frozen workload; all820 original token records unchanged; original48GiB capacity failures and fullsevenfalse retained",
+      "summary": {
+        "C4_longer": {
+          "measured_tps": {
+            "A_P4D4_off": [
+              8.762302525387751,
+              8.760329684816153,
+              8.771077828848712,
+              8.767018797755568,
+              8.766118712533094,
+              8.770046199152276,
+              8.770167113795575,
+              8.769818094269308,
+              8.769696453900798,
+              8.76995226996374
+            ],
+            "C_P4D3_off": [
+              9.447377736109177,
+              9.428956588250507,
+              9.413536482437193,
+              9.417291504713326,
+              9.435178077996124,
+              9.389745645801515,
+              9.389346672253012,
+              9.389257430773249,
+              9.391144832052962,
+              9.39072112600005
+            ],
+            "D_P4D3_on": [
+              9.438008128394774,
+              9.41513600885693,
+              9.427500062401588,
+              9.413515020171737,
+              9.423420410472001,
+              9.369109442707073,
+              9.369550397648943,
+              9.369795409858055,
+              9.369316754193829,
+              9.368975107690858
+            ]
+          },
+          "mean_tps": {
+            "A_P4D4_off": 8.767652768042298,
+            "C_P4D3_off": 9.409255609638711,
+            "D_P4D3_on": 9.396432674239579
+          },
+          "same_depth_guidance_percent": -0.1362800197073688,
+          "shallower_guided_vs_full_percent": 7.171587685237202
+        }
+      }
+    }
+  },
+  "ReLoop_extra_reference_copy": {
+    "prior_uniform_only_percent": 0.19851152250709436,
+    "latest_mixed_depth_percent": 0.28607718967770257,
+    "latest_order_percent": [
+      -0.30015974189103733,
+      0.8752266570016598
+    ],
+    "substantial_stable_gain_established": false
+  },
+  "ScaleRLT": {
+    "resource_change": "one_node_two_GPUs -> two_nodes_three_GPUs; DP1 -> DP2, one rollout engine held constant",
+    "paired_seeds_and_stages": [
+      {
+        "stage": "pilot",
+        "seed": 42,
+        "throughput_change_percent": -10.855645592594087
+      },
+      {
+        "stage": "pilot",
+        "seed": 43,
+        "throughput_change_percent": 17.03478074493152
+      },
+      {
+        "stage": "pilot",
+        "seed": 44,
+        "throughput_change_percent": 20.400610781169128
+      },
+      {
+        "stage": "pilot",
+        "seed": 45,
+        "throughput_change_percent": 20.406076306631917
+      },
+      {
+        "stage": "pilot",
+        "seed": 46,
+        "throughput_change_percent": 35.0813939934038
+      },
+      {
+        "stage": "sequential_confirmation",
+        "seed": 42,
+        "throughput_change_percent": 27.097197808881667
+      },
+      {
+        "stage": "sequential_confirmation",
+        "seed": 43,
+        "throughput_change_percent": 26.802631113277208
+      }
+    ],
+    "sequential_completed_seeds": [
+      42,
+      43
+    ],
+    "sequential_not_started_seeds": [
+      44,
+      45,
+      46
+    ],
+    "further_testing_stopped_by_user": true
+  },
+  "limits": [
+    "Source/dtype/resource baselines differ across projects and stages; percentages cannot be added.",
+    "Depth4 to depth3 guided gains include depth reduction; quality remains unqualified.",
+    "ReLoop original48GiB full seven-case matrix is not complete;52GiBC4 is a separate resource variant.",
+    "Private vector/copy optimization has native E2E evidence, not a corresponding optimized HTTP or current PR86 qualification.",
+    "Co-running/shared-host/IO limits and all original slow/failed outcomes remain."
+  ],
+  "source_JSON_SHA256": {
+    "loopgraph-core-observer-remaining3.json": "5f0db18cc0b3e1b2a0ad4e820157a4a89b03d5987ce1a8d16d67a16fcba356b4",
+    "loopgraph-backlog.json": "da0093af2c5a0dcbcd907c5ce992ed21f6b7d12297532d96130b89c7382847b4",
+    "reloop-native-cpu-isolation-remaining.json": "157f3c6423fbd3cad2fd9b04fa17b7555012de5cc4bb1f7507ab3653113c4884",
+    "reloop-http-c4-52g.json": "9ed743c6e4ad207701dbc7db7c02f9b609e6a7ad38039c7344ed3d6416385045",
+    "loopgraph-fourteen-located-norm32-control.json": "864009d3e2283aab92e51251198910b0c9dc342b358407e1c2fcbed9307137f4",
+    "reloop-http-cpu-isolation-remaining.json": "68ac7e9ce090152cc04b34243eb6fbb3e42920b8d8900e8754a159359c7b2dc4",
+    "loopgraph-norm-row-shape.json": "4b2da5e1f7cd81461b5001bd6c044f95547c4d72206fb292ea2f28379041ea97",
+    "reloop-mixed-depth-reference-batch-copy-e2e.json": "3dfb064ab12e2f9b4196e3e60dda3271e5350c4c3d639c23bdf9f22dab7b6301",
+    "reloop-http-matrix.json": "5fac5ab0355edd1f0ec8375b71745e39a4ee922d2a0aab4fa51d765e536a5427",
+    "loopgraph-remaining-norm-row-shape.json": "78b438462f9f2e554e04d4e7b39adb39f28a5d294eb06b3be0f63c6aa47d1e73",
+    "loopgraph-fourteen-next-norm-source-forward.json": "9f7d156557f4e4dd53ec6bcb96ebd7be9473d12e45739e4e1d33ed6160864d24",
+    "loopgraph-three-norm-localization.json": "6f624d75db477e17e188df8dea9307d5a1d7e9acf9d5b94a201cf282ba8787d4",
+    "loopgraph-seven-norm-next-row-shape.json": "3915957a1461a4134f7985d2985d2c6b7d8f5484d12a0aaff996180d6f0dd7ad",
+    "loopcd-cost.json": "4a69bf831c54125492b5a048b97c8ca07f041f42ed732cbe61439ef3c0cfea35",
+    "loopcd-current-pr86-native-gpu-regressions.json": "cc2710b74003c347922b2634bfbffc57405fed6fab57b1cb71200a2a2a7d0609",
+    "loopgraph-global-first-sites.json": "82b5dbad12194b9bd320ed500d81645710272684e85aa62b47ba54e72931501c",
+    "reloop-vector-readout-l1-q64-e2e.json": "a924a123f86d4469a09d2b1e64c729d2c9f802318f19e1284407458a14696b78",
+    "loopgraph-down-proj-shape.json": "599248cacd285b59e6a0efb06f9d1ef5ac903f3fc744d8d4ca4dd6e4cad72fea",
+    "loopgraph-prefill-observer.json": "d91f4067bc5046f3048206734fd84b6dc1b7845e6566fc88c860783898c62738",
+    "reloop-reference-batch-copy-e2e.json": "049f50c9bc2f97eb043f510546c0df01205e4585d9bb7cca83d453233f0b9e7e",
+    "reloop-vector-readout-e2e.json": "bcef8127cbb8c252649b12b796113bf412f72d00154fe27f58d40c6c1fdda5fe",
+    "reloop-vector-readout-t32-c8-e2e.json": "610e50daad099a19749c54afb67b22b8ae33f5a0bcb0c689c83faecba140bf53",
+    "scalerlt-sequential-pairs.json": "14b074e976c8000db7f15aac1217ee20b4e001c6cc5f9f50c70f2c8182daa3cb",
+    "loopgraph-long-context.json": "a46e70ce8ff3002d7ae8f13117d03c4ba30c4155e2084cd79461aae8658fd87c",
+    "loopgraph-core-observer-all9.json": "ad40b3c176411c18c95b89fdec34d6be0b22fe1ea228dea5d49f0c8c5df1feca",
+    "scalerlt-scaling-pilot.json": "18ea8b789470286c7846537115ee47d0e1b3124527156df2cdf7002231b4cc14",
+    "scalerlt-training.json": "c49db69d9b8a2fcafa05d7ecc8cf7db36b91a49eb3de218086b3a5344252f12c",
+    "loopgraph-full-batch-replay.json": "7f80ea4d407112107a2d43d3c9a554626aa1fe772a60f79327434ebf251660ea",
+    "loopgraph-serving.json": "b2a0b6f0e54bc50744070a82274c06ca9055e9e587857e80fc569c599182c9e8",
+    "reloop-guidance-host-api-profile.json": "a0225af68cb804584ce5fc5ba9d08494ba054082410c7e95376ea3ae405ac6c1",
+    "loopgraph-global-norm-row-shape.json": "b77480ebc54af73f3cc4a5a1b82d86bc5b9d91cad7c0079716fd404929c8d5b4",
+    "loopgraph-minimum16-shape-control.json": "7be8f87aca2af2c09a5432da7d547a9480389db4de7cf28ef4ba19b1f5504696",
+    "loopgraph-precision-exact-dot.json": "2acf74e2c93384d22437d51c422e3d5ff6444e9cf60dc3bbebcb942c6c13425d",
+    "loopgraph-seven-norm-next-first-sites.json": "ea42dc221caeb89daffc89ea03e0a0f263dff3d8994eb38c7afff2e4c8a4a564",
+    "loopgraph-down32-remaining-operators.json": "e9e5f7f9bd1b13b8624b724ae94d9f902228c0d807446e89655ab648254c97ef",
+    "loopgraph-single-norm32-control.json": "857494ae15667347644d0c28ba731c9d3a3623111a00a70ab4047b0f3c7af2b0",
+    "loopgraph-all64-heads.json": "2f71b617c1a2d831e9c423e5d48bdaca52f886309413d4ff2b547c9325608e98",
+    "loopgraph-seven-located-norm32-control.json": "4fa78bd0ffb6f0246653049c33fc5e14e6836c6385369e4a5c8e12d956a6bea0",
+    "loopgraph-bf16-kernel-dispatch.json": "cf4512d30be0b16db1a92634017bc114f1167caac68657aeff0e993933ef7cd8",
+    "reloop-http-cpu-isolation.json": "dc74ccbf3ab13fa3b638814fe68c7ed3c328e4c14f782f019c7420d0b47faac1",
+    "loopgraph-fourteen-norm-next-fresh-node.json": "0b656d86cabf1fd9777876fc4f7661253277eae5b47afe4d31c7b5b0c103e5fb",
+    "loopgraph-eleven-located-norm32-control.json": "93bddd07c61416e9cff3687384ca445928d6cc0cab5c45919739ea5b61d9a058",
+    "reloop-native-matrix.json": "e98e42f7ba13ab3c6971eac10457af347ff5c578850851530eeac00bfcd65307",
+    "loopgraph-eleven-norm-next-first-sites.json": "9d9474c7e24ef96adacfc44fe2344322c21f95f41cadce6d8681e815e61ed819",
+    "loopgraph-core-observer.json": "419debec3b8e9121053d2879416d9c67ee05ca155c04cbfb01d70679988884a7",
+    "loopgraph-all-down32-head-comparison.json": "8d71d9bbf1a18408d2e783992a89fb93da8ea9404c0b2f8c999464f9db0f9f7d",
+    "reloop-guidance-profile.json": "6a8d6f0a44ab5586eda29ab0579c2848e3cbe0c6621156d55cfbf45af13b6ae8",
+    "loopcd-full-tensors.json": "806f264865ab500e558ce08a2e474ae809ba52bb951a221249918589a796bc64",
+    "reloop-vector-readout-bit-qualification.json": "616e01d70cb36f3eb293e3079c267841ee6acaaf304dbb4ec3775e0cac3689ba",
+    "loopgraph-matrix-precision.json": "a243b0f66a71b0e8d15733ead41c05904e27d907e691d61e10dfd7e537836815",
+    "loopgraph-three-located-norm32-control.json": "b3d0237cde859ad79526be0a32eb8e362dddad0a5383e7bf3a3a20ea1752b2d9",
+    "reloop-native-cpu-isolation.json": "c92b3ca8b8cd6d193977bbf1c0a363d6ddafbedb86f5a48b0d3840bfd38e7652",
+    "loopgraph-eleven-norm-next-row-shape.json": "b957f6cb9f4d310bbdd419883d75d0e697a217fca285834e018b1c1d3753581d",
+    "reloop-reference-copy-cpu-qualification.json": "3c63b0b6711b13eb891b70e1986cbde4e930f28c03787100299d59c3c3ac8aa9",
+    "loopgraph-all-down32-shape-control.json": "b29f1c44683ce6a2ee903794c5e82495da88c3d03f1ad4a217473aeaa5d82a42",
+    "loopgraph-w1-diagnostics.json": "0b38344f0dc7d281dd3692c12e5f958fa2a504982d1ba66d91ad46aa8816f4a9",
+    "reloop-native-c4-52g.json": "719c61335cb884a7486e22ad0208d64f2019de8331319da01f0debf2a2df23ee"
+  }
+}

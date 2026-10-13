@@ -1,6 +1,6 @@
 # Loop E2E supplements — 2026-10-11
 
-This update records completed, independently audited LoopCD and LoopGraph stages. ReLoop's native matrix and five ScaleRLT scaling pairs have completed; The HTTP matrix is now independently audited; isolated timing confirmations and further numerical diagnosis continue. These are stage results, not a claim that every requested E2E case is complete. This branch changes documentation and result metadata only.
+This update records completed, independently audited LoopCD and LoopGraph stages. ReLoop's native matrix and five ScaleRLT scaling pairs have completed; The HTTP matrix is now independently audited; isolated timing confirmations and further numerical diagnosis continue. These are stage results, not a claim that every requested E2E case is complete. This branch changes documentation and result metadata only. The complete scope-separated throughput table is in [e2e-throughput-summary.md](e2e-throughput-summary.md).
 
 ## LoopCD: complete FP32 numerical evidence
 
