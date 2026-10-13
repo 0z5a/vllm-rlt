@@ -1,0 +1,1807 @@
+{
+  "scope": "Completed fresh-H100 isolated source-forward diagnosis of four next earliest Norm differences; no production changes or serving/performance/quality PASS.",
+  "protocol": {
+    "eps": 1e-06,
+    "width": 2048,
+    "dtype": "BF16",
+    "repeated_row_counts": [
+      1,
+      2,
+      8,
+      13,
+      14,
+      15,
+      16,
+      32
+    ],
+    "complete_matrix_observations": 16,
+    "repeated_row_observations": 64,
+    "observations": 80,
+    "matching_owner_complete_matrix_captures": 8,
+    "original_sources_and_weights_unchanged": true
+  },
+  "original_G3": {
+    "passed": true,
+    "scope": "sixteen synchronous prepared-token G3 cases; not serving or performance",
+    "original_scientific_AST_unchanged": true,
+    "archive_sha256": "af77e50eee9aabb434d9d525c4e9f2841b2f6fc1696c080a91c947dc8621f1c6",
+    "payloads": 429,
+    "trials": 16,
+    "full_tensor_comparisons": 480,
+    "full_vocabulary_argmax_comparisons": 48,
+    "full_KV_plane_comparisons": 384,
+    "maxabs": {
+      "hidden": 0.0,
+      "logits": 0.0,
+      "kv": 0.0,
+      "cdf": 0.001720428466796875,
+      "survival": 0.001720428466796875
+    },
+    "cuda_initialized": false
+  },
+  "four_boundaries": [
+    {
+      "request": 55,
+      "index": 16,
+      "depth": 0,
+      "module": "layers.14.input_layernorm_2",
+      "author_rows": 14,
+      "native_rows": 32,
+      "original_selected_output_differences": 19
+    },
+    {
+      "request": 33,
+      "index": 17,
+      "depth": 0,
+      "module": "layers.3.input_layernorm_2",
+      "author_rows": 1,
+      "native_rows": 32,
+      "original_selected_output_differences": 16
+    },
+    {
+      "request": 20,
+      "index": 20,
+      "depth": 0,
+      "module": "layers.3.post_attention_layernorm_2",
+      "author_rows": 13,
+      "native_rows": 32,
+      "original_selected_output_differences": 14
+    },
+    {
+      "request": 38,
+      "index": 21,
+      "depth": 0,
+      "module": "layers.21.input_layernorm_2",
+      "author_rows": 15,
+      "native_rows": 32,
+      "original_selected_output_differences": 12
+    }
+  ],
+  "actual_captured_matrix_matches": [
+    {
+      "label": "whole:author:request-55:16:layer14.input_layernorm_2:author",
+      "case": "author:request-55:16:layer14.input_layernorm_2",
+      "source": "author",
+      "input_shape": [
+        1,
+        14,
+        2048
+      ],
+      "row_index": 13,
+      "weight_key": "model.layers.14.input_layernorm_2.weight",
+      "matching_owner_capture_required": true,
+      "capture_byte_equal": true
+    },
+    {
+      "label": "whole:candidate:request-55:16:layer14.input_layernorm_2:native",
+      "case": "candidate:request-55:16:layer14.input_layernorm_2",
+      "source": "native",
+      "input_shape": [
+        32,
+        2048
+      ],
+      "row_index": 23,
+      "weight_key": "model.layers.14.input_layernorm_2.weight",
+      "matching_owner_capture_required": true,
+      "capture_byte_equal": true
+    },
+    {
+      "label": "whole:author:request-33:17:layer3.input_layernorm_2:author",
+      "case": "author:request-33:17:layer3.input_layernorm_2",
+      "source": "author",
+      "input_shape": [
+        1,
+        1,
+        2048
+      ],
+      "row_index": 0,
+      "weight_key": "model.layers.3.input_layernorm_2.weight",
+      "matching_owner_capture_required": true,
+      "capture_byte_equal": true
+    },
+    {
+      "label": "whole:candidate:request-33:17:layer3.input_layernorm_2:native",
+      "case": "candidate:request-33:17:layer3.input_layernorm_2",
+      "source": "native",
+      "input_shape": [
+        32,
+        2048
+      ],
+      "row_index": 1,
+      "weight_key": "model.layers.3.input_layernorm_2.weight",
+      "matching_owner_capture_required": true,
+      "capture_byte_equal": true
+    },
+    {
+      "label": "whole:author:request-20:20:layer3.post_attention_layernorm_2:author",
+      "case": "author:request-20:20:layer3.post_attention_layernorm_2",
+      "source": "author",
+      "input_shape": [
+        1,
+        13,
+        2048
+      ],
+      "row_index": 9,
+      "weight_key": "model.layers.3.post_attention_layernorm_2.weight",
+      "matching_owner_capture_required": true,
+      "capture_byte_equal": true
+    },
+    {
+      "label": "whole:candidate:request-20:20:layer3.post_attention_layernorm_2:native",
+      "case": "candidate:request-20:20:layer3.post_attention_layernorm_2",
+      "source": "native",
+      "input_shape": [
+        32,
+        2048
+      ],
+      "row_index": 20,
+      "weight_key": "model.layers.3.post_attention_layernorm_2.weight",
+      "matching_owner_capture_required": true,
+      "capture_byte_equal": true
+    },
+    {
+      "label": "whole:author:request-38:21:layer21.input_layernorm_2:author",
+      "case": "author:request-38:21:layer21.input_layernorm_2",
+      "source": "author",
+      "input_shape": [
+        1,
+        15,
+        2048
+      ],
+      "row_index": 11,
+      "weight_key": "model.layers.21.input_layernorm_2.weight",
+      "matching_owner_capture_required": true,
+      "capture_byte_equal": true
+    },
+    {
+      "label": "whole:candidate:request-38:21:layer21.input_layernorm_2:native",
+      "case": "candidate:request-38:21:layer21.input_layernorm_2",
+      "source": "native",
+      "input_shape": [
+        32,
+        2048
+      ],
+      "row_index": 6,
+      "weight_key": "model.layers.21.input_layernorm_2.weight",
+      "matching_owner_capture_required": true,
+      "capture_byte_equal": true
+    }
+  ],
+  "all_row_count_comparisons": [
+    {
+      "case_id": "request-55:16:layer14.input_layernorm_2",
+      "request_id": "request-55",
+      "index": 16,
+      "module": "layers.14.input_layernorm_2",
+      "rows": 1,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1025187850,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1025187850,
+          "variance_correctly_rounded": true,
+          "variance": 0.037872351706027985,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1025187850,
+          "variance_correctly_rounded": true,
+          "variance": 0.037872351706027985,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-55:16:layer14.input_layernorm_2",
+      "request_id": "request-55",
+      "index": 16,
+      "module": "layers.14.input_layernorm_2",
+      "rows": 2,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1025187850,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-55:16:layer14.input_layernorm_2",
+      "request_id": "request-55",
+      "index": 16,
+      "module": "layers.14.input_layernorm_2",
+      "rows": 8,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1025187850,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-55:16:layer14.input_layernorm_2",
+      "request_id": "request-55",
+      "index": 16,
+      "module": "layers.14.input_layernorm_2",
+      "rows": 13,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1025187850,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-55:16:layer14.input_layernorm_2",
+      "request_id": "request-55",
+      "index": 16,
+      "module": "layers.14.input_layernorm_2",
+      "rows": 14,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1025187850,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-55:16:layer14.input_layernorm_2",
+      "request_id": "request-55",
+      "index": 16,
+      "module": "layers.14.input_layernorm_2",
+      "rows": 15,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1025187850,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1025187851,
+          "variance_correctly_rounded": false,
+          "variance": 0.03787235543131828,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-55:16:layer14.input_layernorm_2",
+      "request_id": "request-55",
+      "index": 16,
+      "module": "layers.14.input_layernorm_2",
+      "rows": 16,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1025187850,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1025187850,
+          "variance_correctly_rounded": true,
+          "variance": 0.037872351706027985,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1025187850,
+          "variance_correctly_rounded": true,
+          "variance": 0.037872351706027985,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-55:16:layer14.input_layernorm_2",
+      "request_id": "request-55",
+      "index": 16,
+      "module": "layers.14.input_layernorm_2",
+      "rows": 32,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1025187850,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1025187850,
+          "variance_correctly_rounded": true,
+          "variance": 0.037872351706027985,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1025187850,
+          "variance_correctly_rounded": true,
+          "variance": 0.037872351706027985,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 19,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-33:17:layer3.input_layernorm_2",
+      "request_id": "request-33",
+      "index": 17,
+      "module": "layers.3.input_layernorm_2",
+      "rows": 1,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1018282938,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-33:17:layer3.input_layernorm_2",
+      "request_id": "request-33",
+      "index": 17,
+      "module": "layers.3.input_layernorm_2",
+      "rows": 2,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1018282938,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-33:17:layer3.input_layernorm_2",
+      "request_id": "request-33",
+      "index": 17,
+      "module": "layers.3.input_layernorm_2",
+      "rows": 8,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1018282938,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-33:17:layer3.input_layernorm_2",
+      "request_id": "request-33",
+      "index": 17,
+      "module": "layers.3.input_layernorm_2",
+      "rows": 13,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1018282938,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-33:17:layer3.input_layernorm_2",
+      "request_id": "request-33",
+      "index": 17,
+      "module": "layers.3.input_layernorm_2",
+      "rows": 14,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1018282938,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-33:17:layer3.input_layernorm_2",
+      "request_id": "request-33",
+      "index": 17,
+      "module": "layers.3.input_layernorm_2",
+      "rows": 15,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1018282938,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1018282938,
+          "variance_correctly_rounded": true,
+          "variance": 0.021699775010347366,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-33:17:layer3.input_layernorm_2",
+      "request_id": "request-33",
+      "index": 17,
+      "module": "layers.3.input_layernorm_2",
+      "rows": 16,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1018282938,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1018282937,
+          "variance_correctly_rounded": false,
+          "variance": 0.021699773147702217,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1018282937,
+          "variance_correctly_rounded": false,
+          "variance": 0.021699773147702217,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-33:17:layer3.input_layernorm_2",
+      "request_id": "request-33",
+      "index": 17,
+      "module": "layers.3.input_layernorm_2",
+      "rows": 32,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1018282938,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1018282937,
+          "variance_correctly_rounded": false,
+          "variance": 0.021699773147702217,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1018282937,
+          "variance_correctly_rounded": false,
+          "variance": 0.021699773147702217,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 16,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-20:20:layer3.post_attention_layernorm_2",
+      "request_id": "request-20",
+      "index": 20,
+      "module": "layers.3.post_attention_layernorm_2",
+      "rows": 1,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028265055,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028265055,
+          "variance_correctly_rounded": true,
+          "variance": 0.04933583363890648,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028265055,
+          "variance_correctly_rounded": true,
+          "variance": 0.04933583363890648,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-20:20:layer3.post_attention_layernorm_2",
+      "request_id": "request-20",
+      "index": 20,
+      "module": "layers.3.post_attention_layernorm_2",
+      "rows": 2,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028265055,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028265055,
+          "variance_correctly_rounded": true,
+          "variance": 0.04933583363890648,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028265055,
+          "variance_correctly_rounded": true,
+          "variance": 0.04933583363890648,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-20:20:layer3.post_attention_layernorm_2",
+      "request_id": "request-20",
+      "index": 20,
+      "module": "layers.3.post_attention_layernorm_2",
+      "rows": 8,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028265055,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028265056,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933583736419678,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028265056,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933583736419678,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-20:20:layer3.post_attention_layernorm_2",
+      "request_id": "request-20",
+      "index": 20,
+      "module": "layers.3.post_attention_layernorm_2",
+      "rows": 13,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028265055,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028265056,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933583736419678,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028265056,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933583736419678,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-20:20:layer3.post_attention_layernorm_2",
+      "request_id": "request-20",
+      "index": 20,
+      "module": "layers.3.post_attention_layernorm_2",
+      "rows": 14,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028265055,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028265056,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933583736419678,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028265056,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933583736419678,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-20:20:layer3.post_attention_layernorm_2",
+      "request_id": "request-20",
+      "index": 20,
+      "module": "layers.3.post_attention_layernorm_2",
+      "rows": 15,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028265055,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028265056,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933583736419678,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028265056,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933583736419678,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-20:20:layer3.post_attention_layernorm_2",
+      "request_id": "request-20",
+      "index": 20,
+      "module": "layers.3.post_attention_layernorm_2",
+      "rows": 16,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028265055,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028265054,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933582991361618,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028265054,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933582991361618,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-20:20:layer3.post_attention_layernorm_2",
+      "request_id": "request-20",
+      "index": 20,
+      "module": "layers.3.post_attention_layernorm_2",
+      "rows": 32,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028265055,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028265054,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933582991361618,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028265054,
+          "variance_correctly_rounded": false,
+          "variance": 0.04933582991361618,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 14,
+            "max_abs": 0.0009765625
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-38:21:layer21.input_layernorm_2",
+      "request_id": "request-38",
+      "index": 21,
+      "module": "layers.21.input_layernorm_2",
+      "rows": 1,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028568853,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-38:21:layer21.input_layernorm_2",
+      "request_id": "request-38",
+      "index": 21,
+      "module": "layers.21.input_layernorm_2",
+      "rows": 2,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028568853,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-38:21:layer21.input_layernorm_2",
+      "request_id": "request-38",
+      "index": 21,
+      "module": "layers.21.input_layernorm_2",
+      "rows": 8,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028568853,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-38:21:layer21.input_layernorm_2",
+      "request_id": "request-38",
+      "index": 21,
+      "module": "layers.21.input_layernorm_2",
+      "rows": 13,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028568853,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-38:21:layer21.input_layernorm_2",
+      "request_id": "request-38",
+      "index": 21,
+      "module": "layers.21.input_layernorm_2",
+      "rows": 14,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028568853,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-38:21:layer21.input_layernorm_2",
+      "request_id": "request-38",
+      "index": 21,
+      "module": "layers.21.input_layernorm_2",
+      "rows": 15,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028568853,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028568853,
+          "variance_correctly_rounded": true,
+          "variance": 0.05046756938099861,
+          "matches_author_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          },
+          "matches_native_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-38:21:layer21.input_layernorm_2",
+      "request_id": "request-38",
+      "index": 21,
+      "module": "layers.21.input_layernorm_2",
+      "rows": 16,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028568853,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028568854,
+          "variance_correctly_rounded": false,
+          "variance": 0.05046757310628891,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028568854,
+          "variance_correctly_rounded": false,
+          "variance": 0.05046757310628891,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case_id": "request-38:21:layer21.input_layernorm_2",
+      "request_id": "request-38",
+      "index": 21,
+      "module": "layers.21.input_layernorm_2",
+      "rows": 32,
+      "source_paths_equal": {
+        "byte_equal": true,
+        "different_elements": 0,
+        "max_abs": 0.0
+      },
+      "source_variances_equal": true,
+      "correctly_rounded_exact_variance_FP32_bits": 1028568853,
+      "paths": {
+        "author": {
+          "GPU_variance_FP32_bits": 1028568854,
+          "variance_correctly_rounded": false,
+          "variance": 0.05046757310628891,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        },
+        "native": {
+          "GPU_variance_FP32_bits": 1028568854,
+          "variance_correctly_rounded": false,
+          "variance": 0.05046757310628891,
+          "matches_author_capture": {
+            "byte_equal": false,
+            "different_elements": 12,
+            "max_abs": 0.00048828125
+          },
+          "matches_native_capture": {
+            "byte_equal": true,
+            "different_elements": 0,
+            "max_abs": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "findings": {
+    "same_row_count_source_output_and_variance_equal": {
+      "passed": 32,
+      "total": 32
+    },
+    "selected_variance_correctly_rounded_to_FP32": {
+      "passed": 34,
+      "total": 64
+    },
+    "interpretation": "At these selected inputs, both source forwards agree for the same row count, while changing row count reproduces captured differences. Exact dyadic variance comparison diagnoses floating reduction rounding; it does not create a new correctness tolerance or qualify all model outputs."
+  },
+  "source_forward_provenance": {
+    "author": {
+      "source_sha256": "47c21a0e5f33992ccc40464eff8f41eee414e16413f247caabdb7f975b04b538",
+      "class": "OuroRMSNorm",
+      "forward_AST_sha256": "beaff17fc244c2ffef968e4655e62003c134b29ca2a0de95d354495c5143f332",
+      "isolated_class_decorators_omitted": [
+        "use_kernel_forward_from_hub('RMSNorm')"
+      ],
+      "interpretation": "Source-forward isolated diagnostic. Matching-owner actual complete outputs must reproduce audited serving captures; this is not a production/decorator/kernel replacement."
+    },
+    "native": {
+      "source_sha256": "0d95a98a62ad6bc0069d1aa71593da1844ad9b61a948af41d9461fc139e427e4",
+      "class": "RMSNorm",
+      "forward_AST_sha256": "bc476c35fec4f6c2dd058a5c9d799c86558a5ce07d352f0cd78cca9371f46cc4",
+      "isolated_class_decorators_omitted": [],
+      "interpretation": "Source-forward isolated diagnostic. Matching-owner actual complete outputs must reproduce audited serving captures; this is not a production/decorator/kernel replacement."
+    }
+  },
+  "input_operand_sha256": "0f3278ba5ea541e68b27801dd7f5742d010792b12ff7012ff877adf8a7ada240",
+  "parent_readonly_archive_sha256": "466f94bc116fb92c2bded12f6002c9148a57ca719ed1e2cc047c69d3d8871d6d",
+  "archives": {
+    "loopgraph-fourteen-norm-replay3h-G3-v1": {
+      "bytes": 657439530,
+      "sha256": "af77e50eee9aabb434d9d525c4e9f2841b2f6fc1696c080a91c947dc8621f1c6",
+      "files": 429,
+      "uncompressed_bytes": 871638243,
+      "producer_actual_return": 0,
+      "RAM_stage_all_payloads_verified": true,
+      "persistent_exact_compressed_copy_fsync_verified": true,
+      "all_original_failure_outputs_retained": true,
+      "kind": "g3",
+      "no_E2E_or_performance_pass_from_archive_integrity": true
+    },
+    "loopgraph-fourteen-norm-replay3h-source-forward-v1": {
+      "passed": true,
+      "bytes": 7829715,
+      "sha256": "4bad2201be49f8a51ba51f1a239951f0159341a513b613e4877050be003b8501",
+      "payloads": 15,
+      "all_payloads_verified": true,
+      "fsync_verified": true,
+      "originals_retained": true
+    },
+    "source-forward-CPU": {
+      "passed": true,
+      "bytes": 6371155,
+      "sha256": "99fd3362f7082e059022b5d07a41192837dd538350b6c85ef6bb48e1bee59ed8",
+      "payloads": 11,
+      "full_payload_verification": true,
+      "fsync_verified": true
+    }
+  },
+  "retirement_archive": {
+    "bytes": 1531529,
+    "sha256": "61c750d6f54c2a580785af17b1f31b9df17c9c76b255f82c2283c30eb2064b91",
+    "manifest_sha256": "5c6a4a2f1bd0ad1d9ca50e1cfb09e01bc669eb8b9a330dc4925edd849cd12570",
+    "payloads": 50,
+    "all_payloads_verified": true,
+    "fsync_verified": true
+  },
+  "Mac_independent_integrity": {
+    "passed": true,
+    "archives": [
+      {
+        "name": "GPU-source-forward",
+        "bytes": 7829715,
+        "sha256": "4bad2201be49f8a51ba51f1a239951f0159341a513b613e4877050be003b8501",
+        "payloads": 15
+      },
+      {
+        "name": "independent-source-forward-CPU",
+        "bytes": 6371155,
+        "sha256": "99fd3362f7082e059022b5d07a41192837dd538350b6c85ef6bb48e1bee59ed8",
+        "payloads": 12
+      },
+      {
+        "name": "complete-CPU-retirement",
+        "bytes": 1531529,
+        "sha256": "61c750d6f54c2a580785af17b1f31b9df17c9c76b255f82c2283c30eb2064b91",
+        "payloads": 50
+      }
+    ]
+  },
+  "actual_execution": {
+    "job": 47238911,
+    "numeric_name": "101304",
+    "node_count": 1,
+    "allocation_elapsed_seconds": 349,
+    "allocated_GPU_hours": 0.3877777777777778,
+    "Slurm_state": "COMPLETED",
+    "Slurm_exit": "0:0",
+    "GPU_driver_children_actual_returns": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "other_node_CPU_audit_actual_returns": [
+      0,
+      0
+    ],
+    "all_owned_children_naturally_joined": true,
+    "owned_GPU_contexts_absent": true,
+    "original_fresh_lock_reacquired_and_released": true,
+    "complete_archives_verified": true,
+    "different_node_audits_verified": true,
+    "CPU_retirement_archive_verified": true
+  },
+  "failures_retained": {
+    "original_token_failures": 9,
+    "parent_all_heads": 8192,
+    "parent_different_hidden_or_logits": 2410,
+    "parent_requests_with_differences": 39,
+    "selected_parent_heads": 512,
+    "selected_hidden_or_logit_failures": 438,
+    "earlier_private_head_difference_counts": [
+      3253,
+      2917,
+      2694
+    ],
+    "original_serving_numerical_PASS": false,
+    "performance_PASS": false,
+    "quality_PASS": false
+  },
+  "next_private_candidate": {
+    "newly_located_norm_modules": 4,
+    "total_after_candidate": 18,
+    "other_unchanged_norm_modules": 78,
+    "only_private_diagnostic_preparation": true,
+    "GPU_cases_started": 0,
+    "submission_ready": false
+  }
+}
