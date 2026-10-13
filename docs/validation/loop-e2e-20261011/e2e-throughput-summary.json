@@ -312,6 +312,29 @@
     "reloop-reference-copy-cpu-qualification.json": "3c63b0b6711b13eb891b70e1986cbde4e930f28c03787100299d59c3c3ac8aa9",
     "loopgraph-all-down32-shape-control.json": "b29f1c44683ce6a2ee903794c5e82495da88c3d03f1ad4a217473aeaa5d82a42",
     "loopgraph-w1-diagnostics.json": "0b38344f0dc7d281dd3692c12e5f958fa2a504982d1ba66d91ad46aa8816f4a9",
-    "reloop-native-c4-52g.json": "719c61335cb884a7486e22ad0208d64f2019de8331319da01f0debf2a2df23ee"
+    "reloop-native-c4-52g.json": "719c61335cb884a7486e22ad0208d64f2019de8331319da01f0debf2a2df23ee",
+    "loopcd-current-pr86-original-cpu-tests.json": "73ce7553c5c0d5d51e2b510e9b65a3617ac66754779b1a15ec417038557c809f",
+    "loopcd-current-pr86-final-native-followup.json": "56d686ac35a329e402383fec840b4f3688b2786e3313b40677c4121dc03d3d1c"
+  },
+  "LoopCD_current_PR86_CPU_outcomes": {
+    "source_head": "48932b2360f6ee750c154b268dae71fef8701782",
+    "passed": 64,
+    "failed": 0,
+    "GPU_cases_deselected": 2,
+    "CPU_correctness_only": true,
+    "full_GPU_or_performance_qualified": false,
+    "source": "loopcd-current-pr86-original-cpu-tests.json"
+  },
+  "LoopCD_current_PR86_final_native_followup": {
+    "source_head": "48932b2360f6ee750c154b268dae71fef8701782",
+    "original_passed": 0,
+    "original_failed": 5,
+    "PD_missing_nixl": 3,
+    "original_Coda_fallback_counter_failures": 2,
+    "separate_completed_Coda_token_depth_parity_observations": 2,
+    "original_tests_all_passed": false,
+    "current_source_full_model_perf_qualified": false,
+    "source": "loopcd-current-pr86-final-native-followup.json",
+    "LoopCD_tests_concluded_at_user_request": true
   }
 }

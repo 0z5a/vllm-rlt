@@ -1,0 +1,377 @@
+{
+  "schema_version": 1,
+  "source_head": "48932b2360f6ee750c154b268dae71fef8701782",
+  "scope": "Original tests/test_loopcd.py CPU cases, excluding the two original GPU-marked Coda cases; no current full-model/GPU/performance qualification.",
+  "original_pytest_actual_return": 0,
+  "original_CPU_cases": 64,
+  "counts": {
+    "passed": 64,
+    "failed": 0,
+    "skipped": 0,
+    "GPU_cases_deselected": 2
+  },
+  "all_original_source_and_assertions_unchanged": true,
+  "GPU_cases_started": 0,
+  "function_case_counts": {
+    "test_affine_logits_folding_against_two_projections": 8,
+    "test_invalid_config": 10,
+    "test_zero_strength_matches_unguided_readout_without_references": 2,
+    "test_padded_coda_projects_only_real_requests": 2,
+    "test_first_readout_matches_independent_dense_oracle": 18,
+    "test_refill_decode_abort_and_request_id_reuse": 1,
+    "test_stale_reference_rejected": 4,
+    "test_unsupported_admission_rejected_before_request_allocation": 5,
+    "test_shallow_prefill_capability_checked_before_allocation": 3,
+    "test_reference_and_two_head_scratch_budgeted_before_auto_kv": 1,
+    "test_teacher_forced_continuation_against_dense_oracle": 10
+  },
+  "all_case_outcomes": [
+    {
+      "nodeid": "tests/test_loopcd.py::test_affine_logits_folding_against_two_projections[0-dtype0-3e-14]",
+      "outcome": "passed",
+      "duration": 3.8007264339830726
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_affine_logits_folding_against_two_projections[0-dtype1-8e-06]",
+      "outcome": "passed",
+      "duration": 0.0008803460514172912
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_affine_logits_folding_against_two_projections[0.3-dtype0-3e-14]",
+      "outcome": "passed",
+      "duration": 0.0007131278980523348
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_affine_logits_folding_against_two_projections[0.3-dtype1-8e-06]",
+      "outcome": "passed",
+      "duration": 0.0003960530739277601
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_affine_logits_folding_against_two_projections[0.5-dtype0-3e-14]",
+      "outcome": "passed",
+      "duration": 0.0006483870092779398
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_affine_logits_folding_against_two_projections[0.5-dtype1-8e-06]",
+      "outcome": "passed",
+      "duration": 0.0003920419840142131
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_affine_logits_folding_against_two_projections[2.0-dtype0-3e-14]",
+      "outcome": "passed",
+      "duration": 0.0006613769801333547
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_affine_logits_folding_against_two_projections[2.0-dtype1-8e-06]",
+      "outcome": "passed",
+      "duration": 0.000388080021366477
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values0]",
+      "outcome": "passed",
+      "duration": 0.0001454360317438841
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values1]",
+      "outcome": "passed",
+      "duration": 0.0001307689817622304
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values2]",
+      "outcome": "passed",
+      "duration": 0.00011751498095691204
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values3]",
+      "outcome": "passed",
+      "duration": 0.00011484499555081129
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values4]",
+      "outcome": "passed",
+      "duration": 0.00014655000995844603
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values5]",
+      "outcome": "passed",
+      "duration": 0.0001400740584358573
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values6]",
+      "outcome": "passed",
+      "duration": 0.00014615803956985474
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values7]",
+      "outcome": "passed",
+      "duration": 0.0001547079300507903
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values8]",
+      "outcome": "passed",
+      "duration": 0.0001533969771116972
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_invalid_config[values9]",
+      "outcome": "passed",
+      "duration": 0.00016096397303044796
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_zero_strength_matches_unguided_readout_without_references[False]",
+      "outcome": "passed",
+      "duration": 0.027060023974627256
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_zero_strength_matches_unguided_readout_without_references[True]",
+      "outcome": "passed",
+      "duration": 0.02063744596671313
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_padded_coda_projects_only_real_requests[two_head]",
+      "outcome": "passed",
+      "duration": 0.006809585960581899
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_padded_coda_projects_only_real_requests[linear_fused]",
+      "outcome": "passed",
+      "duration": 0.006324120098724961
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[1-two_head-4-4]",
+      "outcome": "passed",
+      "duration": 0.02156406210269779
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[1-two_head-4-2]",
+      "outcome": "passed",
+      "duration": 0.018739286926575005
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[1-two_head-3-2]",
+      "outcome": "passed",
+      "duration": 0.015641703037545085
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[1-linear_fused-4-4]",
+      "outcome": "passed",
+      "duration": 0.021187357022427022
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[1-linear_fused-4-2]",
+      "outcome": "passed",
+      "duration": 0.018691026023589075
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[1-linear_fused-3-2]",
+      "outcome": "passed",
+      "duration": 0.016155952005647123
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[3-two_head-4-4]",
+      "outcome": "passed",
+      "duration": 0.01594684401061386
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[3-two_head-4-2]",
+      "outcome": "passed",
+      "duration": 0.013345866929739714
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[3-two_head-3-2]",
+      "outcome": "passed",
+      "duration": 0.011487043928354979
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[3-linear_fused-4-4]",
+      "outcome": "passed",
+      "duration": 0.015733749023638666
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[3-linear_fused-4-2]",
+      "outcome": "passed",
+      "duration": 0.013413711916655302
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[3-linear_fused-3-2]",
+      "outcome": "passed",
+      "duration": 0.011570387985557318
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[8-two_head-4-4]",
+      "outcome": "passed",
+      "duration": 0.013811617041938007
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[8-two_head-4-2]",
+      "outcome": "passed",
+      "duration": 0.012487816042266786
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[8-two_head-3-2]",
+      "outcome": "passed",
+      "duration": 0.01006626698654145
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[8-linear_fused-4-4]",
+      "outcome": "passed",
+      "duration": 0.013593369978480041
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[8-linear_fused-4-2]",
+      "outcome": "passed",
+      "duration": 0.011270529008470476
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_first_readout_matches_independent_dense_oracle[8-linear_fused-3-2]",
+      "outcome": "passed",
+      "duration": 0.010667672962881625
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_refill_decode_abort_and_request_id_reuse",
+      "outcome": "passed",
+      "duration": 0.020357094006612897
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_stale_reference_rejected[owner]",
+      "outcome": "passed",
+      "duration": 0.00022381404414772987
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_stale_reference_rejected[position]",
+      "outcome": "passed",
+      "duration": 0.00015237589832395315
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_stale_reference_rejected[output_index]",
+      "outcome": "passed",
+      "duration": 0.00014990498311817646
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_stale_reference_rejected[loop]",
+      "outcome": "passed",
+      "duration": 0.00014296092558652163
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_unsupported_admission_rejected_before_request_allocation[unreserved]",
+      "outcome": "passed",
+      "duration": 0.002128513064235449
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_unsupported_admission_rejected_before_request_allocation[reference]",
+      "outcome": "passed",
+      "duration": 0.0021378759993240237
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_unsupported_admission_rejected_before_request_allocation[early_exit]",
+      "outcome": "passed",
+      "duration": 0.0021265660179778934
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_unsupported_admission_rejected_before_request_allocation[prefix]",
+      "outcome": "passed",
+      "duration": 0.002130975015461445
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_unsupported_admission_rejected_before_request_allocation[preemption]",
+      "outcome": "passed",
+      "duration": 0.0020507259760051966
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_shallow_prefill_capability_checked_before_allocation[async]",
+      "outcome": "passed",
+      "duration": 0.00196726992726326
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_shallow_prefill_capability_checked_before_allocation[prefix]",
+      "outcome": "passed",
+      "duration": 0.00187506596557796
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_shallow_prefill_capability_checked_before_allocation[shared]",
+      "outcome": "passed",
+      "duration": 0.0019255070947110653
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_reference_and_two_head_scratch_budgeted_before_auto_kv",
+      "outcome": "passed",
+      "duration": 0.001830692053772509
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.0-two_head-2]",
+      "outcome": "passed",
+      "duration": 0.023638822021894157
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.0-two_head-4]",
+      "outcome": "passed",
+      "duration": 0.039890879066661
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.3-two_head-2]",
+      "outcome": "passed",
+      "duration": 0.023760554031468928
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.3-two_head-4]",
+      "outcome": "passed",
+      "duration": 0.04087115603033453
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.3-linear_fused-2]",
+      "outcome": "passed",
+      "duration": 0.023601955035701394
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.3-linear_fused-4]",
+      "outcome": "passed",
+      "duration": 0.040013266960158944
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.5-two_head-2]",
+      "outcome": "passed",
+      "duration": 0.023795461049303412
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.5-two_head-4]",
+      "outcome": "passed",
+      "duration": 0.03999724506866187
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.5-linear_fused-2]",
+      "outcome": "passed",
+      "duration": 0.023679808946326375
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_teacher_forced_continuation_against_dense_oracle[0.5-linear_fused-4]",
+      "outcome": "passed",
+      "duration": 0.039910517050884664
+    }
+  ],
+  "verification": {
+    "passed": true,
+    "actual_transfer_return": 0,
+    "compressed_SHA_verified": true,
+    "all_payloads_verified": 151,
+    "all_file_fsync_verified": true,
+    "all_original_native_CPU_calls_passed": 64,
+    "original_source_files_covered": 141,
+    "GPU_cases_executed": 0,
+    "original_GPU_cases_excluded_not_qualified": 2,
+    "manifest_last_order_preserved": true,
+    "initial_local_order_assumption_failure_preserved": true,
+    "finished": 1791910323.8735218
+  },
+  "complete_original_archive": {
+    "bytes": 4893838,
+    "sha256": "b68ae20a4a31ba4499470084ac5939c358a81c0e1084a805b5ec47875b3b093a",
+    "manifest_sha256": "88ab0504cc8e778f26867e5199b150c47d515de5730a4cda3bf33c2e86a9a34e",
+    "payloads": 151,
+    "all_payloads_verified": true,
+    "fsync_verified": true
+  },
+  "limits": [
+    "CPU mathematical, configuration and request-lifecycle tests only; no official checkpoint or GPU/performance/quality qualification.",
+    "The two original Coda GPU counter failures and overall GPU suite74pass/33fail/7skip remain unchanged.",
+    "Existing complete FP32 checkpoint evidence and cost timings use the older qualified source; they do not qualify the captured current PR86 source pin."
+  ]
+}

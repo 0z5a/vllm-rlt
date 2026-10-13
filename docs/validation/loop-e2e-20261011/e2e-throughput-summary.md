@@ -24,7 +24,9 @@ All inference depth comparisons below retain fixed input/output work, but depth4
 
 The separately declared52GiB C4_longer pool variant has native same-depth guidance **+0.0813%** and HTTP **−0.1363%**. Its depth4 comparisons are **+7.15% /+7.17%**, including depth reduction. Original48GiB capacity stops remain, and these variants do not complete the original seven-case matrix.
 
-The current PR86 capture at48932b2 returned **74 pass /33 fail /7 skip**. Its28 optional-FlashAttention dependency failures,3 hidden-device1 PD failures and2 Coda counter failures remain. The original Coda final token/depth comparison was not reached. Existing LoopCD cost data therefore do not qualify this current pin. A new two-GPU PD/passive-Coda diagnostic has CPU preparation only and has not executed on a GPU.
+The captured current PR86 pin also passed **64/64 original LoopCD CPU tests**, retaining all mathematical and lifecycle assertions; its two GPU cases were excluded and remain unqualified. See [current CPU evidence](loopcd-current-pr86-original-cpu-tests.json).
+
+The current PR86 capture at48932b2 returned **74 pass /33 fail /7 skip**. Its28 optional-FlashAttention dependency failures,3 hidden-device1 PD failures and2 Coda counter failures remain. The original Coda final token/depth comparison was not reached. Existing LoopCD cost data therefore do not qualify this current pin. The final [two-GPU follow-up](loopcd-current-pr86-final-native-followup.json) retained five original failures: three PD cases lack NIXL and two Coda cases still fail the original fallback counter assertion. Separate passive comparison found exact completed eager/graph token-depth trajectories for both Coda implementations. This is tiny-model correctness evidence, without a current-pin speed claim. LoopCD testing is concluded with opt-in/default-off scope.
 
 All ScaleRLT pair outcomes:
 

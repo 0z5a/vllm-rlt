@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "source_head": "48932b2360f6ee750c154b268dae71fef8701782",
+  "scope": "Five original tiny native GPU regressions after exposing two GPUs; passive failure-frame observation adds an independent completed token/depth comparison while retaining the original failures. No current full-model, quality or throughput qualification.",
+  "original_pytest_actual_return": 1,
+  "original_test_counts": {
+    "passed": 0,
+    "failed": 5,
+    "skipped": 0
+  },
+  "original_outcomes": [
+    {
+      "nodeid": "tests/test_pd.py::test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs[True-True]",
+      "outcome": "failed",
+      "duration_seconds": 3.330183831974864,
+      "failure": "Missing nixl package after two-GPU admission"
+    },
+    {
+      "nodeid": "tests/test_pd.py::test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs[True-False]",
+      "outcome": "failed",
+      "duration_seconds": 3.3042694539763033,
+      "failure": "Missing nixl package after two-GPU admission"
+    },
+    {
+      "nodeid": "tests/test_pd.py::test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs[False-True]",
+      "outcome": "failed",
+      "duration_seconds": 3.2919442279962823,
+      "failure": "Missing nixl package after two-GPU admission"
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_loopcd_coda_graphs_match_eager_through_request_reuse[two_head]",
+      "outcome": "failed",
+      "duration_seconds": 2.474439739016816,
+      "failure": "Original fallbacks > 0 assertion failed; capture/replay succeeded, zero fallbacks"
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_loopcd_coda_graphs_match_eager_through_request_reuse[linear_fused]",
+      "outcome": "failed",
+      "duration_seconds": 0.15767310606315732,
+      "failure": "Original fallbacks > 0 assertion failed; capture/replay succeeded, zero fallbacks"
+    }
+  ],
+  "two_GPU_visibility_verified": true,
+  "logical_device_count": 2,
+  "PD_prefix_reuse_qualification": {
+    "cases": 3,
+    "passed": 0,
+    "failed": 3,
+    "missing_package": "nixl",
+    "guidance_feature_compatibility_claimed": false
+  },
+  "Coda_passive_completed_trajectory_observations": [
+    {
+      "nodeid": "tests/test_loopcd.py::test_loopcd_coda_graphs_match_eager_through_request_reuse[two_head]",
+      "implementation": "two_head",
+      "captures": 1,
+      "replays": 36,
+      "fallbacks": 0,
+      "captured_row_counts": [
+        1
+      ],
+      "independent_completed_token_depth_lists_equal": true,
+      "rounds_completed": 2,
+      "requests_per_round": [
+        3,
+        3
+      ],
+      "references_empty": true,
+      "used_cache_blocks": 0,
+      "original_assertions_removed": false,
+      "test_source_modified": false,
+      "scope": "Passive failure-frame observation; original fallback assertion remains failed. No throughput or full-model claim."
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_loopcd_coda_graphs_match_eager_through_request_reuse[linear_fused]",
+      "implementation": "linear_fused",
+      "captures": 1,
+      "replays": 18,
+      "fallbacks": 0,
+      "captured_row_counts": [
+        1
+      ],
+      "independent_completed_token_depth_lists_equal": true,
+      "rounds_completed": 2,
+      "requests_per_round": [
+        3,
+        3
+      ],
+      "references_empty": true,
+      "used_cache_blocks": 0,
+      "original_assertions_removed": false,
+      "test_source_modified": false,
+      "scope": "Passive failure-frame observation; original fallback assertion remains failed. No throughput or full-model claim."
+    }
+  ],
+  "independent_CPU_comparisons": [
+    {
+      "nodeid": "tests/test_loopcd.py::test_loopcd_coda_graphs_match_eager_through_request_reuse[two_head]",
+      "all_completed_token_depth_lists_exact": true,
+      "original_counter_test_still_failed": true,
+      "captured_row_counts": [
+        1
+      ],
+      "fallbacks": 0
+    },
+    {
+      "nodeid": "tests/test_loopcd.py::test_loopcd_coda_graphs_match_eager_through_request_reuse[linear_fused]",
+      "all_completed_token_depth_lists_exact": true,
+      "original_counter_test_still_failed": true,
+      "captured_row_counts": [
+        1
+      ],
+      "fallbacks": 0
+    }
+  ],
+  "all_original_source_assertions_and_failures_retained": true,
+  "original_final_token_depth_assertion_reached": false,
+  "separate_passive_comparison_executed": true,
+  "all_owned_children_joined": true,
+  "contexts_absent_original_two_locks_reacquired_released": true,
+  "cross_host_lock_device_literals_equal": false,
+  "complete_original_archive": {
+    "passed": true,
+    "path": "/gpfs/scratch/ehpc390/tueb043681/loops-direct-e2e-20261011/loopcd-pd2gpu-coda-observer-existing1-v1-full.tar.gz",
+    "bytes": 4902354,
+    "sha256": "8cfcbbc656d12c1f9084962d49699744867e29654ef32daaf8abfbb2d4daa066",
+    "manifest_sha256": "9efa2f42ca784995d8a9a0966c0ab1893b85046e1c6b75674bebd2a53f04f9fc",
+    "payloads": 161,
+    "all_payloads_verified": true,
+    "fsync_verified": true,
+    "original_failures_preserved": true
+  },
+  "complete_independent_CPU_and_retirement_archive": {
+    "passed": true,
+    "path": "/gpfs/scratch/ehpc390/tueb043681/loops-direct-e2e-20261011/loopcd-pd2gpu-coda-observer-existing1-v1-CPU-final-full.tar.gz",
+    "bytes": 10948,
+    "sha256": "a6e2a77f830d1b2f1fef141a98a1172ac5e559a02fa476158b8f4508a30862bf",
+    "manifest_sha256": "8f0355fd9991a8eb275840e655a1bf9076a7f1ff3f3dc165a728f074d2a2543b",
+    "payloads": 17,
+    "all_payloads_verified": true,
+    "fsync_verified": true
+  },
+  "independent_CPU_actual_return": 0,
+  "complete_backup_all_payload_SHA_and_fsync_verified": true,
+  "backup_payload_counts": {
+    "original": 161,
+    "CPU_final": 17
+  },
+  "current_full_model_quality_or_performance_PASS": false,
+  "testing_round_status": "Closed after this complete finite follow-up at the user request; no additional LoopCD tests scheduled."
+}
