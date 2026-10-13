@@ -19,6 +19,8 @@ from vllm_rlt.config import SpeculativeConfig
 from vllm_rlt.core.scheduling_policy import (
     NoRefillPolicy,
     RefillPolicy,
+    SchedulingPolicy,
+    SpeculativePolicy,
     SplitPrefillPolicy,
 )
 from vllm_rlt.engine.llm_engine import LLMEngine
@@ -1389,6 +1391,23 @@ def test_split_policy_honors_decode_due_before_split_prefill():
     e.close()
 
 
+def test_split_prefill_stages_count_toward_decode_fairness():
+    e = split_engine(scheduler_config=SchedulerConfig(max_prefill_batches_before_decode=2))
+    policy = e.scheduler.policy
+    assert policy.PREFILL_STAGES == (
+        Stage.PREFILLING_PRELUDE,
+        Stage.PREFILLING_RECURRENT,
+    )
+
+    policy.record_batch(Stage.PREFILLING_PRELUDE)
+    assert not policy.decode_due
+    policy.record_batch(Stage.PREFILLING_RECURRENT)
+    assert policy.decode_due
+    policy.record_batch(Stage.RECURRENT)
+    assert not policy.decode_due
+    e.close()
+
+
 def test_split_prefill_stages_after_a_reused_prompt_prefix():
     """A cached prefix is prefilled at every depth: the window opens past it."""
     e = split_engine()
@@ -1437,6 +1456,17 @@ def test_split_prefill_policy_is_selected_only_by_the_atomic_prefill_flag():
     assert SplitPrefillPolicy is type(split_engine().scheduler.policy)
     assert NoRefillPolicy is type(
         engine(scheduler_config=SchedulerConfig(mode="no_refill")).scheduler.policy
+    )
+
+
+def test_scheduling_policies_declare_their_prefill_stages():
+    assert SchedulingPolicy.PREFILL_STAGES == ()
+    assert RefillPolicy.PREFILL_STAGES == (Stage.PREFILL,)
+    assert NoRefillPolicy.PREFILL_STAGES == (Stage.PREFILL,)
+    assert SpeculativePolicy.PREFILL_STAGES == (Stage.PREFILL,)
+    assert SplitPrefillPolicy.PREFILL_STAGES == (
+        Stage.PREFILLING_PRELUDE,
+        Stage.PREFILLING_RECURRENT,
     )
 
 

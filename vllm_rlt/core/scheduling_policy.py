@@ -17,13 +17,8 @@ class NoRefillPhase(Enum):
 
 
 class SchedulingPolicy:
-    # Every stage that advances prompt prefill counts against the decode bound,
-    # whether the whole chunk or one recurrence depth forms the batch boundary.
-    PREFILL_STAGES = (
-        Stage.PREFILL,
-        Stage.PREFILLING_PRELUDE,
-        Stage.PREFILLING_RECURRENT,
-    )
+    # Prompt stages supported by this policy also count against the decode bound.
+    PREFILL_STAGES = (Stage.PREFILL, )
 
     def __init__(self, config: SchedulerConfig):
         self.config = config
@@ -42,9 +37,6 @@ class SchedulingPolicy:
 
 
 class RefillPolicy(SchedulingPolicy):
-    # Split refill specializes prompt work without duplicating refill ordering.
-    prompt_prefill_stages = (Stage.PREFILL,)
-
     def schedule(
         self, scheduler: "Scheduler", *, prefer_recurrent: bool = False
     ) -> "SchedulerOutput | None":
@@ -61,8 +53,8 @@ class RefillPolicy(SchedulingPolicy):
         if self.decode_due and q[Stage.RECURRENT]:
             return scheduler._take(Stage.RECURRENT)
         scheduler._admit()
-        for stage in self.prompt_prefill_stages: # PREFILL for atomic
-            if q[stage]: # PREFILLING_PRELUDE and PREFILLING_RECURRENT for split prefill
+        for stage in self.PREFILL_STAGES:
+            if q[stage]:
                 return scheduler._take(stage)
         # Admission can restore a snapshot directly to a boundary stage.
         if q[Stage.PRELUDE]:
@@ -132,8 +124,8 @@ class SpeculativePolicy(SchedulingPolicy):
 
 class SplitPrefillPolicy(RefillPolicy):
     """Refill ordering where each recurrence depth is its own batch boundary."""
-    # override BasePolicy's prefill stages
-    prompt_prefill_stages = (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT)
+    
+    PREFILL_STAGES = (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT)
 
 
 def create_scheduling_policy(
