@@ -42,7 +42,7 @@ output reservations separately from committed tokens.
 
 A simpler alternative is to copy each result asynchronously but wait before
 submitting the next round for that request. That can overlap independent requests,
-but retains a CPU dependency between consecutive rounds. The two-bank design
+but retains a CPU dependency between consecutive rounds. The two-buffer design
 removes that dependency at the cost of device state, reservation slack and up to
 one discarded round after EOS. The existing synchronous speculative path remains
 available by disabling `async_scheduling`; ordinary decoding remains the default
@@ -180,7 +180,7 @@ reduction is claimed; reserved and allocated peaks are retained per observation.
 ### Active-region preparation and transfer
 
 A separate warmed microexperiment used 1000 CPU preparations and 100 CUDA-event
-H2D observations per variant, with prompt/output 64/32. Both banks are reused,
+H2D observations per variant, with prompt/output 64/32. Both buffers are reused,
 and copies complete before the CPU mutates pinned storage. Times below are medians;
 they are not complete-round or E2E timings.
 
@@ -310,7 +310,7 @@ These ranges describe the observed runs, not confidence intervals.
 
 The largest observed allocated-memory peaks were 18.342 GiB for sync speculation
 and 18.657 GiB for async speculation (longer case, concurrency 32, K=2). This
-implementation retains device state and pinned/device banks; it does not claim a
+implementation retains device state and pinned/device buffers; it does not claim a
 memory reduction. JSON also contains reserved-memory peaks for every observation.
 
 ## Historical profiling analysis

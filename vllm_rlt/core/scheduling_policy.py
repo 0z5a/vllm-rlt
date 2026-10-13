@@ -18,7 +18,7 @@ class NoRefillPhase(Enum):
 
 class SchedulingPolicy:
     # Prompt stages supported by this policy also count against the decode bound.
-    PREFILL_STAGES = (Stage.PREFILL, )
+    PREFILL_STAGES = (Stage.PREFILL,)
 
     def __init__(self, config: SchedulerConfig):
         self.config = config
@@ -124,7 +124,7 @@ class SpeculativePolicy(SchedulingPolicy):
 
 class SplitPrefillPolicy(RefillPolicy):
     """Refill ordering where each recurrence depth is its own batch boundary."""
-    
+
     PREFILL_STAGES = (Stage.PREFILLING_PRELUDE, Stage.PREFILLING_RECURRENT)
 
 

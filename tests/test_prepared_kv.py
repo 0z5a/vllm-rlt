@@ -111,6 +111,19 @@ def test_row_and_span_frontends_reuse_one_kv_metadata_lease():
     pool.release(lease)
 
 
+def test_kv_metadata_lease_buffers_can_be_reused_outside_inference_mode():
+    pool = KVMetadataPool(torch.device("cpu"), slots=1)
+    with torch.inference_mode():
+        lease = pool.acquire()
+        lease.stage([1, 2], torch.long)
+        pool.release(lease)
+
+    lease = pool.acquire()
+    lease.stage([3, 4], torch.long)
+    assert lease.device_wide[:2].tolist() == [3, 4]
+    pool.release(lease)
+
+
 def test_span_frontend_preserves_mixed_depth_and_packed_sequence_order():
     cache = make_cache(num_blocks=128, block_size=4)
     assert cache.allocate("a", 20) and cache.allocate("b", 20)

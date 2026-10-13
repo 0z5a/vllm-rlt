@@ -13,7 +13,7 @@ from vllm_rlt.core.kv_cache_manager import KVSpan, _PreparedKVBatch
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace, prefill_stage_rows
-from vllm_rlt.worker.cuda_graph import RecurrentGraphs
+from vllm_rlt.worker.cuda_graph import CodaGraphs, RecurrentGraphs
 from vllm_rlt.worker.sampler import RngRegistry, Sampler
 
 
@@ -193,6 +193,11 @@ class ModelRunner:
                 self.exit_config.mode in ("ouro", "ouro_delayed"),
             )
             if self.execution_config.cuda_graphs
+            else None
+        )
+        self.coda_graphs = (
+            CodaGraphs(model, self.execution_config, cache_manager)
+            if self.graphs is not None and getattr(model, "requires_boundary_kv", False)
             else None
         )
         self._prefill_banks = None
@@ -508,24 +513,61 @@ class ModelRunner:
                 ids = [i.request.request_id for i in active]
                 positions = [i.token_start + offset for i in active]
                 tokens = [i.request.prompt_token_ids[p] for i, p in zip(active, positions)]
-                hidden = self._prefill_tokens(ids, positions, tokens)
+                hidden = self._prefill_tokens(ids, positions, tokens, [i.request for i in active])
                 for row, item in enumerate(active):
                     self._save(item.request, hidden[row])
             return
-        ids, positions, tokens = [], [], []
+        ids, positions, tokens, requests = [], [], [], []
         for item in batch.items:
             start, count, request = item.token_start, item.token_count, item.request
             ids.extend([request.request_id] * count)
             positions.extend(range(start, start + count))
             tokens.extend(request.prompt_token_ids[start : start + count])
-        hidden = self._prefill_tokens(ids, positions, tokens)
+            requests.extend([request] * count)
+        hidden = self._prefill_tokens(ids, positions, tokens, requests)
         offset = 0
         for item in batch.items:
             offset += item.token_count
             self._save(item.request, hidden[offset - 1])
 
-    def _prefill_tokens(self, ids, positions, tokens):
+    def _populate_coda(self, hidden, ids, positions, requests):
+        # The last prompt position runs coda once, when producing the first token.
+        rows = (
+            [
+                row
+                for row, (position, request) in enumerate(zip(positions, requests))
+                if position < len(request.prompt_token_ids) - 1
+            ]
+            if requests
+            else list(range(len(ids)))
+        )
+        if not rows:
+            return
+        lease = self.cache_manager.acquire_metadata_lease()
+        try:
+            boundary = self.cache_manager._prepare_batch(
+                [ids[row] for row in rows],
+                [0] * len(rows),
+                [positions[row] for row in rows],
+                packed_prefill=self.cache_manager.attention_capabilities.packed_prefill,
+                metadata_lease=lease,
+            )
+            self.model.coda_prepared(
+                hidden[rows], boundary, self.cache_manager, compute_logits=False
+            )
+        finally:
+            self.cache_manager.release_metadata_lease(lease)
+
+    def _prefill_tokens(self, ids, positions, tokens, requests=()):
         cache = self.cache_manager
+        generators = (
+            [
+                self.rng.acquire(request.request_id, request.sampling_params, self.device)
+                for request in requests
+            ]
+            if getattr(self.model, "requires_boundary_kv", False) and requests
+            else None
+        )
         if cache.layout == "last_exited" and cache.attention_capabilities.packed_prefill:
             # Prefill has genuinely ragged query sequences. Do not pad token rows
             # or reuse decode's per-query, model-max-width static page tables.
@@ -537,31 +579,58 @@ class ModelRunner:
                     self._prefill_banks = [PrefillMetadataBank(cache) for _ in range(3)]
                 bank = self._prefill_banks[self._prefill_bank_index]
                 self._prefill_bank_index = (self._prefill_bank_index + 1) % len(self._prefill_banks)
-            if bank:
-                hidden = self.model.prelude(bank.prepare(ids, positions, tokens))
+            try:
+                tensor = (
+                    bank.prepare(ids, positions, tokens)
+                    if bank
+                    else torch.tensor(tokens, device=self.device, dtype=torch.long)
+                )
+                boundary = None
+                if getattr(self.model, "requires_boundary_kv", False):
+                    boundary_lease = cache.acquire_metadata_lease()
+                    try:
+                        boundary = cache._prepare_batch(
+                            ids,
+                            [0] * len(ids),
+                            positions,
+                            packed_prefill=True,
+                            metadata_lease=boundary_lease,
+                        )
+                        hidden = self.model.prelude_prepared(
+                            tensor, boundary, cache, generators=generators
+                        )
+                    finally:
+                        cache.release_metadata_lease(boundary_lease)
+                else:
+                    hidden = self.model.prelude(tensor)
+
                 for depth in range(self.model.config.total_ut_steps):
-                    hidden, _ = self.model.recurrent_prepared(
-                        hidden, bank.metadata(depth), cache, compute_gate=False
-                    )
-                bank.release()
+                    if bank:
+                        metadata = bank.metadata(depth)
+                        hidden, _ = self.model.recurrent_prepared(
+                            hidden, metadata, cache, compute_gate=False
+                        )
+                    else:
+                        lease = cache.acquire_metadata_lease()
+                        try:
+                            metadata = cache._prepare_batch(
+                                ids,
+                                [depth] * len(ids),
+                                positions,
+                                packed_prefill=True,
+                                metadata_lease=lease,
+                            )
+                            hidden, _ = self.model.recurrent_prepared(
+                                hidden, metadata, cache, compute_gate=False
+                            )
+                        finally:
+                            cache.release_metadata_lease(lease)
+                if boundary is not None:
+                    self._populate_coda(hidden, ids, positions, requests)
                 return hidden
-            hidden = self.model.prelude(torch.tensor(tokens, device=self.device, dtype=torch.long))
-            for depth in range(self.model.config.total_ut_steps):
-                lease = cache.acquire_metadata_lease()
-                try:
-                    metadata = cache._prepare_batch(
-                        ids,
-                        [depth] * len(ids),
-                        positions,
-                        packed_prefill=True,
-                        metadata_lease=lease,
-                    )
-                    hidden, _ = self.model.recurrent_prepared(
-                        hidden, metadata, cache, compute_gate=False
-                    )
-                finally:
-                    cache.release_metadata_lease(lease)
-            return hidden
+            finally:
+                if bank:
+                    bank.release()
         size = self._size(len(tokens))
         workspace = self._workspace("core")
         tensor = (
@@ -569,7 +638,27 @@ class ModelRunner:
             if workspace
             else torch.tensor(tokens, device=self.device, dtype=torch.long)
         )
-        hidden = self.model.prelude(tensor)
+        boundary = None
+        if getattr(self.model, "requires_boundary_kv", False):
+            boundary_lease = cache.acquire_metadata_lease()
+            try:
+                boundary = cache._prepare_batch(
+                    ids,
+                    [0] * len(ids),
+                    positions,
+                    metadata_lease=boundary_lease,
+                )
+                hidden = self.model.prelude_prepared(
+                    tensor[: len(ids)], boundary, cache, generators=generators
+                )
+            finally:
+                cache.release_metadata_lease(boundary_lease)
+            if workspace:
+                workspace.hidden[:size].zero_()
+                workspace.hidden[: len(ids)].copy_(hidden)
+                hidden = workspace.hidden[:size]
+        else:
+            hidden = self.model.prelude(tensor)
         for depth in range(self.model.config.total_ut_steps):
             # Same workspace metadata can be refilled only once previous DMA is done.
             if workspace:
@@ -577,6 +666,8 @@ class ModelRunner:
             hidden, _ = self._core(hidden, ids, [depth] * len(ids), positions, workspace, size)
             if workspace:
                 workspace.release()
+        if boundary is not None:
+            self._populate_coda(hidden, ids, positions, requests)
         return hidden
 
     def prepare(self, batch):
@@ -738,7 +829,30 @@ class ModelRunner:
                     if workspace
                     else torch.tensor(ids, device=self.device, dtype=torch.long)
                 )
-            hidden = self.model.prelude(tokens)
+            if getattr(self.model, "requires_boundary_kv", False):
+                boundary_lease = self.cache_manager.acquire_metadata_lease()
+                try:
+                    boundary = self.cache_manager._prepare_batch(
+                        [r.request_id for r in requests],
+                        [0] * len(requests),
+                        [r.position for r in requests],
+                        metadata_lease=boundary_lease,
+                    )
+                    hidden = self.model.prelude_prepared(
+                        tokens[: len(requests)],
+                        boundary,
+                        self.cache_manager,
+                        generators=[
+                            self.rng.acquire(
+                                request.request_id, request.sampling_params, self.device
+                            )
+                            for request in requests
+                        ],
+                    )
+                finally:
+                    self.cache_manager.release_metadata_lease(boundary_lease)
+            else:
+                hidden = self.model.prelude(tokens)
             self._save_batch(requests, hidden, routing)
             result = None
         else:
@@ -784,7 +898,26 @@ class ModelRunner:
                     logits = self.lookahead_head(hidden).squeeze(-1)
                 result = logits[: len(requests)].float().sigmoid() if logits is not None else None
             elif batch.stage == Stage.CODA:
-                logits = self.model.coda(hidden)
+                if getattr(self.model, "requires_boundary_kv", False):
+                    boundary_lease = self.cache_manager.acquire_metadata_lease()
+                    try:
+                        boundary = self.cache_manager._prepare_batch(
+                            [r.request_id for r in requests],
+                            [0] * len(requests),
+                            [r.position for r in requests],
+                            metadata_lease=boundary_lease,
+                        )
+                        logits = (
+                            self.coda_graphs.run(hidden[: len(requests)], boundary)
+                            if self.coda_graphs is not None
+                            else self.model.coda_prepared(
+                                hidden[: len(requests)], boundary, self.cache_manager
+                            )
+                        )
+                    finally:
+                        self.cache_manager.release_metadata_lease(boundary_lease)
+                else:
+                    logits = self.model.coda(hidden)
                 result = torch.stack([self._sample_row(row, r) for row, r in zip(logits, requests)])
                 if routing is not None:
                     routing.scatter(result, tokens=True)
@@ -852,7 +985,7 @@ class ModelRunner:
         slot = None
         try:
             if split_prefill and stream is not None:
-                # Split metadata copies and staging gathers must share the consumer stream.
+                # Split metadata copies and staging gathers share the consumer stream.
                 with torch.cuda.stream(stream):
                     prepared = self.prepare(batch)
             else:
@@ -882,7 +1015,6 @@ class ModelRunner:
                     result = self._execute(batch, prepared)
                 finally:
                     if prepared.routing is not None:
-                        # Mark before calling so a failing cleanup is not retried.
                         routing_finish_attempted = True
                         prepared.routing.record_done()
                 device_values = result
@@ -921,6 +1053,7 @@ class ModelRunner:
                     and not routing_finish_attempted
                 ):
                     with torch.cuda.stream(stream) if stream is not None else nullcontext():
+                        routing_finish_attempted = True
                         prepared.routing.record_done()
             finally:
                 if slot is not None:

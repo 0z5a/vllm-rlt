@@ -1460,7 +1460,7 @@ def test_split_prefill_policy_is_selected_only_by_the_atomic_prefill_flag():
 
 
 def test_scheduling_policies_declare_their_prefill_stages():
-    assert SchedulingPolicy.PREFILL_STAGES == ()
+    assert SchedulingPolicy.PREFILL_STAGES == (Stage.PREFILL,)
     assert RefillPolicy.PREFILL_STAGES == (Stage.PREFILL,)
     assert NoRefillPolicy.PREFILL_STAGES == (Stage.PREFILL,)
     assert SpeculativePolicy.PREFILL_STAGES == (Stage.PREFILL,)
