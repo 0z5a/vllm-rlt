@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "snapshot_UTC": "2026-10-13T16:11:32.363824+00:00",
+  "snapshot_UTC": "2026-10-13T19:05:03.964723+00:00",
   "scope": "Full native/HTTP serving throughput and full training-update wall time, with inference-depth changes, code-only increments and resource scaling kept distinct. No kernel timings are substituted for E2E.",
   "PR82_accepted_Coda_only_E2E_percent": {
     "B1": 0.34,
@@ -37,7 +37,13 @@
   },
   "LoopGraph": {
     "qualified_formal_W1_E2E_speedup_percent": null,
-    "reason": "Original numerical/token gates remain failed. Private18Norm job47244713 was pending at last verified15:43UTC; this is not an observed0% result."
+    "reason": "Original numerical/token failures remain. The completed private18Norm control passes both full token/depth/work waves, with2146/8192 differing hidden/logit positions across38 requests. This is not an observed0% performance result.",
+    "private18Norm_differing_head_pairs": 2146,
+    "private18Norm_total_head_pairs": 8192,
+    "private18Norm_affected_requests": 38,
+    "private18Norm_token_gate_passed": true,
+    "private18Norm_all_head_tensor_equality_passed": false,
+    "source": "loopgraph-eighteen-located-norm32-control.json"
   },
   "ReLoop_cases": [
     {
@@ -314,7 +320,8 @@
     "loopgraph-w1-diagnostics.json": "0b38344f0dc7d281dd3692c12e5f958fa2a504982d1ba66d91ad46aa8816f4a9",
     "reloop-native-c4-52g.json": "719c61335cb884a7486e22ad0208d64f2019de8331319da01f0debf2a2df23ee",
     "loopcd-current-pr86-original-cpu-tests.json": "73ce7553c5c0d5d51e2b510e9b65a3617ac66754779b1a15ec417038557c809f",
-    "loopcd-current-pr86-final-native-followup.json": "56d686ac35a329e402383fec840b4f3688b2786e3313b40677c4121dc03d3d1c"
+    "loopcd-current-pr86-final-native-followup.json": "56d686ac35a329e402383fec840b4f3688b2786e3313b40677c4121dc03d3d1c",
+    "loopgraph-eighteen-located-norm32-control.json": "14964eea8c5169271a38ded19b272f4b58fa27b5a70bf64543903d5b07028292"
   },
   "LoopCD_current_PR86_CPU_outcomes": {
     "source_head": "48932b2360f6ee750c154b268dae71fef8701782",

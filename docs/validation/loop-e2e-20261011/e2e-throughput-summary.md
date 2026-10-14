@@ -12,6 +12,8 @@ Inference columns measure complete generated-token throughput. ScaleRLT measures
 | ReLoop additional reference batch-copy | Old **+0.1985%**, latest **+0.2861%** | Both against their same vector-readout baseline; latest orders **−0.3002% /+0.8752%**; not a stable gain |
 | ScaleRLT full-update1node/2GPU →2nodes/3GPU | Sequential seed42 **+27.0972%**, seed43 **+26.8026%** | Two complete audited pairs; more GPUs; all pilot regressions retained; further tests stopped |
 
+The latest private LoopGraph18-Norm control preserves both full token/depth/work waves, but still has **2,146/8,192 differing hidden/logit positions across38 requests** (previously2,410 across39). This narrows the numerical diagnosis; it adds no qualified speedup to the table. See [the complete audited control](loopgraph-eighteen-located-norm32-control.json).
+
 All inference depth comparisons below retain fixed input/output work, but depth4→depth3 changes model computation and does not establish quality noninferiority. The private vector column is a separate comparison of the same guided implementation; it is not added to either preceding column or transferred to HTTP.
 
 | ReLoop workload | Native guidance, same depth3 | HTTP guidance, same depth3 | Native depth4→guided depth3 | HTTP depth4→guided depth3 | Private native vector vs scalar |
