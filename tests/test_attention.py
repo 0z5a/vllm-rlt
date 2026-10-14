@@ -105,3 +105,47 @@ def test_empty_batch_and_invalid_gqa():
     cache.write(0, ["a"], [0], [0], torch.ones(1, 2, 4), torch.ones(1, 2, 4))
     with pytest.raises(ValueError, match="positive multiple"):
         cache.attend(0, ["a"], [0], [0], torch.ones(1, 3, 4))
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("head_dim,heads,kv_heads", [(64, 4, 2), (96, 8, 8), (128, 16, 16)])
+def test_triton_paged_prefill_matches_per_query_reference(head_dim, heads, kv_heads):
+    from vllm_rlt.kernels.paged_attention import torch_paged_attention
+    from vllm_rlt.kernels.triton_attention import paged_prefill_attention
+
+    torch.manual_seed(0)
+    block, blocks = 16, 96
+    k = torch.randn(blocks, block, kv_heads, head_dim, device="cuda", dtype=torch.bfloat16)
+    v = torch.randn_like(k)
+    # (keys visible to the last query, queries in this chunk): prefixes of 32, 0, 0, 60, 9.
+    sequences = [(37, 5), (100, 100), (3, 3), (130, 70), (129, 120)]
+    order = torch.randperm(blocks).tolist()  # Pages deliberately out of order.
+    width = max(-(-length // block) for length, _ in sequences)
+    tables = torch.zeros(len(sequences), width, dtype=torch.int32, device="cuda")
+    for s, (length, _) in enumerate(sequences):
+        pages = [order.pop() for _ in range(-(-length // block))]
+        tables[s, : len(pages)] = torch.tensor(pages, dtype=torch.int32)
+    total = sum(count for _, count in sequences)
+    q = torch.randn(total, heads, head_dim, device="cuda", dtype=torch.bfloat16)
+    lengths = torch.tensor([length for length, _ in sequences], dtype=torch.int32, device="cuda")
+    starts = [0]
+    for _, count in sequences:
+        starts.append(starts[-1] + count)
+    cu = torch.tensor(starts, dtype=torch.int32, device="cuda")
+    actual = paged_prefill_attention(
+        q, k, v, tables, lengths, cu, max(count for _, count in sequences)
+    )
+    rows, row_tables, row_lengths = [], [], []
+    for s, (length, count) in enumerate(sequences):
+        for i in range(count):
+            rows.append(starts[s] + i)
+            row_tables.append(tables[s])
+            row_lengths.append(length - count + i + 1)  # Causal: keys up to own position.
+    expected = torch_paged_attention(
+        q[rows],
+        k,
+        v,
+        torch.stack(row_tables),
+        torch.tensor(row_lengths, dtype=torch.int32, device="cuda"),
+    )
+    torch.testing.assert_close(actual[rows], expected, rtol=2e-2, atol=2e-2)
