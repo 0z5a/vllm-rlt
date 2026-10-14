@@ -44,10 +44,10 @@ class PrefillSegment(NamedTuple):
 
 
 class PrefillMetadataPool:
-    def __init__(self, max_num_seqs, max_num_batched_tokens, device, slots=3):
+    def __init__(self, max_num_seqs, max_num_batched_tokens, device, num_slots=3):
         self.slots = []
         self.next_slot = 0
-        for _ in range(slots):
+        for _ in range(num_slots):
             host = torch.empty(
                 (max_num_seqs, 5),
                 dtype=torch.int64,
@@ -215,6 +215,7 @@ class ModelRunner:
             self.lookahead_head = head.to(device=self.device, dtype=parameter.dtype).eval()
             self.lookahead_head.requires_grad_(False)
         self.core_stream = self.boundary_stream = self.copy_stream = None
+        self.split_prefill = (False == self.execution_config.atomic_prefill)
         if self.execution_config.async_scheduling and self.device.type == "cuda":
             self.core_stream = torch.cuda.Stream(device=self.device)
             self.boundary_stream = (
@@ -255,6 +256,7 @@ class ModelRunner:
         self.states = None
         # Prompt hidden states staged between split-prefill scheduling boundaries.
         # Sized by the same helper the memory plan reserves with.
+        # zero when atomic prefill
         stage_rows = prefill_stage_rows(model.config, scheduler, self.execution_config)
         self.prefill_states = (
             torch.empty(
@@ -262,7 +264,7 @@ class ModelRunner:
                 device=self.device,
                 dtype=parameter.dtype,
             )
-            if stage_rows
+            if self.split_prefill
             else None
         )
         prefill_rows = scheduler.max_num_batched_tokens
@@ -274,7 +276,7 @@ class ModelRunner:
                 device=self.device,
                 dtype=parameter.dtype,
             )
-            if stage_rows
+            if self.split_prefill
             else None
         )
         self.prefill_metadata_pool = (
@@ -283,7 +285,7 @@ class ModelRunner:
                 max(scheduler.max_num_batched_tokens, scheduler.prefill_chunk_size),
                 self.device,
             )
-            if stage_rows
+            if self.split_prefill
             else None
         )
         self.last_effective_size = self.last_submitted_size = 0
