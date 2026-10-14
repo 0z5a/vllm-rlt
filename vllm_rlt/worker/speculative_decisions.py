@@ -5,6 +5,7 @@ from __future__ import annotations
 import heapq
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+
 import torch
 
 from vllm_rlt.worker.speculative_pipeline import PipelineLane, PipelineSchedule
