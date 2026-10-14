@@ -13,7 +13,7 @@ from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace
 from vllm_rlt.worker.cuda_graph import CodaGraphs, RecurrentGraphs
 from vllm_rlt.worker.loopcd import Reference, active, extrapolate
-from vllm_rlt.worker.sampler import Sampler
+from vllm_rlt.worker.sampler import RngRegistry, Sampler
 
 
 @dataclass
@@ -75,12 +75,16 @@ class ModelRunner:
         exit_config=None,
         execution_config=None,
         scheduler_config=None,
+        rng: RngRegistry | None = None,
     ):
         self.model = model.eval()
         self.cache_manager = cache_manager
         parameter = next(model.parameters())
         self.device = parameter.device
-        self.sampler = Sampler(self.device)
+        self.sampler = Sampler()
+        # Sampling RNG state lives with the engine, which shares this registry
+        # between the CODA runner and the speculative runner.
+        self.rng = rng if rng is not None else RngRegistry()
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
         self.loopcd_references = {}
@@ -110,10 +114,16 @@ class ModelRunner:
             else None
         )
         self.coda_graphs = (
-            CodaGraphs(model, self.execution_config)
+            CodaGraphs(
+                model,
+                self.execution_config,
+                cache_manager if getattr(model, "requires_boundary_kv", False) else None,
+            )
             if self.graphs is not None
-            and self.execution_config.loopcd
-            and not self.execution_config.async_scheduling
+            and (
+                getattr(model, "requires_boundary_kv", False)
+                or (self.execution_config.loopcd and not self.execution_config.async_scheduling)
+            )
             else None
         )
         self._prefill_banks = None
@@ -378,8 +388,37 @@ class ModelRunner:
         self.loopcd_stats["guided_rows"] += sum(ref is not None for ref in references)
         return logits
 
+    def _populate_coda(self, hidden, ids, positions, requests):
+        # The last prompt position runs coda once, when producing the first token.
+        rows = (
+            [
+                row
+                for row, (position, request) in enumerate(zip(positions, requests))
+                if position < len(request.prompt_token_ids) - 1
+            ]
+            if requests
+            else list(range(len(ids)))
+        )
+        if not rows:
+            return
+        boundary = self.cache_manager._prepare_batch(
+            [ids[row] for row in rows],
+            [0] * len(rows),
+            [positions[row] for row in rows],
+            packed_prefill=self.cache_manager.attention_capabilities.packed_prefill,
+        )
+        self.model.coda_prepared(hidden[rows], boundary, self.cache_manager, compute_logits=False)
+
     def _prefill_tokens(self, ids, positions, tokens, requests=()):
         cache = self.cache_manager
+        generators = (
+            [
+                self.rng.acquire(request.request_id, request.sampling_params, self.device)
+                for request in requests
+            ]
+            if getattr(self.model, "requires_boundary_kv", False) and requests
+            else None
+        )
         if cache.layout == "last_exited" and cache.attention_capabilities.packed_prefill:
             # Prefill has genuinely ragged query sequences. Do not pad token rows
             # or reuse decode's per-query, model-max-width static page tables.
@@ -396,7 +435,11 @@ class ModelRunner:
                 if bank
                 else torch.tensor(tokens, device=self.device, dtype=torch.long)
             )
-            hidden = self.model.prelude(tensor)
+            if getattr(self.model, "requires_boundary_kv", False):
+                boundary = cache._prepare_batch(ids, [0] * len(ids), positions, packed_prefill=True)
+                hidden = self.model.prelude_prepared(tensor, boundary, cache, generators=generators)
+            else:
+                hidden = self.model.prelude(tensor)
             for depth in range(self.prefill_depth):
                 metadata = (
                     bank.metadata(depth)
@@ -417,6 +460,8 @@ class ModelRunner:
                     [0] * len(requests),
                     prefill=True,
                 )
+            if getattr(self.model, "requires_boundary_kv", False):
+                self._populate_coda(hidden, ids, positions, requests)
             if bank:
                 bank.release()
             return hidden
@@ -427,7 +472,18 @@ class ModelRunner:
             if workspace
             else torch.tensor(tokens, device=self.device, dtype=torch.long)
         )
-        hidden = self.model.prelude(tensor)
+        boundary = None
+        if getattr(self.model, "requires_boundary_kv", False):
+            boundary = cache._prepare_batch(ids, [0] * len(ids), positions)
+            hidden = self.model.prelude_prepared(
+                tensor[: len(ids)], boundary, cache, generators=generators
+            )
+            if workspace:
+                workspace.hidden[:size].zero_()
+                workspace.hidden[: len(ids)].copy_(hidden)
+                hidden = workspace.hidden[:size]
+        else:
+            hidden = self.model.prelude(tensor)
         for depth in range(self.prefill_depth):
             # Same workspace metadata can be refilled only once previous DMA is done.
             if workspace:
@@ -444,6 +500,8 @@ class ModelRunner:
             )
             if workspace:
                 workspace.release()
+        if boundary is not None:
+            self._populate_coda(hidden, ids, positions, requests)
         return hidden
 
     def prepare(self, batch):
@@ -508,7 +566,23 @@ class ModelRunner:
                     if workspace
                     else torch.tensor(ids, device=self.device, dtype=torch.long)
                 )
-            hidden = self.model.prelude(tokens)
+            if getattr(self.model, "requires_boundary_kv", False):
+                boundary = self.cache_manager._prepare_batch(
+                    [r.request_id for r in requests],
+                    [0] * len(requests),
+                    [r.position for r in requests],
+                )
+                hidden = self.model.prelude_prepared(
+                    tokens[: len(requests)],
+                    boundary,
+                    self.cache_manager,
+                    generators=[
+                        self.rng.acquire(request.request_id, request.sampling_params, self.device)
+                        for request in requests
+                    ],
+                )
+            else:
+                hidden = self.model.prelude(tokens)
             self._save_batch(requests, hidden, routing)
             result = None
         else:
@@ -557,17 +631,29 @@ class ModelRunner:
                     logits = self.lookahead_head(hidden).squeeze(-1)
                 result = logits[: len(requests)].float().sigmoid() if logits is not None else None
             elif batch.stage == Stage.CODA:
-                logits = self._loopcd_readout(
-                    hidden,
-                    requests,
-                    prepared.positions if prepared else [r.position for r in requests],
-                    prepared.output_indices
-                    if prepared
-                    else [r.num_scheduled_outputs for r in requests],
-                )
-                result = torch.stack(
-                    [self._sample_tensor(row, r) for row, r in zip(logits, requests)]
-                )
+                if getattr(self.model, "requires_boundary_kv", False):
+                    boundary = self.cache_manager._prepare_batch(
+                        [r.request_id for r in requests],
+                        [0] * len(requests),
+                        [r.position for r in requests],
+                    )
+                    logits = (
+                        self.coda_graphs.run(hidden[: len(requests)], boundary)
+                        if self.coda_graphs is not None
+                        else self.model.coda_prepared(
+                            hidden[: len(requests)], boundary, self.cache_manager
+                        )
+                    )
+                else:
+                    logits = self._loopcd_readout(
+                        hidden,
+                        requests,
+                        prepared.positions if prepared else [r.position for r in requests],
+                        prepared.output_indices
+                        if prepared
+                        else [r.num_scheduled_outputs for r in requests],
+                    )
+                result = torch.stack([self._sample_row(row, r) for row, r in zip(logits, requests)])
                 if routing is not None:
                     routing.scatter(result, tokens=True)
             else:
@@ -719,7 +805,7 @@ class ModelRunner:
                 event.record(stream)
                 self.events[request.request_id] = event
 
-    def release(self, request_id):
+    def _free_runner_slot(self, request_id):
         # The latest submission or KV-finalization event follows earlier work
         # through stream dependencies. Wait before recycling this request's slot.
         event = self.events.pop(request_id, None)
@@ -733,14 +819,39 @@ class ModelRunner:
         if slot is not None:
             self.free_state_slots.append(slot)
 
+    def suspend(self, request_id):
+        """Free the request's runner resources but keep its sampling RNG.
+
+        Preemption suspends a request without terminating it, so its generator
+        must survive for the resumed token sequence to match an uninterrupted run.
+        """
+        self._free_runner_slot(request_id)
+
+    def release(self, request_id):
+        """Terminate the request: free its runner resources and drop its RNG.
+
+        A new request reusing the same ID must start from a fresh generator, so
+        termination drops the RNG slot while suspension keeps it.
+        """
+        self._free_runner_slot(request_id)
+        self.rng.drop(request_id)
+
     def synchronize(self):
         for stream in (self.core_stream, self.boundary_stream, self.copy_stream):
             if stream is not None:
                 stream.synchronize()
 
-    def _sample_tensor(self, logits: torch.Tensor, request: Request):
-        # Thin delegate kept for the async path and for tests that monkeypatch
-        # this method; the algorithm lives in Sampler.
-        token, generator = self.sampler.sample(logits, request.sampling_params, request.generator)
-        request.generator = generator
-        return token
+    def _sample_row(self, logits: torch.Tensor, request: Request) -> torch.Tensor:
+        """Sample one token for one logits row from the engine's RNG registry.
+
+        Greedy rows never acquire a generator. Otherwise the registry creates it on
+        the distribution's device, so the generator follows the logits row rather
+        than the device the model was loaded on.
+        """
+        params = request.sampling_params
+        generator = (
+            None
+            if params.temperature == 0
+            else self.rng.acquire(request.request_id, params, logits.device)
+        )
+        return self.sampler.sample(logits, params, generator)

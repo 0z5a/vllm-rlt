@@ -16,7 +16,7 @@ from vllm_rlt import (
 )
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
-from vllm_rlt.request import FinishReason, RequestOutput, Stage
+from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 
 
 def tiny_model():
@@ -170,34 +170,117 @@ def test_same_id_after_finish_starts_from_a_fresh_generator():
     engine.add_request("r", [2, 4], params)
     request = engine.scheduler.requests["r"]
     for _ in range(20):
-        if request.generator is not None:
+        if engine.rng.peek("r") is not None:
             break
         engine.step()
-    assert request.generator is not None
+    first_generator = engine.rng.peek("r")
+    assert first_generator is not None
     first, _ = drain(engine)
-    # finish() pops the request from scheduler.requests, but this local name is
-    # still a live reference to the same object, so it can observe the released
-    # RNG: reusing the ID must not continue the previous stream.
-    assert request.generator is None
+    # Termination drops the request's RNG slot, so a request that reuses the ID
+    # cannot continue the previous stream: it gets a new generator and replays
+    # the same tokens.
+    assert engine.rng.peek("r") is None
     engine.add_request("r", [2, 4], params)
     assert engine.scheduler.requests["r"] is not request
+    for _ in range(20):
+        if engine.rng.peek("r") is not None:
+            break
+        engine.step()
+    assert engine.rng.peek("r") is not first_generator
     second, _ = drain(engine)
     assert second["r"].token_ids == first["r"].token_ids
     assert second["r"].exit_depths == first["r"].exit_depths
 
 
+def test_abort_drops_the_rng_slot_so_id_reuse_starts_over():
+    params = SamplingParams(max_tokens=4, temperature=0.8, seed=23, ignore_eos=True)
+    engine = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+    engine.add_request("r", [2, 4], params)
+    for _ in range(20):
+        if engine.rng.peek("r") is not None:
+            break
+        engine.step()
+    aborted_generator = engine.rng.peek("r")
+    assert aborted_generator is not None
+    engine.abort_request("r")
+    assert engine.rng.peek("r") is None
+
+    engine.add_request("r", [2, 4], params)
+    for _ in range(20):
+        if engine.rng.peek("r") is not None:
+            break
+        engine.step()
+    assert engine.rng.peek("r") is not aborted_generator
+    reused, _ = drain(engine)
+
+    fresh = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+    fresh.add_request("r", [2, 4], params)
+    expected, _ = drain(fresh)
+    # The rebuilt request replays a same-seed run instead of continuing the
+    # aborted stream.
+    assert reused["r"].token_ids == expected["r"].token_ids
+
+
 def test_greedy_requests_never_create_a_generator():
     engine = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
     engine.add_request("g", [2, 4], SamplingParams(max_tokens=3, ignore_eos=True))
-    request = engine.scheduler.requests["g"]
     for _ in range(1000):
         if not engine.has_unfinished_requests():
             break
         engine.step()
-        assert request.generator is None
+        assert engine.rng.peek("g") is None
     else:
         pytest.fail("engine failed to finish within bounded scheduler steps")
-    assert request.generator is None
+    assert engine.rng.peek("g") is None
+
+
+def test_greedy_sampling_never_acquires_a_generator(monkeypatch):
+    # The registry is the only creator, so the strongest greedy contract is that
+    # acquire() is never reached at all, not merely that no slot is left behind.
+    engine = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("greedy sampling must not acquire a generator")
+
+    monkeypatch.setattr(engine.rng, "acquire", forbidden)
+    engine.add_request("g", [2, 4], SamplingParams(max_tokens=3, ignore_eos=True))
+    outputs, _ = drain(engine)
+    assert outputs["g"].finish_reason == "length"
+    assert engine.rng.peek("g") is None
+
+
+def test_sample_row_requests_the_generator_on_the_logits_device(monkeypatch):
+    # multinomial runs on the distribution's device, so the row helper must pass the
+    # logits device, not the model's. Moving the runner's own device to a different
+    # value makes the two sources distinguishable on a CPU-only machine; the spy
+    # below returns a real CPU generator, so no meta device is ever allocated.
+    engine = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+    runner = engine.model_runner
+    runner.device = torch.device("meta")
+    recorded = []
+    real_acquire = engine.rng.acquire
+
+    def spy(request_id, params, device):
+        recorded.append(device)
+        return real_acquire(request_id, params, torch.device("cpu"))
+
+    monkeypatch.setattr(engine.rng, "acquire", spy)
+    logits = torch.linspace(1.0, -1.0, 8)
+    request = Request("r", [1], SamplingParams(temperature=0.7, seed=3))
+    token = runner._sample_row(logits, request)
+    assert recorded == [logits.device]
+    assert runner.device != logits.device
+    assert token.dim() == 0 and token.device == logits.device
+
+
+def test_engines_own_independent_rng_registries():
+    first = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+    second = LLMEngine(tiny_model(), cache_config=CacheConfig(64, 2))
+    assert first.model_runner.rng is first.rng
+    assert second.model_runner.rng is second.rng
+    assert first.rng is not second.rng
+    first.model_runner.rng.acquire("r", SamplingParams(temperature=1.0), torch.device("cpu"))
+    assert second.rng.peek("r") is None
 
 
 def test_execution_failure_releases_affected_requests(monkeypatch):

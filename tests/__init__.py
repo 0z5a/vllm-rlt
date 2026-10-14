@@ -1,1 +1,1 @@
-"""Repository-owned correctness fixtures and reference oracles."""
+"""Repository regression tests and their shared fixtures."""

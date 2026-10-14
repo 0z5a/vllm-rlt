@@ -1,4 +1,7 @@
 from dataclasses import replace
+from typing import TYPE_CHECKING, cast
+
+import torch
 
 from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
@@ -11,7 +14,11 @@ from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
 from vllm_rlt.sampling_params import SamplingParams
 from vllm_rlt.worker.loopcd import reserved_bytes, validate
 from vllm_rlt.worker.model_runner import ModelRunner
+from vllm_rlt.worker.sampler import RngRegistry
 from vllm_rlt.worker.speculative import SpeculativeRunner
+
+if TYPE_CHECKING:
+    from vllm_rlt.worker.async_speculative import AsyncSpeculativeRunner
 
 
 class LLMEngine:
@@ -34,6 +41,11 @@ class LLMEngine:
         scheduler_config = scheduler_config or SchedulerConfig()
         parameter = next(model.parameters())
         config = model.config
+        if getattr(model, "requires_boundary_kv", False):
+            if cache_config.layout != "last_exited":
+                raise ValueError("Huginn requires last_exited KV")
+            if cache_config.enable_prefix_caching:
+                raise ValueError("Huginn prefix caching is not yet supported")
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
         self.prefill_depth = self.execution_config.prefill_depth or config.total_ut_steps
@@ -48,7 +60,13 @@ class LLMEngine:
             raise ValueError(
                 "prefill_depth override requires synchronous last_exited without prefix/speculation"
             )
+        if getattr(model, "requires_boundary_kv", False):
+            if self.execution_config.async_scheduling or self.execution_config.prefill_uva:
+                raise ValueError("Huginn requires synchronous scheduling without prefill UVA")
+            if speculative_config is not None:
+                raise ValueError("Huginn speculative decoding is not yet supported")
         self.speculative_config = speculative_config
+        self.async_speculative = bool(speculative_config and self.execution_config.async_scheduling)
         if speculative_config is not None:
             if cache_config.layout != "last_exited":
                 raise ValueError("speculative decoding requires last_exited KV")
@@ -56,8 +74,14 @@ class LLMEngine:
                 raise ValueError("speculative target_loops must equal the model full depth")
             if self.exit_config.mode != "ouro":
                 raise ValueError("speculative decoding requires fixed-depth ouro exit mode")
-            if self.execution_config.async_scheduling:
-                raise ValueError("speculative decoding currently requires synchronous execution")
+            if self.async_speculative and self.execution_config.cuda_graphs:
+                raise ValueError(
+                    "speculative decoding requires eager execution without CUDA graphs"
+                )
+            if self.async_speculative and (
+                parameter.device.type != "cuda" or attention_backend != "triton"
+            ):
+                raise ValueError("async speculative decoding requires CUDA and Triton attention")
             if scheduler_config.enable_preemption or scheduler_config.mode != "refill":
                 raise ValueError(
                     "speculative decoding requires refill scheduling without preemption"
@@ -68,13 +92,25 @@ class LLMEngine:
             scratch = scheduler_config.max_num_batched_tokens * (
                 config.vocab_size * 24 + config.hidden_size * parameter.element_size() * 2
             )
+            if self.async_speculative:
+                # Two in-flight rounds, plus device and pinned page-table buffers.
+                width = (config.max_position_embeddings + cache_config.block_size - 1) // (
+                    cache_config.block_size
+                )
+                scratch = 2 * scratch + 8 * scheduler_config.max_num_seqs * (
+                    config.total_ut_steps * width
+                )
             cache_config = replace(
                 cache_config, memory_reserve_bytes=cache_config.memory_reserve_bytes + scratch
             )
         if self.execution_config.cuda_graphs and parameter.device.type != "cuda":
             raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
         if self.execution_config.async_scheduling:
-            if self.exit_config.mode not in ("ouro_delayed", "random_lookahead", "trace"):
+            if not self.async_speculative and self.exit_config.mode not in (
+                "ouro_delayed",
+                "random_lookahead",
+                "trace",
+            ):
                 raise ValueError(
                     "async scheduling requires ouro_delayed, random_lookahead or trace exit mode"
                 )
@@ -121,10 +157,21 @@ class LLMEngine:
             enable_prefix_caching=cache_config.enable_prefix_caching,
             incremental_allocation=cache_config.incremental_allocation,
             watermark_ratio=cache_config.watermark_ratio,
+            recurrent_layers=getattr(model, "recurrent_kv_layers", None),
         )
         self.scheduler = Scheduler(scheduler_config, self.cache_manager, speculative_config)
+        # One RNG registry per engine, shared by both runners: the CODA and
+        # speculative paths must advance the same per-request slot, and only the
+        # engine knows when a request terminates.
+        self.rng = RngRegistry()
         self.speculative_runner = (
-            SpeculativeRunner(model, self.cache_manager, speculative_config, self.execution_config)
+            SpeculativeRunner(
+                model,
+                self.cache_manager,
+                speculative_config,
+                self.execution_config,
+                rng=self.rng,
+            )
             if speculative_config is not None
             else None
         )
@@ -134,7 +181,21 @@ class LLMEngine:
             exit_config=self.exit_config,
             execution_config=self.execution_config,
             scheduler_config=scheduler_config,
+            rng=self.rng,
         )
+        if self.async_speculative:
+            from vllm_rlt.worker.async_speculative import AsyncSpeculativeRunner
+
+            self.speculative_runner = AsyncSpeculativeRunner(
+                model,
+                self.cache_manager,
+                speculative_config,
+                scheduler_config,
+                multi_stream=self.execution_config.multi_stream,
+                rng=self.rng,
+            )
+        self._pending_speculative = []
+        self._retiring_speculative = {}
         self._exit_traces = {
             key: tuple(values) for key, values in (self.exit_config.depths_by_request or {}).items()
         }
@@ -161,6 +222,10 @@ class LLMEngine:
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
         params = sampling_params or SamplingParams()
+        if self.async_speculative and params.temperature != 0:
+            raise ValueError("async speculative decoding currently requires greedy sampling")
+        if request_id in self._retiring_speculative:
+            self._retire_speculative(wait=True, request_id=request_id)
         config = self.model.config
         if not prompt_token_ids:
             raise ValueError("prompt must contain at least one token")
@@ -228,9 +293,35 @@ class LLMEngine:
         )
 
     def has_unfinished_requests(self) -> bool:
-        return self.scheduler.has_unfinished_requests
+        return self.scheduler.has_unfinished_requests or bool(self._pending_speculative)
+
+    def close(self):
+        """Drain owned GPU work before serving teardown drops tensor owners."""
+        self.profiling.close()
+        self.model_runner.synchronize()
+        if self.async_speculative:
+            cast("AsyncSpeculativeRunner", self.speculative_runner).synchronize()
+        for rid in list(self.scheduler.requests):
+            self.abort_request(rid)
+        if self.async_speculative:
+            self._discard_speculative()
+
+    def _discard_speculative(self):
+        """Release speculative owners after the caller has drained both streams."""
+        self._retire_speculative(wait=True)
+        for ticket in self._pending_speculative:
+            ticket.retire(discard=True)
+        self._pending_speculative.clear()
+        # A partial submission can lease a buffer before returning its ticket.
+        for buffer in cast("AsyncSpeculativeRunner", self.speculative_runner).buffers:
+            buffer.keepalive.clear()
+            buffer.leased = False
 
     def abort_request(self, request_id: str) -> RequestOutput:
+        if self.async_speculative:
+            request = self.scheduler.requests[request_id]
+            self._finish(request, FinishReason.ABORT)
+            return RequestOutput.from_request(request)
         self.preemption.discard_snapshot(request_id)
         self.model_runner.release(request_id)
         self._pending_exit_signals.pop(request_id, None)
@@ -248,9 +339,6 @@ class LLMEngine:
     def wait_for_profile_artifacts(self, timeout=None):
         return self.profiling.wait(timeout)
 
-    def close(self):
-        self.profiling.close()
-
     def step(self) -> list[RequestOutput]:
         if not self.profiling.recording:
             return self._step()
@@ -265,13 +353,19 @@ class LLMEngine:
     def _step(self) -> list[RequestOutput]:
         if self.execution_config.async_scheduling:
             try:
+                if self.async_speculative:
+                    return self._step_async_speculative()
                 return self._step_async()
             except Exception:
                 # A submission can fail before recording an event. Drain owned
                 # streams before invalidating requests or recycling any memory.
                 self.model_runner.synchronize()
+                if self.async_speculative:
+                    cast("AsyncSpeculativeRunner", self.speculative_runner).synchronize()
                 for rid in list(self.scheduler.requests):
                     self.abort_request(rid)
+                if self.async_speculative:
+                    self._discard_speculative()
                 self._pending_exit_signals.clear()
                 self._pending_coda.clear()
                 self._inflight.clear()
@@ -400,10 +494,130 @@ class LLMEngine:
         return request.loops_done >= max_loops or reached_threshold
 
     def _finish(self, request, reason: FinishReason):
+        if self.async_speculative:
+            # Logical finish is immediate; allocation ownership survives until
+            # the final submitted round has stopped accessing the request.
+            request.stage = Stage.FINISHED
+            request.finish_reason = reason
+            for queue in self.scheduler.queues.values():
+                while request.request_id in queue:
+                    queue.remove(request.request_id)
+            self._retiring_speculative[request.request_id] = request
+            return
         self.model_runner.release(request.request_id)
         self.cache_manager.poll_prefixes()
         self._pending_exit_signals.pop(request.request_id, None)
         self.scheduler.finish(request, reason)
+
+    def _retire_speculative(self, *, wait=False, request_id=None):
+        runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
+        for rid, request in list(self._retiring_speculative.items()):
+            if request_id is not None and rid != request_id:
+                continue
+            if not wait and not runner.request_ready(request):
+                continue
+            runner.release(request)
+            self.model_runner.release(rid)
+            self.cache_manager.poll_prefixes()
+            self.scheduler.finish(request, request.finish_reason)
+            del self._retiring_speculative[rid]
+
+    def _collect_speculative(self):
+        assert self.speculative_config is not None
+        ticket = self._pending_speculative[0]
+        runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
+        if not ticket.ready():
+            runner.readback_waits += 1
+        results, frontiers = ticket.collect()
+        outputs = []
+        for item, state, round_id, result, frontier in zip(
+            ticket.batch.items,
+            ticket.states,
+            ticket.rounds,
+            results,
+            frontiers,
+        ):
+            request = item.request
+            if (
+                self.scheduler.requests.get(request.request_id) is not request
+                or request.stage == Stage.FINISHED
+            ):
+                runner.discarded_rounds += 1
+                continue
+            if state.delivered != round_id:
+                raise RuntimeError("out-of-order speculative round delivery")
+            state.delivered += 1
+            request.num_output_placeholders -= item.token_count
+            request.num_speculative_rounds -= 1
+            if request.num_output_placeholders < 0 or request.num_speculative_rounds < 0:
+                raise RuntimeError("invalid speculative reservation count")
+            expected = len(request.prompt_token_ids) + len(request.generated_token_ids) - 1
+            if frontier != expected + len(result.token_ids):
+                raise RuntimeError("speculative GPU frontier disagrees with committed prefix")
+            params = request.sampling_params
+            eos = self.model.config.eos_token_id
+            eos_ids = eos if isinstance(eos, (tuple, list)) else [eos]
+            emitted = 0
+            for token in result.token_ids:
+                request.generated_token_ids.append(token)
+                request.exit_depths.append(self.speculative_config.target_loops)
+                emitted += 1
+                if token in eos_ids and not params.ignore_eos:
+                    self._finish(request, FinishReason.STOP)
+                    break
+                if len(request.generated_token_ids) >= params.max_tokens:
+                    self._finish(request, FinishReason.LENGTH)
+                    break
+            runner.stats.committed_tokens += emitted
+            runner.stats.accepted_tokens += min(result.accepted_count, emitted)
+            # In particular, do NOT truncate KV here: the GPU may already be
+            # writing the following round at a later actual position.
+            if request.stage != Stage.FINISHED:
+                queue = self.scheduler.queues[Stage.SPECULATIVE]
+                if request.request_id not in queue:
+                    self.scheduler.enqueue(request, Stage.SPECULATIVE)
+            outputs.append(RequestOutput.from_request(request))
+        ticket.retire()
+        self._pending_speculative.pop(0)
+        self._retire_speculative()
+        return outputs
+
+    def _step_async_speculative(self):
+        runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
+        self._retire_speculative()
+        outputs = []
+        # Submit ahead before collecting, even when a small round already
+        # completed. Two leased buffers provide a hard global queue bound.
+        if len(self._pending_speculative) == 2:
+            outputs.extend(self._collect_speculative())
+        batch = self.scheduler.schedule()
+        self.last_schedule = batch
+        if batch is not None:
+            if batch.stage == Stage.SPECULATIVE:
+                ticket = runner.submit_round(batch)
+                self._pending_speculative.append(ticket)
+                for item in batch.items:
+                    request = item.request
+                    request.num_output_placeholders += item.token_count
+                    request.num_speculative_rounds += 1
+                    self.scheduler.enqueue(request, Stage.SPECULATIVE)
+            else:
+                # Prefill/bootstrap retain native semantics. All model compute
+                # shares the speculative stream; the first coda is a CPU boundary.
+                with torch.cuda.stream(runner.compute_stream):
+                    result = self.model_runner.execute(batch)
+                    event = torch.cuda.Event()
+                    event.record(runner.compute_stream)
+                    for item in batch.items:
+                        self.model_runner.events[item.request.request_id] = event
+                    outputs.extend(self._update(batch, result))
+        elif self._pending_speculative:
+            outputs.extend(self._collect_speculative())
+        elif self._retiring_speculative:
+            self._retire_speculative(wait=True)
+        elif self.scheduler.has_unfinished_requests:
+            raise RuntimeError("speculative scheduler made no progress")
+        return outputs
 
     def _trace_exit(self, request):
         target = request.exit_trace[request.num_scheduled_outputs]

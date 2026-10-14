@@ -5,6 +5,7 @@ import json
 import math
 from dataclasses import dataclass, fields
 
+from vllm_rlt.models import special_token_ids
 from vllm_rlt.sampling_params import SamplingParams
 
 
@@ -134,7 +135,7 @@ class IncrementalText:
 
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer
-        self.special_ids = set(tokenizer.all_special_ids)
+        self.special_ids = special_token_ids(tokenizer)
         # ByteLevel's byte alphabet is stable; avoid Transformers' private helper.
         visible = list(range(33, 127)) + list(range(161, 173)) + list(range(174, 256))
         self.byte_decoder = {chr(byte): byte for byte in visible}
