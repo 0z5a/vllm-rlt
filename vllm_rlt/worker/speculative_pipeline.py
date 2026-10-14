@@ -79,9 +79,7 @@ class PipelineSchedule:
                 f"got step_size={self.step_size}, stages={self.stages}"
             )
         if self.second_step is not None:
-            if not isinstance(self.second_step, int) or not (
-                1 < self.second_step < self.depth
-            ):
+            if not isinstance(self.second_step, int) or not (1 < self.second_step < self.depth):
                 raise ValueError(
                     f"second_step must satisfy 1 < second_step < depth; "
                     f"got second_step={self.second_step}, depth={self.depth}"
@@ -229,9 +227,7 @@ def continue_pipelined(
     while len(committed) < max_new_tokens:
         results = list(executor.forward(lanes))
         if len(results) != len(lanes):
-            raise ValueError(
-                f"executor returned {len(results)} results for {len(lanes)} lanes"
-            )
+            raise ValueError(f"executor returned {len(results)} results for {len(lanes)} lanes")
 
         following: list[PipelineLane] = []
         children: list[PipelineLane] = []

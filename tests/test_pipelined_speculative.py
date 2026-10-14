@@ -51,11 +51,14 @@ def native_autoregressive_decode(model, cache, prompt, max_new_tokens):
     return tokens
 
 
-@pytest.mark.parametrize("seed,prompt,length", [
-    (42, [1, 2, 3], 6),
-    (999, [4, 12, 18, 22], 8),
-    (71, [5], 5),
-])
+@pytest.mark.parametrize(
+    "seed,prompt,length",
+    [
+        (42, [1, 2, 3], 6),
+        (999, [4, 12, 18, 22], 8),
+        (71, [5], 5),
+    ],
+)
 def test_pipelined_speculation_matches_native_losslessly(seed, prompt, length):
     torch.manual_seed(seed)
     cfg = tiny_ouro_config(total_ut_steps=4)

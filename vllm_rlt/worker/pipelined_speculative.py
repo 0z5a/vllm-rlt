@@ -89,9 +89,7 @@ class PipelinedSpeculativeRunner:
         # Execute all recurrent loops for the prompt
         for depth in range(self.schedule.stages):
             batch = self.cache._prepare_batch(ids, [depth] * self.prompt_len, positions)
-            hidden, _ = self.model.recurrent_prepared(
-                hidden, batch, self.cache, compute_gate=False
-            )
+            hidden, _ = self.model.recurrent_prepared(hidden, batch, self.cache, compute_gate=False)
 
         last_hidden = hidden[-1:]
         logits = self.model.coda(last_hidden)
@@ -128,9 +126,7 @@ class PipelinedSpeculativeRunner:
             ids = [self.request_id for _ in lanes]
 
             batch = self.cache._prepare_batch(ids, depths, positions)
-            hidden, _ = self.model.recurrent_prepared(
-                hidden, batch, self.cache, compute_gate=False
-            )
+            hidden, _ = self.model.recurrent_prepared(hidden, batch, self.cache, compute_gate=False)
 
         # 4. Write back updated hidden states to the state bank
         for i, lane in enumerate(lanes):

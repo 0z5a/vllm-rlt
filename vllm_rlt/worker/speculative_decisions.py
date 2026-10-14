@@ -147,9 +147,7 @@ class GreedyDecisionPolicy:
             proposed=proposed,
             proposal_state=proposal_state,
             accepted_stage=accepted_stage,
-            proposal_action=(
-                "argmax" if endpoint_kind == "q2" and proposed else None
-            ),
+            proposal_action=("argmax" if endpoint_kind == "q2" and proposed else None),
             first_rejected=first_rejected,
             second_rejected=second_rejected,
         )
