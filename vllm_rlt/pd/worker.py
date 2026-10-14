@@ -274,6 +274,11 @@ class PDWorker:
             w.next_sequence += 1
 
     def prefill_step(self):
+        # GPU submission can block the owner thread on CUDA launch backpressure.
+        # Let the event loop advance ready handoffs before submitting more compute;
+        # it must keep polling transfers and control messages if credits are full.
+        if any(w.chunks and w.chunks[0][0].query() for w in self.work.values()):
+            return
         queue = self.engine.scheduler.queues[Stage.PREFILL]
         # Limit unsubmitted data as well as posted network work. Each request
         # can have at most one unfinished chunk; ready requests still progress.
