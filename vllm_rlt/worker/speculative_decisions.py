@@ -5,8 +5,6 @@ from __future__ import annotations
 import heapq
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
-
 import torch
 
 from vllm_rlt.worker.speculative_pipeline import PipelineLane, PipelineSchedule
@@ -44,7 +42,7 @@ class StateSlotPool:
     def acquire(self) -> int:
         if not self._free:
             raise RuntimeError(
-                f"pipeline requires more recurrent state slots than configured (capacity={self.capacity})"
+                f"pipeline requires more recurrent state slots (capacity={self.capacity})"
             )
         slot = heapq.heappop(self._free)
         self._live.add(slot)

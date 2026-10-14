@@ -6,8 +6,9 @@ A mock executor can fully drive and verify this logic deterministically.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Protocol, Sequence
+from typing import Any, Protocol
 
 
 @dataclass

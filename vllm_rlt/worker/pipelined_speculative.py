@@ -102,7 +102,6 @@ class PipelinedSpeculativeRunner:
         """Execute one forward cycle advancing all live lanes by schedule.step_size iterations."""
         self.stats.cycles += 1
         stride = self.schedule.step_size
-        final_stage = self.schedule.stages - 1
 
         # 1. Initialize newly spawned lanes at stage 0
         new_lanes = [lane for lane in lanes if lane.stage == 0 and lane.state is None]
