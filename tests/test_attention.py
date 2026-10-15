@@ -151,13 +151,8 @@ def test_triton_paged_prefill_matches_per_query_reference(head_dim, heads, kv_he
     torch.testing.assert_close(actual[rows], expected, rtol=2e-2, atol=2e-2)
 
 
-@pytest.mark.gpu
-@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
-def test_split_kv_decode_matches_reference_and_is_batch_invariant(dtype):
-    from vllm_rlt.kernels.paged_attention import torch_paged_attention
-    from vllm_rlt.kernels.triton_attention import paged_attention
-
-    torch.manual_seed(1)
+def split_kv_case(dtype, seed=1):
+    torch.manual_seed(seed)
     block, heads, kv_heads, head_dim = 16, 8, 4, 128
     # Empty, tile and split boundaries, and long rows that use every split.
     lengths = [0, 1, 31, 32, 33, 511, 512, 513, 4097, 10000]
@@ -172,6 +167,16 @@ def test_split_kv_decode_matches_reference_and_is_batch_invariant(dtype):
         tables[row, : len(ids)] = torch.tensor(ids, dtype=torch.int32)
     q = torch.randn(len(lengths), heads, head_dim, device="cuda", dtype=dtype)
     context = torch.tensor(lengths, dtype=torch.int32, device="cuda")
+    return q, k, v, tables, context
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_split_kv_decode_matches_reference_and_is_batch_invariant(dtype):
+    from vllm_rlt.kernels.paged_attention import torch_paged_attention
+    from vllm_rlt.kernels.triton_attention import paged_attention
+
+    q, k, v, tables, context = split_kv_case(dtype)
     actual = paged_attention(q, k, v, tables, context)
     expected = torch_paged_attention(q, k, v, tables, context)
     tolerance = 2e-2 if dtype == torch.bfloat16 else 1e-4
@@ -182,3 +187,63 @@ def test_split_kv_decode_matches_reference_and_is_batch_invariant(dtype):
         one = slice(row, row + 1)
         alone = paged_attention(q[one], k, v, tables[one], context[one])
         assert torch.equal(alone[0], actual[row])
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_split_kv_graph_and_eager_merges_are_bitwise_equal(dtype):
+    from vllm_rlt.kernels.triton_attention import paged_attention
+
+    q, k, v, tables, context = split_kv_case(dtype)
+    eager = paged_attention(q, k, v, tables, context)  # Fused merge, reused workspace.
+    # A smaller call reuses the workspace; a larger one after it must not see stale state.
+    assert torch.equal(paged_attention(q[:3], k, v, tables[:3], context[:3]), eager[:3])
+    assert torch.equal(paged_attention(q, k, v, tables, context), eager)
+    side = torch.cuda.Stream()
+    side.wait_stream(torch.cuda.current_stream())
+    with torch.cuda.stream(side):
+        paged_attention(q, k, v, tables, context)  # Warm up outside capture.
+    torch.cuda.current_stream().wait_stream(side)
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph):
+        captured = paged_attention(q, k, v, tables, context)  # Separate merge kernel.
+    graph.replay()
+    torch.cuda.synchronize()
+    assert torch.equal(captured, eager)
+    # Two streams at once each use their own workspace.
+    other = q.flip(0).contiguous()
+    expected_other = paged_attention(other, k, v, tables, context)
+    first, second = torch.cuda.Stream(), torch.cuda.Stream()
+    for stream in (first, second):
+        stream.wait_stream(torch.cuda.current_stream())
+    for _ in range(20):
+        with torch.cuda.stream(first):
+            a = paged_attention(q, k, v, tables, context)
+        with torch.cuda.stream(second):
+            b = paged_attention(other, k, v, tables, context)
+    for stream in (first, second):
+        torch.cuda.current_stream().wait_stream(stream)
+    assert torch.equal(a, eager) and torch.equal(b, expected_other)
+
+
+@pytest.mark.gpu
+def test_split_kv_eager_workspace_crosses_inference_mode():
+    # The engine decodes under inference_mode; serial oracles call the kernel outside it.
+    from vllm_rlt.kernels import triton_attention
+    from vllm_rlt.kernels.triton_attention import paged_attention
+
+    q, k, v, tables, context = split_kv_case(torch.float32, seed=2)
+    torch.cuda.synchronize()
+    triton_attention._EAGER_STATE.clear()
+    with torch.inference_mode():
+        inside = paged_attention(q, k, v, tables, context)  # Allocates the workspace here.
+    outside = paged_attention(q, k, v, tables, context)
+    smaller = paged_attention(q[:3], k, v, tables[:3], context[:3])
+    with torch.inference_mode():
+        again = paged_attention(q, k, v, tables, context)
+    assert torch.equal(outside, inside) and torch.equal(again, inside)
+    assert torch.equal(smaller, inside[:3])
+    # The merging program resets each ticket counter; no memset runs between calls.
+    torch.cuda.synchronize()
+    for state in triton_attention._EAGER_STATE.values():
+        assert torch.count_nonzero(state[-1]) == 0
