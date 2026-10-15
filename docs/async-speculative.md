@@ -177,6 +177,156 @@ production arrival workloads, saturation, other GPUs/backends or other d/D/K
 settings. Keep cold-capture and steady-state
 results separate.
 
+### Higher-concurrency extension (2026-10-15)
+
+This extension keeps the same runtime, model, BF16, d=2/D=4/K=2,
+Triton and timed-work definitions. It adds concurrency 16/32/64 at input
+64/512, concurrency 128/256 at input 64, and two longer-output cohorts.
+The original eight prompt texts are repeated across requests; prefix caching
+remains disabled. Every condition has five warmed, alternating paired trials
+for native async Graph, speculative eager and speculative Graph.
+
+The shared graph row limit is `max(128, 3 * concurrency)` for all modes;
+in particular, concurrency 64/128/256 uses 192/384/768 rows instead of the
+default 128. The per-cache graph-entry limit remains the default 16. Token
+budgets are `max(4096, concurrency * input_length)` with one full input
+chunk, so all first tokens complete before decode timing begins. KV capacity
+is identical across modes within each condition. No runtime source changed.
+
+For concurrency 128/256, the admission scan limit is raised to concurrency
+for all modes. The first concurrency-256 warmup with the default limit failed
+the all-first-tokens boundary assertion before timing; its logs and the
+earlier concurrency-128 observations are retained as setup diagnostics. The
+corrected extension reruns both conditions and preserves the assertion.
+
+| Input | Concurrency | Native async Graph tok/s | Async spec eager tok/s | Async spec Graph tok/s | Graph/eager | Graph/native Graph |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64 | 16 | 889.21 | 418.05 | 1095.99 | 2.62x | 1.23x |
+| 64 | 32 | 1680.14 | 816.76 | 1965.45 | 2.41x | 1.17x |
+| 64 | 64 | 2777.62 | 1545.85 | 3147.42 | 2.04x | 1.13x |
+| 64 | 128 | 4099.39 | 2789.72 | 4253.05 | 1.53x | 1.04x |
+| 64 | 256 | 5086.70 | 4233.01 | 4924.13 | 1.16x | 0.97x |
+| 512 | 16 | 716.55 | 419.43 | 866.16 | 2.06x | 1.21x |
+| 512 | 32 | 1332.00 | 818.50 | 1504.23 | 1.84x | 1.13x |
+| 512 | 64 | 1950.26 | 1535.66 | 2182.76 | 1.42x | 1.12x |
+
+All throughput values and speedups are medians; speedups pair observations by
+repetition. The plot includes the earlier concurrency 1/8 measurements on the
+same runtime. Concurrency 1–64 uses physical GPU `c07d27d8`; the 128/256
+extension uses another H20-3e (`667b4c91`) on the same host. All modes within
+each comparison share one allocation. Cross-card points do not establish
+strict scaling across that boundary. Error bars show observed min/max, not confidence
+intervals. Short fixed-work batches do not establish steady-state capacity.
+
+![Concurrency scaling with matched native baseline](assets/performance/async-speculative-graphs-concurrency.png)
+
+| Input / output | Concurrency | Native Graph tok/s | Spec eager tok/s | Spec Graph tok/s | Graph/eager | Graph/native Graph |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 64 / 512 | 64 | 2275.48 | 1554.37 | 2554.26 | 1.65x | 1.12x |
+| 512 / 256 | 64 | 1823.15 | 1528.78 | 2055.56 | 1.36x | 1.13x |
+
+The longer cohorts lengthen the observation window and also grow the KV
+context. Their absolute throughput must not be compared with the 64-output
+table as though only duration had changed.
+
+All 150 measured trials in the completed extension matched the native baseline
+on output token IDs; eager and Graph speculative outputs also matched pairwise.
+There were no measured speculative core/head captures or fallbacks after warmup.
+Per-trial acceptance counters exclude warmup: draft acceptance is about 93.3–93.5%
+in these cohorts, and verified/committed work is recorded separately. The change
+in relative benefit across these loads is not accompanied by a comparable drop
+in acceptance.
+
+For input/output 64/64 on the extension GPU, Graph speculation is about 3.7%
+faster than native Graph at concurrency 128 and about 3.1% slower at concurrency
+256. At concurrency 256, Graph still accelerates speculative execution by about
+16% relative to eager speculation. The native comparison therefore matters when
+choosing whether to enable speculation. These samples do not establish a
+universal concurrency threshold or a hardware saturation point.
+
+A separate warmed concurrency-64, input-512 one-round ops-only pair on GPU
+`667b4c91` reduces
+individual CPU runtime/driver kernel submissions from 12,040 to 981 plus 11
+Graph launches. GPU kernels are 12,040/12,048, and the GPU-active interval union
+is 76.38/76.30 ms. The remaining profile interval falls from 129.80 to 12.92 ms;
+D2D copies rise from 321 to 375. This supports dispatch reduction with unchanged
+core GPU work and added staging, while the Graph run spends most of its interval
+executing GPU work. Profiled durations include instrumentation overhead and are
+not the unprofiled throughput results. This selected round accepts all 128
+draft tokens; workload-wide acceptance is lower, as reported above. Paired full
+captures retain shapes,
+nonempty CPU/GPU stacks and memory timelines for the same complete round.
+
+
+Isolated-engine warmed decode allocation peaks on GPU `667b4c91` are below.
+Each mode warms one complete cohort and records another; initialization/prefill
+temporary peaks are excluded. Reserved-memory peaks are retained in raw records.
+The throughput runs keep three engines resident, so their global memory peaks
+are not per-mode deployment costs.
+
+| Input / output | Concurrency | Native Graph GiB | Spec eager GiB | Spec Graph GiB | Graph extra MiB |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 64 / 512 | 64 | 30.091 | 30.111 | 30.281 | 174.5 |
+| 512 / 256 | 64 | 41.408 | 41.428 | 41.587 | 162.4 |
+| 64 / 64 | 256 | 28.283 | 28.363 | 28.639 | 282.8 |
+
+A separate loopback SSE comparison uses production `load_engine/create_app`,
+a seven-token prompt, 64 outputs, ignore EOS, and concurrency 16/64 on the
+extension GPU. Each mode warms one burst, followed by five alternating paired
+bursts. The common graph row limit is 128/192 respectively; entry limits remain
+16. All 800 measured requests completed with `[DONE]`, correct usage and length;
+there were no measured core/head captures or fallbacks. Throughput includes
+prefill and the complete burst, unlike the decode-only tables above.
+
+| Concurrency | Mode | Complete tok/s | TTFT p50/p95 ms | E2E p50/p95 ms |
+| ---: | --- | ---: | --- | --- |
+| 16 | Spec eager | 421.62 | 68.1 / 190.2 | 2427.7 / 2494.8 |
+| 16 | Spec graph | 1149.61 | 66.1 / 66.9 | 889.7 / 890.4 |
+| 64 | Spec eager | 1325.75 | 99.6 / 222.1 | 3086.2 / 3191.4 |
+| 64 | Spec graph | 2807.89 | 98.5 / 100.9 | 1455.5 / 1550.6 |
+
+Throughput is the median of five burst observations; latency percentiles pool
+80 requests per mode at concurrency 16 and 320 at concurrency 64. These finite
+bursts do not qualify steady-state capacity or arbitrary production arrivals.
+Responses emit 24/28 choice events for 64 tokens (2.67/2.29 tokens per event).
+Choice-event gap p50 is 102.8→36.5 ms at concurrency 16 and 111.9→51.2 ms at
+concurrency 64; these are not per-token ITL.
+
+Text matches between eager and Graph within each concurrency and matches a
+native full-depth async Graph control at that concurrency. The two concurrency
+levels produce different continuations. The native control reproduces their
+first divergence at zero-based output index 29, with an identical preceding
+token chain: top-1/top-2 margin is 0.125 at batch 16 and 0 at batch 64. The
+batch-16 choice is token 6756; batch 64 ties tokens 6756 and 5383 at logit 17.75
+and chooses 5383. Maximum absolute and RMS logit differences at that shared
+prefix are 0.171875 and 0.03971. This demonstrates an existing native BF16
+batch-dependent decision, rather than a new eager/Graph speculative split;
+cross-batch bitwise generation invariance is not established. Native controls
+at batch 48/192 also reproduce the batch-64 continuation.
+
+At concurrency 256 the speculative counters record 16,128 committed tokens,
+16,864 verification positions and 11,200 draft proposals. Thus the core forwards
+4.6% more positions than useful output, and proposal heads add work beyond the
+target readout. This is a concrete cost that remains after dispatch reduction;
+the data does not by itself establish the unique bottleneck at concurrency 256.
+
+Raw measurements, all token IDs, counters, environment/source identities,
+profile metadata, CPU/GPU stacks, memory timelines and diagnostic scripts are
+retained under the earlier experiment directory in `high-concurrency/`. Jobs
+160 and 166 produced the 150 timing observations; 167/168/169 produced profiles,
+isolated memory and HTTP results; 170 retained native shared-prefix logits.
+Job 161 is the preserved aborted setup attempt; cancelled dependent jobs
+163–165 did not run and are not included as successful evidence.
+
+From the repository with `PYTHONPATH` set, inside a GPU allocation, use the
+retained `measure-high.py --model "$RLT_MODEL_PATH"` for the primary matrix and
+`measure-extension.py --model "$RLT_MODEL_PATH"` for the corrected 128/256 cases.
+`profile-high.py --mode spec_graph --profile full`, `memory-high.py` and
+`http-high.py` reproduce the corresponding diagnostics. The latter scripts read
+the retained parent `model-path.txt`; these remain task-local diagnostic entry
+points, not a new repository benchmark interface. Runtime source hashes remain
+identical to `08d3f99`; this follow-up changes report content and the plot only.
+
 ## Execution and ownership
 
 The synchronous runner reads the acceptance result before constructing the next
