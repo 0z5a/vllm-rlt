@@ -1,0 +1,40 @@
+flowchart TB
+    local(["本地请求<br/>add_request"])
+    imported(["跨 stage 请求<br/>Connector.reserve → 收齐 commit + 序号<br/>→ Engine.activate_import"])
+    req["复用本 stage 的 Request<br/>每次提交只冻结 token / depth 等执行位置"]
+    schedule["StageEngine.step → Scheduler.schedule<br/>初始化时选择策略；运行时不按部署角色分派"]
+    ready{"有可执行 batch？"}
+    wait["让出本次调度<br/>等待连接器进展或已有执行完成"]
+    exe["Executor.submit → ticket"]
+    mode{"本次是否为投机 round？"}
+    ordinary["普通执行<br/>ExecutionBatch → ModelRunner"]
+    speculative["本地投机控制<br/>组织 draft / verify 的依赖执行"]
+    forward["统一 ExecutionRuntime.forward<br/>PRELUDE / RECURRENT / CODA"]
+    resident["设备内连续执行<br/>原子 prefill 的 N loops / 投机步骤<br/>不触发跨 stage 通信"]
+    progress["StageEngine 应用提交结果<br/>推进逻辑进度，保留 event / ticket 约束"]
+    route{"该请求有显式路由<br/>需要导出 prompt 结果？"}
+    export["Connector.prefill_submitted<br/>记录依赖 / 暂存 hidden / 排队传输<br/>独立 progress tick 查询完成，不等待 GPU"]
+    next{"本 stage 仍有后续工作？"}
+    done(["返回输出，或等待交接确认<br/>按生命周期释放资源"])
+    local & imported --> req --> schedule --> ready
+    ready -->|否| wait
+    wait -.->|后续 tick| schedule
+    ready -->|是| exe --> mode
+    mode -->|否| ordinary --> forward
+    mode -->|是| speculative --> forward
+    forward --- resident
+    forward --> progress --> route
+    route -->|是| export --> next
+    route -->|否| next
+    next -->|继续 loop / chunk / decode| schedule
+    next -->|完成或交给下游| done
+    classDef entry fill:#e2e8f0,stroke:#64748b,color:#0f172a;
+    classDef control fill:#dbeafe,stroke:#2563eb,color:#172554;
+    classDef compute fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef decide fill:#fef3c7,stroke:#d97706,color:#78350f;
+    classDef transport fill:#ffedd5,stroke:#ea580c,color:#7c2d12;
+    class local,imported,done entry;
+    class req,schedule,exe,progress,wait control;
+    class ordinary,speculative,forward,resident compute;
+    class ready,mode,route,next decide;
+    class export transport;

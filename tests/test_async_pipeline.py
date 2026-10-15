@@ -5,6 +5,7 @@ import torch
 
 from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
+from vllm_rlt.core.execution import Operation
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Stage
@@ -169,7 +170,7 @@ def test_cpu_prepare_finishes_while_previous_gpu_forward_is_inflight(monkeypatch
     engine.add_request("warm", [2], params)
     drain(engine)
     runner = engine.model_runner
-    execute, prepare = runner._execute, runner.prepare
+    execute, prepare = runner._execute, runner.prepare_batch
     delayed = torch.cuda.Event()
     injected = False
     observations = []
@@ -193,7 +194,7 @@ def test_cpu_prepare_finishes_while_previous_gpu_forward_is_inflight(monkeypatch
 
     def inspect_prepare(batch):
         result = prepare(batch)
-        if injected and not observations and batch.stage == Stage.RECURRENT:
+        if injected and not observations and batch.operation == Operation.RECURRENT:
             assert not delayed.query(), "prepare waited for the preceding forward"
             assert result.kv.position_ids.device.type == "cpu"
             assert result.kv.position_ids.is_pinned()
@@ -201,11 +202,11 @@ def test_cpu_prepare_finishes_while_previous_gpu_forward_is_inflight(monkeypatch
         return result
 
     monkeypatch.setattr(runner, "_execute", execute_with_delay)
-    monkeypatch.setattr(runner, "prepare", inspect_prepare)
+    monkeypatch.setattr(runner, "prepare_batch", inspect_prepare)
     engine.add_request("a", [2], params)
     drain(engine)
     assert observations == [True]
-    assert not runner.workspaces
+    assert not runner.requestspaces
     assert runner.states is runner.async_state.hidden
     assert not runner.async_state.owners
     assert len(runner.submission_events) <= 3
@@ -269,7 +270,7 @@ def test_completed_core_refills_even_when_coda_cpu_delivery_is_pending(monkeypat
     engine = make_engine(device="cuda", multi_stream=True)
     engine.add_request("fast", [2], SamplingParams(max_tokens=3, exit_threshold=0, ignore_eos=True))
     engine.add_request("slow", [3], SamplingParams(max_tokens=3, exit_threshold=1, ignore_eos=True))
-    original = engine.model_runner.submit
+    original = engine.executor.submit
     held = HeldEvent()
     target = []
 
@@ -277,14 +278,14 @@ def test_completed_core_refills_even_when_coda_cpu_delivery_is_pending(monkeypat
         ticket = original(batch)
         if (
             batch.stage == Stage.CODA
-            and len(batch.items) == 1
-            and batch.items[0].request.request_id == "fast"
+            and len(batch.requests) == 1
+            and batch.requests[0].request.request_id == "fast"
         ):
             target.append((ticket, ticket.event))
             ticket.event = held
         return ticket
 
-    monkeypatch.setattr(engine.model_runner, "submit", submit)
+    monkeypatch.setattr(engine.executor, "submit", submit)
     for _ in range(30):
         engine.step()
         if target:
@@ -296,8 +297,56 @@ def test_completed_core_refills_even_when_coda_cpu_delivery_is_pending(monkeypat
     assert not held.complete
     engine.step()
     assert engine.last_schedule.stage == Stage.RECURRENT
-    assert {i.request.request_id for i in engine.last_schedule.items} == {"fast", "slow"}
+    assert {i.request.request_id for i in engine.last_schedule.requests} == {"fast", "slow"}
     assert not held.complete
     target[0][0].event = target[0][1]
-    monkeypatch.setattr(engine.model_runner, "submit", original)
+    monkeypatch.setattr(engine.executor, "submit", original)
     drain(engine)
+
+
+@pytest.mark.gpu
+def test_device_progress_does_not_wait_for_readback_stream():
+    engine = make_engine(device="cuda", multi_stream=True)
+    runner = engine.model_runner
+    engine.add_request("a", [2], SamplingParams(max_tokens=3, ignore_eos=True, exit_threshold=1))
+    try:
+        engine.step()  # Prefill has no host result.
+        with torch.cuda.stream(runner.readback_stream):
+            torch.cuda._sleep(1_000_000_000)
+        engine.step()  # Coda submits D2H behind the delay.
+        ticket = engine._pending_coda[0]
+        compute_done = runner.events["a"]
+        assert compute_done is not ticket.event
+        compute_done.synchronize()
+        assert not ticket.ready()
+        engine.step()  # Prelude consumes the device token, not the host result.
+        assert engine.last_schedule.stage == Stage.PRELUDE
+        runner.events["a"].synchronize()
+        assert not ticket.ready()
+        assert not engine.scheduler.requests["a"].generated_token_ids
+        assert drain(engine)[-1].exit_depths == [4, 4, 4]
+    finally:
+        engine.close()
+
+
+@pytest.mark.parametrize("device", ["cpu", pytest.param("cuda", marks=pytest.mark.gpu)])
+def test_fixed_depth_async_does_not_read_back_unused_gates(monkeypatch, device):
+    engine = make_engine(device=device, multi_stream=True)
+    engine.add_request("a", [2], SamplingParams(max_tokens=3, ignore_eos=True, exit_threshold=1))
+    submit = engine.executor.submit
+    recurrent = []
+
+    def record(batch):
+        ticket = submit(batch)
+        if batch.stage == Stage.RECURRENT:
+            recurrent.append(ticket)
+            assert not ticket.has_result
+            assert ticket.slot is None
+        return ticket
+
+    monkeypatch.setattr(engine.executor, "submit", record)
+    try:
+        assert drain(engine)[-1].exit_depths == [4, 4, 4]
+        assert recurrent
+    finally:
+        engine.close()

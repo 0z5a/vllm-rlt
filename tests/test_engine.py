@@ -22,7 +22,7 @@ def drain(engine, limit=1000):
             return outputs, trace
         emitted = engine.step()
         batch = engine.last_schedule
-        trace.append((batch.stage, tuple(i.request.request_id for i in batch.items)))
+        trace.append((batch.stage, tuple(i.request.request_id for i in batch.requests)))
         for output in emitted:
             if output.finished:
                 outputs[output.request_id] = output
@@ -281,7 +281,7 @@ def test_execution_failure_releases_affected_requests(monkeypatch):
     def fail(_):
         raise RuntimeError("injected runner failure")
 
-    monkeypatch.setattr(engine.model_runner, "execute", fail)
+    monkeypatch.setattr(engine.executor, "submit", fail)
     with pytest.raises(RuntimeError, match="injected"):
         engine.step()
     assert not engine.has_unfinished_requests()
@@ -334,7 +334,8 @@ def test_repeated_short_arrivals_cannot_starve_existing_decode(mode):
             engine.step()
             batch = engine.last_schedule
             if batch.stage == Stage.RECURRENT and any(
-                item.request.request_id == "long" for item in batch.items
+                scheduled_request.request.request_id == "long"
+                for scheduled_request in batch.requests
             ):
                 recurrent_steps += 1
             if request_id not in engine.scheduler.requests:

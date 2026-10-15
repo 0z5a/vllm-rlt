@@ -223,7 +223,7 @@ def test_async_submits_next_core_before_collecting_previous_signal(monkeypatch):
         execution_config=ExecutionConfig(async_scheduling=True),
     )
     engine.add_request("a", [1], SamplingParams(max_tokens=2, exit_threshold=0, ignore_eos=True))
-    original_submit, original_collect = engine.model_runner.submit, Submission.collect
+    original_submit, original_collect = engine.executor.submit, Submission.collect
     events = []
 
     def submit(batch):
@@ -236,7 +236,7 @@ def test_async_submits_next_core_before_collecting_previous_signal(monkeypatch):
             events.append("collect")
         return original_collect(ticket)
 
-    monkeypatch.setattr(engine.model_runner, "submit", submit)
+    monkeypatch.setattr(engine.executor, "submit", submit)
     monkeypatch.setattr(Submission, "collect", collect)
     drain(engine)
     assert events[:3] == ["submit", "submit", "collect"]
@@ -358,7 +358,7 @@ def test_pending_coda_does_not_block_other_recurrent_work(monkeypatch):
     )
     engine.add_request("fast", [1], SamplingParams(max_tokens=3, exit_threshold=0, ignore_eos=True))
     engine.add_request("slow", [2], SamplingParams(max_tokens=3, exit_threshold=1, ignore_eos=True))
-    original = engine.model_runner.submit
+    original = engine.executor.submit
 
     class HeldEvent:
         complete = False
@@ -375,13 +375,13 @@ def test_pending_coda_does_not_block_other_recurrent_work(monkeypatch):
         ticket = original(batch)
         if (
             batch.stage == Stage.CODA
-            and len(batch.items) == 1
-            and batch.items[0].request.request_id == "fast"
+            and len(batch.requests) == 1
+            and batch.requests[0].request.request_id == "fast"
         ):
             ticket.event = held
         return ticket
 
-    monkeypatch.setattr(engine.model_runner, "submit", submit)
+    monkeypatch.setattr(engine.executor, "submit", submit)
     for _ in range(20):
         engine.step()
         if any(t.event is held for t in engine._pending_coda):
@@ -392,11 +392,11 @@ def test_pending_coda_does_not_block_other_recurrent_work(monkeypatch):
     # The pending sample can already re-enter prelude on device. Its next
     # recurrent batch includes BOTH requests, without waiting for CPU delivery.
     assert engine.last_schedule.stage == Stage.PRELUDE
-    assert engine.last_schedule.items[0].request.request_id == "fast"
+    assert engine.last_schedule.requests[0].request.request_id == "fast"
     assert not held.complete
     engine.step()
     assert engine.last_schedule.stage == Stage.RECURRENT
-    assert {i.request.request_id for i in engine.last_schedule.items} == {"fast", "slow"}
+    assert {i.request.request_id for i in engine.last_schedule.requests} == {"fast", "slow"}
     assert not held.complete
     held.complete = True
     drain(engine)
@@ -409,13 +409,13 @@ def test_async_failed_submission_reclaims_all_affected_state(monkeypatch):
         execution_config=ExecutionConfig(async_scheduling=True, static_buffers=True),
     )
     engine.add_request("a", [2], SamplingParams(max_tokens=2))
-    original = engine.model_runner.submit
+    original = engine.executor.submit
 
     def fail(batch):
         original(batch)
         raise RuntimeError("failed after a partial submission")
 
-    monkeypatch.setattr(engine.model_runner, "submit", fail)
+    monkeypatch.setattr(engine.executor, "submit", fail)
     with pytest.raises(RuntimeError, match="partial submission"):
         engine.step()
     assert engine.cache_manager.num_used_blocks == 0
@@ -489,8 +489,8 @@ def test_cuda_boundary_and_core_can_overlap(monkeypatch):
 
     def execute(batch, prepared=None):
         label = None
-        if batch.stage == Stage.CODA and len(batch.items) == 1:
-            request = batch.items[0].request
+        if batch.stage == Stage.CODA and len(batch.requests) == 1:
+            request = batch.requests[0].request
             if request.request_id == "fast" and len(request.generated_token_ids) == 1:
                 label = "coda"
         if batch.stage == Stage.RECURRENT:
@@ -498,7 +498,7 @@ def test_cuda_boundary_and_core_can_overlap(monkeypatch):
                 i.request.request_id == "slow"
                 and i.request.loops_done == 2
                 and len(i.request.generated_token_ids) == 1
-                for i in batch.items
+                for i in batch.requests
             ):
                 label = "core"
         start = torch.cuda.Event(enable_timing=True)
@@ -589,7 +589,7 @@ def test_cuda_dynamic_async_respects_buffers_and_matches_sync(layout, multi_stre
     execution = ExecutionConfig(async_scheduling=True, multi_stream=multi_stream)
     actual = LLM(base, execution_config=execution, **common)
     assert actual.engine.execution_config == execution
-    assert actual.engine.model_runner.workspaces == {}
+    assert actual.engine.model_runner.requestspaces == {}
     assert actual.engine.model_runner.states is actual.engine.model_runner.async_state.hidden
     result = actual.generate(prompts, params)
     assert [(o.token_ids, o.exit_depths) for o in result] == [

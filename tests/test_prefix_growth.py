@@ -37,7 +37,7 @@ def test_prefix_reuse_matches_cold_generation_and_retains_shared_pages():
     assert e.cache_manager.lookup_prefix([1, 2, 3, 4, 5])
     e.add_request("second", [1, 2, 3, 4, 5], p)
     e.step()
-    assert e.last_schedule.items[0].token_start == 4
+    assert e.last_schedule.requests[0].token_start == 4
     second = finish(e)["second"]
     assert second.token_ids == first.token_ids
     assert second.exit_depths == first.exit_depths
@@ -347,3 +347,33 @@ def test_async_preemption_restores_prelude_token_in_a_new_slot():
         assert not e.preemption.snapshots and e.cache_manager.num_used_blocks == 0
     assert Stage.PRELUDE in victim_stages
     assert results[0] == results[1]
+
+
+@pytest.mark.parametrize("incremental", [False, True])
+def test_watermark_only_limits_incremental_admission(incremental):
+    from vllm_rlt.core.scheduler import Scheduler
+    from vllm_rlt.request import Request
+
+    cache = KVCacheManager(
+        1,
+        1,
+        4,
+        16,
+        2,
+        4,
+        incremental_allocation=incremental,
+        watermark_ratio=0.5,
+    )
+    scheduler = Scheduler(
+        SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8, prefill_chunk_size=4),
+        cache,
+    )
+    for request_id in ("a", "b"):
+        scheduler.add_request(Request(request_id, [1, 2, 3, 4], SamplingParams(max_tokens=1)))
+    scheduler._admit()
+    assert cache.watermark_blocks == (8 if incremental else 0)
+    assert scheduler.requests["a"].stage == Stage.PREFILL
+    # Full allocation admits both requests into the 16-block pool despite the
+    # supplied ratio; incremental allocation retains the configured headroom.
+    assert scheduler.requests["b"].stage == (Stage.WAITING if incremental else Stage.PREFILL)
+    assert cache.num_free_blocks == (8 if incremental else 0)

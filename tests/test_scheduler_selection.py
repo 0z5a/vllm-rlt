@@ -46,7 +46,7 @@ def test_batch_selection_is_never_preempted_by_a_later_item(monkeypatch):
     e.scheduler._admit()
     monkeypatch.setattr(e.cache_manager, "ensure_capacity", lambda rid, frontier: rid != "b")
     batch = e.scheduler._take(Stage.PREFILL)
-    assert [item.request.request_id for item in batch.items] == ["a"]
+    assert [scheduled_request.request.request_id for scheduled_request in batch.requests] == ["a"]
     assert e.preemption.preemptions == 0
     assert e.scheduler.requests["a"].stage == Stage.PREFILL
 
@@ -179,7 +179,9 @@ def test_refill_restored_coda_waits_for_recurrent_batchmate():
             break
     else:
         pytest.fail("CODA requests did not form a batch")
-    assert {item.request.request_id for item in e.last_schedule.items} == {
+    assert {
+        scheduled_request.request.request_id for scheduled_request in e.last_schedule.requests
+    } == {
         "core",
         "restored-coda",
     }

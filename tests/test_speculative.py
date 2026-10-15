@@ -16,7 +16,7 @@ from vllm_rlt import (
     SchedulerConfig,
     SpeculativeConfig,
 )
-from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+from vllm_rlt.core.scheduler import ScheduledRequest, SchedulerOutput
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Request, Stage
@@ -108,26 +108,27 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
             h, _ = m.recurrent(h, ["r"], [d], [pos], cache)
     r = Request("r", prefix, SamplingParams(ignore_eos=True), generated_token_ids=[current])
     runner = e.speculative_runner
-    core = runner._core
+    core = m.recurrent_prepared
     seen = {}
-    work = Counter()
+    calls_by_depth = Counter()
 
-    def record(hidden, ids, positions, depth, **kwargs):
-        work[depth] += len(ids)
-        out = core(hidden, ids, positions, depth, **kwargs)
-        for row, pos in enumerate(positions):
+    def record(hidden, batch, cache, **kwargs):
+        out, gate = core(hidden, batch, cache, **kwargs)
+        for row, (_, depth, pos) in enumerate(batch.rows):
+            calls_by_depth[depth] += 1
             seen[depth, pos] = out[row].clone()
-        return out
+        return out, gate
 
-    runner._core = record
+    m.recurrent_prepared = record
     head_outputs = []
     hook = m.lm_head.register_forward_hook(
         lambda module, inputs, output: head_outputs.append(output.detach().clone())
     )
     try:
-        runner.execute(SchedulerOutput(Stage.SPECULATIVE, [ScheduledItem(r, 3, 4)]))
+        runner.submit(SchedulerOutput(Stage.SPECULATIVE, [ScheduledRequest(r, 3, 4)])).collect()
     finally:
         hook.remove()
+        m.recurrent_prepared = core
     # Include the actual batched LM-head GEMM in the numeric comparison.
     verified_logits = head_outputs[-1]
     # The shallow head outputs determine each subsequent input in this round.
@@ -156,7 +157,7 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
             ):
                 torch.testing.assert_close(actual, expected, atol=atol, rtol=rtol)
     # Every input/depth computed exactly once: no shallow recomputation in verify.
-    assert work == Counter({0: 4, 1: 4, 2: 4, 3: 4})
+    assert calls_by_depth == Counter({0: 4, 1: 4, 2: 4, 3: 4})
     if dtype == torch.float32:
         independent = dense_reference(m, tokens, 4)
         for d in range(4):
@@ -458,7 +459,7 @@ def test_dynamic_arrival_budget_and_failure_reclamation(monkeypatch):
     def fail(*args, **kwargs):
         raise RuntimeError("injected verify failure")
 
-    monkeypatch.setattr(e.speculative_runner, "execute", fail)
+    monkeypatch.setattr(e.speculative_runner, "submit", fail)
     with pytest.raises(RuntimeError, match="injected"):
         while e.has_unfinished_requests():
             e.step()
@@ -560,3 +561,97 @@ def test_speculative_cuda_graph_matches_eager_with_ragged_replay(max_graph_rows)
         assert runner.graphs.fallbacks > 0
     else:
         assert any(rows > 2 for rows, _, _, _ in runner.graphs.entries)
+
+
+@pytest.mark.parametrize("chunk_size", [1, 3, 8])
+@pytest.mark.parametrize("budget", [2, 7])
+def test_split_prefill_and_speculation_share_forward_and_match_atomic(chunk_size, budget):
+    from vllm_rlt.core.execution import Operation
+
+    def run(atomic):
+        e = engine(
+            model(),
+            cache_config=CacheConfig(256, 2),
+            scheduler_config=SchedulerConfig(
+                max_num_batched_tokens=budget,
+                prefill_chunk_size=chunk_size,
+            ),
+            execution_config=ExecutionConfig(atomic_prefill=atomic),
+        )
+        assert e.speculative_runner.runtime is e.model_runner.runtime
+        operations = set()
+        forward = e.model_runner.runtime.forward
+
+        def record(batch):
+            operations.add(batch.operation)
+            return forward(batch)
+
+        e.model_runner.runtime.forward = record
+        for i, prompt in enumerate(([2], [3, 4, 5, 6, 7], [9, 3])):
+            e.add_request(str(i), prompt, SamplingParams(max_tokens=9, ignore_eos=True))
+        results = drain(e)
+        assert operations == {Operation.PRELUDE, Operation.RECURRENT, Operation.CODA}
+        assert e.cache_manager.num_used_blocks == 0
+        return {key: (value.token_ids, value.exit_depths) for key, value in results.items()}
+
+    assert run(False) == run(True)
+
+
+@pytest.mark.parametrize("atomic", [False, True])
+def test_common_submit_entry_preserves_prefill_and_speculative_results(atomic, monkeypatch):
+    e = engine(model(), execution_config=ExecutionConfig(atomic_prefill=atomic))
+    calls = []
+    submit = e.executor.submit
+
+    def record(batch):
+        calls.append((batch.stage, batch.is_speculative))
+        return submit(batch)
+
+    monkeypatch.setattr(e.executor, "submit", record)
+    params = SamplingParams(max_tokens=9, ignore_eos=True)
+    e.add_request("r", [2, 3, 4, 5], params)
+    actual = drain(e)["r"]
+    expected = LLM(model()).generate([[2, 3, 4, 5]], params)[0]
+    assert actual.token_ids == expected.token_ids
+    assert actual.exit_depths == expected.exit_depths
+    assert any(flag for _, flag in calls)
+    assert any(not flag for _, flag in calls)
+    assert all(flag == (stage == Stage.SPECULATIVE) for stage, flag in calls)
+    assert e.cache_manager.num_used_blocks == 0
+
+
+def test_common_submit_rejects_speculation_without_controller():
+    e = LLMEngine(model())
+    batch = SchedulerOutput(Stage.SPECULATIVE, [])
+    with pytest.raises(ValueError, match="configured round controller"):
+        e.executor.submit(batch).collect()
+
+
+@pytest.mark.parametrize("temperature", [0.0, 0.7])
+def test_speculative_submit_defers_collection_and_collects_once(monkeypatch, temperature):
+    e = engine(model())
+    original = e.speculative_runner._collect_round
+    collections = []
+
+    def collect(submission):
+        collections.append(submission)
+        return original(submission)
+
+    monkeypatch.setattr(e.speculative_runner, "_collect_round", collect)
+    e.add_request(
+        "r", [2, 3, 4], SamplingParams(max_tokens=9, ignore_eos=True, temperature=temperature)
+    )
+    try:
+        while e.scheduler.requests["r"].stage != Stage.SPECULATIVE:
+            e.step()
+        batch = e._schedule()
+        ticket = e.executor.submit(batch)
+        assert not collections
+        assert ticket.has_result
+        result = ticket.collect()
+        assert ticket.collect() is result
+        assert collections == [ticket]
+        e._update(batch, result)
+        assert len(drain(e)["r"].token_ids) == 9
+    finally:
+        e.close()

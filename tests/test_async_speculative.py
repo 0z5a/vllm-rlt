@@ -57,13 +57,13 @@ def test_scheduler_uses_upper_bound_and_releases_rejected_budget():
     scheduler = Scheduler(SchedulerConfig(), None, SpeculativeConfig(3))
     r = Request("r", [2, 3], SamplingParams(max_tokens=8), generated_token_ids=[4])
     r.num_output_placeholders = 4
-    item = scheduler._make_scheduled_item(r, Stage.SPECULATIVE, 16)
-    assert (item.token_start, item.token_count) == (6, 3)
+    scheduled_request = scheduler._make_scheduled_request(r, Stage.SPECULATIVE, 16)
+    assert (scheduled_request.token_start, scheduled_request.token_count) == (6, 3)
     # One committed token instead of the four reserved: recover three slots.
     r.num_output_placeholders = 0
     r.generated_token_ids.append(5)
-    item = scheduler._make_scheduled_item(r, Stage.SPECULATIVE, 16)
-    assert (item.token_start, item.token_count) == (3, 4)
+    scheduled_request = scheduler._make_scheduled_request(r, Stage.SPECULATIVE, 16)
+    assert (scheduled_request.token_start, scheduled_request.token_count) == (3, 4)
 
 
 def test_async_spec_rejects_cpu_before_cache_allocation():
@@ -303,7 +303,7 @@ def test_active_page_tables_are_contiguous_and_do_not_touch_inactive_storage():
     from types import SimpleNamespace
 
     from vllm_rlt.core.kv_cache_manager import KVCacheManager
-    from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+    from vllm_rlt.core.scheduler import ScheduledRequest, SchedulerOutput
     from vllm_rlt.worker.async_speculative import AsyncSpeculativeRunner
 
     cache = KVCacheManager(1, 1, 4, 64, 2, 4)
@@ -320,8 +320,8 @@ def test_active_page_tables_are_contiguous_and_do_not_touch_inactive_storage():
     batch = SchedulerOutput(
         Stage.SPECULATIVE,
         [
-            ScheduledItem(requests[0], 1, 2),
-            ScheduledItem(requests[1], 7, 2),
+            ScheduledRequest(requests[0], 1, 2),
+            ScheduledRequest(requests[1], 7, 2),
         ],
     )
     _, _, host, device = runner._prepare_round(batch)
@@ -341,7 +341,7 @@ def test_active_page_tables_are_contiguous_and_do_not_touch_inactive_storage():
     # Simulate retirement, then shrink both dimensions using the same storage.
     buffer.leased = False
     before = buffer.host_tables.clone()
-    smaller = SchedulerOutput(Stage.SPECULATIVE, [ScheduledItem(requests[0], 0, 1)])
+    smaller = SchedulerOutput(Stage.SPECULATIVE, [ScheduledRequest(requests[0], 0, 1)])
     _, _, host, device = runner._prepare_round(smaller)
     assert host.shape == device.shape == (1, 4, 1)
     assert host.is_contiguous() and device.is_contiguous()

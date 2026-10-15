@@ -117,7 +117,8 @@ def test_pd_split_transfer_uses_chunk_origin_after_budget_contention(monkeypatch
     from contextlib import nullcontext
     from types import SimpleNamespace
 
-    from vllm_rlt.pd.worker import PDWorker, Work
+    from vllm_rlt.engine.stage_config import StageConfig
+    from vllm_rlt.pd.connector import PDStageConnector, RequestTransfer
 
     class ReadyEvent:
         def record(self, stream):
@@ -137,47 +138,56 @@ def test_pd_split_transfer_uses_chunk_origin_after_budget_contention(monkeypatch
             max_num_seqs=2, max_num_batched_tokens=5, prefill_chunk_size=4
         ),
         execution_config=ExecutionConfig(atomic_prefill=False),
+        stage_config=StageConfig(role="prefill"),
     )
-    worker = object.__new__(PDWorker)
-    worker.role = "prefill"
-    worker.engine = engine
-    worker.cache = engine.cache_manager
-    worker.config = PDConfig()
-    worker.connector = SimpleNamespace(inflight_bytes=0, busy=lambda tid: False)
-    worker.hidden = torch.empty((2, config.hidden_size))
-    worker.work = {}
-    worker.prefill_tokens = 0
+    transport = SimpleNamespace(inflight_bytes=0, busy=lambda tid: False)
+    connector = PDStageConnector(
+        engine,
+        torch.empty((2, config.hidden_size)),
+        transport,
+        PDConfig(),
+        notify=lambda *a, **k: None,
+    )
+    engine.connector = connector
     transfers = []
-    worker.queue_chunk = lambda w, start, end, event, final: transfers.append(
+    connector.queue_chunk = lambda w, start, end, event, final: transfers.append(
         (w.tid, start, end, final)
     )
     batches = []
-    take = engine.scheduler._take
 
-    def record_take(stage):
-        batch = take(stage)
-        if batch is not None:
-            batches.append(batch)
-        return batch
+    def step():
+        engine.step()
+        if engine.last_schedule is not None:
+            batches.append(engine.last_schedule)
+        return engine.last_schedule is not None
 
-    engine.scheduler._take = record_take
     params = SamplingParams(max_tokens=1)
     for request_id in ("b", "a"):
         engine.add_request(request_id, [1, 2, 3, 4], params)
         engine.scheduler._admit()
         request = engine.scheduler.requests[request_id]
-        worker.work[request_id] = Work(request_id, request, len(worker.work), "peer")
-        assert worker.prefill_step() and worker.prefill_tokens == 0
+        connector.transfers[request_id] = RequestTransfer(
+            request_id, request, len(connector.transfers), "peer", outgoing=True
+        )
+        assert step() and connector.prefill_tokens == 0
 
     for _ in range(config.total_ut_steps):
-        assert worker.prefill_step()
-    assert (engine.scheduler.requests["a"].num_prefilled_tokens, worker.prefill_tokens) == (1, 4)
+        assert step()
+    assert (engine.scheduler.requests["a"].num_prefilled_tokens, connector.prefill_tokens) == (1, 4)
 
     for _ in range(config.total_ut_steps):
-        assert worker.prefill_step()
-    final_item = next(item for item in batches[-1].items if item.request.request_id == "a")
-    assert (final_item.token_start, final_item.token_count, final_item.chunk_start) == (1, 3, 0)
-    assert (transfers, worker.prefill_tokens) == ([("b", 0, 4, True), ("a", 0, 4, True)], 8)
+        assert step()
+    final_scheduled_request = next(
+        scheduled_request
+        for scheduled_request in batches[-1].requests
+        if scheduled_request.request.request_id == "a"
+    )
+    assert (
+        final_scheduled_request.token_start,
+        final_scheduled_request.token_count,
+        final_scheduled_request.chunk_start,
+    ) == (1, 3, 0)
+    assert (transfers, connector.prefill_tokens) == ([("b", 0, 4, True), ("a", 0, 4, True)], 8)
 
 
 def create_pd(
@@ -361,6 +371,12 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
     engine._overlap_boundary = False
     engine._pending_exit_signals = {}
     engine.model_runner = Mock()
+    from vllm_rlt.engine.stage_config import StageConfig
+    from vllm_rlt.worker.executor import Executor
+
+    engine.stage_config = StageConfig()
+    engine.connector = None
+    engine.executor = Executor(engine.model_runner)
     assert engine.step() == []
     assert engine.has_unfinished_requests()
     engine.model_runner.synchronize.assert_not_called()
@@ -371,7 +387,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
         active.num_output_placeholders = 1
         engine.model = SimpleNamespace(config=SimpleNamespace(eos_token_id=2))
         ticket = Mock()
-        ticket.batch.items = [SimpleNamespace(request=active)]
+        ticket.batch.requests = [SimpleNamespace(request=active)]
         ticket.ready.return_value = True
         ticket.collect.return_value = [3]
         ticket.output_indices = [0]
@@ -689,3 +705,33 @@ def test_pd_nanbeige_eos_after_handoff(tmp_path):
             assert result["eos"].finished and result["eos"].finish_reason == "stop"
         assert_nanbeige_idle(engine)
     assert_nanbeige_stopped(engine)
+
+
+def test_cancelled_transfer_does_not_recycle_pending_hidden_copy():
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    from vllm_rlt.pd.connector import PDStageConnector, RequestTransfer
+    from vllm_rlt.request import Request
+
+    engine = SimpleNamespace(
+        cache_manager=Mock(), scheduler=SimpleNamespace(config=SchedulerConfig())
+    )
+    transport = Mock()
+    transport.poll.return_value = ([], [])
+    transport.busy.return_value = False
+    connector = PDStageConnector(engine, [None], transport, PDConfig(), notify=Mock())
+    event = Mock()
+    event.query.return_value = False
+    request = Request("r", [1], SamplingParams())
+    transfer = RequestTransfer(
+        "r", request, 0, "d", outgoing=True, cancelled=True, last_event=event
+    )
+    connector.transfers = {"r": transfer}
+    connector._remove = Mock()
+    connector.progress()
+    connector._remove.assert_not_called()
+    event.synchronize.assert_not_called()
+    event.query.return_value = True
+    connector.progress()
+    connector._remove.assert_called_once_with(transfer)

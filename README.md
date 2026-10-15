@@ -145,6 +145,20 @@ flowchart LR
     class E recurrent
 ```
 
+Each deployment stage owns a `StageEngine`, scheduler, KV manager and executor.
+Prefill, decode and mixed roles share the execution architecture; speculation
+remains a local controller. Connectors handle explicit per-request handoff and
+backpressure, independently of loop execution. See the
+[architecture and flow diagrams](docs/unified_execution_zh.md).
+Opt-in `SchedulerConfig(mode="mixed")`
+with `ExecutionConfig(atomic_prefill=False)` combines ready prompt and generation
+loops under one token budget. It currently uses LAST_EXITED KV and excludes
+self-speculation. Atomic input work retains hidden states locally across all
+loops in the same forward runtime. INPUT, LOOP and OUTPUT, including speculative
+work, share `ExecutionRuntime.forward`. Refill scheduling also supports split
+chunked prefill followed by speculative decoding. See the
+[execution-plan details](docs/cdb_runtime.md#execution-plans-and-mixed-scheduling).
+
 The diagram shows logical token flow; asynchronous execution can overlap
 stages. See the [runtime guide](docs/cdb_runtime.md) for scheduling, exit policies,
 and depth-aware KV caching.

@@ -1,0 +1,38 @@
+sequenceDiagram
+    autonumber
+    participant C as Coordinator / Host
+    participant P as P · StageEngine
+    participant X as P · PD Connector
+    participant Y as D · PD Connector
+    participant D as D · StageEngine
+    Note over P,X: 同一进程；loop 执行不发 RPC
+    Note over Y,D: 同一进程；Connector 持有传输状态与 staging
+    C->>Y: reserve（transfer generation）
+    Y->>D: reserve_transfer(receiving=True)
+    Note over D: 建立本地 Request · RECEIVING<br/>预留 KV 并 pin lease
+    Y-->>C: reserved（映射、slot、prefix hit）
+    C->>X: reserve（目标映射）
+    X->>P: reserve_transfer(receiving=False)
+    loop 每个 prompt 提交
+        P->>P: 公共 step → Executor → forward
+        P->>X: prefill_submitted（范围 + event）
+        Note over P,X: 逻辑进度已推进；GPU 可能仍在执行
+        X->>X: 可交接范围入队；最后范围暂存 hidden
+        Note over X,Y: Host 驱动 progress；event.query + 传输额度<br/>就绪后通过 NIXL WRITE；不阻塞 CPU
+        X-->>Y: KV / hidden 与序号完成通知
+    end
+    X->>P: release_transfer_compute（ready event）
+    Note over P: 引擎检查就绪并释放计算状态<br/>保留 KV transfer lease
+    X-->>C: commit（expected count）
+    C->>Y: commit（不是接收完成）
+    Y->>Y: 收齐本代际序号并检查计算额度
+    Y->>D: activate_import（同一个本地 Request）
+    Note over D: 标记 KV 有效 · 解除导入 lease · 进入 CODA
+    Y-->>C: activated
+    C->>X: acknowledge
+    X->>X: 已 commit + 计算状态已释放<br/>+ transport 不再访问源资源
+    X->>P: release_transfer
+    X->>X: 回收 staging slot
+    rect rgb(255, 244, 239)
+        Note over P,D: 取消：Connector 停止提交，Engine 暂停调度但保留资源<br/>本地 event 与远端访问结束后才释放；接收侧等 cancel_safe
+    end

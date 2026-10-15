@@ -51,7 +51,11 @@ def add_runtime_args(parser):
     parser.add_argument("--cuda-graph-max-batch-size", type=int, default=128)
     parser.add_argument("--cuda-graph-max-graphs", type=int, default=16)
     parser.add_argument("--cuda-graph-memory-reserve-bytes", type=int, default=1024**3)
-    parser.add_argument("--single-stream", action="store_true")
+    parser.add_argument(
+        "--single-stream",
+        action="store_true",
+        help="Disable multi-stream CUDA execution independently of async scheduling",
+    )
     parser.add_argument("--static-buffers", action="store_true")
     parser.add_argument("--pad-to-power-of-two", action="store_true")
     parser.add_argument("--prefill-chunk-size", type=int, default=128)

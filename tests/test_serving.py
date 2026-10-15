@@ -52,7 +52,7 @@ class PauseAt:
 
     def __call__(self, engine):
         self.engine = engine
-        execute = engine.model_runner.execute
+        submit = engine.executor.submit
 
         def pause(batch):
             if batch.stage == self.stage and not self.entered.is_set():
@@ -60,9 +60,9 @@ class PauseAt:
                 assert self.release.wait(5)
                 if self.fail:
                     raise RuntimeError("injected engine failure")
-            return execute(batch)
+            return submit(batch)
 
-        engine.model_runner.execute = pause
+        engine.executor.submit = pause
 
 
 def factory(*, seqs=8, blocks=256, hook=None):
@@ -489,17 +489,25 @@ def test_owner_thread_dynamic_batching_cancellation_and_overload():
 
         def hook(engine):
             engines.append(engine)
-            execute = engine.model_runner.execute
+            submit = engine.executor.submit
 
             def record(batch):
                 owner_threads.append(threading.get_ident())
-                trace.append((batch.stage, [item.request.request_id for item in batch.items]))
+                trace.append(
+                    (
+                        batch.stage,
+                        [
+                            scheduled_request.request.request_id
+                            for scheduled_request in batch.requests
+                        ],
+                    )
+                )
                 if batch.stage == Stage.RECURRENT and not blocked.is_set():
                     blocked.set()
                     assert release.wait(5)
-                return execute(batch)
+                return submit(batch)
 
-            engine.model_runner.execute = record
+            engine.executor.submit = record
             for name in ["add_request", "abort_request"]:
                 method = getattr(engine, name)
 

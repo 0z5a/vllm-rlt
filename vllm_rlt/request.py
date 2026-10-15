@@ -9,6 +9,8 @@ from vllm_rlt.sampling_params import SamplingParams
 class Stage(str, Enum):
     WAITING = "waiting"
     RECEIVING = "receiving"
+    TRANSFERRING = "transferring"
+    MIXED = "mixed"  # Batch policy label; never a request lifecycle phase.
     PREFILL = "prefill"
     PREFILLING_PRELUDE = "prefilling_prelude"
     PREFILLING_RECURRENT = "prefilling_recurrent"
