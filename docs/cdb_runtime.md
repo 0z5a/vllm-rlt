@@ -17,6 +17,7 @@ Implemented 2026-09-15 against base commit `6e8abbc405e1`. CUDA graphs and Hugin
 | Admission fairness | `Scheduler._admit`: bounded scan and bounded bypass count | Short request admitted behind blocked long request; protection prevents further bypass |
 | Chunked prefill policy | Per-request chunk ceiling, queue rotation and bounded prefill batches before decode | Short prompt completes before long prefill; existing decode starvation and chunk consistency tests |
 | Exit-trace replay | `ExitConfig(mode="trace")` bypasses gate compute/readback | Variable-depth replay, gate hook rejects accidental execution, all replay variants match |
+| FP8 KV cache | `CacheConfig(kv_cache_dtype="fp8_e4m3")`: e4m3 codes plus per-vector scales, Torch/Triton dequantize on read | `tests/test_fp8_kv_cache.py`: round-trip bound, attention vs dequantized reference, finalize/snapshot, async/graph equality on GPU |
 
 This implements runtime mechanisms. It does not reproduce the paper's complete accuracy ablations, workload distributions, roofline fit or published speedups.
 
@@ -128,6 +129,26 @@ Static mode preallocates inputs, metadata, persistent request states and async r
 CUDA automatic sizing profiles a synthetic maximum-row core/coda pass. It reserves the measured extra peak (doubled conservatively for overlap), static device buffers, metadata, long-context torch-reference scratch when relevant, and `memory_reserve_bytes`. The memory-utilization budget is also bounded by startup free memory. The resulting pool is capped at the blocks usable by all concurrent full-context requests, avoiding enormous useless pools for tiny models. Profiling includes temporary KV, so the estimate is deliberately conservative; it is not a promise against other processes changing GPU memory usage after startup.
 
 Admission scans up to `admission_scan_limit` waiting items and preserves the order of deferred requests. A later admission increments bypass counts of earlier blocked requests. Once a request reaches `max_admission_bypasses`, later admissions stop bypassing it until enough active work drains. Existing active requests can finish because lifetime KV is already reserved. Chunk sizes and prefill/decode interleaving are independent from admission and apply in both layouts.
+
+## FP8 KV cache
+
+`CacheConfig(kv_cache_dtype="fp8_e4m3")` (CLI `--kv-cache-dtype fp8_e4m3`) stores K and V as
+float8 e4m3 codes with one float32 scale per (block, layer, token, KV head) vector
+(`scale = amax / 448`). Values are quantized when written and dequantized by the attention
+backend when read, so a block costs `head_dim + 4` bytes per vector instead of
+`head_dim * element_size`: 51.6% of BF16 at `head_dim=128`, and automatic sizing or
+`--kv-cache-memory-bytes` admits about 1.94x as many tokens. The default `"auto"` stores the
+model dtype and leaves every existing path unchanged.
+
+- Supported: Torch (reference) and Triton attention; synchronous and asynchronous scheduling;
+  CUDA graphs (quantized writes are captured); LAST_EXITED finalize copies, including the
+  asynchronous finalize kernel, copy codes and scales; preemption snapshots carry the scales;
+  `KVCacheManager.read` returns dequantized values.
+- Rejected: FlashAttention backends (the `fp8_kv` backend capability; `auto` selects Triton)
+  and PD transfer, which does not yet move the scales.
+- The current token's K/V enter attention unquantized in its own loop, as before; only stored
+  history is FP8. Accuracy should be checked per model and workload; adaptive exits can change
+  where a token exits because the gate sees slightly different attention.
 
 ## Replay and validation commands
 
