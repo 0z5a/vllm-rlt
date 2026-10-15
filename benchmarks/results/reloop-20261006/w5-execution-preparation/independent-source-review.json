@@ -1,0 +1,83 @@
+{
+  "status": "PASS_LOCAL_SOURCE_INTERFACE_AND_ORIGINAL_RECEIPT_REVIEW_NATIVE_NOT_RUN",
+  "recorded_unix": 1791247880.5971892,
+  "source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "selected_confirmation_input_sha256": "6677d34e3739999335aecbdfd83c00ea662b30f6f73ad276e36df3ea57ee54be",
+  "templates_sha256": "c42eb26b929e95d8b36c465810776d3004bd8ee4a2a6b0fd0993e2d8c005351f",
+  "observer_sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9",
+  "driver_sources_sha256": {
+    "resolve_w5_prompts.py": "48164e2c52b8da74018f98f745254745255e4cba737a4f51bc4d90df5b0b35b4",
+    "run_w5_cost_arm.py": "08b062e7126167e687f013985fdf3806d88a600e69d9ac238d50b45b42c083a7",
+    "prepare_w5_workloads.py": "55a88ced4e87bf8c779d4882bd932e92b9e17901364322c21be54773eb231409"
+  },
+  "source_review": {
+    "canonical_pinned_tokenizer_only_and_no_weight_load": true,
+    "full_820_ID_trace_and_4C_refill": true,
+    "three_selected_arms_and_two_fresh_rounds": true,
+    "five_warm_and_five_measure_trials": true,
+    "observed_A_S_and_drain_from_unchanged_original_observer": true,
+    "true_off_capability_and_P4_history_planes": true,
+    "OOM_preserved_only_expected_cuda_exception": true,
+    "complete_source_checkpoint_boot_locks_UUID_prechecks_remain_parent_controller_responsibility": true
+  },
+  "original_real_interface_checks": [
+    {
+      "name": "resolve_w5_prompts.py_help",
+      "actual_returncode": 0
+    },
+    {
+      "name": "run_w5_cost_arm.py_help",
+      "actual_returncode": 0
+    },
+    {
+      "name": "actual_unresolved_template_refused_before_admission_or_CUDA_import",
+      "actual_returncode": 1,
+      "model_output_dir_absent": true,
+      "input_template_sha256": "c42eb26b929e95d8b36c465810776d3004bd8ee4a2a6b0fd0993e2d8c005351f"
+    }
+  ],
+  "actual_canonical_tokenization": "NOT_RUN",
+  "actual_native_GPU": "NOT_RUN",
+  "coverage_limit": "Static/source review and retained CLI/negative-path receipts only; not new correctness, quality, speed or cloud state evidence",
+  "total_planned_trials_all7": 420,
+  "total_planned_completed_requests_all7": 49200,
+  "total_planned_output_tokens_all7": 6297600,
+  "files": {
+    "fp32_candidate_cost_trial.py": {
+      "bytes": 11961,
+      "sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9"
+    },
+    "original-interface-review/receipt.json": {
+      "bytes": 1240,
+      "sha256": "5517cf58ba8903a50e37970f36839f40aed44becd068872347a5a6f07293fd64"
+    },
+    "original-interface-review/resolve_w5_prompts.py.help.txt": {
+      "bytes": 512,
+      "sha256": "470e5aaf721dca5396f5e43b72c503a263b363178985b75d380b21b333ae1604"
+    },
+    "original-interface-review/run_w5_cost_arm.py.help.txt": {
+      "bytes": 704,
+      "sha256": "4af151e20da9fcb30232605ba1b3c6f630c293b8b779db8e448e5eba778005dd"
+    },
+    "original-interface-review/unresolved-template-rejection.stderr.txt": {
+      "bytes": 388,
+      "sha256": "d38192e0edaa8af88694e80635c40adec550f038b8cf1db13354b088fe67fa97"
+    },
+    "original-interface-review/unresolved-template-rejection.stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "prepare_w5_workloads.py": {
+      "bytes": 8176,
+      "sha256": "55a88ced4e87bf8c779d4882bd932e92b9e17901364322c21be54773eb231409"
+    },
+    "resolve_w5_prompts.py": {
+      "bytes": 5444,
+      "sha256": "48164e2c52b8da74018f98f745254745255e4cba737a4f51bc4d90df5b0b35b4"
+    },
+    "run_w5_cost_arm.py": {
+      "bytes": 10000,
+      "sha256": "08b062e7126167e687f013985fdf3806d88a600e69d9ac238d50b45b42c083a7"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "status": "PARTIAL_CASE_RAW_PASS_NO_COST_GATE",
+  "case": "B16C32",
+  "fresh_processes": 1,
+  "raw_trials": 10,
+  "total_requests": 320,
+  "total_outputs": 40960,
+  "scientific_payload_files": 21,
+  "archive_bytes": 450190,
+  "archive_sha256": "b8f52f3328db5615f5780e688374f1fff98f44cf01223849da509ea1a243d69e",
+  "original_whole_archive_bytes": 457073,
+  "original_whole_archive_sha256": "494dde9487ca1fa60de62677ba6fdc52dcccf6d50ceb2185610c92044baf2a2b",
+  "source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "production_base": "d700ecca664da2e8f3122f66ad9d45de4295e45a",
+  "scope": "Unchanged first full-D4 baseline scientific files; all 29 original payloads privately verified; excludes cloud/SSH controls, weights and caches; no candidate speed or complete cost gate."
+}

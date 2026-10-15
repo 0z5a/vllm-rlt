@@ -1,0 +1,20 @@
+{
+  "paper_title": "Re:Loop",
+  "status": "FULL_CASE_RAW_PASS",
+  "science_archive": "cost-c32-full.tar.gz",
+  "science_archive_sha256": "2a6dd5adba04bd8de584d0e003500723d9fde795d128e32ac1427db8a7423970",
+  "science_archive_bytes": 2388820,
+  "scientific_payloads": 82,
+  "manifest_sha256": "8c5168ce15aadecb31c8f977181d9b99de3ec970970b7e6ed114ea2a289f5ddd",
+  "original_archive_sha256": "06d960ebb83e97eb1dee8af3a98b5c3cc956815eb558c7cdabccc37077ec5cb4",
+  "original_archive_bytes": 2407222,
+  "original_manifest_payloads": 99,
+  "case": "B16C32",
+  "processes": 6,
+  "warmups_per_process": 5,
+  "measurements_per_process": 5,
+  "requests_all_trials": 1920,
+  "outputs_all_trials": 245760,
+  "scope": "Unchanged scientific subset; original cloud/SSH/admission controls omitted. Both fresh rounds completed; C64/native seven-target/HTTP remain unrun.",
+  "reverified_unix": 1791245131.634808
+}

@@ -1,0 +1,64 @@
+{
+  "files": [
+    {
+      "path": "data/data.json",
+      "bytes": 1041498,
+      "sha256": "0fd5eaca62e594d42785db878902eacf46d9edfd0c4da978d5672dfe14ff0689"
+    },
+    {
+      "path": "data/plan.json",
+      "bytes": 22074,
+      "sha256": "6677d34e3739999335aecbdfd83c00ea662b30f6f73ad276e36df3ea57ee54be"
+    },
+    {
+      "path": "harness/export_confirmation_code.py",
+      "bytes": 3892,
+      "sha256": "c36fababc1f3a6110d0eb6a479aa18433dab13a4d7d72222e29a5050288388a3"
+    },
+    {
+      "path": "harness/generate_quality_fp32.py",
+      "bytes": 14238,
+      "sha256": "81fcf145ce2cf6d492bc10b6047d4469f7209f4fad4f3baa8d9ca7b07a7b0027"
+    },
+    {
+      "path": "harness/paired_quality.py",
+      "bytes": 2407,
+      "sha256": "f0e3d89f680eefcb1ba1058cda972b1625c2448cecfb79d05dd5902ccce78d4d"
+    },
+    {
+      "path": "harness/run_window.py",
+      "bytes": 6550,
+      "sha256": "e476be89c5a205665ba6637e25eabbd091f81cf87a0501beb86bab556c6ed3aa"
+    },
+    {
+      "path": "harness/score_confirmation_math.py",
+      "bytes": 3079,
+      "sha256": "a99168723988ca9bb75a3868002ca43624a7ac1dec608d61a2acafdb5da65cb6"
+    },
+    {
+      "path": "harness/score_math.py",
+      "bytes": 5638,
+      "sha256": "35486f5570d87ab491e0e30afa3097944e0198623a636cb00ab7b930f0fc26a5"
+    },
+    {
+      "path": "selection/selected.json",
+      "bytes": 3082,
+      "sha256": "b26137cad4d719340287c505a13c73af2ecece1296c94a461de86bf0ad73cac1"
+    },
+    {
+      "path": "selection/development-selection-policy.json",
+      "bytes": 1261,
+      "sha256": "4023b28f594c9ca0f675b3b87246d47434d68baab5cd3c732f0508834cda22a0"
+    },
+    {
+      "path": "review/w4-real-frozen-packet-review-v1.json",
+      "bytes": 5045,
+      "sha256": "ff6837448c0d9ff7b70652a95555e5d249162390c09d2c33ce937ba6e23fb61e"
+    },
+    {
+      "path": "review/W4_FROZEN_PACKET_REVIEW-v1.md",
+      "bytes": 1413,
+      "sha256": "0ead5be95abc76d7f7dd7296bd930443cced442754fb635a1c5b8a297e93cac3"
+    }
+  ]
+}

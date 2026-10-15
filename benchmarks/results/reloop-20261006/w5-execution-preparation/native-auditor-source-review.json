@@ -1,0 +1,48 @@
+{
+  "status": "INDEPENDENT_SOURCE_AND_ACTUAL_OLD_CONFIG_PUBLIC_INTERFACE_PASS_NEW_NATIVE_NOT_RUN",
+  "original_sources": {
+    "audit_w5_native_trials.py": "35b94e8cdd1d69d700feeeafee7ed714d674727ae39f606ae63872fe6827d5d6",
+    "summarize_w5_raw_matrix.py": "16c10b46fab4a8b3f68528bbc860c53cbe1db51e33036a7aac020da3e973b58f"
+  },
+  "public_sources": {
+    "audit_w5_native_trials.py": "35b94e8cdd1d69d700feeeafee7ed714d674727ae39f606ae63872fe6827d5d6",
+    "summarize_w5_raw_matrix.py": "57f9dc51cf81836de14f06f14182b5aae3857149da7eabefcd7d772f17704e23"
+  },
+  "raw_trial_function_AST_unchanged": true,
+  "configuration_function_AST_matches_actual_original_execution": true,
+  "matrix_public_change": "Literal-string wrapping only; complete AST identical",
+  "previous_actual_C32_raw_trials_audited": 60,
+  "root_current_actual_old_config_passes": 6,
+  "root_old_config_files_and_scientific_archive_members_SHA_verified": 6,
+  "original_negative_config_checks": [
+    {
+      "name": "wrong_temperature",
+      "actual_natural_returncode": 1
+    },
+    {
+      "name": "wrong_graph",
+      "actual_natural_returncode": 1
+    },
+    {
+      "name": "different_pool",
+      "actual_natural_returncode": 1
+    },
+    {
+      "name": "wrong_reference_loop",
+      "actual_natural_returncode": 1
+    }
+  ],
+  "public_help_natural_returns": [
+    0,
+    0
+  ],
+  "public_empty_matrix_actual_natural_return": 0,
+  "original_cases_retained": 7,
+  "missing_jobs_retained": 42,
+  "root_full_raw_recomputation_receipt_sha256": "4b8b3d701cf69971e459fbf7c12fe1ef9bba305cdb9869212df12d81ee5e1513",
+  "root_public_interface_receipt_sha256": "e294c26b096d30fc1400e5e54eef383d04c3166a881c11f31322b65ce3ba952b",
+  "native_complete_job_and_full_six_job_positive_integration": "NOT_RUN_AWAITING_REAL_OUTPUT",
+  "whole_window_and_numerical_gate": "REQUIRED_SEPARATELY",
+  "new_GPU_or_model_jobs": 0,
+  "Ruff_actual_exit": 0
+}

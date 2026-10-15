@@ -1,0 +1,33 @@
+{
+  "status": "PASS_ALL7_ORIGINAL_CPU_INPUT_TEMPLATES_ONLY",
+  "checked_unix": 1791246052.9042718,
+  "cases": 7,
+  "template_requests": 820,
+  "template_tokens": "NOT_CANONICALLY_TOKENIZED",
+  "warmups": 5,
+  "measurements": 5,
+  "fresh_rounds": 2,
+  "arrival": "4C closed-loop, replace after consuming whole output batch",
+  "all_original_case_names_B_C_lengths_and_totals_verified": true,
+  "all_target_capacity_bytes_equal_prior_config_bound_preflight": true,
+  "Q64_firstB_excess": "66GiB target estimate only; complete queued4C workload is not rejected",
+  "A32_large": "102GiB KV target; full case retained for larger-memory device",
+  "actual_A_S_or_refill_observations": "NOT_RUN",
+  "canonical_prompt_ID_SHA": "NOT_CREATED",
+  "actual_memory_plan_and_capacity_admission": "NOT_RUN",
+  "actual_GPU_child_starts": 0,
+  "code_cpu_candidate_execution": "NOT_RUN",
+  "full_source_checkout_check": "REQUIRED_AT_FRESH_GPU_ADMISSION; CPU templates do not certify sourceclean",
+  "frozen_observer_sha256": "8f581b7c1c2fd474a53c2126519964bb7cd3d7bb18cb5096a99437b72b14e5a9",
+  "builder_sha256": "55a88ced4e87bf8c779d4882bd932e92b9e17901364322c21be54773eb231409",
+  "manifest_sha256": "c42eb26b929e95d8b36c465810776d3004bd8ee4a2a6b0fd0993e2d8c005351f",
+  "template_trace_sha256": "0cbe1fa31abac4a7e02cabdba7b62793d59197cebdf23636e905ff7872af9be1",
+  "W4_deadline_withdrawal_receipt_sha256": "4566db6b83df61102fedc805f280848d1d6126b1ea087352693a4c27017160fa",
+  "original_git_precheck_attempt": {
+    "session": 97150,
+    "parent": 24058,
+    "child": 24063,
+    "status": "UNPASSED_RETAINED; no signal"
+  },
+  "own_H20_future_model_borrow": "EXPLICIT_RETURNED_TO_OWNER_AND_BROKER; no other or UNKNOWN holds released"
+}

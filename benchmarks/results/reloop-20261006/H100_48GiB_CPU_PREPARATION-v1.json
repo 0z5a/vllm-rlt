@@ -1,0 +1,86 @@
+{
+  "state": "FULL_CONFIRMATION_CPU_INPUT_AND_STATIC_CAPACITY_PASS_GPU_NOT_RUN",
+  "model": "ByteDance/Ouro-1.4B",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "profile_id": "H100_FP32_48GiB_v1",
+  "hardware": {
+    "GPU": "NVIDIA H100",
+    "count": 1,
+    "observed_total_memory_mib": 65247
+  },
+  "dtype": "float32",
+  "attention_backend": "triton",
+  "cache": {
+    "common_pool_gib": 48,
+    "history_planes": 4,
+    "layout": "last_exited",
+    "block_size": 16,
+    "bytes_per_R4_group": 25165824,
+    "available_R4_groups": 2048
+  },
+  "batch_limit": 16,
+  "canonical_records": 653,
+  "planned_arms": 3,
+  "planned_outputs": 1959,
+  "actual_GPU_model_outputs": 0,
+  "max_new_tokens": 1024,
+  "generated_token_budget": 2006016,
+  "gpu_admission_seconds": 1800,
+  "finite_natural_drain_seconds": 600,
+  "family_comparisons": 2,
+  "noninferiority_margin": 0.01,
+  "original_plan_sha256": "6677d34e3739999335aecbdfd83c00ea662b30f6f73ad276e36df3ea57ee54be",
+  "original_data_sha256": "0fd5eaca62e594d42785db878902eacf46d9edfd0c4da978d5672dfe14ff0689",
+  "unchanged_generator_sha256": "81fcf145ce2cf6d492bc10b6047d4469f7209f4fad4f3baa8d9ca7b07a7b0027",
+  "tokenized_plan_sha256": "b404357f434b208c706cf04a1dd5e49cf6ab2cbfde0a4c316cfced0bbbf1ae01",
+  "tokenizer_versions": {
+    "transformers": "4.54.1",
+    "tokenizers": "0.21.4"
+  },
+  "tokenization": {
+    "add_special_tokens": false,
+    "chat_template": false,
+    "truncation": false,
+    "original_ID_order_preserved": true
+  },
+  "capacity": {
+    "global_cohorts_recomputed": 41,
+    "actual_per_task_cohorts": 42,
+    "position_limit": 65536,
+    "per_task": [
+      {
+        "task": "gsm8k",
+        "ids": 505,
+        "cohorts": 32,
+        "max_prompt_tokens": 420,
+        "max_required_R4_groups": 1363,
+        "max_target_KV_GiB": 31.9453125
+      },
+      {
+        "task": "humanevalplus",
+        "ids": 148,
+        "cohorts": 10,
+        "max_prompt_tokens": 395,
+        "max_required_R4_groups": 1199,
+        "max_target_KV_GiB": 28.1015625
+      }
+    ],
+    "scope": "Static worst-span R4 KV reservation only; weights/activation/scratch/context/reference and actual GPU admission excluded"
+  },
+  "cuda_initialized": false,
+  "natural_child_parent_resource_scheduler_archive_transfer_returns": 0,
+  "off_device_review": {
+    "full_file_hashes": 48,
+    "control_file_hashes": 18,
+    "whole_archive_bytes": 1051227,
+    "whole_archive_sha256": "2291f2df2fccec1f9e9385d71b29a6b4bf530a0a7f4359f13f6ea34ab3a7d472",
+    "scope": "Full original fields/order/integer tokens and all capacity arithmetic independently checked; canonical tokenization and model-file hashes rely on byte-pinned executed driver and recorded complete file checks; not independent retokenization or new device weight hashing"
+  },
+  "original_52_W2_public_qualification_replayed": false,
+  "original_64_102GiB_profiles": "CAPACITY_STOP_PRESERVED",
+  "C32_six_fresh_60_trials": "NOT_RUN",
+  "original_seven_W5_cases_42_jobs_420_trials": "NOT_RUN",
+  "final_quality": "NOT_RUN",
+  "speedup_VRAM_saving_external_SOTA_claim": "NONE"
+}
