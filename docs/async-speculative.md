@@ -1,7 +1,7 @@
 # Cross-round asynchronous self-speculation
 
 This opt-in path uses fixed-depth Ouro, `last_exited` KV, greedy sampling,
-Triton attention, eager CUDA execution, and refill scheduling. Historical tests used H20;
+Triton attention, eager or CUDA Graph execution, and refill scheduling. Historical tests used H20;
 FlashAttention is not required. Draft depth is configurable, with `d=2, D=4`
 as the initial validation configuration. The target depth must match the model.
 
@@ -23,10 +23,45 @@ outputs = llm.generate(
 
 The CLI combines `--async-scheduling --attention-backend triton
 --speculative-tokens 4 --draft-loops 2 --target-loops 4 --temperature 0`.
-Random sampling, adaptive exit, CUDA Graphs, preemption and PD are rejected.
+Random sampling, adaptive exit, preemption and PD are rejected.
 The speculative runner owns its compute and result-copy streams. Setting
 `multi_stream=False` orders the copy on the compute stream as well; cross-round
 CPU/GPU submission remains asynchronous, but D2H no longer overlaps computation.
+
+## CUDA Graph execution
+
+Enable core and LM-head graphs with
+`ExecutionConfig(async_scheduling=True, cuda_graphs=True)`, or add
+`--cuda-graphs` to the CLI above. Fixed draft/target depths and the configured
+maximum K remain unchanged. Output, context and scheduler limits can still
+shorten a round, including effective K=0.
+
+The speculative core uses device-owned positions and allocation-identity checks;
+it does not populate CPU `written` metadata or read back a position to select a
+graph. Graph inputs have stable addresses. Active page tables are still uploaded
+once per round, then copied into graph-owned metadata for each core replay.
+The LM head also uses graphs; prelude, metadata construction, argmax,
+acceptance/state updates and result copies remain outside capture.
+
+Graphs are cached by actual row count. `cuda_graph_max_batch_size` bounds core
+or LM-head rows, not requests: eight requests with K=4 need 40 verification rows.
+Rows above the limit, or new shapes after `cuda_graph_max_graphs` entries, execute
+eagerly. No inactive request padding is introduced. Each graph cache has its own
+entry limit; bootstrap uses the native runner's separate core graph cache.
+
+Capture is lazy and synchronizes the device on the first use of a shape. Measure
+cold capture separately and warm the actual shapes before throughput timing.
+Repeated replay adds no host wait. Graph outputs are cloned before another
+replay can overwrite shared-pool storage. All speculative computation remains
+ordered on the compute stream, while the two round buffers retain their own
+result storage through copy completion. Collecting an older ticket still never
+rewinds the device frontier. Cancellation and partial-failure cleanup retain the
+same stream-draining and allocation-retirement protocol.
+
+Use the existing `cuda_graph_memory_reserve_bytes` capacity reserve and record
+actual allocated/reserved peaks. Enabling graphs does not establish a throughput
+improvement; compare matched warmed eager/Graph runs and retain capture, replay
+and fallback counts from `speculative_runner.graphs` and `coda_graphs`.
 
 ## Execution and ownership
 

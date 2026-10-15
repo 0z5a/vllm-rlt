@@ -10,14 +10,19 @@ import torch
 def _capture(hidden, stream, pool, run):
     """Warm and capture one stable-input graph on its own stream."""
     torch.cuda.synchronize(hidden.device)
-    with torch.cuda.stream(stream):
-        for _ in range(2):
-            run()
-    stream.synchronize()
-    graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(graph, pool=pool, stream=stream):
-        output = run()
-    return graph, output
+    try:
+        with torch.cuda.stream(stream):
+            for _ in range(2):
+                run()
+        stream.synchronize()
+        graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(graph, pool=pool, stream=stream):
+            output = run()
+        return graph, output
+    finally:
+        # A failed warmup can leave KV writes on the capture stream without a
+        # compute-stream event. Drain it before tensor/allocation owners unwind.
+        stream.synchronize()
 
 
 class _DeviceCache:
@@ -52,8 +57,8 @@ class _DeviceCache:
         )
 
 
-def _graph_entry(hidden, batch, cache, max_position_embeddings):
-    count, tables = len(batch.rows), len(batch.context_lengths)
+def _graph_entry(hidden, batch, cache, max_position_embeddings, *, count, packed=False):
+    tables = len(batch.context_lengths)
     width = math.ceil(max_position_embeddings / cache.block_size)
     return SimpleNamespace(
         hidden=torch.empty_like(hidden[:count]),
@@ -64,23 +69,20 @@ def _graph_entry(hidden, batch, cache, max_position_embeddings):
             block_tables=torch.zeros((tables, width), device=cache.device, dtype=torch.int32),
             context_lengths=torch.empty(tables, device=cache.device, dtype=torch.int32),
             cu_seqlens_q=(
-                torch.empty(tables + 1, device=cache.device, dtype=torch.int32)
-                if batch.cu_seqlens_q is not None
-                else None
+                torch.empty(tables + 1, device=cache.device, dtype=torch.int32) if packed else None
             ),
-            max_seqlen_q=batch.max_seqlen_q,
+            max_seqlen_q=batch.max_seqlen_q if packed else 1,
         ),
     )
 
 
-def _copy_graph_inputs(entry, hidden, batch):
-    count = len(batch.rows)
+def _copy_graph_inputs(entry, hidden, batch, *, count):
     entry.hidden.copy_(hidden[:count])
     entry.metadata.position_ids.copy_(batch.position_ids[:count])
     entry.metadata.write_blocks.copy_(batch.write_blocks[:count])
     entry.metadata.write_offsets.copy_(batch.write_offsets[:count])
     entry.metadata.context_lengths.copy_(batch.context_lengths)
-    if batch.cu_seqlens_q is not None:
+    if entry.metadata.cu_seqlens_q is not None:
         entry.metadata.cu_seqlens_q.copy_(batch.cu_seqlens_q)
     entry.metadata.block_tables[:, : batch.block_tables.shape[1]].copy_(batch.block_tables)
 
@@ -137,13 +139,28 @@ class RecurrentGraphs:
                     hidden, batch, cache, compute_gate=self.compute_gate
                 )
             frontier[row_key] = pos
+        output = self._replay(hidden, batch, key, count=count, packed=packed)
+        for allocation, depth, pos in batch.rows:
+            for layer in cache.recurrent_layers:
+                allocation.written[cache._plane(depth)][layer].add(pos)
+        return output
+
+    def _replay(self, hidden, batch, key, *, count, packed=False):
+        cache = self.cache
         stream = torch.cuda.current_stream(cache.device)
         if self.last_event is not None:
             stream.wait_event(self.last_event)
         entry = self.entries.get(key)
         if entry is None:
-            entry = _graph_entry(hidden, batch, cache, self.model.config.max_position_embeddings)
-        _copy_graph_inputs(entry, hidden, batch)
+            entry = _graph_entry(
+                hidden,
+                batch,
+                cache,
+                self.model.config.max_position_embeddings,
+                count=count,
+                packed=packed,
+            )
+        _copy_graph_inputs(entry, hidden, batch, count=count)
         if key not in self.entries:
             proxy = _DeviceCache(cache)
             entry.graph, entry.output = _capture(
@@ -161,11 +178,34 @@ class RecurrentGraphs:
         output = tuple(t.clone() if t is not None else None for t in entry.output)
         self.last_event = torch.cuda.Event()
         self.last_event.record(stream)
-        for allocation, depth, pos in batch.rows:
-            for layer in cache.recurrent_layers:
-                allocation.written[cache._plane(depth)][layer].add(pos)
         self.replays += 1
         return output
+
+
+class DeviceRecurrentGraphs(RecurrentGraphs):
+    """Core graphs whose actual positions and KV frontier remain on device.
+
+    Allocation identity is checked on every call, outside capture. Entries retain
+    only tensor metadata, never request allocations or CPU written-position state.
+    """
+
+    @torch.inference_mode()
+    def run(self, hidden, batch):
+        self.cache._require_live_batch(batch)
+        count = len(batch.position_ids)
+        if (
+            not count
+            or count > self.execution.cuda_graph_max_batch_size
+            or (
+                count not in self.entries
+                and len(self.entries) >= self.execution.cuda_graph_max_graphs
+            )
+        ):
+            self.fallbacks += 1
+            return self.model.recurrent_prepared(
+                hidden, batch, self.cache, compute_gate=self.compute_gate
+            )
+        return self._replay(hidden, batch, count, count=count)
 
 
 class CodaGraphs:
@@ -215,12 +255,18 @@ class CodaGraphs:
         entry = self.entries.get(count)
         if entry is None:
             entry = (
-                _graph_entry(hidden, batch, self.cache, self.model.config.max_position_embeddings)
+                _graph_entry(
+                    hidden,
+                    batch,
+                    self.cache,
+                    self.model.config.max_position_embeddings,
+                    count=count,
+                )
                 if self.cache is not None
                 else SimpleNamespace(hidden=torch.empty_like(hidden))
             )
         if self.cache is not None:
-            _copy_graph_inputs(entry, hidden, batch)
+            _copy_graph_inputs(entry, hidden, batch, count=count)
         else:
             entry.hidden.copy_(hidden)
         if count not in self.entries:

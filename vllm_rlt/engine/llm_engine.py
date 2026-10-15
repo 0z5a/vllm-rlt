@@ -61,10 +61,6 @@ class LLMEngine:
                 raise ValueError("speculative target_loops must equal the model full depth")
             if self.exit_config.mode != "ouro":
                 raise ValueError("speculative decoding requires fixed-depth ouro exit mode")
-            if self.async_speculative and self.execution_config.cuda_graphs:
-                raise ValueError(
-                    "speculative decoding requires eager execution without CUDA graphs"
-                )
             if self.async_speculative and (
                 parameter.device.type != "cuda" or attention_backend != "triton"
             ):
@@ -156,7 +152,7 @@ class LLMEngine:
                 self.execution_config,
                 rng=self.rng,
             )
-            if speculative_config is not None
+            if speculative_config is not None and not self.async_speculative
             else None
         )
         self.model_runner = ModelRunner(
@@ -175,6 +171,7 @@ class LLMEngine:
                 self.cache_manager,
                 speculative_config,
                 scheduler_config,
+                execution=self.execution_config,
                 multi_stream=self.execution_config.multi_stream,
                 rng=self.rng,
             )

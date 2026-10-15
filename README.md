@@ -100,6 +100,9 @@ for supported combinations and limitations.
   across GPUs on one host, with NIXL KV transfer and overlap between chunked
   prefill computation and transfer.
 
+Fixed-depth greedy Ouro asynchronous self-speculation also supports opt-in
+core/LM-head CUDA Graphs with Triton. See [configuration and execution limits](docs/async-speculative.md#cuda-graph-execution).
+
 The default runtime uses synchronous execution; Ouro uses its original gate.
 Advanced execution and cache features are opt-in; see the guides below for
 supported combinations.

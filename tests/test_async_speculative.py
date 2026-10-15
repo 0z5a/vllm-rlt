@@ -22,7 +22,18 @@ def tiny(device="cpu", dtype=torch.float32):
     return OuroForCausalLM(tiny_ouro_config()).to(device=device, dtype=dtype)
 
 
-def make_engine(model, *, asynchronous=True, k=3, budget=16, prefix=False, multi_stream=True):
+def make_engine(
+    model,
+    *,
+    asynchronous=True,
+    k=3,
+    budget=16,
+    prefix=False,
+    multi_stream=True,
+    graphs=False,
+    max_graph_rows=128,
+    max_graphs=16,
+):
     return LLMEngine(
         model,
         attention_backend="triton",
@@ -30,7 +41,13 @@ def make_engine(model, *, asynchronous=True, k=3, budget=16, prefix=False, multi
         scheduler_config=SchedulerConfig(
             max_num_seqs=4, max_num_batched_tokens=budget, prefill_chunk_size=2
         ),
-        execution_config=ExecutionConfig(async_scheduling=asynchronous, multi_stream=multi_stream),
+        execution_config=ExecutionConfig(
+            async_scheduling=asynchronous,
+            multi_stream=multi_stream,
+            cuda_graphs=graphs,
+            cuda_graph_max_batch_size=max_graph_rows,
+            cuda_graph_max_graphs=max_graphs,
+        ),
         speculative_config=SpeculativeConfig(k),
     )
 
@@ -74,13 +91,16 @@ def test_async_spec_rejects_cpu_before_cache_allocation():
 @pytest.mark.gpu
 @pytest.mark.parametrize("k,budget", [(1, 1), (2, 7), (4, 16), (8, 32)])
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
-def test_async_matches_sync_with_ragged_limits_and_prefix_reuse(k, budget, dtype):
+@pytest.mark.parametrize("graphs", [False, True])
+def test_async_matches_sync_with_ragged_limits_and_prefix_reuse(k, budget, dtype, graphs):
     model = tiny("cuda", dtype)
     params = [SamplingParams(max_tokens=n, ignore_eos=True) for n in (1, 13, 8)]
     prompts = [[2, 3, 4, 5], [2, 3, 4, 7], [9]]
     results = []
     for asynchronous in (False, True):
-        e = make_engine(model, asynchronous=asynchronous, k=k, budget=budget, prefix=True)
+        e = make_engine(
+            model, asynchronous=asynchronous, k=k, budget=budget, prefix=True, graphs=graphs
+        )
         for repetition in range(2):
             for i, (prompt, p) in enumerate(zip(prompts, params)):
                 e.add_request(str(i), prompt, p)
@@ -88,6 +108,9 @@ def test_async_matches_sync_with_ragged_limits_and_prefix_reuse(k, budget, dtype
             results.append([output[str(i)].token_ids for i in range(3)])
             assert all(o.finished for o in output.values())
         if asynchronous:
+            if graphs:
+                assert e.speculative_runner.graphs.replays > 0
+                assert e.speculative_runner.coda_graphs.replays > 0
             assert not e.speculative_runner.states
             assert all(not buffer.leased for buffer in e.speculative_runner.buffers)
     assert all(r == results[0] for r in results)
@@ -95,9 +118,10 @@ def test_async_matches_sync_with_ragged_limits_and_prefix_reuse(k, budget, dtype
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("accepted", [0, 1, 2, 3])
-def test_second_round_executes_before_cpu_commit_at_every_rejection(accepted, monkeypatch):
+@pytest.mark.parametrize("graphs", [False, True])
+def test_second_round_executes_before_cpu_commit_at_every_rejection(accepted, monkeypatch, graphs):
     model = tiny("cuda")
-    e = make_engine(model)
+    e = make_engine(model, graphs=graphs)
     request = bootstrap(e)
     start = request.position
     calls = 0
@@ -114,7 +138,9 @@ def test_second_round_executes_before_cpu_commit_at_every_rejection(accepted, mo
                 logits[row, 10 + row if row < accepted else 20 + row] = 100
         return logits
 
-    monkeypatch.setattr(model, "coda", controlled)
+    # Keep the synthetic phase policy outside capture: Python call counters
+    # describe test phases, not replayable model operations. Core graphs still run.
+    monkeypatch.setattr(e.speculative_runner, "_coda", controlled)
 
     # A CPU read of candidate/acceptance values would fail during submission.
     def forbidden(*args, **kwargs):
@@ -141,14 +167,15 @@ def test_second_round_executes_before_cpu_commit_at_every_rejection(accepted, mo
 
 
 @pytest.mark.gpu
-def test_eos_discards_queued_round_and_request_id_can_be_reused(monkeypatch):
+@pytest.mark.parametrize("graphs", [False, True])
+def test_eos_discards_queued_round_and_request_id_can_be_reused(monkeypatch, graphs):
     model = tiny("cuda")
-    e = make_engine(model)
+    e = make_engine(model, graphs=graphs)
     bootstrap(e, ignore_eos=False)
-    coda = model.coda
+    coda = e.speculative_runner._coda
     monkeypatch.setattr(
-        model,
-        "coda",
+        e.speculative_runner,
+        "_coda",
         lambda h: torch.zeros(
             len(h),
             model.config.vocab_size,
@@ -160,7 +187,7 @@ def test_eos_discards_queued_round_and_request_id_can_be_reused(monkeypatch):
     out = e._collect_speculative()[0]
     assert out.finished and out.token_ids[-1] == 0 and len(out.token_ids) == 2
     # Reuse while an old ticket still exists. It must never touch the new request.
-    monkeypatch.setattr(model, "coda", coda)
+    monkeypatch.setattr(e.speculative_runner, "_coda", coda)
     e.add_request("r", [7, 8], SamplingParams(max_tokens=5, ignore_eos=True))
     output = drain(e)["r"]
     assert len(output.token_ids) == 5
@@ -169,9 +196,10 @@ def test_eos_discards_queued_round_and_request_id_can_be_reused(monkeypatch):
 
 
 @pytest.mark.gpu
-def test_cancel_and_partial_submission_failure_reclaim_resources(monkeypatch):
+@pytest.mark.parametrize("graphs", [False, True])
+def test_cancel_and_partial_submission_failure_reclaim_resources(monkeypatch, graphs):
     model = tiny("cuda")
-    e = make_engine(model)
+    e = make_engine(model, graphs=graphs)
     bootstrap(e)
     e.step()
     e.step()
@@ -184,7 +212,7 @@ def test_cancel_and_partial_submission_failure_reclaim_resources(monkeypatch):
     def fail(*args, **kwargs):
         raise RuntimeError("injected target failure")
 
-    monkeypatch.setattr(model, "coda", fail)
+    monkeypatch.setattr(e.speculative_runner, "_verify", fail)
     with pytest.raises(RuntimeError, match="injected"):
         e.step()
     assert not e.scheduler.requests
@@ -212,9 +240,10 @@ def test_async_rejects_other_backends_before_loading_attention(backend):
 
 
 @pytest.mark.gpu
-def test_prefill_arrivals_interleave_with_inflight_rounds():
+@pytest.mark.parametrize("graphs", [False, True])
+def test_prefill_arrivals_interleave_with_inflight_rounds(graphs):
     model = tiny("cuda", torch.bfloat16)
-    e = make_engine(model, budget=5, prefix=True)
+    e = make_engine(model, budget=5, prefix=True, graphs=graphs)
     bootstrap(e, max_tokens=17)
     e.step()
     e.step()
@@ -240,8 +269,9 @@ def test_prefill_arrivals_interleave_with_inflight_rounds():
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("multi_stream", [False, True])
-def test_close_drains_both_submitted_rounds(multi_stream):
-    e = make_engine(tiny("cuda"), multi_stream=multi_stream)
+@pytest.mark.parametrize("graphs", [False, True])
+def test_close_drains_both_submitted_rounds(multi_stream, graphs):
+    e = make_engine(tiny("cuda"), multi_stream=multi_stream, graphs=graphs)
     bootstrap(e)
     e.step()
     e.step()
@@ -256,9 +286,10 @@ def test_close_drains_both_submitted_rounds(multi_stream):
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
-def test_two_round_kv_matches_serial_replay_at_every_depth(dtype):
+@pytest.mark.parametrize("graphs", [False, True])
+def test_two_round_kv_matches_serial_replay_at_every_depth(dtype, graphs):
     model = tiny("cuda", dtype)
-    e = make_engine(model)
+    e = make_engine(model, graphs=graphs)
     request = bootstrap(e)
     e.step()
     e.step()
@@ -410,3 +441,121 @@ def test_async_speculative_engine_shares_its_registry(multi_stream):
     assert e.async_speculative
     assert e.speculative_runner.rng is e.rng
     assert e.model_runner.rng is e.rng
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("max_graph_rows,max_graphs", [(2, 16), (128, 1)])
+def test_async_graph_fallback_preserves_ragged_outputs_and_reuses_entries(
+    max_graph_rows, max_graphs
+):
+    model = tiny("cuda", torch.bfloat16)
+    results = []
+    for graphs in (False, True):
+        engine = make_engine(
+            model, graphs=graphs, max_graph_rows=max_graph_rows, max_graphs=max_graphs
+        )
+        repetitions = []
+        for _ in range(2):
+            for i, length in enumerate((15, 9, 6)):
+                engine.add_request(
+                    str(i),
+                    [2 + i, 3, 4],
+                    SamplingParams(max_tokens=length, ignore_eos=True),
+                )
+            outputs = drain(engine)
+            repetitions.append({rid: (o.token_ids, o.exit_depths) for rid, o in outputs.items()})
+            assert engine.cache_manager.num_used_blocks == 0
+        if graphs:
+            core, coda = engine.speculative_runner.graphs, engine.speculative_runner.coda_graphs
+            assert core.captures > 0 and core.replays > core.captures
+            assert coda.captures > 0 and coda.replays > coda.captures
+            assert core.fallbacks > 0 and coda.fallbacks > 0
+            assert core.captures <= max_graphs and coda.captures <= max_graphs
+            assert all(n <= max_graph_rows for n in core.entries)
+        results.append(repetitions)
+        engine.close()
+    assert results[0] == results[1]
+
+
+@pytest.mark.gpu
+@torch.inference_mode()
+def test_device_graph_replay_owns_outputs_and_checks_replaced_allocations(monkeypatch):
+    engine = make_engine(tiny("cuda", torch.bfloat16), graphs=True)
+    cache, runner = engine.cache_manager, engine.speculative_runner
+    assert cache.allocate("manual", 4)
+    allocation = cache._get_allocation("manual")
+
+    def metadata(depth):
+        table = torch.tensor([allocation.block_tables[depth]], device="cuda", dtype=torch.int32)
+        return cache._prepare_device_batch(
+            allocations=(("manual", allocation),),
+            position_ids=torch.zeros(1, device="cuda", dtype=torch.int64),
+            write_blocks=table[:, 0].long(),
+            write_offsets=torch.zeros(1, device="cuda", dtype=torch.int64),
+            block_tables=table,
+            context_lengths=torch.ones(1, device="cuda", dtype=torch.int32),
+        )
+
+    batch = metadata(0)
+    hidden = engine.model.prelude(torch.tensor([2], device="cuda"))
+    first, _ = runner.graphs.run(hidden, batch)
+    saved = first.clone()
+    second_batch = metadata(1)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("device graph replay read a GPU position on the host")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(torch.Tensor, "item", forbidden)
+        patch.setattr(torch.Tensor, "tolist", forbidden)
+        second, _ = runner.graphs.run(hidden + 1, second_batch)
+    assert runner.graphs.captures == 1 and runner.graphs.replays == 2
+    assert first.data_ptr() != second.data_ptr()
+    assert torch.equal(first, saved)
+    assert all(written.prefix == 0 for plane in allocation.written for written in plane)
+    torch.cuda.synchronize()
+    cache.free("manual")
+    assert cache.allocate("manual", 4)
+    with pytest.raises(RuntimeError, match="stale"):
+        runner.graphs.run(hidden, batch)
+    cache.free("manual")
+    engine.close()
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("phase", ["core", "coda"])
+def test_async_graph_failed_warmup_drains_capture_stream_before_cleanup(monkeypatch, phase):
+    engine = make_engine(tiny("cuda"), graphs=True)
+    bootstrap(engine)
+    runner = engine.speculative_runner
+    completed = torch.cuda.Event()
+    if phase == "core":
+        original = engine.model.recurrent_prepared
+
+        def fail(hidden, batch, cache, **kwargs):
+            result = original(hidden, batch, cache, **kwargs)
+            # Only fail the graph proxy traversal, after GPU work is submitted.
+            if cache is not engine.cache_manager:
+                torch.cuda._sleep(10_000_000)
+                completed.record(torch.cuda.current_stream())
+                raise RuntimeError("injected core warmup failure")
+            return result
+
+        monkeypatch.setattr(engine.model, "recurrent_prepared", fail)
+    else:
+        original = engine.model.coda
+
+        def fail(hidden):
+            original(hidden)
+            torch.cuda._sleep(10_000_000)
+            completed.record(torch.cuda.current_stream())
+            raise RuntimeError("injected coda warmup failure")
+
+        monkeypatch.setattr(engine.model, "coda", fail)
+    with pytest.raises(RuntimeError, match=f"injected {phase} warmup failure"):
+        engine.step()
+    assert completed.query()
+    assert not engine.scheduler.requests and not runner.states
+    assert engine.cache_manager.num_used_blocks == 0
+    assert all(not b.leased and not b.keepalive for b in runner.buffers)
+    engine.close()
