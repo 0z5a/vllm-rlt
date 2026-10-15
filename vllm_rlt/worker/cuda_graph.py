@@ -1,10 +1,26 @@
 """Bounded recurrent-core graphs; request bookkeeping and sampling stay eager."""
 
+import logging
 import math
 from dataclasses import replace
 from types import SimpleNamespace
 
 import torch
+
+logger = logging.getLogger(__name__)
+
+
+def _cache_full(owner, key):
+    full = key not in owner.entries and len(owner.entries) >= owner.execution.cuda_graph_max_graphs
+    if full and not owner.warned_cache_full:
+        logger.warning(
+            "%s cache is full (%d shapes); unseen shapes will run eager. "
+            "Existing shapes still replay; lazy capture synchronizes the device.",
+            type(owner).__name__,
+            len(owner.entries),
+        )
+        owner.warned_cache_full = True
+    return full
 
 
 def _capture(hidden, stream, pool, run):
@@ -96,6 +112,7 @@ class RecurrentGraphs:
         self.capture_stream = torch.cuda.Stream(device=cache.device)
         self.last_event = None
         self.captures = self.replays = self.fallbacks = 0
+        self.warned_cache_full = False
 
     @torch.inference_mode()
     def run(self, hidden, batch):
@@ -109,14 +126,7 @@ class RecurrentGraphs:
                 context_lengths=batch.context_lengths[:count],
                 block_tables=batch.block_tables[:count],
             )
-        if (
-            count > self.execution.cuda_graph_max_batch_size
-            or not count
-            or (
-                key not in self.entries
-                and len(self.entries) >= self.execution.cuda_graph_max_graphs
-            )
-        ):
+        if count > self.execution.cuda_graph_max_batch_size or not count or _cache_full(self, key):
             self.fallbacks += 1
             return self.model.recurrent_prepared(
                 hidden, batch, self.cache, compute_gate=self.compute_gate
@@ -196,10 +206,7 @@ class DeviceRecurrentGraphs(RecurrentGraphs):
         if (
             not count
             or count > self.execution.cuda_graph_max_batch_size
-            or (
-                count not in self.entries
-                and len(self.entries) >= self.execution.cuda_graph_max_graphs
-            )
+            or _cache_full(self, count)
         ):
             self.fallbacks += 1
             return self.model.recurrent_prepared(
@@ -219,6 +226,7 @@ class CodaGraphs:
         self.stream = torch.cuda.Stream(device=next(model.parameters()).device)
         self.last_event = None
         self.captures = self.replays = self.fallbacks = 0
+        self.warned_cache_full = False
 
     @torch.inference_mode()
     def run(self, hidden, batch=None):
@@ -238,10 +246,7 @@ class CodaGraphs:
         if (
             not count
             or count > self.execution.cuda_graph_max_batch_size
-            or (
-                count not in self.entries
-                and len(self.entries) >= self.execution.cuda_graph_max_graphs
-            )
+            or _cache_full(self, count)
         ):
             self.fallbacks += 1
             return (

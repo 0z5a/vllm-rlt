@@ -48,9 +48,19 @@ or LM-head rows, not requests: eight requests with K=4 need 40 verification rows
 Rows above the limit, or new shapes after `cuda_graph_max_graphs` entries, execute
 eagerly. No inactive request padding is introduced. Each graph cache has its own
 entry limit; bootstrap uses the native runner's separate core graph cache.
+With the default 128-row limit, full verification stops fitting at concurrency
+43 for K=2, or 26 for K=4. Above 128 requests even drafting cannot fit. Startup
+warns when `max_num_seqs * (K + 1)` exceeds the row limit; it does not silently
+increase the limit or memory commitment. Set the row limit explicitly if this
+coverage is needed.
 
 Capture is lazy and synchronizes the device on the first use of a shape. Measure
 cold capture separately and warm the actual shapes before throughput timing.
+A full cache retains existing entries and permanently runs unseen shapes eager;
+a warning is emitted once per cache on the first such fallback. There is no
+bucketing, eviction or pre-capture. Staggered arrivals, mixed lengths and natural
+EOS can create many shapes and repeated cold-capture stalls; the burst results
+below do not qualify latency tails under that traffic.
 Repeated replay adds no host wait. Graph outputs are cloned before another
 replay can overwrite shared-pool storage. All speculative computation remains
 ordered on the compute stream, while the two round buffers retain their own
@@ -58,10 +68,24 @@ result storage through copy completion. Collecting an older ticket still never
 rewinds the device frontier. Cancellation and partial-failure cleanup retain the
 same stream-draining and allocation-retirement protocol.
 
-Use the existing `cuda_graph_memory_reserve_bytes` capacity reserve and record
-actual allocated/reserved peaks. Enabling graphs does not establish a throughput
+Automatic KV planning treats `cuda_graph_memory_reserve_bytes` as headroom per
+graph pool, and additionally reserves retained speculative coda logits across
+the configured entries and row capacity. Ouro asynchronous speculation owns
+three pools (native core, speculative core/coda); its default pool headroom is
+therefore 3 GiB before the retained-logits allowance. Native Ouro has one pool;
+Huginn has native core/coda pools and cannot speculate. These are conservative
+planning allowances, not a guarantee against capture OOM for every model.
+Explicit `num_blocks` or `kv_cache_memory_bytes` bypass automatic planning;
+leave graph memory available when choosing them. Record actual allocated/reserved
+peaks. Enabling graphs does not establish a throughput
 improvement; compare matched warmed eager/Graph runs and retain capture, replay
 and fallback counts from `speculative_runner.graphs` and `coda_graphs`.
+
+The measurements below were collected at runtime `08d3f99`. The review follow-up
+adds startup/cache-capacity warnings and changes automatic KV memory planning;
+it does not change replay computations or remove the full-logits clone. Their
+throughput values have not been remeasured with the new planning policy. The
+reported runs used explicit KV capacities, which bypass that policy.
 
 ### H20-3e measurements (2026-10-15)
 
@@ -78,6 +102,10 @@ after every first token and completed bootstrap GPU work, counts the remaining
 63 tokens per request, and ends after GPU completion. All modes share model,
 inputs, KV capacity, token budget and hardware. Each mode warms a full request;
 mode order reverses between five paired repetitions. Profiling is disabled.
+
+All measurements below use K=2, including the CLI reproduction below. The K=4
+usage example above is supported but has no real-checkpoint performance evidence
+in this report. Concurrency 1/8 fits the default 128-row verification limit.
 
 | Input | Concurrency | Native async Graph tok/s | Async spec eager tok/s | Async spec Graph tok/s | Paired Graph/eager speedup |
 | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -193,6 +221,12 @@ for all modes. The first concurrency-256 warmup with the default limit failed
 the all-first-tokens boundary assertion before timing; its logs and the
 earlier concurrency-128 observations are retained as setup diagnostics. The
 corrected extension reruns both conditions and preserves the assertion.
+
+**Tuned row coverage, not default settings:** this table uses K=2 and raises the
+shared row limit as described above. At the default 128 rows, speculative verify
+core/coda fall back from C43 and drafting from C129; the native core also falls
+back from C129. No default-limit throughput or non-lockstep serving gain is
+established by these measurements.
 
 | Input | Concurrency | Native async Graph tok/s | Async spec eager tok/s | Async spec Graph tok/s | Graph/eager | Graph/native Graph |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |

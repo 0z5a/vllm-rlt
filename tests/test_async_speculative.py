@@ -33,13 +33,19 @@ def make_engine(
     graphs=False,
     max_graph_rows=128,
     max_graphs=16,
+    max_num_seqs=4,
 ):
     return LLMEngine(
         model,
         attention_backend="triton",
-        cache_config=CacheConfig(256, 2, enable_prefix_caching=prefix, incremental_allocation=True),
+        cache_config=CacheConfig(
+            max(256, 64 * max_num_seqs),
+            2,
+            enable_prefix_caching=prefix,
+            incremental_allocation=True,
+        ),
         scheduler_config=SchedulerConfig(
-            max_num_seqs=4, max_num_batched_tokens=budget, prefill_chunk_size=2
+            max_num_seqs=max_num_seqs, max_num_batched_tokens=budget, prefill_chunk_size=2
         ),
         execution_config=ExecutionConfig(
             async_scheduling=asynchronous,
@@ -558,4 +564,132 @@ def test_async_graph_failed_warmup_drains_capture_stream_before_cleanup(monkeypa
     assert not engine.scheduler.requests and not runner.states
     assert engine.cache_manager.num_used_blocks == 0
     assert all(not b.leased and not b.keepalive for b in runner.buffers)
+    engine.close()
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("k,concurrency", [(2, 43), (4, 26)])
+def test_default_graph_row_limit_preserves_high_concurrency_outputs(k, concurrency, caplog):
+    model = tiny("cuda")
+    results = []
+    for graphs in (False, True):
+        engine = make_engine(
+            model,
+            k=k,
+            graphs=graphs,
+            max_num_seqs=concurrency,
+            budget=concurrency * (k + 1),
+        )
+        for i in range(concurrency):
+            engine.add_request(
+                str(i),
+                [2, 3, 4],
+                SamplingParams(max_tokens=k + 4, ignore_eos=True),
+            )
+        outputs = drain(engine)
+        results.append({rid: output.token_ids for rid, output in outputs.items()})
+        if graphs:
+            assert "cannot cover" in caplog.text
+            core, coda = engine.speculative_runner.graphs, engine.speculative_runner.coda_graphs
+            assert core.replays > 0 and coda.replays > 0
+            assert core.fallbacks > 0 and coda.fallbacks > 0
+            assert all(rows <= 128 for rows in core.entries)
+            assert all(rows <= 128 for rows in coda.entries)
+        engine.close()
+    assert results[0] == results[1]
+
+
+@pytest.mark.gpu
+@torch.inference_mode()
+def test_full_device_graph_caches_keep_old_shapes_and_fallback_for_new_shapes(caplog):
+    engine = make_engine(tiny("cuda"), graphs=True, max_graphs=2)
+    cache, runner = engine.cache_manager, engine.speculative_runner
+    allocations = []
+    for i in range(3):
+        rid = f"manual-{i}"
+        assert cache.allocate(rid, 2)
+        allocations.append((rid, cache._get_allocation(rid)))
+    saved = None
+    for count in (1, 2, 3, 3, 1):
+        table = torch.tensor(
+            [a.block_tables[0] for _, a in allocations[:count]],
+            device="cuda",
+            dtype=torch.int32,
+        )
+        batch = cache._prepare_device_batch(
+            allocations=tuple(allocations[:count]),
+            position_ids=torch.zeros(count, device="cuda", dtype=torch.long),
+            write_blocks=table[:, 0].long(),
+            write_offsets=torch.zeros(count, device="cuda", dtype=torch.long),
+            block_tables=table,
+            context_lengths=torch.ones(count, device="cuda", dtype=torch.int32),
+        )
+        hidden = engine.model.prelude(torch.arange(2, 2 + count, device="cuda"))
+        actual, _ = runner.graphs.run(hidden, batch)
+        expected, _ = engine.model.recurrent_prepared(hidden, batch, cache, compute_gate=False)
+        torch.testing.assert_close(actual, expected)
+        logits = runner.coda_graphs.run(actual)
+        torch.testing.assert_close(logits, engine.model.coda(expected))
+        if saved is None:
+            saved = logits.clone()
+        if count == 1:
+            torch.testing.assert_close(logits, saved)
+    for graphs in (runner.graphs, runner.coda_graphs):
+        assert set(graphs.entries) == {1, 2}
+        assert (graphs.captures, graphs.replays, graphs.fallbacks) == (2, 3, 2)
+    assert caplog.text.count("cache is full") == 2  # Once per cache, not per unseen call.
+    torch.cuda.synchronize()
+    for rid, _ in allocations:
+        cache.free(rid)
+    engine.close()
+
+
+@pytest.mark.gpu
+def test_async_graphs_use_nondefault_device_with_two_live_engines():
+    if torch.cuda.device_count() < 2:
+        pytest.skip("requires a two-GPU scheduler reservation")
+    previous = torch.cuda.current_device()
+    engines = []
+    try:
+        torch.cuda.set_device(0)
+        for graphs in (False, True):
+            engines.append(make_engine(tiny("cuda:1"), graphs=graphs, k=4))
+        for engine in engines:
+            engine.add_request("r", [2, 3, 4], SamplingParams(max_tokens=12, ignore_eos=True))
+        outputs = [drain(engine)["r"].token_ids for engine in engines]
+        assert outputs[0] == outputs[1]
+        runner = engines[1].speculative_runner
+        assert runner.graphs.replays > 0 and runner.coda_graphs.replays > 0
+        assert runner.graphs.capture_stream.device == torch.device("cuda:1")
+        assert runner.coda_graphs.stream.device == torch.device("cuda:1")
+        assert torch.cuda.current_device() == 0
+    finally:
+        for engine in engines:
+            engine.close()
+        torch.cuda.set_device(previous)
+
+
+@pytest.mark.gpu
+def test_async_graph_auto_memory_plan_includes_all_pools_and_logits():
+    from vllm_rlt.core.memory import graph_memory_reserve
+
+    model = tiny("cuda", torch.bfloat16)
+    scheduler = SchedulerConfig(max_num_seqs=4, max_num_batched_tokens=16)
+    execution = ExecutionConfig(async_scheduling=True, cuda_graphs=True)
+    speculative = SpeculativeConfig(4)
+    engine = LLMEngine(
+        model,
+        attention_backend="triton",
+        cache_config=CacheConfig(block_size=2),
+        scheduler_config=scheduler,
+        execution_config=execution,
+        speculative_config=speculative,
+    )
+    assert engine.memory_plan["source"] == "cuda_profile"
+    expected = graph_memory_reserve(model, scheduler, execution, speculative)
+    assert expected > 3 * execution.cuda_graph_memory_reserve_bytes
+    assert engine.memory_plan["cuda_graph_reserve_bytes"] == expected
+    engine.add_request("r", [2, 3, 4], SamplingParams(max_tokens=12, ignore_eos=True))
+    assert len(drain(engine)["r"].token_ids) == 12
+    assert engine.speculative_runner.coda_graphs.replays > 0
     engine.close()

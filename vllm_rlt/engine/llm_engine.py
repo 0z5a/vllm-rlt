@@ -1,3 +1,4 @@
+import logging
 from dataclasses import replace
 from typing import TYPE_CHECKING, cast
 
@@ -18,6 +19,9 @@ from vllm_rlt.worker.speculative import SpeculativeRunner
 
 if TYPE_CHECKING:
     from vllm_rlt.worker.async_speculative import AsyncSpeculativeRunner
+
+
+logger = logging.getLogger(__name__)
 
 
 class LLMEngine:
@@ -88,6 +92,19 @@ class LLMEngine:
             )
         if self.execution_config.cuda_graphs and parameter.device.type != "cuda":
             raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
+        if self.execution_config.cuda_graphs and speculative_config is not None:
+            rows = scheduler_config.max_num_seqs * (speculative_config.num_speculative_tokens + 1)
+            if rows > self.execution_config.cuda_graph_max_batch_size:
+                logger.warning(
+                    "CUDA Graph row limit %d cannot cover %d verification rows "
+                    "(max_num_seqs=%d, K=%d); larger batches run eager. "
+                    "Raise cuda_graph_max_batch_size explicitly to expand coverage "
+                    "and budget additional graph memory.",
+                    self.execution_config.cuda_graph_max_batch_size,
+                    rows,
+                    scheduler_config.max_num_seqs,
+                    speculative_config.num_speculative_tokens,
+                )
         if self.execution_config.async_scheduling:
             if not self.async_speculative and self.exit_config.mode not in (
                 "ouro_delayed",
@@ -121,6 +138,7 @@ class LLMEngine:
             scheduler_config,
             self.execution_config,
             attention.info["selected_backend"],
+            speculative=speculative_config,
         )
         self.cache_manager = KVCacheManager(
             num_layers=config.num_hidden_layers,
