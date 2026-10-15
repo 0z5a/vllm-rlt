@@ -63,6 +63,108 @@ actual allocated/reserved peaks. Enabling graphs does not establish a throughput
 improvement; compare matched warmed eager/Graph runs and retain capture, replay
 and fallback counts from `speculative_runner.graphs` and `coda_graphs`.
 
+### H20-3e measurements (2026-10-15)
+
+Runtime: `08d3f99`, based on `main@9d601ce`; one Slurm-reserved H20-3e,
+driver 580.105.08, Python 3.12, PyTorch 2.14.1+cu130 and Triton 3.8.0.
+Ouro-1.4B revision `574fa66cb8bf5abdc979642d01cf2b79b16bfab1` uses BF16
+weights, activations and KV, fixed d=2/D=4, K=2, LAST_EXITED, greedy and
+ignore-EOS generation. Native async uses `ouro_delayed` at threshold 1;
+speculation uses fixed-depth `ouro`.
+
+Eight distinct explanatory/code/math prompts were repeated and clipped to exact
+input lengths. All requests produced 64 output tokens. Decode timing starts
+after every first token and completed bootstrap GPU work, counts the remaining
+63 tokens per request, and ends after GPU completion. All modes share model,
+inputs, KV capacity, token budget and hardware. Each mode warms a full request;
+mode order reverses between five paired repetitions. Profiling is disabled.
+
+| Input | Concurrency | Native async Graph tok/s | Async spec eager tok/s | Async spec Graph tok/s | Paired Graph/eager speedup |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 64 | 1 | 65.53 | 31.04 | 97.57 | 3.14x |
+| 512 | 1 | 52.48 | 30.74 | 77.22 | 2.51x |
+| 64 | 8 | 469.70 | 210.03 | 589.00 | 2.80x |
+| 512 | 8 | 378.83 | 206.77 | 482.40 | 2.33x |
+
+Throughput values are medians. Paired speedup min/max across the five observations
+are respectively [3.13, 3.19], [2.48, 2.52], [2.80, 2.81], [2.33, 2.34]. These are
+descriptive ranges, not confidence intervals. All 60 measured trials matched the
+native baseline's output token IDs exactly. The warmed Graph trials had no new
+captures or speculative fallbacks. This establishes agreement for these inputs,
+not general task accuracy or all BF16 batching configurations.
+
+Separate isolated-engine memory runs at input/output 64/64 increased peak
+allocated memory from eager to Graph by 96.5 MiB at concurrency 1 and 102.8 MiB at
+concurrency 8. Core/LM-head caches captured 2/2 and 7/6 entries respectively;
+cross-round submissions before collection remained active. The main throughput
+runs held all three engines resident, so their global allocation peaks must not
+be interpreted as isolated per-mode memory costs.
+
+![Matched eager and Graph request/zoom timelines](assets/performance/async-speculative-graphs.png)
+
+The figure uses independent ops-only profiles, concurrency 1 and input/output
+64/8. Both panels have the same time scale and align the same request or decode
+start. Bootstrap ends at the explicit device synchronization after the first
+token. Profiled times are diagnostic and do not replace the unprofiled table.
+
+| Decode observation | Async spec eager | Async spec Graph |
+| --- | ---: | ---: |
+| CPU runtime/driver individual kernel launches | 27,844 | 181 |
+| CPU Graph launches | 0 | 27 |
+| GPU kernels | 27,844 | 27,848 |
+| GPU active interval union (ms) | 65.19 | 67.48 |
+| Remaining decode interval (ms) | 372.34 | 14.98 |
+| Device-to-device copies | 48 | 198 |
+| CPU time inside synchronization APIs (ms) | 0.02 | 31.53 |
+
+`AsyncSpeculativeRunner._execute_recurrent_step()` and `_coda()` replace
+per-operator submission with `DeviceRecurrentGraphs`/`CodaGraphs` replay. GPU
+kernel work stays almost unchanged, while launch/dispatch gaps shrink. Input
+staging and output ownership add D2D copies and graph storage. Faster submission
+also leaves the CPU waiting for GPU completion more often: the gain must not be
+described as removing all host synchronization. Bootstrap GPU activity is almost
+unchanged (18.71 versus 18.67 ms); no prefill acceleration is claimed. The active
+interval union is not an SM-utilization measurement.
+
+Matching one-round ops-only/full profiles cover production submission, result
+copy and CPU collection. Full enables shapes, memory and stacks and retains
+nonempty CPU/GPU stack exports and memory timelines. The initial 469 MiB
+whole-request full trace is preserved; narrowing the full window reduced it to
+138 MiB for eager and 17 MiB for Graph. The remaining eager metadata/acceptance
+and extra copies remain visible; whole-round capture is a separate optimization.
+
+Validation at the same runtime includes 191 CUDA tests passed with 16
+FlashAttention cases deselected, plus three Huginn Graph regressions and full Ruff/CPU pre-commit checks. Tiny-model
+cases cover per-depth KV, ragged limits, rejection/bonus, two rounds before
+collection, cancellation/EOS/ID reuse, HTTP delivery and failure isolation,
+graph-cache fallback, output retention and failed warmup cleanup.
+
+Raw trials, all token IDs, source/model hashes, logs, scripts and traces are
+retained locally at `/home/leo/task-artifacts/async-speculative-graphs-20261015/`;
+this is a provenance location, not a public download URL. In that retained
+experiment directory, `measure-151.py --model "$RLT_MODEL_PATH"` reproduces the
+60-trial matrix; `round_profile.py --mode spec_graph --profile full` reproduces
+the bounded full window (and reads `model-path.txt`). Run from the repository
+with its environment and `PYTHONPATH` set, inside a one-GPU Slurm allocation.
+These diagnostic scripts are not supported repository benchmark entry points.
+
+For a supported single-request reproduction, set `RLT_MODEL_PATH` to that local
+checkpoint and run inside an allocation:
+
+```bash
+vllm-rlt --model "$RLT_MODEL_PATH" --device cuda --dtype bfloat16 \
+  --attention-backend triton --async-scheduling --cuda-graphs \
+  --speculative-tokens 2 --draft-loops 2 --target-loops 4 \
+  --max-loops 4 --exit-threshold 1 --temperature 0 \
+  --max-tokens 64 --prompt "Explain why the sky appears blue."
+```
+
+The serving entry point accepts the same execution flags; see
+[HTTP serving](serving.md) for startup and request examples. These engine
+measurements do not qualify real-checkpoint HTTP latency, natural EOS, saturation,
+other GPUs/backends or other d/D/K settings. Keep cold-capture and steady-state
+results separate.
+
 ## Execution and ownership
 
 The synchronous runner reads the acceptance result before constructing the next
@@ -135,7 +237,7 @@ is untouched; ragged rows are padded within the active width. This reduces the
 number of entries prepared and submitted for H2D. The current measurements below
 separate that reduction from end-to-end effects.
 
-## Current GPU validation (2026-10-10)
+## Eager GPU validation (2026-10-10)
 
 Runtime source: `d977817d4e174cbc2fcc9aa7ef5893c35da2ec89`, incorporating main
 `d704aee654235f6a13e8c5bf13b41aaf80fbb7d9`. Validation used
@@ -395,7 +497,7 @@ hook timings. Representative kernel reports and all-pass tables are retained.
 These historical engine microbenchmarks do not establish production HTTP
 capacity, TTFT or general model quality. Repeated identical prompts do not
 represent all serving traffic; concurrency 32 is a tested point, not a saturation
-limit. The current runs cover K=2 and concurrency 1/8; they do not validate K=1/4/8,
+limit. The 2026-10-10 eager runs cover K=2 and concurrency 1/8; they do not validate K=1/4/8,
 concurrency 32, production capacity, other GPUs/checkpoints, random sampling,
 adaptive depth, asynchronous CUDA Graphs, FA4, preemption or PD. Keep the
 synchronous path until the missing capabilities are covered and validated.
