@@ -149,3 +149,36 @@ def test_triton_paged_prefill_matches_per_query_reference(head_dim, heads, kv_he
         torch.tensor(row_lengths, dtype=torch.int32, device="cuda"),
     )
     torch.testing.assert_close(actual[rows], expected, rtol=2e-2, atol=2e-2)
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+def test_split_kv_decode_matches_reference_and_is_batch_invariant(dtype):
+    from vllm_rlt.kernels.paged_attention import torch_paged_attention
+    from vllm_rlt.kernels.triton_attention import paged_attention
+
+    torch.manual_seed(1)
+    block, heads, kv_heads, head_dim = 16, 8, 4, 128
+    # Empty, tile and split boundaries, and long rows that use every split.
+    lengths = [0, 1, 31, 32, 33, 511, 512, 513, 4097, 10000]
+    pages = sum(-(-n // block) for n in lengths)
+    k = torch.randn(pages, block, kv_heads, head_dim, device="cuda", dtype=dtype)
+    v = torch.randn_like(k)
+    order = torch.randperm(pages).tolist()  # Pages deliberately out of order.
+    width = max(-(-n // block) for n in lengths)
+    tables = torch.zeros(len(lengths), width, dtype=torch.int32, device="cuda")
+    for row, n in enumerate(lengths):
+        ids = [order.pop() for _ in range(-(-n // block))]
+        tables[row, : len(ids)] = torch.tensor(ids, dtype=torch.int32)
+    q = torch.randn(len(lengths), heads, head_dim, device="cuda", dtype=dtype)
+    context = torch.tensor(lengths, dtype=torch.int32, device="cuda")
+    actual = paged_attention(q, k, v, tables, context)
+    expected = torch_paged_attention(q, k, v, tables, context)
+    tolerance = 2e-2 if dtype == torch.bfloat16 else 1e-4
+    torch.testing.assert_close(actual, expected, rtol=tolerance, atol=tolerance)
+    assert torch.count_nonzero(actual[0]) == 0
+    # Speculative verification compares rows computed in different batches.
+    for row in (1, 5, 8, 9):
+        one = slice(row, row + 1)
+        alone = paged_attention(q[one], k, v, tables[one], context[one])
+        assert torch.equal(alone[0], actual[row])

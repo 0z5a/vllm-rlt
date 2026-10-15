@@ -1,13 +1,20 @@
-"""Paged GQA kernel using bounded-memory online softmax.
+"""Paged GQA kernels using bounded-memory online softmax.
 
-One Triton program computes one query head. Unlike a fixed-depth batch, every
-query row receives its own physical block table. This is a correctness-first
-kernel without a performance claim or autotuning.
+Every query row receives its own physical block table. Single-query attention
+splits each row's context into NUM_SPLITS equal parts (split-KV): one program
+per (row, head, split) produces a partial softmax state and a second kernel
+merges the parts. A row's partition depends only on its own length, so its
+result does not depend on the batch it runs in. Without splitting, one long
+row serialized its whole context in one program and set the decode step time.
 """
 
 import torch
 import triton
 import triton.language as tl
+
+# Splits per row for single-query attention. A power of two (tl.arange) and a
+# constant, so the grid is static under CUDA graphs and independent of batch.
+NUM_SPLITS = 16
 
 
 @triton.jit
@@ -17,7 +24,9 @@ def _paged_attention_kernel(
     V,
     TABLES,
     LENGTHS,
-    OUT,
+    PART_M,
+    PART_L,
+    PART_O,
     q_batch_stride: tl.constexpr,
     q_head_stride: tl.constexpr,
     q_dim_stride: tl.constexpr,
@@ -30,20 +39,24 @@ def _paged_attention_kernel(
     v_head_stride: tl.constexpr,
     v_dim_stride: tl.constexpr,
     table_stride: tl.constexpr,
-    out_batch_stride: tl.constexpr,
-    out_head_stride: tl.constexpr,
-    out_dim_stride: tl.constexpr,
     HEAD_DIM: tl.constexpr,
     HEAD_GROUPS: tl.constexpr,
+    NUM_HEADS: tl.constexpr,
     PAGE_SIZE: tl.constexpr,
     SCALE: tl.constexpr,
     BLOCK_D: tl.constexpr,
     BLOCK_T: tl.constexpr,
+    SPLITS: tl.constexpr,
 ):
     row = tl.program_id(0)
     head = tl.program_id(1)
+    split = tl.program_id(2)
     kv_head = head // HEAD_GROUPS
     length = tl.load(LENGTHS + row)
+    # Equal tile-aligned parts of this row's context; trailing parts may be empty.
+    split_tokens = ((length + SPLITS - 1) // SPLITS + BLOCK_T - 1) // BLOCK_T * BLOCK_T
+    begin = split * split_tokens
+    end = tl.minimum(length, begin + split_tokens)
     dims = tl.arange(0, BLOCK_D)
     query = tl.load(
         Q + row * q_batch_stride + head * q_head_stride + dims * q_dim_stride,
@@ -53,9 +66,9 @@ def _paged_attention_kernel(
     maximum = -float("inf")
     normalizer = 0.0
     accumulator = tl.zeros((BLOCK_D,), dtype=tl.float32)
-    for start in range(0, length, BLOCK_T):
+    for start in range(begin, end, BLOCK_T):
         positions = start + tl.arange(0, BLOCK_T)
-        valid_tokens = positions < length
+        valid_tokens = positions < end
         blocks = tl.load(
             TABLES + row * table_stride + positions // PAGE_SIZE,
             mask=valid_tokens,
@@ -90,6 +103,38 @@ def _paged_attention_kernel(
         accumulator = accumulator * correction + tl.sum(weights[:, None] * values, axis=0)
         normalizer = normalizer * correction + tl.sum(weights, axis=0)
         maximum = next_maximum
+    # An empty part stores (-inf, 0, 0), which the merge weights by zero.
+    part = (row * NUM_HEADS + head) * SPLITS + split
+    tl.store(PART_M + part, maximum)
+    tl.store(PART_L + part, normalizer)
+    tl.store(PART_O + part * BLOCK_D + dims, accumulator)
+
+
+@triton.jit
+def _paged_attention_merge_kernel(
+    PART_M,
+    PART_L,
+    PART_O,
+    OUT,
+    out_batch_stride: tl.constexpr,
+    out_head_stride: tl.constexpr,
+    out_dim_stride: tl.constexpr,
+    HEAD_DIM: tl.constexpr,
+    NUM_HEADS: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+    SPLITS: tl.constexpr,
+):
+    row = tl.program_id(0)
+    head = tl.program_id(1)
+    parts = (row * NUM_HEADS + head) * SPLITS + tl.arange(0, SPLITS)
+    dims = tl.arange(0, BLOCK_D)
+    maxima = tl.load(PART_M + parts)
+    top = tl.max(maxima, axis=0)
+    # All parts empty (length 0) leaves top = -inf; zero weights give a zero row.
+    scale = tl.where(maxima > -float("inf"), tl.exp(maxima - top), 0.0)
+    normalizer = tl.sum(tl.load(PART_L + parts) * scale, axis=0)
+    partial = tl.load(PART_O + parts[:, None] * BLOCK_D + dims[None, :])
+    accumulator = tl.sum(partial * scale[:, None], axis=0)
     tl.store(
         OUT + row * out_batch_stride + head * out_head_stride + dims * out_dim_stride,
         accumulator / tl.maximum(normalizer, 1.0e-30),
@@ -98,28 +143,48 @@ def _paged_attention_kernel(
 
 
 def paged_attention(q, key_cache, value_cache, block_tables, context_lengths):
-    """Launch over [batch row, query head]; inputs are validated by the manager."""
+    """Launch split-KV parts over [row, head, split], then merge per [row, head]."""
     output = torch.empty_like(q)
     if q.shape[0] == 0:
         return output
-    _paged_attention_kernel[(q.shape[0], q.shape[1])](
+    rows, heads = q.shape[0], q.shape[1]
+    block_d = triton.next_power_of_2(q.shape[-1])
+    part_m = torch.empty((rows, heads, NUM_SPLITS), device=q.device, dtype=torch.float32)
+    part_l = torch.empty_like(part_m)
+    part_o = torch.empty((rows, heads, NUM_SPLITS, block_d), device=q.device, dtype=torch.float32)
+    _paged_attention_kernel[(rows, heads, NUM_SPLITS)](
         q,
         key_cache,
         value_cache,
         block_tables,
         context_lengths,
-        output,
+        part_m,
+        part_l,
+        part_o,
         *q.stride(),
         *key_cache.stride(),
         *value_cache.stride(),
         block_tables.stride(0),
-        *output.stride(),
         HEAD_DIM=q.shape[-1],
-        HEAD_GROUPS=q.shape[1] // key_cache.shape[2],
+        HEAD_GROUPS=heads // key_cache.shape[2],
+        NUM_HEADS=heads,
         PAGE_SIZE=key_cache.shape[1],
         SCALE=q.shape[-1] ** -0.5,
-        BLOCK_D=triton.next_power_of_2(q.shape[-1]),
+        BLOCK_D=block_d,
         BLOCK_T=32,
+        SPLITS=NUM_SPLITS,
+        num_warps=4,
+    )
+    _paged_attention_merge_kernel[(rows, heads)](
+        part_m,
+        part_l,
+        part_o,
+        output,
+        *output.stride(),
+        HEAD_DIM=q.shape[-1],
+        NUM_HEADS=heads,
+        BLOCK_D=block_d,
+        SPLITS=NUM_SPLITS,
         num_warps=4,
     )
     return output
