@@ -160,9 +160,21 @@ vllm-rlt --model "$RLT_MODEL_PATH" --device cuda --dtype bfloat16 \
 ```
 
 The serving entry point accepts the same execution flags; see
-[HTTP serving](serving.md) for startup and request examples. These engine
-measurements do not qualify real-checkpoint HTTP latency, natural EOS, saturation,
-other GPUs/backends or other d/D/K settings. Keep cold-capture and steady-state
+[HTTP serving](serving.md) for startup and request examples. A separate loopback HTTP check uses the production `load_engine/create_app`
+path on the same GPU and checkpoint, one seven-token prompt, 64 output tokens,
+ignore EOS and concurrency 1. Both servers warm a complete request before five
+alternating paired SSE trials. All ten requests returned `[DONE]`, identical text
+and usage of 64 completion tokens. Median E2E latency was 2711.7 ms eager versus
+824.4 ms Graph; median TTFT was 55.4 versus 54.4 ms. E2E p95 was 2728.2 versus
+824.8 ms, descriptive only with five observations per mode. Each response emitted
+27 choice events for 64 tokens (2.37 tokens/event); event gaps are not per-token
+ITL. Graph replay and cross-round submission counters remained active. The raw
+records and `http_measure.py` are retained with the other experiment artifacts.
+The real-checkpoint CLI also completed a 16-token Graph request.
+
+These bounded engine/loopback HTTP measurements do not qualify natural EOS,
+production arrival workloads, saturation, other GPUs/backends or other d/D/K
+settings. Keep cold-capture and steady-state
 results separate.
 
 ## Execution and ownership
