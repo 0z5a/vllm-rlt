@@ -2,7 +2,8 @@
 
 One Triton program computes one query head. Unlike a fixed-depth batch, every
 query row receives its own physical block table. This is a correctness-first
-kernel without a performance claim or autotuning.
+kernel without a performance claim or autotuning. FP8 e4m3 pools are read with
+one float32 scale per (block, token, KV head) vector.
 """
 
 import torch
@@ -18,6 +19,8 @@ def _paged_attention_kernel(
     TABLES,
     LENGTHS,
     OUT,
+    KS,
+    VS,
     q_batch_stride: tl.constexpr,
     q_head_stride: tl.constexpr,
     q_dim_stride: tl.constexpr,
@@ -33,6 +36,10 @@ def _paged_attention_kernel(
     out_batch_stride: tl.constexpr,
     out_head_stride: tl.constexpr,
     out_dim_stride: tl.constexpr,
+    s_block_stride: tl.constexpr,
+    s_token_stride: tl.constexpr,
+    s_head_stride: tl.constexpr,
+    HAS_SCALE: tl.constexpr,
     HEAD_DIM: tl.constexpr,
     HEAD_GROUPS: tl.constexpr,
     PAGE_SIZE: tl.constexpr,
@@ -64,29 +71,40 @@ def _paged_attention_kernel(
         # Physical IDs fit in int32, but ID * block_stride can exceed 2**31
         # elements in a large KV pool. Promote BEFORE multiplying, for K and V.
         offsets = positions % PAGE_SIZE
-        keys = tl.load(
+        kv_mask = valid_tokens[:, None] & (dims[None, :] < HEAD_DIM)
+        key_pointers = (
             K
             + blocks[:, None] * k_block_stride
             + offsets[:, None] * k_token_stride
             + kv_head * k_head_stride
-            + dims[None, :] * k_dim_stride,
-            mask=valid_tokens[:, None] & (dims[None, :] < HEAD_DIM),
-            other=0,
-        ).to(tl.float32)
+            + dims[None, :] * k_dim_stride
+        )
+        if HAS_SCALE:
+            # An integer fill value cannot be cast to fp8: zero masked lanes after widening.
+            scale_offsets = (
+                blocks * s_block_stride + offsets * s_token_stride + kv_head * s_head_stride
+            )
+            keys = tl.where(kv_mask, tl.load(key_pointers, mask=kv_mask).to(tl.float32), 0.0)
+            keys = keys * tl.load(KS + scale_offsets, mask=valid_tokens, other=0.0)[:, None]
+        else:
+            keys = tl.load(key_pointers, mask=kv_mask, other=0).to(tl.float32)
         scores = tl.sum(keys * query[None, :], axis=1) * SCALE
         scores = tl.where(valid_tokens, scores, -float("inf"))
         next_maximum = tl.maximum(maximum, tl.max(scores, axis=0))
         correction = tl.exp(maximum - next_maximum)
         weights = tl.exp(scores - next_maximum)
-        values = tl.load(
+        value_pointers = (
             V
             + blocks[:, None] * v_block_stride
             + offsets[:, None] * v_token_stride
             + kv_head * v_head_stride
-            + dims[None, :] * v_dim_stride,
-            mask=valid_tokens[:, None] & (dims[None, :] < HEAD_DIM),
-            other=0,
-        ).to(tl.float32)
+            + dims[None, :] * v_dim_stride
+        )
+        if HAS_SCALE:
+            values = tl.where(kv_mask, tl.load(value_pointers, mask=kv_mask).to(tl.float32), 0.0)
+            values = values * tl.load(VS + scale_offsets, mask=valid_tokens, other=0.0)[:, None]
+        else:
+            values = tl.load(value_pointers, mask=kv_mask, other=0).to(tl.float32)
         accumulator = accumulator * correction + tl.sum(weights[:, None] * values, axis=0)
         normalizer = normalizer * correction + tl.sum(weights, axis=0)
         maximum = next_maximum
@@ -97,11 +115,18 @@ def _paged_attention_kernel(
     )
 
 
-def paged_attention(q, key_cache, value_cache, block_tables, context_lengths):
+def paged_attention(
+    q, key_cache, value_cache, block_tables, context_lengths, key_scale=None, value_scale=None
+):
     """Launch over [batch row, query head]; inputs are validated by the manager."""
     output = torch.empty_like(q)
     if q.shape[0] == 0:
         return output
+    has_scale = key_scale is not None
+    # Unused pointer arguments when the pool is not quantized.
+    key_scale = key_scale if has_scale else context_lengths
+    value_scale = value_scale if has_scale else context_lengths
+    scale_strides = key_scale.stride() if has_scale else (0, 0, 0)
     _paged_attention_kernel[(q.shape[0], q.shape[1])](
         q,
         key_cache,
@@ -109,11 +134,15 @@ def paged_attention(q, key_cache, value_cache, block_tables, context_lengths):
         block_tables,
         context_lengths,
         output,
+        key_scale,
+        value_scale,
         *q.stride(),
         *key_cache.stride(),
         *value_cache.stride(),
         block_tables.stride(0),
         *output.stride(),
+        *scale_strides,
+        HAS_SCALE=has_scale,
         HEAD_DIM=q.shape[-1],
         HEAD_GROUPS=q.shape[1] // key_cache.shape[2],
         PAGE_SIZE=key_cache.shape[1],
