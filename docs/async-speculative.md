@@ -139,17 +139,12 @@ cases cover per-depth KV, ragged limits, rejection/bonus, two rounds before
 collection, cancellation/EOS/ID reuse, HTTP delivery and failure isolation,
 graph-cache fallback, output retention and failed warmup cleanup.
 
-Raw trials, all token IDs, source/model hashes, logs, scripts and traces are
-retained locally at `/home/leo/task-artifacts/async-speculative-graphs-20261015/`;
-this is a provenance location, not a public download URL. In that retained
-experiment directory, `measure-151.py --model "$RLT_MODEL_PATH"` reproduces the
-60-trial matrix; `round_profile.py --mode spec_graph --profile full` reproduces
-the bounded full window (and reads `model-path.txt`). Run from the repository
-with its environment and `PYTHONPATH` set, inside a one-GPU Slurm allocation.
-These diagnostic scripts are not supported repository benchmark entry points.
+Raw trials, token IDs, source/model hashes, logs and traces were retained for
+validation. The diagnostic measurement scripts and raw artifacts are not included
+in this repository. The configuration and methodology above describe the measured
+workload; the supported CLI example below exercises the single-request path.
 
-For a supported single-request reproduction, set `RLT_MODEL_PATH` to that local
-checkpoint and run inside an allocation:
+Set `RLT_MODEL_PATH` to the Ouro-1.4B checkpoint and run inside a GPU allocation:
 
 ```bash
 vllm-rlt --model "$RLT_MODEL_PATH" --device cuda --dtype bfloat16 \
@@ -310,22 +305,16 @@ At concurrency 256 the speculative counters record 16,128 committed tokens,
 target readout. This is a concrete cost that remains after dispatch reduction;
 the data does not by itself establish the unique bottleneck at concurrency 256.
 
-Raw measurements, all token IDs, counters, environment/source identities,
-profile metadata, CPU/GPU stacks, memory timelines and diagnostic scripts are
-retained under the earlier experiment directory in `high-concurrency/`. Jobs
-160 and 166 produced the 150 timing observations; 167/168/169 produced profiles,
-isolated memory and HTTP results; 170 retained native shared-prefix logits.
-Job 161 is the preserved aborted setup attempt; cancelled dependent jobs
-163–165 did not run and are not included as successful evidence.
+Raw measurements, token IDs, counters, environment/source identities, profile
+metadata, CPU/GPU stacks and memory timelines were retained for validation.
+The diagnostic scripts and raw artifacts are not included in this repository.
+Jobs 160 and 166 produced the 150 timing observations; 167/168/169 produced
+profiles, isolated memory and HTTP results; 170 recorded native shared-prefix
+logits. Job 161 was an aborted setup attempt; cancelled dependent jobs 163–165
+did not run and are not included as successful evidence.
 
-From the repository with `PYTHONPATH` set, inside a GPU allocation, use the
-retained `measure-high.py --model "$RLT_MODEL_PATH"` for the primary matrix and
-`measure-extension.py --model "$RLT_MODEL_PATH"` for the corrected 128/256 cases.
-`profile-high.py --mode spec_graph --profile full`, `memory-high.py` and
-`http-high.py` reproduce the corresponding diagnostics. The latter scripts read
-the retained parent `model-path.txt`; these remain task-local diagnostic entry
-points, not a new repository benchmark interface. Runtime source hashes remain
-identical to `08d3f99`; this follow-up changes report content and the plot only.
+Runtime source hashes remain identical to `08d3f99`; this follow-up changes
+report content and the plot only.
 
 ## Execution and ownership
 
