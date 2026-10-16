@@ -12,12 +12,39 @@ from vllm_rlt.config import cuda_graph_rows
 logger = logging.getLogger(__name__)
 
 
-def graph_capture_sizes(execution):
-    """Fixed geometric row buckets, bounded by both user capacity settings."""
-    sizes = [cuda_graph_rows(execution)]
-    while sizes[-1] > 1 and len(sizes) < execution.cuda_graph_max_graphs:
-        sizes.append((sizes[-1] + 1) // 2)
-    return tuple(reversed(sizes))
+def graph_capture_sizes(execution, preferred=()):
+    """Row buckets covering the row limit within cuda_graph_max_graphs entries.
+
+    The default is a halving ladder from the row limit. Preferred sizes (e.g.
+    full-batch draft and verification rows, which bound every round) are kept
+    exactly, plus a halving ladder below the smallest, so steady full-batch
+    rounds replay without padding; if that set exceeds the entry limit, the
+    default is used. Rows above the largest bucket run eager.
+    """
+    limit = cuda_graph_rows(execution)
+
+    def ladder(top):
+        sizes = [top]
+        while sizes[-1] > 1 and len(sizes) < execution.cuda_graph_max_graphs:
+            sizes.append((sizes[-1] + 1) // 2)
+        return sizes
+
+    preferred = {min(size, limit) for size in preferred if size > 0}
+    if not preferred:
+        return tuple(reversed(ladder(limit)))
+    sizes = preferred | set(ladder(min(preferred)))
+    if len(sizes) > execution.cuda_graph_max_graphs or 1 not in sizes:
+        return tuple(reversed(ladder(limit)))
+    return tuple(sorted(sizes))
+
+
+def speculative_capture_sizes(execution, scheduler, speculative):
+    """Buckets for async speculative rounds of max_num_seqs requests drafting 0..K."""
+    rows = [
+        min(scheduler.max_num_seqs * (drafts + 1), scheduler.max_num_batched_tokens)
+        for drafts in range(speculative.num_speculative_tokens + 1)
+    ]
+    return graph_capture_sizes(execution, rows)
 
 
 def _bucket_size(sizes, count):
@@ -124,8 +151,9 @@ def _copy_graph_inputs(entry, hidden, batch, *, count):
         metadata.position_ids[count:].zero_()
         metadata.write_blocks[count:].zero_()
         metadata.write_offsets[count:].zero_()
+        # Padding has zero context, so attention never reads its (stale) table
+        # rows, and active rows read only pages they cover; no table reset.
         metadata.context_lengths[count:].zero_()
-        metadata.block_tables.zero_()
     entry.hidden[:count].copy_(hidden[:count])
     metadata.position_ids[:count].copy_(batch.position_ids[:count])
     metadata.write_blocks[:count].copy_(batch.write_blocks[:count])
@@ -234,9 +262,9 @@ class DeviceRecurrentGraphs(RecurrentGraphs):
     only tensor metadata, never request allocations or CPU written-position state.
     """
 
-    def __init__(self, model, cache, execution, compute_gate):
+    def __init__(self, model, cache, execution, compute_gate, capture_sizes=None):
         super().__init__(model, cache, execution, compute_gate)
-        self.capture_sizes = graph_capture_sizes(execution)
+        self.capture_sizes = capture_sizes or graph_capture_sizes(execution)
 
     @torch.inference_mode()
     def prepare(self):
@@ -259,7 +287,7 @@ class DeviceRecurrentGraphs(RecurrentGraphs):
     def run(self, hidden, batch):
         self.cache._require_live_batch(batch)
         count = len(batch.position_ids)
-        if not count or count > cuda_graph_rows(self.execution):
+        if not count or count > self.capture_sizes[-1]:
             self.fallbacks += 1
             return self.model.recurrent_prepared(
                 hidden, batch, self.cache, compute_gate=self.compute_gate
@@ -271,12 +299,12 @@ class DeviceRecurrentGraphs(RecurrentGraphs):
 class CodaGraphs:
     """Capture decode coda and its head; commit boundary KV outside capture."""
 
-    def __init__(self, model, execution, cache=None, *, bucketed=False):
+    def __init__(self, model, execution, cache=None, *, bucketed=False, capture_sizes=None):
         self.model, self.execution = model, execution
         self.cache = cache
         if bucketed and cache is not None:
             raise ValueError("bucketed coda graphs require a row-independent Ouro head")
-        self.capture_sizes = graph_capture_sizes(execution) if bucketed else None
+        self.capture_sizes = (capture_sizes or graph_capture_sizes(execution)) if bucketed else None
         self.entries = {}
         self.pool = torch.cuda.graph_pool_handle()
         self.stream = torch.cuda.Stream(device=next(model.parameters()).device)
@@ -309,7 +337,8 @@ class CodaGraphs:
                 for layer in self.model.coda_kv_layers:
                     self.cache._require_prefix(allocation, layer, depth, position)
         capacity = _bucket_size(self.capture_sizes, count) if self.capture_sizes else count
-        if not count or count > cuda_graph_rows(self.execution) or _cache_full(self, capacity):
+        limit = self.capture_sizes[-1] if self.capture_sizes else cuda_graph_rows(self.execution)
+        if not count or count > limit or _cache_full(self, capacity):
             self.fallbacks += 1
             return (
                 self.model.coda_prepared(hidden, batch, self.cache)

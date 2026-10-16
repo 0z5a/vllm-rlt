@@ -136,9 +136,16 @@ def test_async_graph_memory_accounts_for_every_precaptured_bucket():
     execution = ExecutionConfig(cuda_graphs=True, async_scheduling=True)
     # Even tiny admitted work has the configured capture capacity prepared.
     scheduler = SchedulerConfig(max_num_seqs=1, max_num_batched_tokens=1)
+    from vllm_rlt.worker.cuda_graph import speculative_capture_sizes
+
     reserve = graph_memory_reserve(model, scheduler, execution, SpeculativeConfig(2))
-    retained = 255 * model.config.vocab_size * next(model.parameters()).element_size()
+    rows = sum(speculative_capture_sizes(execution, scheduler, SpeculativeConfig(2)))
+    retained = rows * model.config.vocab_size * next(model.parameters()).element_size()
     assert reserve == 3 * execution.cuda_graph_memory_reserve_bytes + retained
+    # Without preferred rows the full halving ladder from the limit is prepared.
+    wide = SchedulerConfig(max_num_seqs=1024, max_num_batched_tokens=1 << 16)
+    sizes = speculative_capture_sizes(execution, wide, SpeculativeConfig(2))
+    assert max(sizes) == 128 and min(sizes) == 1
 
 
 def test_unset_graph_rows_cover_async_verification_and_keep_explicit_limits():
@@ -181,3 +188,18 @@ def test_unset_graph_rows_cover_async_verification_and_keep_explicit_limits():
     )
     with pytest.raises(ValueError, match="positive"):
         ExecutionConfig(cuda_graph_max_batch_size=0)
+
+
+def test_speculative_buckets_keep_full_batch_rows_exact_within_entry_limit():
+    from vllm_rlt import SpeculativeConfig
+    from vllm_rlt.worker.cuda_graph import graph_capture_sizes, speculative_capture_sizes
+
+    scheduler = SchedulerConfig(max_num_seqs=256, max_num_batched_tokens=4096)
+    rows = ExecutionConfig(async_scheduling=True, cuda_graphs=True, cuda_graph_max_batch_size=768)
+    sizes = speculative_capture_sizes(rows, scheduler, SpeculativeConfig(2))
+    assert {256, 512, 768} <= set(sizes) and min(sizes) == 1 and len(sizes) <= 16
+    # Too many preferred sizes for the entry limit: the default halving ladder.
+    few = ExecutionConfig(cuda_graph_max_batch_size=17, cuda_graph_max_graphs=3)
+    small = SchedulerConfig(max_num_seqs=4, max_num_batched_tokens=16)
+    assert speculative_capture_sizes(few, small, SpeculativeConfig(3)) == graph_capture_sizes(few)
+    assert graph_capture_sizes(few) == (5, 9, 17)
