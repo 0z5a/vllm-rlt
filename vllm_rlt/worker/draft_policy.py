@@ -7,15 +7,16 @@ full-depth single-token step with native-equivalent compute, is cheaper per
 token. The policy picks K' in [0, K] maximizing expected committed tokens per
 predicted round time:
 
-    tokens(K') = n * sum(alpha**i for i in 0..K')
+    tokens(K') = n * (1 + sum over j <= K' of prod(p_i for i < j))
     time(K')   = theta . features(n, contexts, K')
 
 theta is fitted online by recursive least squares from compute-stream events
 around every submitted round (both events have completed when the round is
-collected), with a prior from the startup graph-bucket replay timings. alpha is a
-per-draft acceptance probability with a Beta prior, updated from collected
-rounds. A deterministic exploration round (K' >= 1) every `explore_every`
-rounds keeps both estimates current when the policy settles on K'=0.
+collected), with a prior from the startup graph-bucket replay timings. p_i is
+the acceptance probability of draft position i given an accepted prefix, with
+a Beta prior, updated from collected rounds. A deterministic exploration
+round (K' >= 1) every `explore_every` rounds keeps both estimates current when
+the policy settles on K'=0.
 """
 
 import math
@@ -76,7 +77,9 @@ class AdaptiveDraftPolicy:
         self.covariance = [
             [(100.0 if r == c else 0.0) for c in range(NUM_FEATURES)] for r in range(NUM_FEATURES)
         ]
-        self.accepted, self.rejected = alpha_prior
+        # Per draft position: (accepted, stopped) counts with a Beta prior. Later
+        # drafts condition on longer accepted prefixes and are accepted less often.
+        self.position_counts = [list(alpha_prior) for _ in range(max_drafts)]
         self.rounds = 0
         self.choices = [0] * (max_drafts + 1)
         self.observed = 0
@@ -91,9 +94,21 @@ class AdaptiveDraftPolicy:
         ctx = (d + v) * (width * starts + n * width * (width + 1) / 2)
         return [float(d * width + v), core_rows, coda_rows, ctx / 1000.0, 1.0]
 
+    def acceptance(self, position):
+        accepted, stopped = self.position_counts[position]
+        return accepted / (accepted + stopped)
+
     @property
     def alpha(self):
-        return self.accepted / (self.accepted + self.rejected)
+        return self.acceptance(0)
+
+    def expected_tokens(self, drafts):
+        """1 + sum over j <= drafts of P(the first j drafts are all accepted)."""
+        total, prefix = 1.0, 1.0
+        for position in range(drafts):
+            prefix *= self.acceptance(position)
+            total += prefix
+        return total
 
     def predict_ms(self, features):
         return max(1e-3, sum(t * x for t, x in zip(self.theta, features)))
@@ -109,11 +124,11 @@ class AdaptiveDraftPolicy:
         if self.explore_every and cap and self.rounds % self.explore_every == 0:
             drafts = 1 + (self.rounds // self.explore_every) % cap
         else:
-            alpha, best, drafts = self.alpha, -1.0, 0
+            best, drafts = -1.0, 0
             starts = float(sum(token_starts))
             for k in range(cap + 1):
                 features = self.uniform_features(n, starts, k)
-                expected = sum(alpha**i for i in range(k + 1))
+                expected = self.expected_tokens(k)
                 rate = n * expected / self.predict_ms(features)
                 if rate > best * (1 + 1e-9):
                     best, drafts = rate, k
@@ -121,12 +136,11 @@ class AdaptiveDraftPolicy:
         return drafts
 
     def observe_acceptance(self, drafted, accepted):
-        """Truncated-geometric MLE update: each accepted draft is a success; a stop is a failure."""
-        if drafted <= 0:
-            return
-        self.accepted += accepted
-        if accepted < drafted:
-            self.rejected += 1
+        """Drafts before the first rejection were accepted; the rejected one stopped."""
+        for position in range(min(accepted, len(self.position_counts))):
+            self.position_counts[position][0] += 1
+        if accepted < drafted and accepted < len(self.position_counts):
+            self.position_counts[accepted][1] += 1
 
     def observe_time(self, features, elapsed_ms):
         """Recursive least squares with exponential forgetting."""
@@ -149,6 +163,7 @@ class AdaptiveDraftPolicy:
     def summary(self):
         return dict(
             alpha=self.alpha,
+            acceptance=[self.acceptance(j) for j in range(self.max_drafts)],
             theta=list(self.theta),
             choices=list(self.choices),
             observed_rounds=self.observed,

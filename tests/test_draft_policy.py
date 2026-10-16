@@ -74,3 +74,14 @@ def test_speculative_config_validates_draft_knobs():
     with pytest.raises(ValueError, match="draft_policy"):
         SpeculativeConfig(2, draft_policy="greedy")
     assert SpeculativeConfig(2, draft_tokens_override=0).draft_tokens_override == 0
+
+
+def test_per_position_acceptance_shapes_expected_tokens():
+    p = policy([1.0, 0, 0, 0, 0])
+    # Position 0 is always accepted, position 1 never: deeper drafts stop paying.
+    for _ in range(500):
+        p.observe_acceptance(4, 1)
+    assert p.acceptance(0) > 0.99 and p.acceptance(1) < 0.01
+    assert p.expected_tokens(1) == pytest.approx(2.0, abs=0.02)
+    assert p.expected_tokens(4) == pytest.approx(p.expected_tokens(1), abs=0.03)
+    assert p.choose([0] * 64) == 1
