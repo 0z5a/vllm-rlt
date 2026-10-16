@@ -1,43 +1,43 @@
 flowchart TB
-    host["API / 部署 Host / PD Coordinator<br/>请求路由 · 进程管理 · 控制协议"]
-    subgraph owner["部署与资源边界 · Stage A 的 owner 进程"]
+    host["API / Deployment host / PD Coordinator<br/>Request routing · Process management · Control protocol"]
+    subgraph owner["Deployment and resource boundary · Stage A owner process"]
       direction TB
-      config["StageEngine<br/>role → 工作能力与调度策略"]
-      subgraph control["请求与调度"]
+      config["StageEngine<br/>role → Capabilities and scheduling policy"]
+      subgraph control["Requests and scheduling"]
         direction LR
-        req["Request registry<br/>本地请求与逻辑进度"]
-        sched["Scheduler<br/>PromptOnly / refill / mixed / 投机策略<br/>就绪检查 · token 预算 · loop 调度"]
+        req["Request registry<br/>Local requests and logical progress"]
+        sched["Scheduler<br/>PromptOnly / refill / mixed / speculation<br/>Readiness · Token budget · Loop scheduling"]
         req <--> sched
       end
-      subgraph execution["统一执行 · 同一设备内"]
+      subgraph execution["Unified execution · Within one device"]
         direction TB
-        exe["Executor<br/>唯一执行入口"]
-        runner["ModelRunner<br/>metadata · buffer · event<br/>可选多流：core / boundary / copy"]
-        spec["投机控制器<br/>本地 draft / verify / acceptance"]
+        exe["Executor<br/>Single submission entry point"]
+        runner["ModelRunner<br/>metadata · buffer · event<br/>Optional streams: core / boundary / copy / readback"]
+        spec["Speculative controller<br/>Local draft / verify / acceptance"]
         forward["ExecutionRuntime.forward<br/>PRELUDE · RECURRENT · CODA"]
-        fast["保留物理执行优化<br/>packed prefill · static decode · CUDA Graph"]
+        fast["Preserved execution optimizations<br/>packed prefill · static decode · CUDA Graph"]
         exe --> runner & spec
         runner & spec --> forward
         forward --> fast
       end
-      kv["KVCacheManager<br/>分配 · 有效范围 · transfer lease"]
-      conn["Connector<br/>本地 RequestTransfer / staging slot owner<br/>reserve · progress · cancel · commit · ack"]
+      kv["KVCacheManager<br/>Allocation · Valid ranges · Transfer lease"]
+      conn["Connector<br/>Local RequestTransfer / Staging slot owner<br/>reserve · progress · cancel · commit · ack"]
       config --> req
-      sched -->|Request 引用与执行快照| exe
-      sched -.->|容量与有效性| kv
-      runner -.->|设备读写与资源绑定| kv
-      conn -.->|背压与就绪反馈| sched
-      config -->|提交范围 + completion event| conn
-      conn -->|申请激活 / 暂停 / 释放计算状态 / 释放 lease| config
-      transport["Transport · NIXL<br/>注册 · WRITE · 完成通知"]
+      sched -->|Request references and execution snapshots| exe
+      sched -.->|Capacity and validity| kv
+      runner -.->|Device access and resource binding| kv
+      conn -.->|Backpressure and readiness| sched
+      config -->|Submitted ranges + Completion event| conn
+      conn -->|Activate / Suspend / Release compute state / Release lease| config
+      transport["Transport · NIXL<br/>Registration · WRITE · Completion notifications"]
       conn --> transport
     end
-    subgraph peer["另一个部署边界 · Stage B 的 owner 进程"]
-      remote["同一个 StageEngine 实现<br/>独立 Request / Scheduler / KV / Executor"]
+    subgraph peer["Separate deployment boundary · Stage B owner process"]
+      remote["Same StageEngine implementation<br/>Independent Request / Scheduler / KV / Executor"]
     end
     host --> config
-    host -.->|部署与控制| remote
-    transport <-->|跨部署边界：KV / hidden / 完成通知| remote
+    host -.->|Deployment and control| remote
+    transport <-->|Across stages: KV / Hidden / Completion notifications| remote
     classDef api fill:#e2e8f0,stroke:#64748b,color:#0f172a;
     classDef engine fill:#dbeafe,stroke:#2563eb,color:#172554;
     classDef compute fill:#dcfce7,stroke:#16a34a,color:#14532d;

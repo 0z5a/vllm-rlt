@@ -59,7 +59,7 @@ For a task-assigned GPU, set `CUDA_VISIBLE_DEVICES` and add `--device cuda --att
 
 ## Execution plans and mixed scheduling
 
-See the [Chinese architecture and flow diagrams](unified_execution_zh.md) for
+See the [architecture and flow diagrams](unified_execution.md) for
 terminal-readable versions of the unified execution path.
 
 A deployment stage owns one `StageEngine`, scheduler, Request registry, KV manager
@@ -274,7 +274,7 @@ env CUDA_VISIBLE_DEVICES=0 python -m vllm_rlt.entrypoints.serve \
 ```bash
 curl -sS http://127.0.0.1:8000/v1/completions \
   -H 'Content-Type: application/json' \
-  -d '{"model":"ouro","prompt":"请解释一下什么是矩阵乘法。","max_tokens":512,"temperature":0,"min_loops":2,"max_loops":4,"exit_threshold":0.9,"stream":false}' \
+  -d '{"model":"ouro","prompt":"Explain matrix multiplication.","max_tokens":512,"temperature":0,"min_loops":2,"max_loops":4,"exit_threshold":0.9,"stream":false}' \
   | python -c 'import sys,json; r=json.load(sys.stdin); print(r["choices"][0]["text"] if "choices" in r else json.dumps(r,ensure_ascii=False))'
 ```
 
