@@ -9,7 +9,11 @@ from vllm_rlt.config import ExecutionConfig
 from vllm_rlt.core.kv_cache_manager import _Allocation
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Request
-from vllm_rlt.worker.cuda_graph import CodaGraphs, DeviceRecurrentGraphs
+from vllm_rlt.worker.cuda_graph import (
+    CodaGraphs,
+    DeviceRecurrentGraphs,
+    speculative_capture_sizes,
+)
 from vllm_rlt.worker.sampler import RngRegistry
 from vllm_rlt.worker.speculative import SpeculativeResult, SpeculativeRunner
 
@@ -117,11 +121,16 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
     ):
         super().__init__(model, cache, config, ExecutionConfig(), rng=rng)
         execution = execution or ExecutionConfig()
+        sizes = speculative_capture_sizes(execution, scheduler, config)
         self.graphs = (
-            DeviceRecurrentGraphs(model, cache, execution, False) if execution.cuda_graphs else None
+            DeviceRecurrentGraphs(model, cache, execution, False, capture_sizes=sizes)
+            if execution.cuda_graphs
+            else None
         )
         self.coda_graphs = (
-            CodaGraphs(model, execution, bucketed=True) if execution.cuda_graphs else None
+            CodaGraphs(model, execution, bucketed=True, capture_sizes=sizes)
+            if execution.cuda_graphs
+            else None
         )
         if self.graphs is not None:
             self.graphs.prepare()
