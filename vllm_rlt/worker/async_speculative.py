@@ -52,6 +52,8 @@ class SpeculativeRoundTicket:
     rows: int
     cached: tuple[list[SpeculativeResult], list[int]] | None = None
     retired: bool = False
+    # (start event, end event, round features) when round timing is enabled.
+    timing: tuple | None = None
 
     def ready(self):
         assert self.buffer.copy_done is not None
@@ -134,6 +136,8 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         self.submitted_before_collect = 0
         self.discarded_rounds = 0
         self.readback_waits = 0
+        # Set by the engine for the adaptive draft policy: callable(items) -> features.
+        self.round_features = None
 
     def _state(self, request, buffer):
         rid = request.request_id
@@ -285,9 +289,17 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             if any(s.submitted > s.delivered for s in states):
                 self.submitted_before_collect += 1
             tables.copy_(host_tables, non_blocking=True)
+            timing = None
+            if self.round_features is not None:
+                start = torch.cuda.Event(enable_timing=True)
+                start.record(self.compute_stream)
             starts, candidates, hidden_rows = self._draft(items, states, tables, allocations)
             target = self._verify(items, starts, hidden_rows, tables, allocations)
             count = self._accept_and_update_state(items, states, starts, candidates, target, buffer)
+            if self.round_features is not None:
+                end = torch.cuda.Event(enable_timing=True)
+                end.record(self.compute_stream)
+                timing = (start, end, self.round_features(items))
             buffer.compute_done = torch.cuda.Event()
             buffer.compute_done.record(self.compute_stream)
             for state in states:
@@ -302,7 +314,7 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         self.stats.rounds += len(items)
         self.stats.drafted_tokens += sum(item.token_count - 1 for item in items)
         self.stats.verified_rows += count
-        return SpeculativeRoundTicket(batch, buffer, states, rounds, count)
+        return SpeculativeRoundTicket(batch, buffer, states, rounds, count, timing=timing)
 
     def request_ready(self, request):
         state = self.states.get(request.request_id)

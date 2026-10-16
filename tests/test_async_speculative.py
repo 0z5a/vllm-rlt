@@ -34,6 +34,7 @@ def make_engine(
     max_graph_rows=128,
     max_graphs=16,
     max_num_seqs=4,
+    spec_kwargs=None,
 ):
     return LLMEngine(
         model,
@@ -54,7 +55,7 @@ def make_engine(
             cuda_graph_max_batch_size=max_graph_rows,
             cuda_graph_max_graphs=max_graphs,
         ),
-        speculative_config=SpeculativeConfig(k),
+        speculative_config=SpeculativeConfig(k, **(spec_kwargs or {})),
     )
 
 
@@ -802,5 +803,68 @@ def test_bucketed_ragged_arrivals_match_eager_tokens(k, dtype):
             for cache in (engine.speculative_runner.graphs, engine.speculative_runner.coda_graphs):
                 assert cache.captures == len(cache.capture_sizes) == 4
                 assert cache.replays > 0 and cache.fallbacks == 0
+        engine.close()
+    assert results[0] == results[1]
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("override", [0, 1])
+def test_forced_draft_count_matches_eager_and_fixed_k(override):
+    model = tiny("cuda")
+    results = []
+    for graphs, kwargs in (
+        (False, {}),
+        (False, {"draft_tokens_override": override}),
+        (True, {"draft_tokens_override": override}),
+    ):
+        engine = make_engine(
+            model,
+            k=3,
+            graphs=graphs,
+            max_graph_rows=None,
+            max_num_seqs=8,
+            budget=32,
+            spec_kwargs=kwargs,
+        )
+        for i in range(8):
+            engine.add_request(
+                str(i), [2 + i, 3, 4], SamplingParams(max_tokens=11, ignore_eos=True)
+            )
+        results.append({rid: o.token_ids for rid, o in drain(engine).items()})
+        if kwargs:
+            assert (
+                engine.speculative_runner.stats.drafted_tokens
+                <= override * engine.speculative_runner.stats.rounds
+            )
+        engine.close()
+    # FP32 greedy speculation commits the target model's tokens for every K.
+    assert results[0] == results[1] == results[2]
+
+
+@pytest.mark.gpu
+def test_adaptive_draft_policy_learns_and_preserves_fp32_greedy_tokens():
+    model = tiny("cuda")
+    results, policy = [], None
+    for kwargs in ({}, {"draft_policy": "adaptive"}):
+        engine = make_engine(
+            model,
+            k=3,
+            graphs=True,
+            max_graph_rows=None,
+            max_num_seqs=8,
+            budget=32,
+            spec_kwargs=kwargs,
+        )
+        for i in range(8):
+            engine.add_request(
+                str(i), [2 + i, 3, 4], SamplingParams(max_tokens=24, ignore_eos=True)
+            )
+        results.append({rid: o.token_ids for rid, o in drain(engine).items()})
+        if kwargs:
+            policy = engine.draft_policy
+            summary = policy.summary()
+            assert summary["observed_rounds"] > 0
+            assert sum(summary["choices"]) == policy.rounds
+            assert all(t == t for t in summary["theta"])  # finite fit
         engine.close()
     assert results[0] == results[1]

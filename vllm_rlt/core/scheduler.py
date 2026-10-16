@@ -67,6 +67,10 @@ class Scheduler:
         # device state and mutate queues; they are operations, not predicates.
         self.preempt_callback = None
         self.resume_callback = None
+        # Optional callable (eligible requests' token starts) -> drafts this round.
+        # Bound by the async speculative engine; None keeps the configured K.
+        self.draft_tokens = None
+        self._round_drafts = speculative_config.num_speculative_tokens if speculative_config else 0
         policy_cls = NoRefillPolicy if config.mode == "no_refill" else RefillPolicy
         self.policy = (SpeculativePolicy if speculative_config else policy_cls)(config)
 
@@ -300,7 +304,7 @@ class Scheduler:
             # K candidates plus one bonus distribution. At the output limit,
             # K=0 is an ordinary fixed-depth step and needs no extra KV slot.
             remaining = request.sampling_params.max_tokens - request.num_scheduled_outputs
-            count = min(self.speculative_config.num_speculative_tokens + 1, remaining, token_budget)
+            count = min(self._round_drafts + 1, remaining, token_budget)
             return ScheduledItem(request, request.position, count)
         return ScheduledItem(request)
 
@@ -342,6 +346,20 @@ class Scheduler:
         selected: set[str] = set()
         queue = self.queues[stage]
         remaining = len(queue)
+        if stage == Stage.SPECULATIVE and self.speculative_config is not None:
+            self._round_drafts = self.speculative_config.num_speculative_tokens
+            if self.draft_tokens is not None:
+                starts = []
+                for rid in queue:
+                    request = self.requests[rid]
+                    if (
+                        request.num_speculative_rounds < 2
+                        and request.num_scheduled_outputs < request.sampling_params.max_tokens
+                    ):
+                        starts.append(request.position)
+                        if len(starts) == self.config.max_num_seqs:
+                            break
+                self._round_drafts = self.draft_tokens(starts)
         while queue and token_budget and len(items) < self.config.max_num_seqs and remaining:
             remaining -= 1
             request = self.requests[queue.popleft()]
