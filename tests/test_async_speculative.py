@@ -608,6 +608,39 @@ def test_default_graph_row_limit_preserves_high_concurrency_outputs(k, concurren
 
 
 @pytest.mark.gpu
+@pytest.mark.parametrize("k,concurrency", [(2, 43), (4, 26)])
+def test_unset_graph_row_limit_covers_high_concurrency_without_fallback(k, concurrency, caplog):
+    model = tiny("cuda")
+    results = []
+    for graphs in (False, True):
+        engine = make_engine(
+            model,
+            k=k,
+            graphs=graphs,
+            max_graph_rows=None,
+            max_num_seqs=concurrency,
+            budget=concurrency * (k + 1),
+        )
+        for i in range(concurrency):
+            engine.add_request(
+                str(i),
+                [2, 3, 4],
+                SamplingParams(max_tokens=k + 4, ignore_eos=True),
+            )
+        outputs = drain(engine)
+        results.append({rid: output.token_ids for rid, output in outputs.items()})
+        if graphs:
+            assert "cannot cover" not in caplog.text
+            assert engine.execution_config.cuda_graph_max_batch_size == concurrency * (k + 1)
+            core, coda = engine.speculative_runner.graphs, engine.speculative_runner.coda_graphs
+            assert max(core.capture_sizes) == concurrency * (k + 1)
+            assert core.replays > 0 and coda.replays > 0
+            assert core.fallbacks == 0 and coda.fallbacks == 0
+        engine.close()
+    assert results[0] == results[1]
+
+
+@pytest.mark.gpu
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
 @torch.inference_mode()
 def test_bucketed_graphs_reuse_all_shapes_and_never_write_padding(dtype):

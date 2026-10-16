@@ -139,3 +139,45 @@ def test_async_graph_memory_accounts_for_every_precaptured_bucket():
     reserve = graph_memory_reserve(model, scheduler, execution, SpeculativeConfig(2))
     retained = 255 * model.config.vocab_size * next(model.parameters()).element_size()
     assert reserve == 3 * execution.cuda_graph_memory_reserve_bytes + retained
+
+
+def test_unset_graph_rows_cover_async_verification_and_keep_explicit_limits():
+    from vllm_rlt import SpeculativeConfig
+    from vllm_rlt.config import DEFAULT_CUDA_GRAPH_ROWS, resolve_cuda_graph_rows
+    from vllm_rlt.core.memory import graph_memory_reserve
+    from vllm_rlt.worker.cuda_graph import graph_capture_sizes
+
+    scheduler = SchedulerConfig(max_num_seqs=256, max_num_batched_tokens=4096)
+    unset = ExecutionConfig(async_scheduling=True, cuda_graphs=True)
+    resolved = resolve_cuda_graph_rows(unset, scheduler, SpeculativeConfig(2))
+    assert resolved.cuda_graph_max_batch_size == 768
+    assert max(graph_capture_sizes(resolved)) == 768
+    # The token budget bounds verification rows; small configs never shrink coverage.
+    budget = SchedulerConfig(max_num_seqs=256, max_num_batched_tokens=1024)
+    assert (
+        resolve_cuda_graph_rows(unset, budget, SpeculativeConfig(4)).cuda_graph_max_batch_size
+        == 1024
+    )
+    small = SchedulerConfig(max_num_seqs=8, max_num_batched_tokens=128)
+    assert (
+        resolve_cuda_graph_rows(unset, small, SpeculativeConfig(2)).cuda_graph_max_batch_size
+        == DEFAULT_CUDA_GRAPH_ROWS
+    )
+    # Native and synchronous paths keep the previous default.
+    native = resolve_cuda_graph_rows(unset, scheduler)
+    sync = resolve_cuda_graph_rows(
+        ExecutionConfig(cuda_graphs=True), scheduler, SpeculativeConfig(2)
+    )
+    assert native.cuda_graph_max_batch_size == sync.cuda_graph_max_batch_size == 128
+    explicit = ExecutionConfig(
+        async_scheduling=True, cuda_graphs=True, cuda_graph_max_batch_size=128
+    )
+    assert resolve_cuda_graph_rows(explicit, scheduler, SpeculativeConfig(2)) is explicit
+    # Memory planning reads the same resolved limit as the graph buckets.
+    model = OuroForCausalLM(tiny_ouro_config())
+    pinned = ExecutionConfig(async_scheduling=True, cuda_graphs=True, cuda_graph_max_batch_size=768)
+    assert graph_memory_reserve(model, scheduler, resolved, SpeculativeConfig(2)) == (
+        graph_memory_reserve(model, scheduler, pinned, SpeculativeConfig(2))
+    )
+    with pytest.raises(ValueError, match="positive"):
+        ExecutionConfig(cuda_graph_max_batch_size=0)

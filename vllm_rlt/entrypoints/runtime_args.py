@@ -42,7 +42,12 @@ def add_runtime_args(parser):
         action="store_true",
         help="Capture decode recurrent cores; prefill and sampling remain eager",
     )
-    parser.add_argument("--cuda-graph-max-batch-size", type=int, default=128)
+    parser.add_argument(
+        "--cuda-graph-max-batch-size",
+        type=int,
+        default=None,
+        help="Graph row limit; unset covers async speculative verification rows, else 128",
+    )
     parser.add_argument("--cuda-graph-max-graphs", type=int, default=16)
     parser.add_argument(
         "--cuda-graph-memory-reserve-bytes",

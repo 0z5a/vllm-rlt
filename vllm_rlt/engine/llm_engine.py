@@ -5,7 +5,13 @@ from typing import TYPE_CHECKING, cast
 import torch
 
 from vllm_rlt.attention import BackendCapabilities, create_backend
-from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
+from vllm_rlt.config import (
+    CacheConfig,
+    ExecutionConfig,
+    ExitConfig,
+    SchedulerConfig,
+    resolve_cuda_graph_rows,
+)
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
 from vllm_rlt.core.scheduler import Scheduler
@@ -58,6 +64,10 @@ class LLMEngine:
                 raise ValueError("Huginn speculative decoding is not yet supported")
         self.speculative_config = speculative_config
         self.async_speculative = bool(speculative_config and self.execution_config.async_scheduling)
+        # Graphs and memory planning must read the same resolved row limit.
+        self.execution_config = resolve_cuda_graph_rows(
+            self.execution_config, scheduler_config, speculative_config
+        )
         if speculative_config is not None:
             if cache_config.layout != "last_exited":
                 raise ValueError("speculative decoding requires last_exited KV")
@@ -93,12 +103,15 @@ class LLMEngine:
         if self.execution_config.cuda_graphs and parameter.device.type != "cuda":
             raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
         if self.execution_config.cuda_graphs and speculative_config is not None:
-            rows = scheduler_config.max_num_seqs * (speculative_config.num_speculative_tokens + 1)
+            rows = min(
+                scheduler_config.max_num_seqs * (speculative_config.num_speculative_tokens + 1),
+                scheduler_config.max_num_batched_tokens,
+            )
             if rows > self.execution_config.cuda_graph_max_batch_size:
                 logger.warning(
                     "CUDA Graph row limit %d cannot cover %d verification rows "
                     "(max_num_seqs=%d, K=%d); larger batches run eager. "
-                    "Raise cuda_graph_max_batch_size explicitly to expand coverage "
+                    "Raise cuda_graph_max_batch_size, or leave it unset to cover them, "
                     "and budget additional graph memory.",
                     self.execution_config.cuda_graph_max_batch_size,
                     rows,

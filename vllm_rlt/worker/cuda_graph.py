@@ -7,12 +7,14 @@ from types import SimpleNamespace
 
 import torch
 
+from vllm_rlt.config import cuda_graph_rows
+
 logger = logging.getLogger(__name__)
 
 
 def graph_capture_sizes(execution):
     """Fixed geometric row buckets, bounded by both user capacity settings."""
-    sizes = [execution.cuda_graph_max_batch_size]
+    sizes = [cuda_graph_rows(execution)]
     while sizes[-1] > 1 and len(sizes) < execution.cuda_graph_max_graphs:
         sizes.append((sizes[-1] + 1) // 2)
     return tuple(reversed(sizes))
@@ -158,7 +160,7 @@ class RecurrentGraphs:
                 context_lengths=batch.context_lengths[:count],
                 block_tables=batch.block_tables[:count],
             )
-        if count > self.execution.cuda_graph_max_batch_size or not count or _cache_full(self, key):
+        if count > cuda_graph_rows(self.execution) or not count or _cache_full(self, key):
             self.fallbacks += 1
             return self.model.recurrent_prepared(
                 hidden, batch, self.cache, compute_gate=self.compute_gate
@@ -257,7 +259,7 @@ class DeviceRecurrentGraphs(RecurrentGraphs):
     def run(self, hidden, batch):
         self.cache._require_live_batch(batch)
         count = len(batch.position_ids)
-        if not count or count > self.execution.cuda_graph_max_batch_size:
+        if not count or count > cuda_graph_rows(self.execution):
             self.fallbacks += 1
             return self.model.recurrent_prepared(
                 hidden, batch, self.cache, compute_gate=self.compute_gate
@@ -307,11 +309,7 @@ class CodaGraphs:
                 for layer in self.model.coda_kv_layers:
                     self.cache._require_prefix(allocation, layer, depth, position)
         capacity = _bucket_size(self.capture_sizes, count) if self.capture_sizes else count
-        if (
-            not count
-            or count > self.execution.cuda_graph_max_batch_size
-            or _cache_full(self, capacity)
-        ):
+        if not count or count > cuda_graph_rows(self.execution) or _cache_full(self, capacity):
             self.fallbacks += 1
             return (
                 self.model.coda_prepared(hidden, batch, self.cache)
