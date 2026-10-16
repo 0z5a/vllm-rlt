@@ -206,6 +206,13 @@ class LLMEngine:
                 multi_stream=self.execution_config.multi_stream,
                 rng=self.rng,
             )
+        self.draft_policy = None
+        if self.async_speculative and speculative_config.draft_tokens_override is not None:
+            forced = speculative_config.draft_tokens_override
+            self.scheduler.draft_tokens = lambda starts: forced
+        elif self.async_speculative and speculative_config.draft_policy == "adaptive":
+            self.draft_policy = self._make_draft_policy(scheduler_config)
+            self.scheduler.draft_tokens = self.draft_policy.choose
         self._pending_speculative = []
         self._retiring_speculative = {}
         self._exit_traces = {
@@ -222,6 +229,50 @@ class LLMEngine:
         if scheduler_config.enable_preemption:
             self.scheduler.preempt_callback = self.preemption.preempt
             self.scheduler.resume_callback = self.preemption.resume
+
+    def _make_draft_policy(self, scheduler_config):
+        from vllm_rlt.worker.cuda_graph import _bucket_size
+        from vllm_rlt.worker.draft_policy import (
+            AdaptiveDraftPolicy,
+            calibrated_prior,
+            round_features,
+            time_replays,
+        )
+
+        runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
+        spec = self.speculative_config
+        bucket, prior = None, None
+        if runner.graphs is not None:
+            sizes = runner.graphs.capture_sizes
+            limit = sizes[-1]
+
+            # Rows above the largest bucket run eager: approximately linear.
+            def bucket(rows):
+                return _bucket_size(sizes, rows) if rows <= limit else rows
+
+            with torch.cuda.device(runner.device):
+                prior = calibrated_prior(
+                    time_replays(runner.graphs),
+                    time_replays(runner.coda_graphs),
+                    spec.draft_loops,
+                    spec.target_loops,
+                )
+        policy = AdaptiveDraftPolicy(
+            spec.num_speculative_tokens,
+            spec.draft_loops,
+            spec.target_loops,
+            token_budget=scheduler_config.max_num_batched_tokens,
+            bucket=bucket,
+            prior=prior,
+        )
+        runner.round_features = lambda items: round_features(
+            [item.token_start for item in items],
+            [item.token_count for item in items],
+            spec.draft_loops,
+            spec.target_loops,
+            bucket,
+        )
+        return policy
 
     def add_request(
         self,
@@ -523,6 +574,9 @@ class LLMEngine:
         if not ticket.ready():
             runner.readback_waits += 1
         results, frontiers = ticket.collect()
+        if self.draft_policy is not None and ticket.timing is not None:
+            start, end, features = ticket.timing
+            self.draft_policy.observe_time(features, start.elapsed_time(end))
         outputs = []
         for item, state, round_id, result, frontier in zip(
             ticket.batch.items,
@@ -564,6 +618,8 @@ class LLMEngine:
                     break
             runner.stats.committed_tokens += emitted
             runner.stats.accepted_tokens += min(result.accepted_count, emitted)
+            if self.draft_policy is not None:
+                self.draft_policy.observe_acceptance(result.draft_count, result.accepted_count)
             # In particular, do NOT truncate KV here: the GPU may already be
             # writing the following round at a later actual position.
             if request.stage != Stage.FINISHED:
