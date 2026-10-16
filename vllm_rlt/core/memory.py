@@ -4,6 +4,7 @@ import math
 
 import torch
 
+from vllm_rlt.config import cuda_graph_rows
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.worker.buffers import execution_buffer_bytes
 from vllm_rlt.worker.cuda_graph import graph_capture_sizes
@@ -31,7 +32,7 @@ def graph_memory_reserve(model, scheduler, execution, speculative=None):
     if speculative is not None:
         pools += 2
         rows = min(
-            execution.cuda_graph_max_batch_size,
+            cuda_graph_rows(execution),
             scheduler.max_num_seqs * (speculative.num_speculative_tokens + 1),
             scheduler.max_num_batched_tokens,
         )
