@@ -85,3 +85,15 @@ def test_per_position_acceptance_shapes_expected_tokens():
     assert p.expected_tokens(1) == pytest.approx(2.0, abs=0.02)
     assert p.expected_tokens(4) == pytest.approx(p.expected_tokens(1), abs=0.03)
     assert p.choose([0] * 64) == 1
+
+
+def test_async_speculation_adapts_by_default_and_cli_can_pin_k():
+    import argparse
+
+    from vllm_rlt.entrypoints.runtime_args import add_runtime_args
+
+    assert SpeculativeConfig(2).draft_policy == "adaptive"
+    parser = argparse.ArgumentParser()
+    add_runtime_args(parser)
+    assert parser.parse_args([]).draft_policy == "adaptive"
+    assert parser.parse_args(["--draft-policy", "fixed"]).draft_policy == "fixed"

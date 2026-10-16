@@ -55,7 +55,10 @@ def make_engine(
             cuda_graph_max_batch_size=max_graph_rows,
             cuda_graph_max_graphs=max_graphs,
         ),
-        speculative_config=SpeculativeConfig(k, **(spec_kwargs or {})),
+        # Mechanism tests pin K drafts per round unless a test opts into a policy.
+        speculative_config=SpeculativeConfig(
+            k, **({"draft_policy": "fixed"} | (spec_kwargs or {}))
+        ),
     )
 
 
