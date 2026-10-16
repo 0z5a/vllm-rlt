@@ -149,8 +149,8 @@ def test_cuda_serving_two_completed_rounds_isolate_decode_failure(
         # Force full acceptance, so the two real queued rounds produce both
         # an intermediate snapshot and the terminal snapshot in the same tick.
         monkeypatch.setattr(
-            engine.model,
-            "coda",
+            engine.speculative_runner,
+            "_coda",
             lambda h: torch.zeros(len(h), engine.model.config.vocab_size, device=h.device),
         )
         engine.step()

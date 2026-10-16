@@ -118,7 +118,12 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         self.graphs = (
             DeviceRecurrentGraphs(model, cache, execution, False) if execution.cuda_graphs else None
         )
-        self.coda_graphs = CodaGraphs(model, execution) if execution.cuda_graphs else None
+        self.coda_graphs = (
+            CodaGraphs(model, execution, bucketed=True) if execution.cuda_graphs else None
+        )
+        if self.graphs is not None:
+            self.graphs.prepare()
+            self.coda_graphs.prepare()
         self.compute_stream = torch.cuda.Stream(device=self.device)
         self.copy_stream = (
             torch.cuda.Stream(device=self.device) if multi_stream else self.compute_stream

@@ -6,6 +6,7 @@ import torch
 
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.worker.buffers import execution_buffer_bytes
+from vllm_rlt.worker.cuda_graph import graph_capture_sizes
 
 
 def budget_blocks(available_bytes, bytes_per_block):
@@ -37,8 +38,11 @@ def graph_memory_reserve(model, scheduler, execution, speculative=None):
         entries = min(rows, execution.cuda_graph_max_graphs)
         # Each entry retains a separate full-vocabulary output, even though the
         # graph allocator pool can reuse intermediate storage between replays.
+        retained_rows = (
+            sum(graph_capture_sizes(execution)) if execution.async_scheduling else entries * rows
+        )
         retained_logits = (
-            entries * rows * model.config.vocab_size * next(model.parameters()).element_size()
+            retained_rows * model.config.vocab_size * next(model.parameters()).element_size()
         )
     return pools * execution.cuda_graph_memory_reserve_bytes + retained_logits
 

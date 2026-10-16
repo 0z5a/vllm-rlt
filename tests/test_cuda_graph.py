@@ -126,3 +126,16 @@ def test_speculative_graph_memory_budget_scales_with_pools_and_retained_outputs(
         model, replace(scheduler, max_num_batched_tokens=64), execution, SpeculativeConfig(4)
     )
     assert limited == 3 * base + logits // 12
+
+
+def test_async_graph_memory_accounts_for_every_precaptured_bucket():
+    from vllm_rlt import SpeculativeConfig
+    from vllm_rlt.core.memory import graph_memory_reserve
+
+    model = OuroForCausalLM(tiny_ouro_config())
+    execution = ExecutionConfig(cuda_graphs=True, async_scheduling=True)
+    # Even tiny admitted work has the configured capture capacity prepared.
+    scheduler = SchedulerConfig(max_num_seqs=1, max_num_batched_tokens=1)
+    reserve = graph_memory_reserve(model, scheduler, execution, SpeculativeConfig(2))
+    retained = 255 * model.config.vocab_size * next(model.parameters()).element_size()
+    assert reserve == 3 * execution.cuda_graph_memory_reserve_bytes + retained

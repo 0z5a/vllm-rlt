@@ -13,7 +13,7 @@ llm = LLM(
     device="cuda",
     attention_backend="triton",
     execution_config=ExecutionConfig(async_scheduling=True),
-    speculative_config=SpeculativeConfig(num_speculative_tokens=4),
+    speculative_config=SpeculativeConfig(num_speculative_tokens=2),
 )
 outputs = llm.generate(
     ["Explain speculative decoding."],
@@ -22,7 +22,7 @@ outputs = llm.generate(
 ```
 
 The CLI combines `--async-scheduling --attention-backend triton
---speculative-tokens 4 --draft-loops 2 --target-loops 4 --temperature 0`.
+--speculative-tokens 2 --draft-loops 2 --target-loops 4 --temperature 0`.
 Random sampling, adaptive exit, preemption and PD are rejected.
 The speculative runner owns its compute and result-copy streams. Setting
 `multi_stream=False` orders the copy on the compute stream as well; cross-round
@@ -43,30 +43,41 @@ once per round, then copied into graph-owned metadata for each core replay.
 The LM head also uses graphs; prelude, metadata construction, argmax,
 acceptance/state updates and result copies remain outside capture.
 
-Graphs are cached by actual row count. `cuda_graph_max_batch_size` bounds core
-or LM-head rows, not requests: eight requests with K=4 need 40 verification rows.
-Rows above the limit, or new shapes after `cuda_graph_max_graphs` entries, execute
-eagerly. No inactive request padding is introduced. Each graph cache has its own
-entry limit; bootstrap uses the native runner's separate core graph cache.
-With the default 128-row limit, full verification stops fitting at concurrency
-43 for K=2, or 26 for K=4. Above 128 requests even drafting cannot fit. Startup
-warns when `max_num_seqs * (K + 1)` exceeds the row limit; it does not silently
-increase the limit or memory commitment. Set the row limit explicitly if this
-coverage is needed.
+The asynchronous speculative core and Ouro LM-head use a fixed geometric set
+of row buckets. Starting at `cuda_graph_max_batch_size`, repeatedly halve
+(rounding up) until reaching one row or `cuda_graph_max_graphs` sizes. With the
+defaults, the sizes are 1, 2, 4, 8, 16, 32, 64, 128. Smaller calls replay the
+smallest fitting bucket and return only the active output rows. A lower entry
+limit coarsens this fixed set rather than admitting arbitrary shapes until full;
+for example, 17 rows with three entries gives buckets 5, 9, 17.
 
-Capture is lazy and synchronizes the device on the first use of a shape. Measure
-cold capture separately and warm the actual shapes before throughput timing.
-A full cache retains existing entries and permanently runs unseen shapes eager;
-a warning is emitted once per cache on the first such fallback. There is no
-bucketing, eviction or pre-capture. Staggered arrivals, mixed lengths and natural
-EOS can create many shapes and repeated cold-capture stalls; the burst results
-below do not qualify latency tails under that traffic.
-Repeated replay adds no host wait. Graph outputs are cloned before another
-replay can overwrite shared-pool storage. All speculative computation remains
-ordered on the compute stream, while the two round buffers retain their own
-result storage through copy completion. Collecting an older ticket still never
-rewinds the device frontier. Cancellation and partial-failure cleanup retain the
-same stream-draining and allocation-retirement protocol.
+Padding receives zero hidden states and zero context lengths. A device-resident
+active-row count guards KV scatter in the captured kernel: inactive rows do not
+load write addresses or write any KV, including during capture. Real positions,
+allocation checks, and per-depth block tables retain the same ownership. The
+Ouro head is row-independent; Huginn coda and synchronous/native core graphs
+retain their existing exact-shape behavior.
+
+All speculative buckets are warmed and captured during engine construction,
+before serving requests, with zero active core rows. No speculative capture or
+cache-capacity fallback occurs for a new row count within the limit. Startup
+capture time and memory are costs of enabling this path; coarser buckets also
+add padded GPU work. Native bootstrap still uses its existing lazy exact-shape
+cache, so this is not a claim that all engine paths avoid cold capture.
+
+`cuda_graph_max_batch_size` bounds token rows, not requests: eight requests with
+K=4 need 40 verification rows. With the default 128-row limit, full verification
+stops fitting at concurrency 43 for K=2, or 26 for K=4; above 128 requests even
+drafting cannot fit. Those over-limit calls still run eager. Startup warns when
+`max_num_seqs * (K + 1)` exceeds coverage; raise the limit explicitly and budget
+the additional capture memory if necessary.
+
+Graph outputs are sliced to active rows and cloned before another replay can
+reuse shared-pool storage. The two result buffers retain copy-completion and
+cancellation ordering. Tests cover shrinking/reusing buckets, untouched KV for
+inactive rows, and greedy token equality against eager. Padding changes GEMM
+shapes, so these tests do not establish bitwise logits or universal greedy
+invariance for every model and input.
 
 Automatic KV planning treats `cuda_graph_memory_reserve_bytes` as headroom per
 graph pool, and additionally reserves retained speculative coda logits across
@@ -81,11 +92,57 @@ peaks. Enabling graphs does not establish a throughput
 improvement; compare matched warmed eager/Graph runs and retain capture, replay
 and fallback counts from `speculative_runner.graphs` and `coda_graphs`.
 
-The measurements below were collected at runtime `08d3f99`. The review follow-up
-adds startup/cache-capacity warnings and changes automatic KV memory planning;
-it does not change replay computations or remove the full-logits clone. Their
-throughput values have not been remeasured with the new planning policy. The
-reported runs used explicit KV capacities, which bypass that policy.
+The H20 measurements below were collected at runtime `08d3f99`; the external
+H100 measurements were collected at `9eb01bb`. Both predate the bucketed path
+and its startup pre-capture policy. Their throughput values must not be presented
+as measurements of the new implementation. Compare end-to-end completion as
+well as decode/window throughput: short-output H100 bursts regress against
+native async Graph, while tested longer sequences show 1.05–1.20× gains.
+
+### Bucketed-path validation (2026-10-16)
+
+The bucketed implementation passes 165 tests with 13 FlashAttention selectors
+deselected and no skips on a two-H20 Slurm allocation (job 376). This includes
+FP32/BF16 KV sentinels during zero-active warmup/capture, shrinking bucket reuse,
+new counts after every bucket is populated, stale allocations, failure cleanup,
+K=2/4 ragged arrivals, non-default device and two live engines. With identical
+padded inputs, core outputs and logits are bitwise equal to eager computation;
+the frozen tiny-model cases also preserve unpadded eager token IDs. Full
+pre-commit (Ruff lint/format and CPU regression) passes.
+
+A separate H20 BF16 diagnostic uses Ouro-1.4B `574fa66c`, torch 2.14.1+cu130 /
+Triton 3.8.0, 32 distinct topic prompts clipped/repeated to 32–128 input tokens,
+24–44 output limits, natural EOS enabled on half, 16 concurrent slots, a
+512-token budget, 128 graph rows and 16 entries. Eight requests arrive at each
+of steps 0/12/24/36. One warm workload precedes three unprofiled observations
+per arm and K, with explicit identical KV capacity. It deliberately synchronizes
+the speculative runner at each step to fix batch composition; it is a controlled
+correctness/coverage diagnostic, **not a production-arrival latency or throughput
+qualification**. Arms ran sequentially, not interleaved.
+
+| K | Implementation | Core replay / fallback per trial | Coda replay / fallback per trial | New speculative captures per trial |
+| ---: | --- | --- | --- | ---: |
+| 2 | Exact rows (`73cfe4e`) | 150 / 136 | 55 / 52 | 0 |
+| 2 | Bucketed | 286 / 0 | 107 / 0 | 0 |
+| 4 | Exact rows (`73cfe4e`) | 254 / 80 | 104 / 35 | 0 |
+| 4 | Bucketed | 334 / 0 | 139 / 0 | 0 |
+
+The counts repeat in all three observations. **Bucketed Graph and eager with
+the same padded computation agree for 32/32 requests at K=2 and K=4 in all
+three trials. Against the original unpadded eager, only 29/32 agree at each K**;
+the differing continuations are reproduced by padded eager with graph replay
+replaced by ordinary model calls. Thus this validates replay of padded
+computation, not universal bitwise equivalence to unpadded execution. First
+unpadded-eager divergences are at output indices 10/26/35 (K=2) and 18/26/33
+(K=4). No end-to-end task-accuracy qualification is inferred from this check.
+
+A warmed complete-round ops-only/full pair for exact-row and bucketed paths
+retains shapes, CPU/GPU stacks and memory timelines. Individual CPU kernel
+submissions drop from 7,266 to 185, with Graph launches increasing from 3 to 11;
+the bucketed trace contains the masked KV scatter kernel. Full capture exports
+are nonempty. These instrumented windows diagnose cache coverage and submission,
+not unprofiled speed or an end-to-end native-relative gain. Broader asynchronous
+arrival performance and H100 testing of the bucketed implementation remain open.
 
 ### H20-3e measurements (2026-10-15)
 
@@ -103,9 +160,7 @@ after every first token and completed bootstrap GPU work, counts the remaining
 inputs, KV capacity, token budget and hardware. Each mode warms a full request;
 mode order reverses between five paired repetitions. Profiling is disabled.
 
-All measurements below use K=2, including the CLI reproduction below. The K=4
-usage example above is supported but has no real-checkpoint performance evidence
-in this report. Concurrency 1/8 fits the default 128-row verification limit.
+The original H20 measurements use K=2, including the CLI reproduction below. K=4 is supported; its separate H100 results below include end-to-end regressions. Concurrency 1/8 fits the default 128-row verification limit.
 
 | Input | Concurrency | Native async Graph tok/s | Async spec eager tok/s | Async spec Graph tok/s | Paired Graph/eager speedup |
 | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -349,6 +404,59 @@ did not run and are not included as successful evidence.
 
 Runtime source hashes remain identical to `08d3f99`; this follow-up changes
 report content and the plot only.
+
+### Supplementary H100 review measurements (2026-10-16)
+
+These results were supplied by [reviewer 0z5a](https://github.com/ThinkFlowLab/vllm-rlt/pull/127#pullrequestreview-5537696863), measured at `9eb01bb`. The reviewer confirmed applicability to `73cfe4e`: its warnings do not change replay/fallback selection, and the experiments use explicit KV sizes. They have **not** been rerun on the subsequent bucketed implementation. Raw JSON/logs are available from the reviewer on request; these are attributed external results, not a locally reproduced benchmark.
+
+Setup: one H100 per engine, torch 2.12.1 / Triton 3.7.1, Ouro-1.4B `574fa66c`, BF16, d=2/D=4, greedy Triton attention. Distinct natural-text slices replace the eight repeated H20 prompts; observed acceptance is 72–91% rather than about 93%. Each arm runs two alternating blocks (ABCD/DCBA), warmed once per exact workload and timed three times per block: six timed observations per arm, reported as medians. Native async Graph is full depth (`ouro_delayed`, threshold 1, four loops).
+
+For speculative Graph, default coverage is 128 rows; raised coverage is `(K+1)*C`. Native coverage is `max(128, C)`. In the original table below, “window” starts after all requests receive their first token and stops before any finishes. The speculative eager/default/raised columns are window throughput too. **“Total” covers submit through last finish, including prefill and the uneven completion tail.** It is not the H20 decode-to-GPU-completion window, so those absolute throughput values should not be combined.
+
+#### Lockstep bursts, input/output 64/64 (tok/s)
+
+| C / K | native window | spec eager | Graph default | Graph raised | **total: native → Graph raised** |
+|---|---:|---:|---:|---:|---:|
+| 16 / 2 | 716 | 414 | 920 | 911 | 687 → 629 (**0.92×**) |
+| 32 / 2 | 1347 | 830 | 1675 | 1675 | 1257 → 1257 (1.00×) |
+| 64 / 2 | 2419 | 1567 | 2555 | 2814 | 2103 → 1989 (**0.95×**) |
+| 128 / 2 | 3578 | 2978 | 4094 | 4295 | 2913 → 2892 (0.99×) |
+| 192 / 2 | 4649 | 3993 | **3966** | 5029 | 3477 → 3333 (**0.96×**) |
+| 256 / 2 | 5365 | 4802 | **4799** | 5670 | 3863 → 3606 (**0.93×**) |
+| 16 / 4 | 716 | 374 | 873 | 873 | 686 → 484 (**0.71×**) |
+| 64 / 4 | 2414 | 1422 | 2369 | 2572 | 2098 → 1621 (**0.77×**) |
+| 128 / 4 | 3578 | 2744 | 3822 | 3930 | 2913 → 2371 (**0.81×**) |
+| 256 / 4 | 5372 | 4166 | **4163** | 4934 | 3871 → 3075 (**0.79×**) |
+
+The original exact-row implementation wins over speculative eager in many window comparisons, but short-output end-to-end throughput is **0.92–1.00× native at K=2**, and **0.71–0.81× at K=4**. Even raised-limit lockstep trials have warmed fallbacks (core 24–148, coda 1–60 per trial) as tail shapes fill the caches. These results do not support a general latency/throughput improvement over native async Graph. K=2 is the usage example; K=4 remains supported and benchmarked here, with the regression disclosed.
+
+Longer-sequence end-to-end results, K=2:
+
+| Concurrency | Input / output | Native total tok/s | Spec Graph raised total tok/s | Graph/native |
+| ---: | --- | ---: | ---: | ---: |
+| 32 | 512 / 128 | 583 | 697 | 1.20x |
+| 64 | 512 / 128 | 784 | 827 | 1.05x |
+| 64 | 64 / 256 | 2092 | 2318 | 1.11x |
+
+DP4, C128, input/output 64/64, K=2: native 2791–2814 versus speculative Graph raised 2697–2760 tok/s per GPU, approximately 0.97×.
+
+#### Staggered arrivals: original exact-row caches
+
+320 requests at 24 requests/s, input lengths 32–1021, output lengths 16–375, about half natural EOS, `max_num_seqs=128`; warm passes. Values below are the reviewer's original ranges. TPOT uses the reviewer's reporting convention, not per-token SSE timestamps.
+
+| K | arm | tok/s | TTFT p50/p99 (s) | TPOT p50/p99 (ms) | core replays / fallbacks |
+|---|---|---:|---:|---:|---:|
+| 2 | native async Graph | 614–641 | 7.6–8.4 / 26–27 | 112–119 / 273–301 | 190–450 / 2200–2380 |
+| 2 | spec eager | 856–892 | 4.7 / 15.0–15.6 | 82–84 / 212–227 | – |
+| 2 | spec Graph, 16 graphs | 897–900 | 4.5–4.6 / 15.0–15.2 | 82 / 206–207 | 142–206 / 1736–1800 |
+| 2 | spec Graph, 64 graphs | 926–945 | 4.1–4.4 / 13.3–14.2 | 75–78 / 190–210 | 996–1080 / 854–978 |
+| 4 | spec eager | 943–983 | 3.6–4.8 / 14.8–16.7 | 82–86 / 217–257 | – |
+| 4 | spec Graph, 16 graphs | 1014–1028 | 3.5–4.1 / 14.8–15.0 | 81–82 / 209–219 | 330–410 / 1412–1492 |
+| 4 | spec Graph, 64 graphs | 1032–1040 | 3.4–3.9 / 13.9–14.6 | 78–80 / 211–213 | 762–1014 / 844–1050 |
+
+With 16 entries, 89–93% (K=2) and 77–82% (K=4) of warmed speculative core calls fall back; with 64 entries, 44–58% still fall back. Graph adds only about 1–6% over speculative eager with 16 entries. Speculation itself beats native in this workload, so that gain must not be attributed entirely to Graph replay. Native's exact-row cache also falls back on 83–93% of its core calls. These measurements motivated the fixed buckets implemented above; they are not measurements of that fix.
+
+Correctness reported by the reviewer: H100 GPU selections passed (212 tests at head, 183 at base, 16 FlashAttention cases deselected, no skips). Speculative Graph/eager token IDs agree in all lockstep conditions, including K=2/4 and longer sequences. Under ragged arrivals, agreement is 320/320 at default limits for K=2/4 and with 64 entries for K=4, but **305/320 with 64 entries at K=2**. Batch composition can vary with asynchronous event collection; this is a hypothesis for the mismatch, not a proven explanation. Speculation/native also diverges on these prompts (eager does too), so native equality in the H20 report is limited to its frozen inputs. Non-default device, interleaved two-engine and DP4 checks passed against their reference outputs.
 
 ## Execution and ownership
 
