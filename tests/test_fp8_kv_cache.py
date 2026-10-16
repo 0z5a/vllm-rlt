@@ -7,6 +7,7 @@ from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.attention import AttentionBackend, BackendCapabilities
 from vllm_rlt.core.kv_cache_manager import (
+    FP8_E4M3_MAX,
     KVCacheManager,
     dequantize_fp8,
     kv_bytes_per_block,
@@ -242,3 +243,77 @@ def test_fp8_async_and_graph_paths_match_sync_eager(mode, graphs):
         ExecutionConfig(async_scheduling=True, multi_stream=mode == "multi", cuda_graphs=graphs)
     )
     assert candidate == reference
+
+
+@pytest.mark.gpu
+def test_triton_fp8_store_matches_quantize_fp8_bitwise():
+    from vllm_rlt.kernels.triton_attention import store_fp8
+
+    torch.manual_seed(2)
+    pages, layers, block, kv_heads, head_dim, rows, layer = 12, 3, 8, 4, 128, 40, 1
+    shape = (pages, layers, block, kv_heads, head_dim)
+    codes = [torch.zeros(shape, device="cuda", dtype=torch.float8_e4m3fn) for _ in range(2)]
+    scales = [torch.ones(shape[:-1], device="cuda") for _ in range(2)]
+    slots = torch.randperm(pages * block, device="cuda")[:rows]
+    blocks, offsets = slots // block, slots % block
+    magnitudes = torch.logspace(-30, 4, rows, device="cuda").view(rows, 1, 1)
+    k = (torch.randn(rows, kv_heads, head_dim, device="cuda") * magnitudes).to(torch.bfloat16)
+    k[3] = 0  # A zero vector keeps a finite scale and zero codes.
+    # V rows strided across heads, as a slice of a wider projection would be.
+    v = torch.randn(rows, kv_heads, 2 * head_dim, device="cuda", dtype=torch.bfloat16)
+    v = v[..., :head_dim]
+    store_fp8(
+        k,
+        v,
+        *(t[:, layer] for t in codes),
+        *(t[:, layer] for t in scales),
+        blocks,
+        offsets,
+        FP8_E4M3_MAX,
+    )
+    untouched = torch.ones(shape[:-1], dtype=torch.bool, device="cuda")
+    untouched[blocks, layer, offsets] = False
+    for x, code, scale in zip((k, v), codes, scales):
+        want_codes, want_scale = quantize_fp8(x)
+        assert torch.equal(code[blocks, layer, offsets].float(), want_codes.float())
+        assert torch.equal(scale[blocks, layer, offsets], want_scale)
+        assert not code.float()[untouched].any() and bool((scale[untouched] == 1).all())
+
+
+def run_cuda_engine(model, backend, execution, traces, prompts, kv_cache_dtype="fp8_e4m3"):
+    engine = LLMEngine(
+        model,
+        cache_config=CacheConfig(num_blocks=64, block_size=16, kv_cache_dtype=kv_cache_dtype),
+        scheduler_config=SchedulerConfig(
+            max_num_seqs=3, max_num_batched_tokens=64, prefill_chunk_size=32
+        ),
+        execution_config=execution,
+        exit_config=ExitConfig("trace", depths_by_request=traces),
+        attention_backend=backend,
+    )
+    for i, prompt in enumerate(prompts):
+        params = SamplingParams(max_tokens=len(traces[str(i)]), min_loops=1, ignore_eos=True)
+        engine.add_request(str(i), prompt, params)
+    done = {}
+    while engine.has_unfinished_requests():
+        for output in engine.step():
+            if output.finished:
+                done[output.request_id] = (output.token_ids, list(output.exit_depths))
+    assert engine.cache_manager.num_used_blocks == 0
+    return done
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("graphs", [False, True])
+def test_triton_fp8_engine_matches_torch_fp8_engine(graphs):
+    # Fused quantized writes and Triton reads, through chunked prefill and decode, against
+    # the Torch backend's reference writes and reads; FP32 isolates the KV path.
+    torch.manual_seed(5)
+    model = OuroForCausalLM(tiny_ouro_config(head_dim=64)).to("cuda")
+    with torch.no_grad():
+        model.lm_head.weight.mul_(8)
+    prompts = [[2 + (7 * i + n) % 60 for i in range(n)] for n in (5, 41, 100)]
+    traces = {str(i): [4, 1, 3, 2, 4, 2, 1, 3, 2, 4, 3, 1][: 8 + 2 * i] for i in range(3)}
+    reference = run_cuda_engine(model, "torch", ExecutionConfig(), traces, prompts)
+    execution = ExecutionConfig(async_scheduling=graphs, cuda_graphs=graphs)
+    assert run_cuda_engine(model, "triton", execution, traces, prompts) == reference

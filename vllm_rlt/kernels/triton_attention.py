@@ -152,3 +152,88 @@ def paged_attention(
         num_warps=4,
     )
     return output
+
+
+@triton.jit
+def _fp8_store_kernel(
+    K,
+    V,
+    K_CODES,
+    V_CODES,
+    K_SCALES,
+    V_SCALES,
+    BLOCKS,
+    OFFSETS,
+    k_row_stride,
+    k_head_stride,
+    v_row_stride,
+    v_head_stride,
+    c_block_stride,
+    c_token_stride,
+    c_head_stride,
+    s_block_stride,
+    s_token_stride,
+    s_head_stride,
+    HEAD_DIM: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+    FP8_MAX: tl.constexpr,
+    INV_FP8_MAX: tl.constexpr,
+    TINY: tl.constexpr,
+):
+    row = tl.program_id(0)
+    head = tl.program_id(1)
+    dims = tl.arange(0, BLOCK_D)
+    valid = dims < HEAD_DIM
+    block = tl.load(BLOCKS + row).to(tl.int64)
+    offset = tl.load(OFFSETS + row).to(tl.int64)
+    codes_at = block * c_block_stride + offset * c_token_stride + head * c_head_stride + dims
+    scale_at = block * s_block_stride + offset * s_token_stride + head * s_head_stride
+    # The same float32 operations as kv_cache_manager.quantize_fp8, in the same order.
+    k = tl.load(K + row * k_row_stride + head * k_head_stride + dims, mask=valid, other=0.0)
+    k = k.to(tl.float32)
+    k_scale = tl.maximum(tl.max(tl.abs(k), axis=0) * INV_FP8_MAX, TINY)
+    k_codes = tl.minimum(tl.maximum(tl.div_rn(k, k_scale), -FP8_MAX), FP8_MAX)
+    tl.store(K_CODES + codes_at, k_codes.to(K_CODES.dtype.element_ty), mask=valid)
+    tl.store(K_SCALES + scale_at, k_scale)
+    v = tl.load(V + row * v_row_stride + head * v_head_stride + dims, mask=valid, other=0.0)
+    v = v.to(tl.float32)
+    v_scale = tl.maximum(tl.max(tl.abs(v), axis=0) * INV_FP8_MAX, TINY)
+    v_codes = tl.minimum(tl.maximum(tl.div_rn(v, v_scale), -FP8_MAX), FP8_MAX)
+    tl.store(V_CODES + codes_at, v_codes.to(V_CODES.dtype.element_ty), mask=valid)
+    tl.store(V_SCALES + scale_at, v_scale)
+
+
+def store_fp8(k, v, key_codes, value_codes, key_scale, value_scale, blocks, offsets, fp8_max):
+    """Quantize rows k, v [row, KV head, dim] and scatter codes and scales in one launch.
+
+    Row i goes to (blocks[i], offsets[i]) of one layer's code pools
+    [physical block, token, KV head, dim] and scale pools [physical block, token, KV head].
+    """
+    if k.shape[0] == 0:
+        return
+    k = k if k.stride(-1) == 1 else k.contiguous()
+    v = v if v.stride(-1) == 1 else v.contiguous()
+    if key_codes.stride() != value_codes.stride() or key_scale.stride() != value_scale.stride():
+        raise ValueError("FP8 key and value pools must share a layout")
+    _fp8_store_kernel[(k.shape[0], k.shape[1])](
+        k,
+        v,
+        key_codes,
+        value_codes,
+        key_scale,
+        value_scale,
+        blocks,
+        offsets,
+        k.stride(0),
+        k.stride(1),
+        v.stride(0),
+        v.stride(1),
+        *key_codes.stride()[:3],
+        *key_scale.stride(),
+        HEAD_DIM=k.shape[-1],
+        BLOCK_D=triton.next_power_of_2(k.shape[-1]),
+        FP8_MAX=fp8_max,
+        INV_FP8_MAX=1.0 / fp8_max,
+        TINY=torch.finfo(torch.float32).tiny,
+        num_warps=1,
+    )

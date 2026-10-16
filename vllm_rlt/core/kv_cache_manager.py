@@ -47,7 +47,9 @@ def kv_bytes_per_block(
 def quantize_fp8(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Per-vector symmetric e4m3: x [..., head_dim] -> (codes, float32 scale [...])."""
     x = x.float()
-    scale = (x.abs().amax(-1) / FP8_E4M3_MAX).clamp_min(torch.finfo(torch.float32).tiny)
+    # A reciprocal multiply, as CUDA division by a scalar does anyway: CPU, CUDA and
+    # the fused Triton writer then produce the same scale bits.
+    scale = (x.abs().amax(-1) * (1.0 / FP8_E4M3_MAX)).clamp_min(torch.finfo(torch.float32).tiny)
     codes = (x / scale.unsqueeze(-1)).clamp(-FP8_E4M3_MAX, FP8_E4M3_MAX)
     return codes.to(torch.float8_e4m3fn), scale
 
@@ -903,6 +905,22 @@ class KVCacheManager:
         if self.key_scale is None:
             self.key_cache[blocks, layer, offsets] = k
             self.value_cache[blocks, layer, offsets] = v
+            return
+        if self.backend == "triton":
+            # One fused launch instead of about 20 small kernels per layer write.
+            from vllm_rlt.kernels.triton_attention import store_fp8
+
+            store_fp8(
+                k,
+                v,
+                self.key_cache[:, layer],
+                self.value_cache[:, layer],
+                self.key_scale[:, layer],
+                self.value_scale[:, layer],
+                blocks,
+                offsets,
+                FP8_E4M3_MAX,
+            )
             return
         k_codes, k_scale = quantize_fp8(k)
         v_codes, v_scale = quantize_fp8(v)
