@@ -144,6 +144,92 @@ are nonempty. These instrumented windows diagnose cache coverage and submission,
 not unprofiled speed or an end-to-end native-relative gain. Broader asynchronous
 arrival performance and H100 testing of the bucketed implementation remain open.
 
+#### First-divergence investigation (2026-10-16)
+
+The 29/32 unpadded-eager agreement was investigated at frozen runtime
+`dfbb0f7` on one H20-3e, torch 2.14.1+cu130 / Triton 3.8.0, with the same BF16
+Ouro-1.4B checkpoint, inputs and controlled arrival/collection boundaries as
+above. Six traced generations (unpadded eager, bucketed Graph, padded eager at
+K=2/4; job 377) reproduced every frozen output exactly. Each first-divergence
+comparison below has the **same complete prompt and generated prefix**, and
+uses a verification row actually committed by acceptance, not a rejected draft
+continuation. Indices are zero-based. These are correctness diagnostics, not
+performance measurements.
+
+| K | Request | First output index | Unpadded → padded token ID | Unpadded / padded top-two gap | Max absolute logit delta | Logit RMS delta |
+| ---: | ---: | ---: | --- | --- | ---: | ---: |
+| 2 | 21 | 26 | 32 → 37 | 0.0000 / 0.1250 | 0.156250 | 0.034166 |
+| 2 | 22 | 10 | 8102 → 3982 | 0.0625 / 0.0000 | 0.125000 | 0.030789 |
+| 2 | 28 | 35 | 3159 → 4869 | 0.0000 / 0.1250 | 0.203125 | 0.045824 |
+| 4 | 15 | 33 | 314 → 2390 | 0.0000 / 0.1250 | 0.189697 | 0.036859 |
+| 4 | 21 | 26 | 32 → 37 | 0.0000 / 0.1250 | 0.125000 | 0.032840 |
+| 4 | 28 | 18 | 46816 → 27871 | 0.0625 / 0.0000 | 0.125000 | 0.023880 |
+
+For example, K=2/request 22/index 10 compares token 8102 at 16.0000 versus
+3982 at 15.9375 in unpadded eager. Padding makes both 16.0000, so `argmax`
+selects the lower token index 3982. K=4/request 15/index 33 compares 314 and
+2390 tied at 23.5000 in unpadded eager, versus 23.5000/23.6250 with padding.
+The first actual output divergence occurs at arrival-loop step 59 for K=2
+(request 22), and step 34 for K=4 (request 15). Padded Graph and padded eager
+logit vectors are bitwise equal at all six first-divergence rows. Recomputing
+only the LM head at exact/padded sizes on the **same hidden states** produces
+identical valid logits at these rows: the differing states already originate
+inside the recurrent core, rather than the head or token-ID copy.
+
+The numerical sources were isolated with identical hidden inputs and a cloned
+pre-call KV state, then reproduced without any KV cache or CUDA Graph:
+
+- **[RMSNorm FP32 reduction](https://github.com/liuyao0322/vllm-rlt/blob/dfbb0f7/vllm_rlt/layers/normalization.py#L20-L23):** the first same-state shadow difference found at
+  step 8, recurrence depth 1, is `model.layers.12.input_layernorm_2` (zero-based
+  layer/depth), for 6 valid rows padded to 8. Its 12,288 input elements and
+  their squares match bitwise. The FP32 variance differs by at most
+  `1.862645149e-9`; reciprocal RMS by `4.768371582e-7`. Sixteen normalized BF16
+  elements then differ, with maximum weighted output delta `0.0009765625`.
+  At one coordinate, normalized FP32 values `1.3554686307907104` versus
+  `1.35546875` cast to BF16 `1.3515625` versus `1.359375` across a rounding
+  boundary. Standalone RMSNorm reproduces both outputs in 20/20 repetitions.
+- **GEMM shape sensitivity remains:** changing only variance reduction to FP64
+  removes that local normalization difference, but is not a full fix: complete
+  unpadded/padded generations still agree for only 28/32 (K=2) and 30/32 (K=4),
+  and the changed precision also changes the original baseline. In this
+  diagnostic-only control, the next isolated first operator is
+  `model.layers.0.mlp.down_proj`, 36 valid rows padded to 64. All 202,752 valid
+  input elements and weights are identical; 121 of 73,728 output elements
+  differ, by at most `0.000244140625`. Standalone BF16 linear calls reproduce
+  both outputs in 20/20 repetitions. An FP64 GEMM counterfactual removes the
+  local difference. These precision controls were **not** applied to production
+  and do not establish a model-accuracy improvement.
+
+The KV and acceptance checks distinguish numerical values from storage errors:
+
+- **620 recurrent metadata checks** (job 381) compare staged hidden rows,
+  positions, block tables, write blocks/offsets and context lengths with the
+  original call arguments, including zeroed inactive rows and trailing pages.
+- **40 full-cache shadow checks** use the identical pre-call KV state and
+  padded computation, but replace the masked kernel with ordinary indexed
+  writes of only the active rows. Every key/value cache byte and active output
+  matches the real Graph path. This checks untouched storage as well as valid
+  writes; the reference never writes padded rows.
+- **1,835 request-round acceptance checks** independently compute the first
+  rejected proposal, emitted target prefix, next token and next device
+  position on CPU. All match GPU state and the compact result buffer. Final
+  delivered outputs match the reconstructed device histories, after ordinary
+  EOS/discard handling. All six first-divergence cases have identical proposal
+  IDs across arms; changed target logits correctly explain any changed accepted
+  length. For K=2/request 21, `[37, 32]` is rejected immediately against target
+  32 in unpadded eager, but both proposals are accepted when the padded target
+  starts with 37; the corresponding frontier increments are 1 and 3.
+
+Within these frozen cases, there is no evidence of wrong KV addressing,
+inactive-row writes, or a broken acceptance/frontier rule. **Valid KV values
+can differ numerically because their upstream computation differs**, which is
+not the same as overwriting another row's storage. The demonstrated causes are
+batch-shape-sensitive reductions and GEMM followed by BF16 rounding and near-tie
+greedy decisions. This explains why padding requires its own numerical scope;
+it does not promise unpadded bitwise equivalence or qualify general task
+accuracy. Fixing only the variance reduction is insufficient. Jobs 378/379 and
+382/383 retain operator-level fixtures and standalone controls.
+
 ### H20-3e measurements (2026-10-15)
 
 Runtime: `08d3f99`, based on `main@9d601ce`; one Slurm-reserved H20-3e,
