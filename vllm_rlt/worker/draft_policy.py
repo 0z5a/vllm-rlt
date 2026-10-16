@@ -101,9 +101,10 @@ class AdaptiveDraftPolicy:
     def choose(self, token_starts):
         """Drafts for a round over the eligible requests' current token starts."""
         n = len(token_starts)
-        self.rounds += 1
         if not n:
+            # No eligible request: the scheduler builds no speculative round.
             return self.max_drafts
+        self.rounds += 1
         cap = min(self.max_drafts, max(0, self.token_budget // n - 1))
         if self.explore_every and cap and self.rounds % self.explore_every == 0:
             drafts = 1 + (self.rounds // self.explore_every) % cap
