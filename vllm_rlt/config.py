@@ -170,9 +170,10 @@ class SpeculativeConfig:
     # Drafts per round when set, in [0, num_speculative_tokens]. Async rounds
     # only; 0 is a full-depth single-token step (measurement/diagnostic knob).
     draft_tokens_override: int | None = None
-    # "adaptive": async rounds draft K' in [0, K] chosen from measured round cost
-    # and acceptance (vllm_rlt.worker.draft_policy); "fixed" always drafts K.
-    draft_policy: str = "fixed"
+    # "adaptive" (default): async rounds draft K' in [0, K], with K a maximum,
+    # chosen from measured round cost and acceptance (vllm_rlt.worker.draft_policy);
+    # "fixed" always drafts K. Synchronous speculation always drafts K.
+    draft_policy: str = "adaptive"
 
     def __post_init__(self):
         for name in ("num_speculative_tokens", "draft_loops", "target_loops"):

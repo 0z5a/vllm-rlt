@@ -64,7 +64,7 @@ def prepared_engine(*, bad_second=False, first_frontier=4, retirement_ready=True
         OuroForCausalLM(tiny_ouro_config()).eval(),
         cache_config=CacheConfig(num_blocks=128, block_size=4),
         scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
-        speculative_config=SpeculativeConfig(num_speculative_tokens=2),
+        speculative_config=SpeculativeConfig(num_speculative_tokens=2, draft_policy="fixed"),
     )
     params = SamplingParams(max_tokens=6, min_loops=4, max_loops=4, ignore_eos=True)
     engine.add_request("r", [2], params)
