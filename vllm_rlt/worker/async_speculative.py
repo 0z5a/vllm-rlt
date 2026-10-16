@@ -2,7 +2,9 @@
 
 import math
 from dataclasses import dataclass
+from types import SimpleNamespace
 
+import numpy as np
 import torch
 
 from vllm_rlt.config import ExecutionConfig
@@ -27,6 +29,8 @@ class SpeculativeRequestState:
     submitted: int = 0
     delivered: int = 0
     event: torch.cuda.Event | None = None
+    # Row in the runner's device slot table holding (token, position).
+    slot: int | None = None
 
 
 class SpeculativeRoundBuffer:
@@ -142,6 +146,13 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         self.compute_stream.wait_stream(torch.cuda.current_stream(self.device))
         self.buffers = [SpeculativeRoundBuffer(self, scheduler) for _ in range(2)]
         self.states: dict[str, SpeculativeRequestState] = {}
+        # Device (input token, next position) per live request. A round gathers
+        # and scatters these rows in one operation each instead of per request.
+        self.slot_values = torch.zeros(
+            (2 * scheduler.max_num_seqs, 2), dtype=torch.long, device=self.device
+        )
+        self.free_slots = list(reversed(range(len(self.slot_values))))
+        self._retired_slot_values: list[torch.Tensor] = []
         self.submitted_before_collect = 0
         self.discarded_rounds = 0
         self.readback_waits = 0
@@ -160,9 +171,27 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         host = torch.tensor([request.input_token_id, request.position], pin_memory=True)
         values = host.to(self.device, non_blocking=True)
         buffer.keepalive.extend((host, values))
-        state = SpeculativeRequestState(request, allocation, values[0], values[1])
+        if not self.free_slots:
+            self._grow_slots()
+        slot = self.free_slots.pop()
+        self.slot_values[slot].copy_(values)
+        state = SpeculativeRequestState(
+            request, allocation, self.slot_values[slot, 0], self.slot_values[slot, 1], slot=slot
+        )
         self.states[rid] = state
         return state
+
+    def _grow_slots(self):
+        """Double the slot table on the compute stream; live states move with it."""
+        old = self.slot_values
+        new = torch.zeros((2 * len(old), 2), dtype=old.dtype, device=old.device)
+        new[: len(old)].copy_(old)
+        # Work already queued still addresses the old storage.
+        self._retired_slot_values.append(old)
+        self.slot_values = new
+        self.free_slots = list(reversed(range(len(old), len(new)))) + self.free_slots
+        for state in self.states.values():
+            state.token, state.position = new[state.slot, 0], new[state.slot, 1]
 
     def _execute_recurrent_step(self, hidden, positions, tables, depth, allocations):
         table = tables[:, depth].contiguous()
@@ -220,68 +249,101 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         buffer.leased = True
         return buffer, allocations, host_tables, tables
 
-    def _draft(self, items, states, tables, allocations):
-        starts = [s.position.clone() for s in states]
-        candidates = [[] for _ in items]
-        hidden_rows = [[] for _ in items]
-        for offset in range(max(item.token_count for item in items)):
-            active = [i for i, item in enumerate(items) if offset < item.token_count]
-            tokens = torch.stack(
-                [states[i].token if offset == 0 else candidates[i][-1] for i in active]
-            )
-            positions = torch.stack([starts[i] + offset for i in active])
-            row_tables = torch.stack([tables[i] for i in active])
-            hidden = self.model.prelude(tokens)
+    def _round_plan(self, items, states, buffer):
+        """Host-built gather/scatter indices for a round, uploaded in one copy.
+
+        Offset o drafts the requests whose token_count exceeds o, in item order;
+        verification rows stay request-major in item order, as results expect.
+        """
+        counts = np.array([item.token_count for item in items], dtype=np.int64)
+        n, width = len(counts), int(counts.max())
+        parts, layout = [], {}
+
+        def add(name, values):
+            layout[name] = (sum(len(p) for p in parts), len(values))
+            parts.append(np.asarray(values, dtype=np.int64))
+
+        add("slots", [state.slot for state in states])
+        add("drafts", counts - 1)
+        ranks = np.cumsum(counts[None, :] > np.arange(width)[:, None], axis=1) - 1
+        sizes = (counts[None, :] > np.arange(width)[:, None]).sum(1)
+        offsets = []
+        for offset in range(width):
+            active = np.nonzero(counts > offset)[0]
+            drafting = np.nonzero(counts[active] > offset + 1)[0]
+            offsets.append((len(active), len(drafting)))
+            if len(active) < n:
+                add(f"active{offset}", active)
+            if len(drafting):
+                add(f"drafting{offset}", active[drafting])
+                if len(drafting) < len(active):
+                    add(f"draft_rows{offset}", drafting)
+        request_rows = np.repeat(np.arange(n), counts)
+        row_offsets = np.arange(len(request_rows)) - np.repeat(np.cumsum(counts) - counts, counts)
+        base = np.concatenate([[0], np.cumsum(sizes)[:-1]])
+        add("request_rows", request_rows)
+        add("row_offsets", row_offsets)
+        add("hidden_rows", base[row_offsets] + ranks[row_offsets, request_rows])
+        host = torch.from_numpy(np.concatenate(parts)).pin_memory()
+        values = host.to(self.device, non_blocking=True)
+        buffer.keepalive.extend((host, values))
+        views = {name: values[start : start + size] for name, (start, size) in layout.items()}
+        return SimpleNamespace(n=n, width=width, rows=len(request_rows), offsets=offsets, **views)
+
+    def _draft(self, plan, tables, allocations):
+        slot_values = self.slot_values[plan.slots]
+        starts = slot_values[:, 1]
+        tokens = torch.zeros((plan.n, plan.width), dtype=torch.long, device=self.device)
+        tokens[:, 0] = slot_values[:, 0]
+        hidden_blocks = []
+        for offset, (active_count, drafting_count) in enumerate(plan.offsets):
+            active = getattr(plan, f"active{offset}", None)
+            if active is None:
+                row_tokens, positions, row_tables = tokens[:, offset], starts + offset, tables
+            else:
+                row_tokens = tokens[active, offset]
+                positions = starts[active] + offset
+                row_tables = tables[active]
+            hidden = self.model.prelude(row_tokens)
             for depth in range(self.config.draft_loops):
                 hidden = self._execute_recurrent_step(
                     hidden, positions, row_tables, depth, allocations
                 )
-            drafting = []
-            for row, i in enumerate(active):
-                hidden_rows[i].append(hidden[row])
-                if offset + 1 < items[i].token_count:
-                    drafting.append((row, i))
-            if drafting:
-                proposed = self._coda(torch.stack([hidden[row] for row, _ in drafting])).argmax(-1)
-                for row, (_, i) in enumerate(drafting):
-                    candidates[i].append(proposed[row])
-        return starts, candidates, hidden_rows
+            hidden_blocks.append(hidden)
+            if drafting_count:
+                rows = getattr(plan, f"draft_rows{offset}", None)
+                drafting = hidden if rows is None else hidden[rows]
+                proposed = self._coda(drafting).argmax(-1)
+                tokens[getattr(plan, f"drafting{offset}"), offset + 1] = proposed
+        return starts, tokens, hidden_blocks
 
-    def _verify(self, items, starts, hidden_rows, tables, allocations):
-        positions = torch.cat(
-            [
-                start + torch.arange(item.token_count, device=self.device)
-                for start, item in zip(starts, items)
-            ]
-        )
-        row_tables = torch.cat(
-            [tables[i : i + 1].expand(item.token_count, -1, -1) for i, item in enumerate(items)]
-        )
-        hidden = torch.stack([h for rows in hidden_rows for h in rows])
+    def _verify(self, plan, starts, hidden_blocks, tables, allocations):
+        positions = starts[plan.request_rows] + plan.row_offsets
+        row_tables = tables[plan.request_rows]
+        hidden = torch.cat(hidden_blocks)[plan.hidden_rows]
         for depth in range(self.config.draft_loops, self.config.target_loops):
             hidden = self._execute_recurrent_step(hidden, positions, row_tables, depth, allocations)
-        target = self._coda(hidden).argmax(-1)
-        return target
+        return self._coda(hidden).argmax(-1)
 
-    def _accept_and_update_state(self, items, states, starts, candidates, target, buffer):
+    def _accept_and_update_state(self, plan, states, starts, tokens, target, buffer):
         count = len(target)
         buffer.result[:count].copy_(target)
-        start = 0
-        for i, (item, state) in enumerate(zip(items, states)):
-            rows = target[start : start + item.token_count]
-            if candidates[i]:
-                matches = torch.stack(candidates[i]) == rows[:-1]
-                accepted = matches.long().cumprod(0).sum()
-            else:
-                accepted = rows.new_zeros(())
-            # All target IDs through the first rejection equal the accepted
-            # candidates followed by the correction (or final bonus).
-            state.token.copy_(rows.gather(0, accepted.reshape(1)).squeeze(0))
-            state.position.copy_(starts[i] + accepted + 1)
-            buffer.result[count + i].copy_(accepted)
-            buffer.result[count + len(items) + i].copy_(state.position)
+        targets = torch.zeros((plan.n, plan.width), dtype=torch.long, device=self.device)
+        targets[plan.request_rows, plan.row_offsets] = target
+        # Candidate j (token column j+1) is checked against target row j; only
+        # a request's own drafts count. Acceptance stops at the first mismatch.
+        drafts = torch.arange(plan.width - 1, device=self.device)[None, :] < plan.drafts[:, None]
+        matches = (tokens[:, 1:] == targets[:, :-1]) & drafts
+        accepted = matches.long().cumprod(1).sum(1)
+        # All target IDs through the first rejection equal the accepted
+        # candidates followed by the correction (or final bonus).
+        next_tokens = targets.gather(1, accepted[:, None]).squeeze(1)
+        next_positions = starts + accepted + 1
+        self.slot_values[plan.slots] = torch.stack((next_tokens, next_positions), 1)
+        buffer.result[count : count + plan.n].copy_(accepted)
+        buffer.result[count + plan.n : count + 2 * plan.n].copy_(next_positions)
+        for state in states:
             state.submitted += 1
-            start += item.token_count
         return count
 
     @torch.inference_mode()
@@ -302,9 +364,10 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             if self.round_features is not None:
                 start = torch.cuda.Event(enable_timing=True)
                 start.record(self.compute_stream)
-            starts, candidates, hidden_rows = self._draft(items, states, tables, allocations)
-            target = self._verify(items, starts, hidden_rows, tables, allocations)
-            count = self._accept_and_update_state(items, states, starts, candidates, target, buffer)
+            plan = self._round_plan(items, states, buffer)
+            starts, tokens, hidden_blocks = self._draft(plan, tables, allocations)
+            target = self._verify(plan, starts, hidden_blocks, tables, allocations)
+            count = self._accept_and_update_state(plan, states, starts, tokens, target, buffer)
             if self.round_features is not None:
                 end = torch.cuda.Event(enable_timing=True)
                 end.record(self.compute_stream)
@@ -337,6 +400,8 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             if state.event is not None:
                 state.event.synchronize()
             del self.states[request.request_id]
+            if state.slot is not None:
+                self.free_slots.append(state.slot)
 
     def synchronize(self):
         self.compute_stream.synchronize()
