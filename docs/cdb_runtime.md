@@ -17,7 +17,7 @@ Implemented 2026-09-15 against base commit `6e8abbc405e1`. CUDA graphs and Hugin
 | Admission fairness | `Scheduler._admit`: bounded scan and bounded bypass count | Short request admitted behind blocked long request; protection prevents further bypass |
 | Chunked prefill policy | Per-request chunk ceiling, queue rotation and bounded prefill batches before decode | Short prompt completes before long prefill; existing decode starvation and chunk consistency tests |
 | Exit-trace replay | `ExitConfig(mode="trace")` bypasses gate compute/readback | Variable-depth replay, gate hook rejects accidental execution, all replay variants match |
-| FP8 KV cache | `CacheConfig(kv_cache_dtype="fp8_e4m3")`: e4m3 codes plus per-vector scales, Torch/Triton dequantize on read | `tests/test_fp8_kv_cache.py`: round-trip bound, attention vs dequantized reference, finalize/snapshot, async/graph equality on GPU |
+| FP8 KV cache | `CacheConfig(kv_cache_dtype="fp8_e4m3")`: e4m3 codes plus per-vector scales, Torch/Triton dequantize on read | `tests/test_fp8_kv_cache.py`: round-trip bound, attention vs dequantized reference, finalize/snapshot; on GPU fused writer bitwise, Triton engine vs Torch engine, async/graph equality |
 
 This implements runtime mechanisms. It does not reproduce the paper's complete accuracy ablations, workload distributions, roofline fit or published speedups.
 
@@ -144,11 +144,13 @@ model dtype and leaves every existing path unchanged.
   CUDA graphs (quantized writes are captured); LAST_EXITED finalize copies, including the
   asynchronous finalize kernel, copy codes and scales; preemption snapshots carry the scales;
   `KVCacheManager.read` returns dequantized values.
+- Triton writes with one fused quantize-and-store kernel per layer. The Torch backend quantizes
+  with Torch ops and is the reference; both writers produce the same codes and scales.
 - Rejected: FlashAttention backends (the `fp8_kv` backend capability; `auto` selects Triton)
   and PD transfer, which does not yet move the scales.
-- The current token's K/V enter attention unquantized in its own loop, as before; only stored
-  history is FP8. Accuracy should be checked per model and workload; adaptive exits can change
-  where a token exits because the gate sees slightly different attention.
+- Each layer writes the current token's K/V before attending, so attention reads the current
+  token in FP8 as well. Accuracy should be checked per model and workload; adaptive exits can
+  change where a token exits because the gate sees slightly different attention.
 
 ## Replay and validation commands
 
