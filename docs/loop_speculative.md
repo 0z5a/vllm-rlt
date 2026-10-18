@@ -19,10 +19,26 @@ SpeculativeConfig(
 
 The offline and serving CLI accept `--speculative-tokens 4 --loop-level-pipelining`.
 Greedy-only early suffix pruning can be enabled separately with
-`--early-rejection-pruning`; it is off by default. Sampling continues to use the
-original batched verification path so its RNG ordering is unchanged.
+`--early-rejection-pruning`; it is off by default. Top-p and top-k sampling are
+supported by the same loop pipeline, but sampling still verifies the complete
+finite window before applying rejection sampling. Early pruning is intentionally
+greedy-only so it does not change the sampling RNG schedule.
 Existing restrictions apply: `last_exited`, full fixed target depth, synchronous
 refill scheduling, and no preemption or PD.
+
+The implementation has three execution choices:
+
+| Mode | Recurrent schedule | Verification | Intended use |
+| --- | --- | --- | --- |
+| Baseline | Complete all draft positions, then complete target depth | One batched verifier window | Reference path and default |
+| Loop | Advance active positions one depth per mixed-depth wave | Reorder completed target rows into the common verifier | Measure mixed-depth batching |
+| Loop + greedy prune | Loop schedule with target-ready rejection checks | Stop future suffix branches after the first mismatch | Optional greedy experiment |
+
+The loop mode is a synchronous pipeline. It does not add CUDA streams, reduce the
+number of recurrent rows, or retain hidden state across speculative rounds. Its
+possible benefit comes from the shape and timing of mixed-depth batches; metadata,
+Python scheduling, Coda fragmentation and dynamic CUDA Graph shapes are additional
+costs.
 
 ## Schedule and state
 
@@ -48,10 +64,12 @@ length for every row. The pipeline uses single-query paged attention, not packed
 multi-query prefill. No shallow KV is copied into uncomputed deep planes.
 
 Each position/depth is computed exactly once. Proposals remain on the device and
-are read back with greedy target IDs once per round. Sampling retains the actual
-filtered q distribution and draws all drafts before acceptance, preserving the
-existing per-request RNG ordering. Different GEMM shapes can still change BF16
-results; same-seed agreement is not a general sampling correctness guarantee.
+greedy target IDs are read back once per mixed-depth wave. For sampling, the
+filtered proposal distribution `q` is retained for each draft and the common
+verifier applies rejection sampling with the request's generator from the shared
+`RngRegistry`. Different GEMM shapes and the changed draft/verify interleaving can
+change BF16 results or the fixed-seed token sequence; same-seed agreement is not a
+general sampling correctness guarantee.
 
 Completed target logits are reordered into item/position order for the common
 verifier. `SpeculativeResult` and engine commit stay unchanged: keep KV through
@@ -104,43 +122,35 @@ python -m benchmarks.loop_speculative \
   --model /path/to/local/Ouro-1.4B \
   --cuda-graphs --k 4 --concurrency 1 --new-tokens 32 --repeats 5 \
   --output /tmp/loop-speculative.json
+
+# Sampling variant (top-p + top-k):
+python -m benchmarks.loop_speculative \
+  --model /path/to/local/Ouro-1.4B \
+  --cuda-graphs --k 4 --concurrency 8 --new-tokens 32 --repeats 5 \
+  --temperature 0.8 --top-p 0.8 --top-k 7 \
+  --output /tmp/loop-speculative-top-p-top-k.json
 ```
 
-The harness warms both engines, completes matched prefill and first-token
-generation before timing, ignores EOS to commit equal work, synchronizes timing
-boundaries, alternates trial order, and saves raw timings, outputs, first
-divergences and runtime metadata. `--prompts` accepts a JSON list of strings;
-`--backend flash_attn_4` requires compatible hardware. Peak memory includes both
-resident engines; the recorded checkpoint config hash is not a weight hash.
-This small run does not replace RFC #43's fixed-input real-model diagnostics,
-sampling distribution checks, long-context/serving matrix or BF16 acceptance
-criteria.
+The harness warms both engines, completes a common prefill barrier before timing,
+ignores EOS to commit equal work, synchronizes timing boundaries, alternates trial
+order, and saves raw timings, outputs, first divergences and runtime metadata.
+`--prompts` accepts a JSON list of strings; `--backend flash_attn_4` requires
+compatible hardware. Peak memory includes both resident engines; the recorded
+checkpoint config hash is not a weight hash. This small run does not replace
+RFC #43's fixed-input real-model diagnostics, sampling distribution checks,
+long-context/serving matrix or BF16 acceptance criteria.
 
-### Local feasibility results (2026-10-07)
+### Rebase verification (2026-10-18)
 
-Base commit: `ecb1f8b505b7e831815b40aec3b4598619cca23a`, plus this working-tree
-implementation. Local Ouro-1.4B, A100-SXM4-40GB, PyTorch 2.14.0+cu130,
-BF16/Triton, CUDA Graphs, d=2/D=4, 32 new tokens after prefill/first-token,
-five alternating measured repetitions after warmup. GPU 0 was idle before the
-experiment. These are the harness's two short default prompts, cycled to fill
-the batch; C=1 uses only the first. No workload generalization is implied.
+The current matrix was measured at `9586b4a` on an A100-SXM4-40GB with BF16,
+Triton, CUDA Graphs, `K=4`, `d=2/D=4`, 32 new tokens and five alternating
+repetitions. It covers C=1/4/8/16/32/64/128. Greedy results include baseline,
+loop and opt-in loop + early pruning; sampling results cover top-p (`p=0.8`) and
+top-p + top-k (`p=0.8,k=7`) for baseline and loop. The full tables and raw JSON
+paths are recorded in `notes/vllm-rlt/loop-speculative-rebase-2026-10-18.md`.
 
-| Concurrency | K | Baseline tokens/s | Pipeline tokens/s | Throughput change |
-| --- | --- | --- | --- | --- |
-| 1 | 1 | 53.74 | 53.13 | -1.1% |
-| 1 | 2 | 57.18 | 55.90 | -2.2% |
-| 1 | 4 | 58.59 | 56.92 | -2.8% |
-| 1 | 8 | 44.92 | 43.17 | -3.9% |
-| 8 | 1 | 383.68 | 380.84 | -0.7% |
-| 8 | 2 | 409.14 | 402.28 | -1.7% |
-| 8 | 4 | 420.43 | 409.88 | -2.5% |
-| 8 | 8 | 324.42 | 316.53 | -2.4% |
-
-Throughput is fixed committed tokens divided by median elapsed decode time.
-Every measured sequence agreed with the matching original speculative run.
-This does not prove general BF16 equivalence or agreement with native decoding.
-FA4, long contexts, native real-model baselines and serving latency were not
-evaluated. On this bounded workload the prototype is correct in the exercised
-cases but **does not improve throughput**; it remains opt-in for experimentation.
-Raw JSON from this local run is retained under `artifacts/loop-speculative/`
-(ignored by git), including per-trial timings, outputs and first divergences.
+The result is workload-dependent: greedy loop improves throughput at C=32/64,
+but loses at C=128; greedy pruning helps C=1 and follows the same trend at larger
+batches. Sampling has mixed results and can produce fixed-seed divergence because
+the loop changes RNG consumption order. The loop remains opt-in pending a broader
+profile and serving workload evaluation.

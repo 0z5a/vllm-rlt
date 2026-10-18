@@ -24,19 +24,23 @@ from vllm_rlt import (
 )
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM, load_tokenizer
-from vllm_rlt.request import Stage
 from vllm_rlt.worker.speculative import SpeculativeStats
 
 
 @torch.inference_mode()
-def trial(engine, prompts, new_tokens):
-    params = SamplingParams(max_tokens=new_tokens + 1, ignore_eos=True)
+def trial(engine, prompts, new_tokens, temperature, top_p, top_k):
+    params = SamplingParams(
+        max_tokens=new_tokens + 1,
+        ignore_eos=True,
+        temperature=temperature,
+        top_p=top_p,
+        top_k=top_k,
+    )
     for i, prompt in enumerate(prompts):
         engine.add_request(str(i), prompt, params)
-    # All prompts fit one prefill batch, so no decode can precede this barrier.
+    # Hold decode until all requests have crossed the first-output barrier.
     while any(not r.generated_token_ids for r in engine.scheduler.requests.values()):
         engine.step()
-        assert engine.last_schedule.stage != Stage.SPECULATIVE
     engine.speculative_runner.stats = SpeculativeStats()
     torch.cuda.synchronize()
     torch.cuda.reset_peak_memory_stats()
@@ -50,7 +54,11 @@ def trial(engine, prompts, new_tokens):
     elapsed = time.perf_counter() - start
     committed = len(prompts) * new_tokens
     stats = asdict(engine.speculative_runner.stats)
-    assert stats["committed_tokens"] == committed
+    if stats["committed_tokens"] != committed:
+        raise RuntimeError(
+            f"benchmark committed {stats['committed_tokens']} tokens, expected {committed}; "
+            f"output lengths={[len(outputs[str(i)]) for i in range(len(prompts))]}"
+        )
     return dict(
         seconds=elapsed,
         committed_tokens=committed,
@@ -78,11 +86,18 @@ def main():
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--new-tokens", type=int, default=32)
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--top-p", type=float, default=1.0)
+    parser.add_argument("--top-k", type=int, default=-1)
     args = parser.parse_args()
     if not args.model.is_dir():
         parser.error("--model must be a complete local checkpoint directory")
     if min(args.concurrency, args.new_tokens, args.repeats, args.k) < 1:
         parser.error("concurrency, new-tokens, repeats and k must be positive")
+    if args.temperature < 0 or not 0 < args.top_p <= 1:
+        parser.error("temperature must be nonnegative and top-p must be in (0, 1]")
+    if args.top_k == 0 or args.top_k < -1:
+        parser.error("top-k must be -1 or positive")
     torch.set_num_threads(1)
     texts = (
         json.loads(args.prompts.read_text())
@@ -102,8 +117,13 @@ def main():
     )
     scheduler = SchedulerConfig(
         max_num_seqs=args.concurrency,
-        max_num_batched_tokens=max(sum(map(len, prompts)), args.concurrency * (args.k + 1)),
+        max_num_batched_tokens=max(
+            sum(map(len, prompts)),
+            args.concurrency * max(map(len, prompts)),
+            args.concurrency * (args.k + 1),
+        ),
         prefill_chunk_size=max(map(len, prompts)),
+        max_prefill_batches_before_decode=1024,
     )
     execution = ExecutionConfig(cuda_graphs=args.cuda_graphs)
     engines = {
@@ -126,11 +146,25 @@ def main():
     raw = {name: [] for name in engines}
     try:
         for engine in engines.values():
-            trial(engine, prompts, args.new_tokens)
+            trial(
+                engine,
+                prompts,
+                args.new_tokens,
+                args.temperature,
+                args.top_p,
+                args.top_k,
+            )
         for repeat in range(args.repeats):
             order = list(engines) if repeat % 2 == 0 else list(reversed(engines))
             for name in order:
-                result = trial(engines[name], prompts, args.new_tokens)
+                result = trial(
+                    engines[name],
+                    prompts,
+                    args.new_tokens,
+                    args.temperature,
+                    args.top_p,
+                    args.top_k,
+                )
                 raw[name].append(result)
                 print(
                     f"{name} repeat={repeat}: {result['tokens_per_second']:.2f} tokens/s",
