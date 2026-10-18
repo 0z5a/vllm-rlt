@@ -134,6 +134,8 @@ python -m benchmarks.loop_speculative \
 The harness warms both engines, completes a common prefill barrier before timing,
 ignores EOS to commit equal work, synchronizes timing boundaries, alternates trial
 order, and saves raw timings, outputs, first divergences and runtime metadata.
+For large loop batches, `--cuda-graph-max-batch-size 256` allows Graph capture of
+the 2C mixed-depth wave when C=128; the default is 128.
 `--prompts` accepts a JSON list of strings; `--backend flash_attn_4` requires
 compatible hardware. Peak memory includes both resident engines; the recorded
 checkpoint config hash is not a weight hash. This small run does not replace

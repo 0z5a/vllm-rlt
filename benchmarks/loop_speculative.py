@@ -89,6 +89,7 @@ def main():
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument("--top-k", type=int, default=-1)
+    parser.add_argument("--cuda-graph-max-batch-size", type=int, default=128)
     args = parser.parse_args()
     if not args.model.is_dir():
         parser.error("--model must be a complete local checkpoint directory")
@@ -98,6 +99,8 @@ def main():
         parser.error("temperature must be nonnegative and top-p must be in (0, 1]")
     if args.top_k == 0 or args.top_k < -1:
         parser.error("top-k must be -1 or positive")
+    if args.cuda_graph_max_batch_size < 1:
+        parser.error("cuda-graph-max-batch-size must be positive")
     torch.set_num_threads(1)
     texts = (
         json.loads(args.prompts.read_text())
@@ -125,7 +128,10 @@ def main():
         prefill_chunk_size=max(map(len, prompts)),
         max_prefill_batches_before_decode=1024,
     )
-    execution = ExecutionConfig(cuda_graphs=args.cuda_graphs)
+    execution = ExecutionConfig(
+        cuda_graphs=args.cuda_graphs,
+        cuda_graph_max_batch_size=args.cuda_graph_max_batch_size,
+    )
     engines = {
         name: LLMEngine(
             model,
