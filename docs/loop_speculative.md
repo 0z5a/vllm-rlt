@@ -1,7 +1,7 @@
 # Loop-level speculative execution
 
-This opt-in synchronous path implements the mixed-depth batching portion of
-[RFC #43](https://github.com/ThinkFlowLab/vllm-rlt/issues/43): advance shallow work
+This opt-in synchronous path implements the mixed-depth batching portion proposed
+in [Issue #43](https://github.com/ThinkFlowLab/vllm-rlt/issues/43): advance shallow work
 for later token positions in the same recurrent call as deep work for earlier
 positions. It retains the existing finite speculative window and atomic round
 commit. The default remains the original block verifier.
@@ -22,7 +22,9 @@ Greedy-only early suffix pruning can be enabled separately with
 `--early-rejection-pruning`; it is off by default. Top-p and top-k sampling are
 supported by the same loop pipeline, but sampling still verifies the complete
 finite window before applying rejection sampling. Early pruning is intentionally
-greedy-only so it does not change the sampling RNG schedule.
+greedy-only because greedy acceptance is a deterministic candidate/argmax
+comparison, while sampling acceptance requires the target and proposal
+distributions, random draws and ordered correction sampling.
 Existing restrictions apply: `last_exited`, full fixed target depth, synchronous
 refill scheduling, and no preemption or PD.
 
@@ -41,6 +43,50 @@ Python scheduling, Coda fragmentation and dynamic CUDA Graph shapes are addition
 costs.
 
 ## Execution and state
+
+### Loop-level flow
+
+The loop path keeps one branch for each active token position. A branch carries
+its request index, token offset, recurrent hidden state and current loop depth.
+Each wave advances every active branch by one depth. When a branch reaches the
+draft depth, its coda output starts a child branch while the parent continues
+toward the target depth. When a branch reaches the target depth, its target
+logits are saved for the existing verifier.
+
+```mermaid
+flowchart TD
+    A[Start speculative round] --> B[Create one branch per input position]
+    B --> C[Initialize hidden state and depth]
+    C --> D[Advance active branches by one recurrent depth]
+    D --> E{Draft depth reached?}
+    E -- Yes --> F[Run coda and generate draft token]
+    F --> G[Create child branch for next position]
+    G --> H{Target depth reached?}
+    E -- No --> H
+    H -- Yes --> I[Run coda and save target logits]
+    H -- No --> J[Keep branch active]
+    I --> K{Greedy pruning enabled?}
+    K -- Target mismatch --> L[Stop future suffix branches]
+    K -- Match or disabled --> M[Keep request active]
+    J --> N{Active branches remain?}
+    L --> N
+    M --> N
+    N -- Yes --> D
+    N -- No --> O[Reorder target rows by request and position]
+    O --> P{Sampling mode?}
+    P -- Greedy --> Q[Compare candidates with target argmax]
+    P -- Top-p or top-k --> R[Apply rejection sampling using p and q]
+    Q --> S[Commit accepted prefix and correction or bonus]
+    R --> S
+    S --> T[Invalidate rejected KV suffix]
+    T --> U[End speculative round]
+```
+
+This PR currently implements only the synchronous finite-window path. Mixed-
+depth waves are launched sequentially from the host; there are no CUDA streams,
+asynchronous scheduler overlap, cross-round hidden-state retention, preemption,
+or PD execution. The existing `SpeculativeResult` and atomic KV commit/rollback
+boundary are intentionally preserved.
 
 For K=2, d=2 and D=4, A is the last committed input, B and C are proposals.
 Numbers below are zero-based depths; columns are successive recurrent calls.
@@ -87,6 +133,27 @@ cannot be cancelled. Sampling still runs the complete window before
 verification. Greedy target and draft IDs are read back once per mixed-depth
 wave; the host-side rejection decision remains the pruning synchronization
 boundary. No new CUDA streams or asynchronous scheduler are introduced.
+
+### Why pruning is greedy-only
+
+For greedy decoding, a target row produces one deterministic token ID. Once that
+ID is available, the runner can compare it with the candidate and stop creating
+later branches for that request after the first mismatch. The already submitted
+rows still finish, but suffix rows that have not entered a wave are avoided.
+
+Top-p and top-k use rejection sampling. Acceptance depends on the filtered target
+distribution `p`, the filtered draft distribution `q`, and a random uniform draw;
+on rejection, the correction token is drawn from `normalize(max(p - q, 0))`.
+A target argmax mismatch is therefore not equivalent to rejection: a candidate
+can differ from the target argmax and still be accepted, while a candidate that
+matches the argmax can still be rejected by the random draw. Applying the full
+decision as soon as each target row is ready would also require retaining every
+proposal distribution, preserving the request's RNG order, sampling a residual
+correction token, and invalidating all descendants generated from the rejected
+candidate. The current sampling path instead computes the finite window and
+applies the existing verifier in order, preserving its distribution and RNG
+behavior. Device-side batched acceptance can support sampling pruning in a later
+change.
 
 For a uniform window, both the original block verifier and this pipeline require
 `d*K + D` recurrent calls and `(K+1)*D` recurrent rows. Pipelining changes batch
@@ -144,6 +211,28 @@ also diverge from baseline at a fixed seed because draft sampling and rejection
 sampling are interleaved differently; this does not by itself indicate an
 incorrect sampling distribution.
 
+In summary, the synchronous loop path is a clear win only at selected higher
+concurrency points: greedy throughput improves by 3-12% from C=32 in this
+benchmark, while low-concurrency runs regress by about 1-3%. Greedy pruning is
+strongest for a single request with an early mismatch (+13.8% at C=1), but adds
+little at larger batches because work already submitted in the current wave
+cannot be cancelled. Sampling remains workload-sensitive, ranging from a 22%
+regression to a 12% improvement for top-p and from a 9% regression to a 10%
+improvement for top-p plus top-k. These results show that mixed-depth scheduling
+alone does not guarantee a speedup; asynchronous overlap, state retention,
+device-side acceptance and more efficient dynamic compaction remain follow-up
+work.
+
+At low concurrency, metadata preparation, Python scheduling and fragmented Coda
+work outweigh the mixed-depth benefit. The measured greedy loop becomes faster
+from C=32 onward, reaching its best gain at C=32; at C=128 it remains faster only
+after raising the Graph limit so the `2C` wave can be captured. Greedy pruning is
+helpful for a single request with early rejection, but adds little at larger
+concurrency because much of the suffix work has already entered a wave. Sampling
+is more workload-sensitive: top-p is slower at C=128, while top-p + top-k is
+faster there, showing that the loop benefit is not a general consequence of
+sampling or concurrency alone.
+
 ## Validation
 
 ```bash
@@ -189,4 +278,7 @@ RFC #43's fixed-input real-model diagnostics, sampling distribution checks,
 long-context/serving matrix or BF16 acceptance criteria.
 
 Raw benchmark JSON is stored under `artifacts/loop-speculative/`; the extended
-run notes include the exact runtime metadata and per-repetition timings.
+run notes include the runtime metadata and per-repetition timings. This work is
+an opt-in implementation of the loop-level direction in Issue #43; it does not
+claim that mixed-depth scheduling reduces total recurrent work or improves every
+hardware and workload combination.
