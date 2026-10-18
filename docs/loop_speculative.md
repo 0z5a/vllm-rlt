@@ -153,8 +153,9 @@ paths are recorded in `notes/vllm-rlt/loop-speculative-rebase-2026-10-18.md`.
 
 The result is workload-dependent: with the default graph limit of 128, the loop
 loses at C=128 because its mixed-depth rows fall back to eager execution. Raising
-`cuda_graph_max_batch_size` to 256 recovers C=128 and gives about +3.4% for the
-loop and +2.8% for loop + greedy pruning. Sampling results below the graph256
-ablation use the original graph limit of 128 and are mixed; they can also produce
-fixed-seed divergence because the loop changes RNG consumption order. The loop
-remains opt-in pending a broader profile and serving workload evaluation.
+`cuda_graph_max_batch_size` to 256 removes that C=128 fallback; the greedy loop is
+about +3.4% faster and loop + greedy pruning about +2.8% faster in the recorded
+run. The C=128 sampling rows use the same graph256 setting, while the other
+sampling points retain graph max 128. Sampling can still produce fixed-seed
+divergence because the loop changes RNG consumption order. The loop remains
+opt-in pending a broader profile and serving workload evaluation.
