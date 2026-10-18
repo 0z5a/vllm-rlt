@@ -53,34 +53,15 @@ draft depth, its coda output starts a child branch while the parent continues
 toward the target depth. When a branch reaches the target depth, its target
 logits are saved for the existing verifier.
 
-```mermaid
-flowchart TD
-    A[Start speculative round] --> B[Create one branch per input position]
-    B --> C[Initialize hidden state and depth]
-    C --> D[Advance active branches by one recurrent depth]
-    D --> E{Draft depth reached?}
-    E -- Yes --> F[Run coda and generate draft token]
-    F --> G[Create child branch for next position]
-    G --> H{Target depth reached?}
-    E -- No --> H
-    H -- Yes --> I[Run coda and save target logits]
-    H -- No --> J[Keep branch active]
-    I --> K{Greedy pruning enabled?}
-    K -- Target mismatch --> L[Stop future suffix branches]
-    K -- Match or disabled --> M[Keep request active]
-    J --> N{Active branches remain?}
-    L --> N
-    M --> N
-    N -- Yes --> D
-    N -- No --> O[Reorder target rows by request and position]
-    O --> P{Sampling mode?}
-    P -- Greedy --> Q[Compare candidates with target argmax]
-    P -- Top-p or top-k --> R[Apply rejection sampling using p and q]
-    Q --> S[Commit accepted prefix and correction or bonus]
-    R --> S
-    S --> T[Invalidate rejected KV suffix]
-    T --> U[End speculative round]
-```
+<img src="assets/loop-schedule-comparison.svg" alt="Baseline and loop-level speculative scheduling" />
+
+The upper lane shows the baseline's block draft followed by block target
+verification. The lower lane shows the loop pipeline: after A reaches the draft
+depth, B starts at depth 0 while A continues at a deeper level; C starts two
+waves later. The target rows are reordered into the common verifier only after
+their corresponding branches reach the target depth. This is the loop-level
+pipeline added in this PR; the waves are still launched sequentially on the
+current host path.
 
 This PR currently implements only the synchronous finite-window path. Mixed-
 depth waves are launched sequentially from the host; there are no CUDA streams,
