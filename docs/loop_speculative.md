@@ -151,8 +151,10 @@ loop and opt-in loop + early pruning; sampling results cover top-p (`p=0.8`) and
 top-p + top-k (`p=0.8,k=7`) for baseline and loop. The full tables and raw JSON
 paths are recorded in `notes/vllm-rlt/loop-speculative-rebase-2026-10-18.md`.
 
-The result is workload-dependent: greedy loop improves throughput at C=32/64,
-but loses at C=128; greedy pruning helps C=1 and follows the same trend at larger
-batches. Sampling has mixed results and can produce fixed-seed divergence because
-the loop changes RNG consumption order. The loop remains opt-in pending a broader
-profile and serving workload evaluation.
+The result is workload-dependent: with the default graph limit of 128, the loop
+loses at C=128 because its mixed-depth rows fall back to eager execution. Raising
+`cuda_graph_max_batch_size` to 256 recovers C=128 and gives about +3.4% for the
+loop and +2.8% for loop + greedy pruning. Sampling results below the graph256
+ablation use the original graph limit of 128 and are mixed; they can also produce
+fixed-seed divergence because the loop changes RNG consumption order. The loop
+remains opt-in pending a broader profile and serving workload evaluation.
