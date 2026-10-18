@@ -53,8 +53,6 @@ draft depth, its coda output starts a child branch while the parent continues
 toward the target depth. When a branch reaches the target depth, its target
 logits are saved for the existing verifier.
 
-<img src="assets/loop-schedule-comparison.svg" alt="Baseline and loop-level speculative scheduling" />
-
 The upper lane shows the baseline's block draft followed by block target
 verification. The lower lane shows the loop pipeline: after A reaches the draft
 depth, B starts at depth 0 while A continues at a deeper level; C starts two
@@ -161,6 +159,11 @@ analytical distributions after applying the actual top-p and top-k filters; the
 empirical samples must match the filtered target distribution within the
 sampling tolerance. Fixed-seed text equality is not required for sampling.
 
+In the focused 16,000-draw check, the maximum absolute deviation from the
+filtered target distribution was 0.003085 for top-p and 0.002593 for top-p plus
+top-k; the corresponding RMS deviations were 0.001781 and 0.001368. Both are
+below the test tolerance of 0.02.
+
 ```bash
 python -m pytest -q tests/test_speculative.py \
   -k 'reused_hidden_logits or issue43_greedy or filtered_top_p'
@@ -172,7 +175,8 @@ The reference measurements use an Ouro-1.4B checkpoint on an NVIDIA A100-SXM4-40
 BF16, Triton attention, CUDA Graphs, `K=4`, `draft_loops=2`, `target_loops=4`,
 32 generated tokens and three timed repetitions per point. The benchmark compares
 the original block verifier with the loop pipeline using the same prompts and
-prefill barrier. Throughput is committed decode tokens per second.
+prefill barrier. Throughput is aggregate committed decode throughput across all
+concurrent requests, measured in output tokens per second (`output tok/s`).
 
 For C=1 through C=64, the CUDA Graph limit is 128. The C=128 rows use limit 256
 because the loop's largest mixed-depth wave is approximately `2C` rows. The C=64
@@ -180,7 +184,7 @@ wave is at most 128 rows and therefore remains within the default limit.
 
 ### Greedy
 
-| Concurrency | Baseline | Loop | Change | Loop + greedy prune | Change |
+| Concurrency | Baseline (output tok/s) | Loop (output tok/s) | Change | Loop + greedy prune (output tok/s) | Change |
 | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | 58.6 | 56.9 | -2.8% | 66.7 | +13.9% |
 | 4 | 217.1 | 214.7 | -1.1% | 215.5 | -0.7% |
@@ -208,7 +212,7 @@ Sampling uses `temperature=0.8`, `top_p=0.8`, with `top_k=-1` for top-p and
 `top_k=7` for top-p + top-k. Early pruning is disabled. The C=128 rows use
 CUDA Graph max 256; all other rows use max 128.
 
-| Concurrency | Top-p baseline | Top-p loop | Change | Top-p + top-k baseline | Top-p + top-k loop | Change |
+| Concurrency | Top-p baseline (output tok/s) | Top-p loop (output tok/s) | Change | Top-p + top-k baseline (output tok/s) | Top-p + top-k loop (output tok/s) | Change |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | 61.9 | 58.5 | -5.5% | 51.6 | 46.8 | -9.4% |
 | 4 | 205.1 | 159.9 | -22.0% | 139.7 | 137.8 | -1.3% |
