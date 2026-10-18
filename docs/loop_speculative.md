@@ -144,11 +144,33 @@ verifier's packed FA4 attention. Speedup must be measured; mixing depths alone
 does not guarantee an improvement. Reducing round bubbles or wasted suffix work
 would require a follow-up design for acceptance and state lifetime.
 
+## Correctness checks for Issue #43
+
+The fixed-input oracle test runs the same token chain through native serial
+full-depth execution and the reuse path. It compares every loop-2 hidden row,
+every depth/layer KV row and the final target logits, and checks max absolute
+error, RMS error and target argmax mismatch rate in the assertion contract. The
+FP32 case is used to diagnose indexing or dependency mistakes; the BF16 case uses
+relaxed numerical tolerances to assess real model behavior.
+
+Free greedy generation is checked at `K=1/2/4/8`, with the existing ragged
+single-request cases and an eight-request batch. The test requires exact token
+and exit-depth agreement with native generation and reports the first divergent
+position in the failure message. Sampling is checked independently with small
+analytical distributions after applying the actual top-p and top-k filters; the
+empirical samples must match the filtered target distribution within the
+sampling tolerance. Fixed-seed text equality is not required for sampling.
+
+```bash
+python -m pytest -q tests/test_speculative.py \
+  -k 'reused_hidden_logits or issue43_greedy or filtered_top_p'
+```
+
 ## Parameters and results
 
 The reference measurements use an Ouro-1.4B checkpoint on an NVIDIA A100-SXM4-40GB,
 BF16, Triton attention, CUDA Graphs, `K=4`, `draft_loops=2`, `target_loops=4`,
-32 generated tokens and five timed repetitions per point. The benchmark compares
+32 generated tokens and three timed repetitions per point. The benchmark compares
 the original block verifier with the loop pipeline using the same prompts and
 prefill barrier. Throughput is committed decode tokens per second.
 
@@ -160,13 +182,25 @@ wave is at most 128 rows and therefore remains within the default limit.
 
 | Concurrency | Baseline | Loop | Change | Loop + greedy prune | Change |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 58.6 | 56.9 | -2.8% | 66.7 | +13.8% |
-| 4 | 217.2 | 214.7 | -1.1% | 215.5 | -0.7% |
-| 8 | 420.4 | 409.9 | -2.5% | 412.4 | -1.9% |
-| 16 | 790.8 | 780.1 | -1.4% | 782.3 | -1.0% |
-| 32 | 1321.2 | 1474.1 | +11.6% | 1468.6 | +11.1% |
-| 64 | 2434.1 | 2649.6 | +8.9% | 2625.5 | +7.7% |
-| 128 | 4092.9 | 4231.2 | +3.4% | 4207.7 | +2.8% |
+| 1 | 58.6 | 56.9 | -2.8% | 66.7 | +13.9% |
+| 4 | 217.1 | 214.7 | -1.1% | 215.5 | -0.7% |
+| 8 | 420.3 | 409.8 | -2.5% | 412.0 | -2.0% |
+| 16 | 790.7 | 780.3 | -1.3% | 782.8 | -1.1% |
+| 32 | 1319.5 | 1473.7 | +11.7% | 1465.0 | +10.4% |
+| 64 | 2428.5 | 2648.4 | +9.1% | 2628.8 | +7.9% |
+| 128 | 4085.1 | 4229.6 | +3.5% | 4203.6 | +3.1% |
+
+The additional greedy counters show where pruning saves work:
+
+| Concurrency | Loop verified rows / committed tokens | Loop + prune verified rows / committed tokens | Loop peak allocated |
+| ---: | ---: | ---: | ---: |
+| 1 | 40 / 32 | 32 / 32 | 2.99 GiB |
+| 4 | 144 / 128 | 128 / 128 | 3.23 GiB |
+| 8 | 288 / 256 | 256 / 256 | 3.54 GiB |
+| 16 | 576 / 512 | 512 / 512 | 4.18 GiB |
+| 32 | 1152 / 1024 | 1024 / 1024 | 5.42 GiB |
+| 64 | 2304 / 2048 | 2048 / 2048 | 7.90 GiB |
+| 128 | 4608 / 4096 | 4096 / 4096 | 12.88 GiB |
 
 ### Sampling
 
@@ -176,21 +210,30 @@ CUDA Graph max 256; all other rows use max 128.
 
 | Concurrency | Top-p baseline | Top-p loop | Change | Top-p + top-k baseline | Top-p + top-k loop | Change |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 61.8 | 58.4 | -5.5% | 51.6 | 46.8 | -9.4% |
-| 4 | 205.2 | 159.9 | -22.0% | 140.3 | 138.0 | -1.6% |
-| 8 | 295.1 | 330.2 | +11.9% | 236.8 | 254.9 | +7.7% |
-| 16 | 524.3 | 493.9 | -5.8% | 417.3 | 393.2 | -5.8% |
-| 32 | 669.1 | 728.7 | +8.9% | 520.3 | 533.6 | +2.6% |
-| 64 | 870.7 | 908.3 | +4.3% | 628.2 | 649.4 | +3.4% |
-| 128 | 1057.5 | 953.4 | -9.8% | 730.6 | 805.7 | +10.3% |
+| 1 | 61.9 | 58.5 | -5.5% | 51.6 | 46.8 | -9.4% |
+| 4 | 205.1 | 159.9 | -22.0% | 139.7 | 137.8 | -1.3% |
+| 8 | 295.4 | 330.2 | +11.8% | 236.3 | 254.2 | +7.5% |
+| 16 | 523.8 | 492.9 | -5.9% | 417.2 | 393.2 | -5.8% |
+| 32 | 662.2 | 723.9 | +9.3% | 519.3 | 532.2 | +2.5% |
+| 64 | 876.7 | 914.1 | +4.3% | 625.2 | 646.8 | +3.5% |
+| 128 | 1046.6 | 940.0 | -10.2% | 727.1 | 801.2 | +10.2% |
+
+The benchmark JSON also records median/min/max decode time, peak allocated
+memory, recurrent rounds, drafted/accepted tokens, verified rows and the first
+divergent output position. Greedy runs have identical outputs at every point;
+sampling divergence is expected when the same request generator is consumed in
+a different draft/verify order. It is not used as a distribution-correctness
+criterion.
 
 The results are workload-dependent. Loop-level scheduling does not reduce the
 number of recurrent rows; its potential benefit comes from mixed-depth batch
 shapes and device utilization. Metadata preparation, Python scheduling, Coda
-fragmentation and graph capture shape can outweigh that benefit. Sampling may
-also diverge from baseline at a fixed seed because draft sampling and rejection
-sampling are interleaved differently; this does not by itself indicate an
-incorrect sampling distribution.
+fragmentation and graph capture shape can outweigh that benefit. For example,
+the greedy loop reduces verified rows from 4608 to 4096 at C=128 only when
+early pruning is enabled, while the non-pruned loop keeps the same recurrent
+row count as baseline. The sampling rows also show that acceptance rate and
+round count change with the sampled path, so throughput should be read together
+with the recorded counters.
 
 In summary, the synchronous loop path is a clear win only at selected higher
 concurrency points: greedy throughput improves by 3-12% from C=32 in this
@@ -203,16 +246,6 @@ improvement for top-p plus top-k. These results show that mixed-depth scheduling
 alone does not guarantee a speedup; asynchronous overlap, state retention,
 device-side acceptance and more efficient dynamic compaction remain follow-up
 work.
-
-At low concurrency, metadata preparation, Python scheduling and fragmented Coda
-work outweigh the mixed-depth benefit. The measured greedy loop becomes faster
-from C=32 onward, reaching its best gain at C=32; at C=128 it remains faster only
-after raising the Graph limit so the `2C` wave can be captured. Greedy pruning is
-helpful for a single request with early rejection, but adds little at larger
-concurrency because much of the suffix work has already entered a wave. Sampling
-is more workload-sensitive: top-p is slower at C=128, while top-p + top-k is
-faster there, showing that the loop benefit is not a general consequence of
-sampling or concurrency alone.
 
 ## Validation
 
@@ -231,18 +264,25 @@ greedy/sampling batches, K=1/2/4/8, shortened windows, EOS, prefix reuse,
 incremental allocation, cancellation and partial execution failure. CUDA coverage
 checks eager/graph parity and one greedy readback per round.
 
+The focused Issue #43 checks can be run without the full suite:
+
+```bash
+python -m pytest -q tests/test_speculative.py \
+  -k 'reused_hidden_logits or issue43_greedy or filtered_top_p'
+```
+
 For a bounded real-checkpoint feasibility run:
 
 ```bash
 python -m benchmarks.loop_speculative \
   --model /path/to/local/Ouro-1.4B \
-  --cuda-graphs --k 4 --concurrency 1 --new-tokens 32 --repeats 5 \
+  --cuda-graphs --k 4 --concurrency 1 --new-tokens 32 --repeats 3 \
   --output /tmp/loop-speculative.json
 
 # Sampling variant (top-p + top-k):
 python -m benchmarks.loop_speculative \
   --model /path/to/local/Ouro-1.4B \
-  --cuda-graphs --k 4 --concurrency 8 --new-tokens 32 --repeats 5 \
+  --cuda-graphs --k 4 --concurrency 8 --new-tokens 32 --repeats 3 \
   --temperature 0.8 --top-p 0.8 --top-k 7 \
   --output /tmp/loop-speculative-top-p-top-k.json
 ```
@@ -254,9 +294,9 @@ For large loop batches, `--cuda-graph-max-batch-size 256` allows Graph capture o
 the 2C mixed-depth wave when C=128; the default is 128.
 `--prompts` accepts a JSON list of strings; `--backend flash_attn_4` requires
 compatible hardware. Peak memory includes both resident engines; the recorded
-checkpoint config hash is not a weight hash. This small run does not replace
-RFC #43's fixed-input real-model diagnostics, sampling distribution checks,
-long-context/serving matrix or BF16 acceptance criteria.
+checkpoint config hash is not a weight hash. These checks cover fixed-input
+reuse and sampling distribution contracts, but do not replace Issue #43's
+long-context, serving-latency or full BF16 acceptance matrix.
 
 Raw benchmark JSON is stored under `artifacts/loop-speculative/`; the extended
 run notes include the runtime metadata and per-repetition timings. This work is

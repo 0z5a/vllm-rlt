@@ -81,6 +81,31 @@ def test_greedy_matches_native_with_ragged_rounds_and_limits(k, budget, pipeline
     assert llm.engine.cache_manager.num_used_blocks == 0
 
 
+@pytest.mark.parametrize("k", [1, 2, 4, 8])
+def test_issue43_greedy_generation_agrees_at_eight_concurrent_requests(k):
+    """Free generation stays byte-for-byte equal for the issue's K sweep."""
+    m = model()
+    prompts = [[2 + i, 7 - (i % 4), 11 + (i % 3)] for i in range(8)]
+    params = [SamplingParams(max_tokens=7, ignore_eos=True) for _ in prompts]
+    native = LLM(m).generate(prompts, params)
+    speculative = LLM(
+        m,
+        speculative_config=SpeculativeConfig(k, loop_level_pipelining=True),
+        cache_config=CacheConfig(256, 2),
+    ).generate(prompts, params)
+    for expected, actual in zip(native, speculative):
+        first = next(
+            (
+                i
+                for i, (left, right) in enumerate(zip(expected.token_ids, actual.token_ids))
+                if left != right
+            ),
+            None,
+        )
+        assert actual.token_ids == expected.token_ids, f"first divergence at {first}"
+        assert actual.exit_depths == expected.exit_depths
+
+
 @pytest.mark.parametrize(
     "device,backend",
     [
@@ -91,7 +116,9 @@ def test_greedy_matches_native_with_ragged_rounds_and_limits(k, budget, pipeline
 )
 @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
 @pytest.mark.parametrize("pipelined", [False, True])
-def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, backend, pipelined):
+def test_reused_hidden_logits_and_all_kv_match_serial_oracle(
+    dtype, device, backend, pipelined, record_property
+):
     if device == "cuda" and dtype == torch.float32 and backend == "flash_attn_4":
         pytest.skip("FA4 requires 16-bit operands")
     m = model(dtype=dtype).to(device)
@@ -146,14 +173,23 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
     oracle.allocate("r", 16)
     atol, rtol = (4e-5, 4e-5) if dtype == torch.float32 else (0.08, 0.04)
     max_logit_error = 0.0
+    hidden_errors = []
+    kv_errors = []
+    logit_errors = []
+    logit_argmax_mismatches = 0
+    logit_rows = 0
     for pos, token in enumerate(tokens):
         h = m.prelude(torch.tensor([token], device=device))
         for d in range(4):
             h, _ = m.recurrent(h, ["r"], [d], [pos], oracle)
             if pos >= 3:
+                hidden_errors.append((seen[d, pos] - h[0]).detach().float().reshape(-1))
                 torch.testing.assert_close(seen[d, pos], h[0], atol=atol, rtol=rtol)
         if pos >= 3:
             actual, expected = verified_logits[pos - 3], m.coda(h)[0]
+            logit_errors.append((actual - expected).detach().float().reshape(-1))
+            logit_argmax_mismatches += int(actual.argmax() != expected.argmax())
+            logit_rows += 1
             max_logit_error = max(max_logit_error, float((actual - expected).abs().max()))
             torch.testing.assert_close(actual, expected, atol=atol, rtol=rtol)
             assert actual.argmax() == expected.argmax()
@@ -162,6 +198,7 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
             for actual, expected in zip(
                 cache.read(layer, "r", d, 7), oracle.read(layer, "r", d, 7)
             ):
+                kv_errors.append((actual - expected).detach().float().reshape(-1))
                 torch.testing.assert_close(actual, expected, atol=atol, rtol=rtol)
     # Every input/depth computed exactly once: no shallow recomputation in verify.
     assert work == Counter({0: 4, 1: 4, 2: 4, 3: 4})
@@ -175,6 +212,36 @@ def test_reused_hidden_logits_and_all_kv_match_serial_oracle(dtype, device, back
                 rtol=4e-5,
             )
     assert max_logit_error < (1e-4 if dtype == torch.float32 else 0.025)
+
+    # Keep the RFC #43 fixed-input metrics visible in the assertion contract:
+    # max absolute and RMS error are tracked independently for hidden, KV and
+    # final-logit reuse, and target argmaxes must not diverge.
+    def metrics(errors):
+        values = torch.cat(errors)
+        return float(values.abs().max()), float(values.square().mean().sqrt())
+
+    hidden_max, hidden_rms = metrics(hidden_errors)
+    kv_max, kv_rms = metrics(kv_errors)
+    logits_max, logits_rms = metrics(logit_errors)
+    record_property("hidden_max_abs", hidden_max)
+    record_property("hidden_rms", hidden_rms)
+    record_property("kv_max_abs", kv_max)
+    record_property("kv_rms", kv_rms)
+    record_property("logits_max_abs", logits_max)
+    record_property("logits_rms", logits_rms)
+    record_property("target_argmax_mismatch_rate", logit_argmax_mismatches / logit_rows)
+    assert logit_argmax_mismatches == 0, (
+        f"fixed-input target argmax mismatch rate={logit_argmax_mismatches / logit_rows:.6f}"
+    )
+    assert hidden_max <= (4e-5 if dtype == torch.float32 else 0.08), (
+        f"hidden max_abs={hidden_max:.6g}, rms={hidden_rms:.6g}"
+    )
+    assert kv_max <= (4e-5 if dtype == torch.float32 else 0.08), (
+        f"KV max_abs={kv_max:.6g}, rms={kv_rms:.6g}"
+    )
+    assert logits_max <= (1e-4 if dtype == torch.float32 else 0.025), (
+        f"logits max_abs={logits_max:.6g}, rms={logits_rms:.6g}"
+    )
 
 
 @pytest.mark.parametrize("rejected", [0, 1, 2, 3])
@@ -433,6 +500,29 @@ def test_probability_filters_match_expected_and_apply_strict_top_k():
     p = Sampler.probabilities(torch.zeros(4), SamplingParams(temperature=1, top_k=1))
     assert int((p > 0).sum()) == 1
     torch.testing.assert_close(p[p > 0], torch.ones(1))
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        SamplingParams(temperature=0.8, top_p=0.8),
+        SamplingParams(temperature=0.8, top_k=3, top_p=0.9),
+    ],
+)
+def test_rejection_sampling_respects_filtered_top_p_and_top_k(params):
+    """The acceptance rule targets the filtered p distribution, not raw logits."""
+    target_logits = torch.tensor([3.0, 2.1, 1.5, 0.4, -0.2, -1.0])
+    proposal_logits = torch.tensor([1.0, 2.8, 2.0, 1.2, 0.5, -0.5])
+    p = Sampler.probabilities(target_logits, params)
+    q = Sampler.probabilities(proposal_logits, params)
+    generator = torch.Generator().manual_seed(9173)
+    counts = torch.zeros_like(p)
+    for _ in range(16000):
+        candidate = int(torch.multinomial(q, 1, generator=generator))
+        token, _ = rejection_sample(candidate, p, q, generator)
+        counts[token] += 1
+    empirical = counts / counts.sum()
+    torch.testing.assert_close(empirical, p, atol=0.02, rtol=0)
 
 
 @pytest.mark.parametrize(
