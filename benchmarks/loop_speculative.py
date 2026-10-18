@@ -70,6 +70,11 @@ def main():
     parser.add_argument("--cuda-graphs", action="store_true")
     parser.add_argument("--k", type=int, default=4)
     parser.add_argument("--draft-loops", type=int, default=2)
+    parser.add_argument(
+        "--early-rejection-pruning",
+        action="store_true",
+        help="Enable greedy early rejection pruning for the pipeline engine",
+    )
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--new-tokens", type=int, default=32)
     parser.add_argument("--repeats", type=int, default=5)
@@ -109,7 +114,11 @@ def main():
             execution_config=execution,
             attention_backend=args.backend,
             speculative_config=SpeculativeConfig(
-                args.k, args.draft_loops, model.config.total_ut_steps, enabled
+                num_speculative_tokens=args.k,
+                draft_loops=args.draft_loops,
+                target_loops=model.config.total_ut_steps,
+                loop_level_pipelining=enabled,
+                early_rejection_pruning=enabled and args.early_rejection_pruning,
             ),
         )
         for name, enabled in [("baseline", False), ("pipeline", True)]

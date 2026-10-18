@@ -11,6 +11,7 @@ from vllm_rlt import LLM, CacheConfig, SamplingParams, SpeculativeConfig
 from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
 from vllm_rlt.entrypoints.runtime_args import add_runtime_args, runtime_configs
 from vllm_rlt.request import Request, Stage
+from vllm_rlt.worker.speculative import SpeculativeResult
 
 
 @pytest.mark.parametrize("draft_depth", [1, 2, 3])
@@ -146,6 +147,57 @@ def test_pipeline_correction_bonus_and_next_round(rejected, temperature, monkeyp
     assert e.cache_manager.num_used_blocks == 0
 
 
+def test_greedy_early_rejection_prunes_unstarted_suffix(monkeypatch):
+    m = model()
+    e = engine(m, pipelined=True, cache_config=CacheConfig(128, 2))
+    runner = e.speculative_runner
+    runner.config = SpeculativeConfig(4, 2, 4, True, True)
+    cache = e.cache_manager
+    request = Request(
+        "r", [2, 3], SamplingParams(max_tokens=12, ignore_eos=True), generated_token_ids=[7]
+    )
+    cache.allocate(request.request_id, 16)
+    for pos, token in enumerate(request.prompt_token_ids):
+        hidden = m.prelude(torch.tensor([token]))
+        for depth in range(4):
+            hidden, _ = m.recurrent(hidden, [request.request_id], [depth], [pos], cache)
+    item = ScheduledItem(request, len(request.prompt_token_ids), 4)
+
+    calls = []
+    core, coda = runner._core_mixed, runner._coda
+    head_rows = []
+
+    def record(hidden, ids, positions, depths):
+        nonlocal head_rows
+        calls.append([(p - item.token_start, d) for p, d in zip(positions, depths)])
+        output = core(hidden, ids, positions, depths)
+        head_rows = [(p - item.token_start, False) for p, d in zip(positions, depths) if d == 1]
+        head_rows += [(p - item.token_start, True) for p, d in zip(positions, depths) if d == 3]
+        return output
+
+    def controlled(hidden):
+        assert len(hidden) == len(head_rows)
+        logits = torch.full((len(hidden), m.config.vocab_size), -torch.inf)
+        for row, (offset, target) in enumerate(head_rows):
+            token = 20 if target and offset == 0 else 10 + offset
+            logits[row, token] = 0
+        return logits
+
+    monkeypatch.setattr(runner, "_core_mixed", record)
+    monkeypatch.setattr(runner, "_coda", controlled)
+    result = runner.execute(SchedulerOutput(Stage.SPECULATIVE, [item]))[0]
+
+    assert result == SpeculativeResult([20], 0, 1)
+    assert runner.stats.verified_rows == 1
+    assert runner.stats.drafted_tokens == 1
+    assert all(offset < 2 for call in calls for offset, _ in call)
+    assert any(offset == 1 and depth == 1 for call in calls for offset, depth in call)
+    assert not any(offset == 1 and depth >= 2 for call in calls for offset, depth in call)
+    assert not any(offset >= 2 for call in calls for offset, _ in call)
+    monkeypatch.setattr(runner, "_core_mixed", core)
+    monkeypatch.setattr(runner, "_coda", coda)
+
+
 def test_pipeline_config_and_cli():
     assert not SpeculativeConfig(3).loop_level_pipelining
     for invalid in (None, 0, 1, "true"):
@@ -154,8 +206,11 @@ def test_pipeline_config_and_cli():
     parser = argparse.ArgumentParser()
     add_runtime_args(parser)
     parser.set_defaults(num_blocks=128, block_size=16)
-    args = parser.parse_args(["--speculative-tokens", "3", "--loop-level-pipelining"])
-    assert runtime_configs(args)["speculative_config"].loop_level_pipelining
+    args = parser.parse_args(
+        ["--speculative-tokens", "3", "--loop-level-pipelining", "--early-rejection-pruning"]
+    )
+    config = runtime_configs(args)["speculative_config"]
+    assert config.loop_level_pipelining and config.early_rejection_pruning
     args = parser.parse_args(["--loop-level-pipelining"])
     with pytest.raises(ValueError, match="requires --speculative-tokens"):
         runtime_configs(args)

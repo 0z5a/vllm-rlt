@@ -18,9 +18,11 @@ SpeculativeConfig(
 ```
 
 The offline and serving CLI accept `--speculative-tokens 4 --loop-level-pipelining`.
+Greedy-only early suffix pruning can be enabled separately with
+`--early-rejection-pruning`; it is off by default. Sampling continues to use the
+original batched verification path so its RNG ordering is unchanged.
 Existing restrictions apply: `last_exited`, full fixed target depth, synchronous
-refill scheduling, and no preemption or PD. Greedy and temperature/top-k/top-p
-sampling use the same acceptance implementation as the original runner.
+refill scheduling, and no preemption or PD.
 
 ## Schedule and state
 
@@ -59,10 +61,14 @@ exception cleanup remain responsible for the request lifecycle.
 
 ## Scope and benefit assessment
 
-This version does **not** implement streaming acceptance, early rejection pruning,
-cross-round hidden-state retention, or the complete continuous LoopSpec algorithm.
-It runs all K+1 positions to target depth even when an earlier proposal will be
-rejected. No new CUDA streams or asynchronous scheduler are introduced.
+The default finite-window path does **not** implement cross-round hidden-state
+retention or the complete continuous LoopSpec algorithm. The optional greedy
+pruning path checks a target row when its coda output is ready and skips later
+suffix branches after rejection. Work that already entered the mixed-depth wave
+cannot be cancelled. Sampling still runs the complete window before
+verification. Greedy target and draft IDs are read back once per mixed-depth
+wave; the host-side rejection decision remains the pruning synchronization
+boundary. No new CUDA streams or asynchronous scheduler are introduced.
 
 For a uniform window, both the original block verifier and this pipeline require
 `d*K + D` recurrent calls and `(K+1)*D` recurrent rows. Pipelining changes batch

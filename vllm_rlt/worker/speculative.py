@@ -138,7 +138,14 @@ class SpeculativeRunner:
 
     @torch.inference_mode()
     def _execute_loop_level_greedy_pruned(self, batch):
-        """Run loop-level speculation while pruning rejected greedy suffixes."""
+        """Run loop-level speculation while pruning rejected greedy suffixes.
+
+        A target row is compared as soon as its coda output is available.  A
+        rejected request is removed before the next mixed-depth core wave, so
+        shallow work already in flight is kept but no later suffix work is
+        started.  This path is greedy-only; sampling retains the common
+        batched verification path so its RNG ordering is unchanged.
+        """
         items = batch.items
         accepted = [0] * len(items)
         draft_counts = [0] * len(items)
@@ -175,13 +182,15 @@ class SpeculativeRunner:
             ready_ids_host = None
             if ready:
                 ready_logits = self._coda(torch.stack([branch.hidden for branch in ready]))
-                # Read all draft and target IDs back once for this wave.  A
-                # per-row .item() would synchronize the GPU for every branch.
+                # One device-to-host transfer per wave supplies both draft
+                # and target IDs.  Per-row `.item()` here would synchronize
+                # the GPU once for every target and draft branch.
                 ready_ids = ready_logits.argmax(-1)
                 ready_ids_host = ready_ids.tolist()
 
-            # Validate target rows before creating a child from a same-wave
-            # draft row for the same request.
+            # Target rows are handled first.  If a parent is rejected, a draft
+            # row for the same request in this coda batch must not create its
+            # child position.
             target_start = len(draft_ready)
             for row, branch in enumerate(target_ready):
                 item_index = branch.item_index
@@ -189,6 +198,7 @@ class SpeculativeRunner:
                 target = ready_ids_host[target_start + row]
                 verified_rows += 1
                 if branch.offset == item.token_count - 1:
+                    # The final row has no candidate: it is the bonus token.
                     results[item_index].append(target)
                     stopped[item_index] = True
                     continue
@@ -202,8 +212,9 @@ class SpeculativeRunner:
                 if candidate != target:
                     stopped[item_index] = True
 
-            # Create children only for requests that survived target validation
-            # in this wave.
+            # Generate children only for requests that survived target
+            # validation in this wave.  Candidate IDs are selected on-device;
+            # their host values come from the single wave-level readback above.
             draft_rows = [
                 (row, branch)
                 for row, branch in enumerate(draft_ready)
@@ -290,9 +301,11 @@ class SpeculativeRunner:
                 for row, branch in enumerate(draft_ready):
                     request = items[branch.item_index].request
                     if request.sampling_params.temperature != 0:
-                        q = probabilities(draft_logits[row], request.sampling_params)
+                        q = Sampler.probabilities(draft_logits[row], request.sampling_params)
                         proposals[branch.item_index].append(q)
-                        child_tokens[row] = draw(q, generator_for(request, self.device))
+                        child_tokens[row] = Sampler.draw(
+                            q, self._acquire_generator(request, draft_logits[row])
+                        )
                 drafted.append(([branch.item_index for branch in draft_ready], child_tokens))
                 child_hidden = self.model.prelude(child_tokens)
                 children = [
