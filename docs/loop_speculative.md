@@ -53,13 +53,11 @@ draft depth, its coda output starts a child branch while the parent continues
 toward the target depth. When a branch reaches the target depth, its target
 logits are saved for the existing verifier.
 
-The upper lane shows the baseline's block draft followed by block target
-verification. The lower lane shows the loop pipeline: after A reaches the draft
-depth, B starts at depth 0 while A continues at a deeper level; C starts two
-waves later. The target rows are reordered into the common verifier only after
-their corresponding branches reach the target depth. This is the loop-level
-pipeline added in this PR; the waves are still launched sequentially on the
-current host path.
+The baseline executes all draft positions before block target verification. In
+the loop schedule, after A reaches the draft depth, B starts at depth 0 while A
+continues at a deeper level; C starts two waves later. Target rows are reordered
+into the common verifier only after their corresponding branches reach target
+depth. The waves are still launched sequentially on the current host path.
 
 This PR currently implements only the synchronous finite-window path. Mixed-
 depth waves are launched sequentially from the host; there are no CUDA streams,
@@ -177,6 +175,8 @@ BF16, Triton attention, CUDA Graphs, `K=4`, `draft_loops=2`, `target_loops=4`,
 the original block verifier with the loop pipeline using the same prompts and
 prefill barrier. Throughput is aggregate committed decode throughput across all
 concurrent requests, measured in output tokens per second (`output tok/s`).
+It counts generated output tokens only, excludes prompt/prefill tokens and is
+not a per-request rate.
 
 For C=1 through C=64, the CUDA Graph limit is 128. The C=128 rows use limit 256
 because the loop's largest mixed-depth wave is approximately `2C` rows. The C=64
