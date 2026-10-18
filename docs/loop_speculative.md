@@ -1,6 +1,6 @@
 # Loop-level speculative execution
 
-This opt-in synchronous prototype implements the mixed-depth batching portion of
+This opt-in synchronous path implements the mixed-depth batching portion of
 [RFC #43](https://github.com/ThinkFlowLab/vllm-rlt/issues/43): advance shallow work
 for later token positions in the same recurrent call as deep work for earlier
 positions. It retains the existing finite speculative window and atomic round
@@ -40,7 +40,7 @@ possible benefit comes from the shape and timing of mixed-depth batches; metadat
 Python scheduling, Coda fragmentation and dynamic CUDA Graph shapes are additional
 costs.
 
-## Schedule and state
+## Execution and state
 
 For K=2, d=2 and D=4, A is the last committed input, B and C are proposals.
 Numbers below are zero-based depths; columns are successive recurrent calls.
@@ -77,7 +77,7 @@ the initial input and accepted candidates; invalidate every depth's rejected
 suffix; leave correction/bonus unforwarded. Engine EOS/length handling and
 exception cleanup remain responsible for the request lifecycle.
 
-## Scope and benefit assessment
+## Scope and benefit
 
 The default finite-window path does **not** implement cross-round hidden-state
 retention or the complete continuous LoopSpec algorithm. The optional greedy
@@ -96,6 +96,54 @@ verifier's packed FA4 attention. Speedup must be measured; mixing depths alone
 does not guarantee an improvement. Reducing round bubbles or wasted suffix work
 would require a follow-up design for acceptance and state lifetime.
 
+## Parameters and results
+
+The reference measurements use an Ouro-1.4B checkpoint on an NVIDIA A100-SXM4-40GB,
+BF16, Triton attention, CUDA Graphs, `K=4`, `draft_loops=2`, `target_loops=4`,
+32 generated tokens and five timed repetitions per point. The benchmark compares
+the original block verifier with the loop pipeline using the same prompts and
+prefill barrier. Throughput is committed decode tokens per second.
+
+For C=1 through C=64, the CUDA Graph limit is 128. The C=128 rows use limit 256
+because the loop's largest mixed-depth wave is approximately `2C` rows. The C=64
+wave is at most 128 rows and therefore remains within the default limit.
+
+### Greedy
+
+| Concurrency | Baseline | Loop | Change | Loop + greedy prune | Change |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 58.6 | 56.9 | -2.8% | 66.7 | +13.8% |
+| 4 | 217.2 | 214.7 | -1.1% | 215.5 | -0.7% |
+| 8 | 420.4 | 409.9 | -2.5% | 412.4 | -1.9% |
+| 16 | 790.8 | 780.1 | -1.4% | 782.3 | -1.0% |
+| 32 | 1321.2 | 1474.1 | +11.6% | 1468.6 | +11.1% |
+| 64 | 2434.1 | 2649.6 | +8.9% | 2625.5 | +7.7% |
+| 128 | 4092.9 | 4231.2 | +3.4% | 4207.7 | +2.8% |
+
+### Sampling
+
+Sampling uses `temperature=0.8`, `top_p=0.8`, with `top_k=-1` for top-p and
+`top_k=7` for top-p + top-k. Early pruning is disabled. The C=128 rows use
+CUDA Graph max 256; all other rows use max 128.
+
+| Concurrency | Top-p baseline | Top-p loop | Change | Top-p + top-k baseline | Top-p + top-k loop | Change |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 61.8 | 58.4 | -5.5% | 51.6 | 46.8 | -9.4% |
+| 4 | 205.2 | 159.9 | -22.0% | 140.3 | 138.0 | -1.6% |
+| 8 | 295.1 | 330.2 | +11.9% | 236.8 | 254.9 | +7.7% |
+| 16 | 524.3 | 493.9 | -5.8% | 417.3 | 393.2 | -5.8% |
+| 32 | 669.1 | 728.7 | +8.9% | 520.3 | 533.6 | +2.6% |
+| 64 | 870.7 | 908.3 | +4.3% | 628.2 | 649.4 | +3.4% |
+| 128 | 1057.5 | 953.4 | -9.8% | 730.6 | 805.7 | +10.3% |
+
+The results are workload-dependent. Loop-level scheduling does not reduce the
+number of recurrent rows; its potential benefit comes from mixed-depth batch
+shapes and device utilization. Metadata preparation, Python scheduling, Coda
+fragmentation and graph capture shape can outweigh that benefit. Sampling may
+also diverge from baseline at a fixed seed because draft sampling and rejection
+sampling are interleaved differently; this does not by itself indicate an
+incorrect sampling distribution.
+
 ## Validation
 
 ```bash
@@ -111,9 +159,7 @@ Tests exercise mixed depths including non-divisible d/D, actual hidden/logit/KV
 agreement against a serial reference, every rejection boundary and bonus,
 greedy/sampling batches, K=1/2/4/8, shortened windows, EOS, prefix reuse,
 incremental allocation, cancellation and partial execution failure. CUDA coverage
-checks eager/graph parity and one greedy readback per round. The inherited GPU
-readback test also replaces its obsolete `OuroConfig.tiny()` call with the current
-test helper.
+checks eager/graph parity and one greedy readback per round.
 
 For a bounded real-checkpoint feasibility run:
 
@@ -142,20 +188,5 @@ checkpoint config hash is not a weight hash. This small run does not replace
 RFC #43's fixed-input real-model diagnostics, sampling distribution checks,
 long-context/serving matrix or BF16 acceptance criteria.
 
-### Rebase verification (2026-10-18)
-
-The current matrix was measured at `9586b4a` on an A100-SXM4-40GB with BF16,
-Triton, CUDA Graphs, `K=4`, `d=2/D=4`, 32 new tokens and five alternating
-repetitions. It covers C=1/4/8/16/32/64/128. Greedy results include baseline,
-loop and opt-in loop + early pruning; sampling results cover top-p (`p=0.8`) and
-top-p + top-k (`p=0.8,k=7`) for baseline and loop. The full tables and raw JSON
-paths are recorded in `notes/vllm-rlt/loop-speculative-rebase-2026-10-18.md`.
-
-The result is workload-dependent: with the default graph limit of 128, the loop
-loses at C=128 because its mixed-depth rows fall back to eager execution. Raising
-`cuda_graph_max_batch_size` to 256 removes that C=128 fallback; the greedy loop is
-about +3.4% faster and loop + greedy pruning about +2.8% faster in the recorded
-run. The C=128 sampling rows use the same graph256 setting, while the other
-sampling points retain graph max 128. Sampling can still produce fixed-seed
-divergence because the loop changes RNG consumption order. The loop remains
-opt-in pending a broader profile and serving workload evaluation.
+Raw benchmark JSON is stored under `artifacts/loop-speculative/`; the extended
+run notes include the exact runtime metadata and per-repetition timings.
