@@ -23,7 +23,17 @@ def add_runtime_args(parser):
     parser.add_argument("--kv-watermark", type=float, default=0.0)
     parser.add_argument("--scheduling-policy", choices=["fcfs", "priority"], default="fcfs")
     parser.add_argument("--enable-preemption", action="store_true")
-    parser.add_argument("--prefill-uva", action="store_true")
+    parser.add_argument(
+        "--prefill-uva",
+        action="store_true",
+        help="Use packed prefill metadata staging (requires packed attention)",
+    )
+    parser.add_argument(
+        "--no-uva",
+        dest="use_uva",
+        action="store_false",
+        help="Copy metadata to the GPU instead of reading mapped host memory",
+    )
     parser.add_argument(
         "--no-atomic-prefill",
         dest="atomic_prefill",
@@ -98,6 +108,7 @@ def runtime_configs(args):
         ),
         execution_config=ExecutionConfig(
             prefill_uva=args.prefill_uva,
+            use_uva=args.use_uva,
             atomic_prefill=args.atomic_prefill,
             cuda_graphs=args.cuda_graphs,
             cuda_graph_max_batch_size=args.cuda_graph_max_batch_size,

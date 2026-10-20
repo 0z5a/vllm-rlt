@@ -1,14 +1,16 @@
 """PD transfer adapter. Request computation remains in StageEngine."""
 
+import hashlib
+import json
 import time
 from collections import deque
-from dataclasses import dataclass, field, replace
+from dataclasses import asdict, dataclass, field, replace
 
 import torch
 
-from vllm_rlt.request import Request, Stage
+from vllm_rlt.request import Request, RequestPhase
 
-from .transport import kv_segments, partition_segments
+from .transport import NixlConnector, kv_segments, partition_segments
 
 
 @dataclass
@@ -33,9 +35,10 @@ class RequestTransfer:
     expected: int | None = None
     committed: bool = False
     cancelled: bool = False
+    ready: bool = False
     active: bool = False
+    cancel_confirmed: bool = False
     compute_done: bool = False
-    compute_released: bool = False
     last_event: object = None
     acknowledged: bool = False
     started: float = field(default_factory=time.monotonic)
@@ -54,9 +57,97 @@ class PDStageConnector:
         self.transfer_cursor = 0
         self.prefill_tokens = 0
 
+    @classmethod
+    def create(cls, engine, *, config, notify):
+        """Allocate transport-owned staging in the stage's owner process."""
+        stage = engine.stage_config
+        limit = engine.scheduler.config.max_num_seqs
+        if stage.produces_tokens:
+            limit += config.max_receiving_requests
+        if stage.accepts_prompt:
+            limit += config.max_draining_requests
+        parameter = next(engine.model.parameters())
+        hidden = torch.empty(
+            (limit, engine.model.config.hidden_size), device=parameter.device, dtype=parameter.dtype
+        )
+        transport = NixlConnector(stage.stage_id, engine.cache_manager, hidden, config)
+        return cls(engine, hidden, transport, config, notify=notify)
+
+    def startup_info(self):
+        """Advertise registered memory and verify peers use compatible model weights."""
+        digest = hashlib.sha256()
+        for parameter in self.engine.model.state_dict().values():
+            digest.update(parameter.detach().contiguous().view(torch.uint8).cpu().numpy().tobytes())
+        parameter = next(self.engine.model.parameters())
+        fingerprint = hashlib.sha256(
+            json.dumps(
+                dict(
+                    model=asdict(self.engine.model.config),
+                    weights=digest.hexdigest(),
+                    dtype=str(parameter.dtype).removeprefix("torch."),
+                    layout=self.cache.layout,
+                    attention=self.cache.attention_info,
+                ),
+                sort_keys=True,
+            ).encode()
+        ).hexdigest()
+        return dict(
+            info=self.transport.info, fingerprint=fingerprint, transfer_slots=len(self.hidden)
+        )
+
+    @property
+    def has_pending(self):
+        return bool(self.transfers or self.transport.pending)
+
+    def command(self, command):
+        """Handle transfer commands; leave generic stage commands to the worker."""
+        kind = command["kind"]
+        if kind == "connect":
+            for peer in command["peers"]:
+                self.transport.connect(peer)
+            self.notify("connected")
+        elif kind in ("reserve", "prefill"):
+            self.reserve(
+                command["tid"],
+                command["tokens"],
+                command["params"],
+                receiving=kind == "reserve",
+                peer=command["peer"],
+                trace_id=command.get("trace_id"),
+                target_tables=command.get("tables", ()),
+                target_slot=command.get("slot", 0),
+                target_cached_tokens=command.get("cached_tokens", 0),
+            )
+        elif kind == "cancel":
+            self.cancel(command["tid"])
+        elif kind == "cancel_safe":
+            self.cancel_safe(command["tid"])
+        elif kind == "commit":
+            self.commit(command["tid"], command["count"])
+        elif kind == "ack":
+            self.acknowledge(command["tid"])
+        elif kind == "abort" and command["request_id"] in self.transfers:
+            raise ValueError("transferred requests must use the transfer cancellation protocol")
+        else:
+            return False
+        return True
+
+    def close(self):
+        if self.has_pending:
+            raise RuntimeError("cannot close a connector with pending transfers")
+        self.transport.close()
+        return dict(
+            prefill_tokens=self.prefill_tokens,
+            bytes_sent=self.transport.bytes_sent,
+            transfers=self.transport.transfers,
+            transfer_seconds=self.transport.transfer_seconds,
+        )
+
     def _remove(self, transfer):
-        self.engine.release_transfer(transfer.request)
-        self._forget(transfer)
+        if transfer.tid not in self.engine.scheduler.requests or self.engine.release_transfer(
+            transfer.request
+        ):
+            self._forget(transfer)
 
     def _forget(self, transfer):
         self.free_slots.append(transfer.slot)
@@ -65,7 +156,15 @@ class PDStageConnector:
 
     def output_finished(self, request_id):
         """The engine has retired a completed decode request; release its staging slot."""
-        self._forget(self.transfers[request_id])
+        transfer = self.transfers.get(request_id)
+        if transfer is not None:
+            if not transfer.active:
+                transfer.active = True
+                self.notify(
+                    "activated", tid=transfer.tid, seconds=time.monotonic() - transfer.started
+                )
+            if request_id not in self.engine.scheduler.requests:
+                self._forget(transfer)
 
     def exports(self, request):
         transfer = self.transfers.get(request.request_id)
@@ -74,13 +173,6 @@ class PDStageConnector:
     def can_schedule(self, request):
         if not self.exports(request):
             return True
-        # Ready handoffs must reach the transport before another prompt can
-        # block this owner thread on GPU submission backpressure (PR #122).
-        if any(
-            transfer.outgoing and transfer.chunks and transfer.chunks[0][0].query()
-            for transfer in self.transfers.values()
-        ):
-            return False
         transfer = self.transfers.get(request.request_id)
         return bool(
             transfer is not None
@@ -95,7 +187,7 @@ class PDStageConnector:
         transfer = self.transfers[request.request_id]
         if transfer.request is not request:
             raise RuntimeError("stale transfer generation")
-        if phase == Stage.PREFILLING_PRELUDE:
+        if phase == RequestPhase.PREFILLING_PRELUDE:
             transfer.transfer_overlaps += self.transport.busy(transfer.tid)
         if not progress.chunk_complete:
             transfer.last_event = event
@@ -211,8 +303,8 @@ class PDStageConnector:
         if transfer.outgoing:
             transfer.chunks.clear()
             self.engine.suspend_transfer(transfer.request)
-        elif transfer.active:
-            self._remove(transfer)  # Activation proves all remote writes have ended.
+        elif transfer.ready:
+            self._remove(transfer)  # Complete receipt proves all remote writes have ended.
 
     def cancel_safe(self, transfer_id):
         """Coordinator confirms remote writers stopped; resources may now be retired."""
@@ -222,6 +314,7 @@ class PDStageConnector:
                 raise RuntimeError("unexpected cancellation acknowledgement")
             if transfer.outgoing:
                 raise RuntimeError("source cancellation must drain local and remote accesses")
+            transfer.cancel_confirmed = True
             self._remove(transfer)
 
     def commit(self, transfer_id, count):
@@ -257,7 +350,7 @@ class PDStageConnector:
                 or sequence < 0
             ):
                 raise RuntimeError("invalid transfer completion")
-            if transfer.active and sequence not in transfer.received:
+            if transfer.ready and sequence not in transfer.received:
                 raise RuntimeError("late KV write after decode activation")
             transfer.received.add(sequence)
         transfers = list(self.transfers.values())
@@ -265,18 +358,6 @@ class PDStageConnector:
             start = self.transfer_cursor % len(transfers)
             transfers = transfers[start:] + transfers[:start]
             self.transfer_cursor += 1
-        if self.engine.scheduler.config.policy == "priority":
-            # Only import activation is priority-ranked; exports retain round robin.
-            imports = iter(
-                sorted(
-                    (transfer for transfer in transfers if not transfer.outgoing),
-                    key=lambda transfer: (
-                        transfer.request.sampling_params.priority,
-                        transfer.started,
-                    ),
-                )
-            )
-            transfers = [transfer if transfer.outgoing else next(imports) for transfer in transfers]
         for transfer in transfers:
             if transfer.outgoing:
                 if transfer.cancelled:
@@ -289,12 +370,11 @@ class PDStageConnector:
                     continue
                 if (
                     transfer.compute_done
-                    and not transfer.compute_released
+                    and not transfer.request.compute_released
                     and self.engine.release_transfer_compute(
                         transfer.request, ready_event=transfer.last_event
                     )
                 ):
-                    transfer.compute_released = True
                     self.notify(
                         "prefill_complete",
                         tid=transfer.tid,
@@ -318,24 +398,30 @@ class PDStageConnector:
                 if (
                     transfer.acknowledged
                     and transfer.committed
-                    and transfer.compute_released
+                    and transfer.request.compute_released
                     and not self.transport.busy(transfer.tid)
                 ):
                     self._remove(transfer)
-            elif not transfer.cancelled and not transfer.active and transfer.expected is not None:
+            elif transfer.cancelled:
+                if transfer.ready or transfer.cancel_confirmed:
+                    self._remove(transfer)
+            elif transfer.ready:
+                if transfer.request.request_id not in self.engine.scheduler.requests:
+                    self._forget(transfer)
+                elif not transfer.active and transfer.request.phase != RequestPhase.RECEIVING:
+                    transfer.active = True
+                    self.notify(
+                        "activated", tid=transfer.tid, seconds=time.monotonic() - transfer.started
+                    )
+            elif transfer.expected is not None:
                 if any(seq >= transfer.expected for seq in transfer.received):
                     raise RuntimeError("unexpected transfer sequence")
-                if (
-                    len(transfer.received) == transfer.expected
-                    and self.engine.import_capacity_available()
-                ):
-                    if not self.engine.activate_import(
+                if len(transfer.received) == transfer.expected:
+                    if not self.engine.accept_import(
                         transfer.request,
                         self.hidden[transfer.slot],
                         cached_tokens=transfer.cached_tokens,
                     ):
                         raise RuntimeError("stale import activation")
-                    transfer.active = True
-                    self.notify(
-                        "activated", tid=transfer.tid, seconds=time.monotonic() - transfer.started
-                    )
+                    transfer.ready = True
+                    self.notify("received", tid=transfer.tid)

@@ -5,13 +5,11 @@ import torch
 
 from tests.helpers import tiny_ouro_config
 from vllm_rlt import SamplingParams, SchedulerConfig
-from vllm_rlt.core.execution import ExecutionBatch, Operation, StateSpan
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.scheduler import Scheduler, SchedulerOutput
 from vllm_rlt.models import OuroForCausalLM
-from vllm_rlt.request import Request, Stage
-from vllm_rlt.worker.execution import ExecutionRuntime
-from vllm_rlt.worker.executor import build_execution_batch
+from vllm_rlt.request import ExecutionBatch, Operation, Request, RequestPhase, StateSpan
+from vllm_rlt.worker.executor import ForwardBatch, ModelRuntime, build_execution_batch
 
 
 def make_span(name, start, count, depth):
@@ -62,10 +60,14 @@ def test_mixed_prompt_and_generation_rows_match_serial_execution(layout, compute
             make_span("generation", 2, 1, 2),
         ),
     )
-    executor = ExecutionRuntime(model, mixed)
-    actual = executor.advance(
-        hidden, (mixed.prepare_recurrent(execution_batch, packed=True),), compute_gate=compute_gate
+    executor = ModelRuntime(model, mixed)
+    forward = ForwardBatch(
+        Operation.RECURRENT,
+        hidden=hidden,
+        metadata=(mixed.prepare_recurrent(execution_batch, packed=True),),
+        compute_gate=compute_gate,
     )
+    actual = executor.forward(executor.prepare(forward))
 
     expected_hidden, expected_gate = [], []
     offset = 0
@@ -100,19 +102,19 @@ def test_scheduled_recurrence_does_not_follow_mutated_request_progress():
     request = Request("r", [1, 2, 3], SamplingParams())
     request.loops_done = 2
     scheduler = Scheduler(SchedulerConfig(), None)
-    scheduled_request = scheduler._make_scheduled_request(request, Stage.RECURRENT, 1)
-    batch = SchedulerOutput(Stage.RECURRENT, [scheduled_request])
+    scheduled_request = scheduler._make_scheduled_request(request, RequestPhase.RECURRENT, 1)
+    batch = SchedulerOutput(RequestPhase.RECURRENT, [scheduled_request])
     request.loops_done = 3
     request.generated_token_ids.append(4)
     assert build_execution_batch(batch, 4).addresses() == (["r"], [2], [2])
 
 
 @torch.inference_mode()
-def test_prepared_work_cannot_write_to_a_reused_request_id():
+def test_prepared_batch_cannot_write_to_a_reused_request_id():
     config = tiny_ouro_config()
     cache = make_cache(config, "last_exited")
     model = OuroForCausalLM(config).eval()
-    executor = ExecutionRuntime(model, cache)
+    executor = ModelRuntime(model, cache)
     cache.allocate("r", 1)
     kv = cache.prepare_recurrent(ExecutionBatch(Operation.RECURRENT, (make_span("r", 0, 1, 0),)))
     cache.free("r")
@@ -120,7 +122,10 @@ def test_prepared_work_cannot_write_to_a_reused_request_id():
     cache.key_cache.fill_(17)
     before = cache.key_cache.clone()
     with pytest.raises(RuntimeError, match="stale"):
-        executor.advance(model.prelude(torch.tensor([1])), (kv,))
+        forward = ForwardBatch(
+            Operation.RECURRENT, hidden=model.prelude(torch.tensor([1])), metadata=(kv,)
+        )
+        executor.forward(executor.prepare(forward))
     torch.testing.assert_close(cache.key_cache, before)
 
 
@@ -190,7 +195,7 @@ def test_mixed_policy_runs_real_combined_batches_with_matching_outputs(
                 if output.finished:
                     outputs[output.request_id] = (output.token_ids, output.exit_depths)
             batch = engine.last_schedule
-            if batch is not None and batch.stage == Stage.MIXED:
+            if batch is not None and batch.is_mixed:
                 phases = {batch.phase_for(i) for i in batch.requests}
                 if len(phases) == 2:
                     # Both storage kinds pass through a single model invocation.
@@ -213,9 +218,9 @@ def test_mixed_policy_runs_real_combined_batches_with_matching_outputs(
 
 
 def mixed_ready_engine():
-    from tests.test_split_prefill import split_engine
+    from tests.helpers import make_prefill_engine
 
-    engine = split_engine(
+    engine = make_prefill_engine(
         scheduler_config=SchedulerConfig(
             mode="mixed",
             max_num_seqs=3,
@@ -227,21 +232,23 @@ def mixed_ready_engine():
         engine.add_request(name, prompt, SamplingParams(max_tokens=6, ignore_eos=True))
     for _ in range(100):
         batch = engine.scheduler.schedule()
-        if batch.stage == Stage.MIXED and len({batch.phase_for(i) for i in batch.requests}) == 2:
+        if batch.is_mixed and len({batch.phase_for(i) for i in batch.requests}) == 2:
             return engine, batch
         engine._update(batch, engine.executor.submit(batch).collect())
     pytest.fail("no mixed batch became ready")
 
 
 @torch.inference_mode()
-def test_prepared_plan_survives_progress_changes_and_contains_no_policy_label():
+def test_prepared_batch_survives_progress_changes_and_contains_no_policy_label():
     reference, reference_batch = mixed_ready_engine()
     expected = reference.model_runner.submit(
         batch=build_execution_batch(reference_batch, 4)
     ).collect()
     engine, batch = mixed_ready_engine()
-    prepared = engine.model_runner.prepare_batch(
-        build_execution_batch(batch, engine.model.config.total_ut_steps)
+    prepared = engine.model_runner.prepare_on_gpu(
+        engine.model_runner.prepare_on_cpu(
+            build_execution_batch(batch, engine.model.config.total_ut_steps)
+        )
     )
     for scheduled_request in batch.requests:
         scheduled_request.request.loops_done += 10
@@ -266,14 +273,14 @@ def test_late_mixed_result_cannot_advance_a_reused_request_id():
     old = next(
         scheduled_request.request
         for scheduled_request in batch.requests
-        if batch.phase_for(scheduled_request) == Stage.RECURRENT
+        if batch.phase_for(scheduled_request) == RequestPhase.RECURRENT
     )
     engine.abort_request(old.request_id)
     engine.add_request(old.request_id, [8, 9], SamplingParams(max_tokens=2))
     replacement = engine.scheduler.requests[old.request_id]
     engine._update(batch, result)
     assert replacement is not old
-    assert replacement.stage == Stage.WAITING
+    assert replacement.phase == RequestPhase.WAITING
     assert replacement.loops_done == 0
     assert replacement.generated_token_ids == []
     other = next(
@@ -284,15 +291,15 @@ def test_late_mixed_result_cannot_advance_a_reused_request_id():
     assert other.request.prefill_depth(other.token_start) == other.depth + 1
 
 
-def test_mixed_selection_protects_items_selected_from_another_queue(monkeypatch):
+def test_mixed_selection_protects_requests_selected_from_another_queue(monkeypatch):
     engine, batch = mixed_ready_engine()
     for scheduled_request in batch.requests:
         engine.scheduler.enqueue(scheduled_request.request, batch.phase_for(scheduled_request))
     selected = next(
-        i.request.request_id for i in batch.requests if batch.phase_for(i) == Stage.RECURRENT
+        i.request.request_id for i in batch.requests if batch.phase_for(i) == RequestPhase.RECURRENT
     )
     blocked = next(
-        i.request.request_id for i in batch.requests if batch.phase_for(i) != Stage.RECURRENT
+        i.request.request_id for i in batch.requests if batch.phase_for(i) != RequestPhase.RECURRENT
     )
     exclusions = []
     monkeypatch.setattr(
@@ -303,18 +310,18 @@ def test_mixed_selection_protects_items_selected_from_another_queue(monkeypatch)
         exclusions.append(excluded)
         return False
 
-    engine.scheduler.preempt_callback = preempt
+    engine.scheduler.preempt = preempt
     actual = engine.scheduler.schedule()
     assert [i.request.request_id for i in actual.requests] == [selected]
     assert exclusions == [frozenset({selected})]
-    assert list(engine.scheduler.queues[Stage.PREFILLING_RECURRENT]) == [blocked]
+    assert list(engine.scheduler.queues[RequestPhase.PREFILLING_RECURRENT]) == [blocked]
 
 
-def test_runtime_closes_metadata_lease_when_loop_execution_fails():
+def test_runtime_closes_metadata_iterator_when_loop_execution_fails():
     config = tiny_ouro_config()
     cache = make_cache(config, "last_exited")
     model = OuroForCausalLM(config)
-    runtime = ExecutionRuntime(model, cache)
+    runtime = ModelRuntime(model, cache)
     released = []
 
     def metadata():
@@ -328,7 +335,10 @@ def test_runtime_closes_metadata_lease_when_loop_execution_fails():
 
     model.recurrent_prepared = fail
     with pytest.raises(RuntimeError, match="injected"):
-        runtime.advance(torch.zeros(1, config.hidden_size), metadata())
+        forward = ForwardBatch(
+            Operation.RECURRENT, hidden=torch.zeros(1, config.hidden_size), metadata=metadata()
+        )
+        runtime.forward(runtime.prepare(forward))
     assert released == [True]
 
 
@@ -436,3 +446,18 @@ def test_invalid_loop_range_fails_before_writing_kv():
             batch=ExecutionBatch(Operation.RECURRENT, (make_span("r", 0, 1, 3),), 2)
         ).collect()
     torch.testing.assert_close(cache.key_cache, before)
+
+
+def test_mixed_attempt_with_one_selected_phase_is_not_a_mixed_batch():
+    from dataclasses import replace
+
+    engine, batch = mixed_ready_engine()
+    for span in batch.requests:
+        engine.scheduler.enqueue(span.request, span.phase)
+    engine.scheduler.config = replace(engine.scheduler.config, max_num_batched_tokens=1)
+    selected = engine.scheduler.schedule()
+    assert selected is not None
+    assert {span.phase for span in selected.requests} == {RequestPhase.RECURRENT}
+    assert selected.phase == RequestPhase.RECURRENT
+    assert not selected.is_mixed
+    engine.close()

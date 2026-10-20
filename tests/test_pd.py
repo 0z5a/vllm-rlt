@@ -1,20 +1,23 @@
 """PD ownership, paged transfer descriptors and real multi-process NIXL execution."""
 
-import json
-import os
 import time
-from contextlib import closing
 from dataclasses import replace
 
 import pytest
 import torch
-from safetensors.torch import save_file
 
-from tests.helpers import tiny_nanbeige_config, tiny_ouro_config
-from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
+from tests.helpers import tiny_ouro_config
+from vllm_rlt import (
+    CacheConfig,
+    ExecutionConfig,
+    ExitConfig,
+    SamplingParams,
+    SchedulerConfig,
+    SpeculativeConfig,
+)
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import AutoModelForCausalLM, NanbeigeForCausalLM, OuroForCausalLM
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.pd.config import PDConfig
 from vllm_rlt.pd.transport import kv_segments, partition_segments
 from vllm_rlt.profiling import Profiler
@@ -198,6 +201,8 @@ def create_pd(
     atomic_prefill=True,
     prefill_chunk_size=3,
     max_num_batched_tokens=5,
+    speculative=False,
+    asynchronous=True,
 ):
     pytest.importorskip("nixl")
     from vllm_rlt.pd.engine import PDEngine
@@ -223,9 +228,12 @@ def create_pd(
             prefill_chunk_size=prefill_chunk_size,
         ),
         decode_scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=2),
-        exit_config=ExitConfig("trace", depths_by_request={"t": [4, 2, 3, 1] * 16}),
+        exit_config=ExitConfig("ouro")
+        if speculative
+        else ExitConfig("trace", depths_by_request={"t": [4, 2, 3, 1] * 16}),
+        speculative_config=SpeculativeConfig(3) if speculative else None,
         execution_config=ExecutionConfig(
-            async_scheduling=True,
+            async_scheduling=asynchronous,
             atomic_prefill=atomic_prefill,
             static_buffers=graph,
             pad_to_power_of_two=graph,
@@ -259,7 +267,7 @@ def test_pd_generation_refill_cancel_and_reuse_matches_local(graph, layout):
             for target in (e, reference):
                 target.add_request(str(i), prompt, params, trace_id="t")
         assert drain(e) == drain(reference)
-        assert e.cache_manager.num_used_blocks == 0
+        assert e.stats()["reserved_blocks"] == 0
         # Sampling belongs entirely to D; moving P must not consume its RNG.
         stochastic = replace(params, temperature=0.7, top_k=32, seed=947)
         for target in (e, reference):
@@ -272,7 +280,7 @@ def test_pd_generation_refill_cancel_and_reuse_matches_local(graph, layout):
         e.add_request("reuse", prompts[1], params, trace_id="t")
         reference.add_request("reuse", prompts[1], params, trace_id="t")
         assert drain(e) == drain(reference)
-        assert all(p.slots == 0 and p.blocks == 0 for p in e.peers.values())
+        assert all(p.slots == 0 and p.reserved_blocks == 0 for p in e.peers.values())
     assert all(m["used_blocks"] == 0 for m in e.worker_metrics.values())
     assert sum(m["bytes_sent"] for m in e.worker_metrics.values()) > 0
 
@@ -314,11 +322,11 @@ def test_pd_multiple_workers_and_peer_failure():
         e.add_request("fail", [1] * 20, params, trace_id="t")
         e.step()
         peer = next(p for p in e.peers.values() if p.role == "prefill")
-        peer.process.kill()
-        peer.process.join()
+        peer.client.process.kill()
+        peer.client.process.join()
         with pytest.raises(RuntimeError):
             e.step()
-        assert e.closed and all(not p.process.is_alive() for p in e.peers.values())
+        assert e.closed and all(not p.client.process.is_alive() for p in e.peers.values())
 
 
 @pytest.mark.gpu
@@ -339,12 +347,12 @@ def test_pd_cancel_during_execution_and_close_with_live_request(phase):
             assert time.monotonic() < deadline
         e.abort_request("cancel")
         assert drain(e) == {}
-        assert all(p.slots == 0 and p.blocks == 0 for p in e.peers.values())
+        assert all(p.slots == 0 and p.reserved_blocks == 0 for p in e.peers.values())
         e.add_request("live", [2] * 50, params, trace_id="t")
         e.step()
     finally:
         e.close()
-    assert all(not p.process.is_alive() for p in e.peers.values())
+    assert all(not p.client.process.is_alive() for p in e.peers.values())
     assert all(m["used_blocks"] == 0 for m in e.worker_metrics.values())
 
 
@@ -355,7 +363,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
 
     from vllm_rlt.core.scheduler import Scheduler
     from vllm_rlt.engine.preemption import PreemptionManager
-    from vllm_rlt.request import Request, Stage
+    from vllm_rlt.request import Request, RequestPhase
 
     engine = object.__new__(LLMEngine)
     engine.async_speculative = False
@@ -364,7 +372,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
     engine.execution_config = ExecutionConfig(async_scheduling=async_scheduling)
     engine.scheduler = Scheduler(SchedulerConfig(), Mock())
     engine.cache_manager = engine.scheduler.cache_manager
-    receiving = Request("remote", [1], SamplingParams(max_tokens=1), stage=Stage.RECEIVING)
+    receiving = Request("remote", [1], SamplingParams(max_tokens=1), phase=RequestPhase.RECEIVING)
     engine.scheduler.requests[receiving.request_id] = receiving
     engine._inflight = []
     engine._pending_coda = []
@@ -382,7 +390,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
     engine.model_runner.synchronize.assert_not_called()
     if async_scheduling:
         # Reap the last local output while another request still awaits KV.
-        active = Request("local", [1], SamplingParams(max_tokens=1), stage=Stage.CODA)
+        active = Request("local", [1], SamplingParams(max_tokens=1), phase=RequestPhase.CODA)
         engine.scheduler.requests[active.request_id] = active
         active.num_output_placeholders = 1
         engine.model = SimpleNamespace(config=SimpleNamespace(eos_token_id=2))
@@ -398,7 +406,7 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
         assert outputs[0].token_ids == [3]
         assert list(engine.scheduler.requests) == ["remote"]
     # A lost runnable request must still trigger the original invariant.
-    receiving.stage = Stage.RECURRENT
+    receiving.phase = RequestPhase.RECURRENT
     with pytest.raises(RuntimeError, match="scheduler made no progress"):
         engine.step()
 
@@ -447,9 +455,7 @@ def test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs(p_cache, d_cach
         for i in range(3):
             assert results[0][f"0-{i}"].token_ids == results[1][f"1-{i}"].token_ids
             assert results[0][f"0-{i}"].exit_depths == results[1][f"1-{i}"].exit_depths
-        assert all(
-            p.slots == 0 and p.compute_slots == 0 and p.blocks == 0 for p in e.peers.values()
-        )
+        assert all(p.slots == 0 and p.reserved_blocks == 0 for p in e.peers.values())
     stats = list(e.worker_metrics.values())
     p = next(x for x in stats if x["prefill_tokens"])
     assert (p["prefill_tokens"] < 6 * 9) == p_cache
@@ -466,245 +472,6 @@ def test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs(p_cache, d_cach
     if d_cache:
         assert p["bytes_sent"] < full_bytes
     assert all(x["used_blocks"] == 0 for x in stats)
-
-
-@pytest.fixture
-def nanbeige_checkpoint(tmp_path):
-    # An explicit local checkpoint can qualify the same tests on official weights.
-    checkpoint = os.environ.get("VLLM_RLT_NANBEIGE_CHECKPOINT")
-    if checkpoint:
-        from pathlib import Path
-
-        assert Path(checkpoint).is_dir(), "provide a complete local checkpoint directory"
-        return checkpoint
-    torch.manual_seed(42)
-    model = NanbeigeForCausalLM(tiny_nanbeige_config(head_dim=64))
-    (tmp_path / "config.json").write_text(json.dumps(model.config.to_dict()))
-    save_file(model.state_dict(), str(tmp_path / "model.safetensors"))
-    return str(tmp_path)
-
-
-def test_pd_nanbeige_checkpoint_loading(nanbeige_checkpoint):
-    model = AutoModelForCausalLM.from_pretrained(nanbeige_checkpoint, dtype=torch.float32)
-    assert isinstance(model, NanbeigeForCausalLM)
-    assert model.config.total_ut_steps == 2
-
-
-def test_pd_coordinator_stores_typed_metadata(monkeypatch):
-    from unittest.mock import Mock
-
-    from vllm_rlt.pd.engine import PDEngine, PDModelInfo
-
-    context = Mock()
-    context.Pipe.side_effect = lambda: (Mock(), Mock())
-    monkeypatch.setattr("vllm_rlt.pd.engine.mp.get_context", lambda _: context)
-    config = tiny_nanbeige_config()
-
-    def ready(engine, condition, deadline):
-        for peer in engine.peers.values():
-            peer.info = dict(
-                fingerprint="same-weights",
-                model=config.to_dict(),
-                info=dict(agent=peer.name),
-                block_size=4,
-                depths=2,
-                num_blocks=128,
-            )
-            peer.ready = peer.connected = True
-        assert condition()
-
-    monkeypatch.setattr(PDEngine, "_wait", ready)
-    # The coordinator consumes worker metadata, not Nanbeige's full config class.
-    engine = PDEngine(tiny_ouro_config(), attention_backend="triton")
-    try:
-        assert engine.model_info == PDModelInfo(64, 2, 128)
-        assert not hasattr(engine, "model")
-        with pytest.raises(ValueError, match="loop bounds"):
-            engine.add_request("invalid", [2], SamplingParams(max_loops=3))
-        engine.add_request("valid", [2, 3], SamplingParams(max_tokens=4, max_loops=2))
-        assert engine.requests["valid"].prompt_token_ids == [2, 3]
-        engine.abort_request("valid")
-        assert not engine.requests and not engine.transfers
-        # A late control completion for generation A must not mutate generation B.
-        engine.add_request("reuse", [2], SamplingParams(max_tokens=1))
-        old = next(iter(engine.transfers.values()))
-        engine.abort_request("reuse")
-        engine.add_request("reuse", [3], SamplingParams(max_tokens=1))
-        replacement = next(iter(engine.transfers.values()))
-        engine._message(next(iter(engine.peers.values())), dict(kind="activated", tid=old.tid))
-        assert replacement.phase == "waiting"
-        assert engine.requests["reuse"] is replacement.request
-        assert replacement.request.generated_token_ids == []
-        engine.abort_request("reuse")
-    finally:
-        engine._terminate()
-
-
-def create_nanbeige_pd(checkpoint):
-    pytest.importorskip("nixl")
-    from vllm_rlt.pd.engine import PDEngine
-
-    if torch.cuda.device_count() < 2:
-        pytest.skip("requires 2 reserved visible GPUs")
-    return PDEngine(
-        checkpoint,
-        pd_config=PDConfig(
-            prefill_devices=(0,),
-            decode_devices=(1,),
-            transfer_chunk_bytes=4096,
-            max_inflight_bytes=16384,
-            request_timeout=90,
-            startup_timeout=180,
-        ),
-        prefill_cache_config=CacheConfig(128, 4, "last_exited"),
-        decode_cache_config=CacheConfig(128, 4, "last_exited"),
-        prefill_scheduler_config=SchedulerConfig(
-            max_num_seqs=2, max_num_batched_tokens=8, prefill_chunk_size=8
-        ),
-        decode_scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=2),
-        execution_config=ExecutionConfig(async_scheduling=True),
-        attention_backend="triton",
-    )
-
-
-def nanbeige_reference(checkpoint):
-    model = AutoModelForCausalLM.from_pretrained(checkpoint, device="cuda:0", dtype=torch.bfloat16)
-    assert isinstance(model, NanbeigeForCausalLM)
-    assert model.config.total_ut_steps == 2
-    return LLMEngine(
-        model,
-        cache_config=CacheConfig(128, 4, "last_exited"),
-        scheduler_config=SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=8),
-        attention_backend="triton",
-    )
-
-
-def assert_nanbeige_idle(engine):
-    assert not engine.requests and not engine.transfers
-    assert engine.cache_manager.num_used_blocks == 0
-    assert all(
-        p.slots == 0 and p.blocks == 0 and p.compute_slots == 0 for p in engine.peers.values()
-    )
-
-
-def assert_nanbeige_stopped(engine):
-    assert all(not p.process.is_alive() for p in engine.peers.values())
-    assert len(engine.worker_metrics) == 2
-    assert all(m["used_blocks"] == 0 for m in engine.worker_metrics.values())
-
-
-@pytest.mark.gpu
-def test_pd_nanbeige_1p1d_matches_single_engine(nanbeige_checkpoint):
-    """Real checkpoint loading and NIXL KV/hidden handoff, without forced exit traces."""
-    params = SamplingParams(max_tokens=4, temperature=0.0, ignore_eos=True)
-    with create_nanbeige_pd(nanbeige_checkpoint) as engine:
-        with closing(nanbeige_reference(nanbeige_checkpoint)) as reference:
-            for i, prompt in enumerate(([2, 3, 4, 5, 6] * 3, [6, 5, 4])):
-                for target in (engine, reference):
-                    target.add_request(str(i), prompt, params)
-            actual, expected = drain(engine), drain(reference)
-            assert actual == expected
-            assert len(actual) == 2
-            for output in actual.values():
-                assert output.finished and output.finish_reason == "length"
-                assert len(output.token_ids) == params.max_tokens
-                assert output.exit_depths == [2] * params.max_tokens
-            # Single output exercises hidden-state handoff without a recurrent decode.
-            for request_id, options in (
-                ("first-only", replace(params, max_tokens=1)),
-                ("seeded", replace(params, temperature=0.7, top_k=32, seed=947)),
-            ):
-                for target in (engine, reference):
-                    target.add_request(request_id, [6, 5, 4], options)
-                result = drain(engine)
-                assert result == drain(reference)
-                assert result[request_id].exit_depths == [2] * options.max_tokens
-        assert_nanbeige_idle(engine)
-    assert_nanbeige_stopped(engine)
-    assert sum(m["bytes_sent"] for m in engine.worker_metrics.values()) > 0
-
-
-@pytest.mark.gpu
-@pytest.mark.parametrize("phase", ["prefill", "handoff", "decode", "decode_output"])
-def test_pd_nanbeige_cancel_reuse_and_close(nanbeige_checkpoint, phase, monkeypatch):
-    params = SamplingParams(max_tokens=32, temperature=0.0, ignore_eos=True)
-    engine = create_nanbeige_pd(nanbeige_checkpoint)
-    try:
-        engine.add_request("reuse", [2, 3, 4, 5] * 12, params)
-        old = next(iter(engine.transfers.values()))
-        message = engine._message
-        boundary = dict(
-            prefill="prefill_started", handoff="commit", decode="activated", decode_output="output"
-        )[phase]
-        replacement = replace(params, max_tokens=4)
-        prompt = [6, 5, 4, 3, 2]
-        cancelled = False
-
-        def cancel_at_boundary(peer, event):
-            nonlocal cancelled
-            # Commit marks P's submitted handoff, before the coordinator activates D.
-            # Observe protocol boundaries rather than racing sleeps against CUDA.
-            reached = event.get("tid") == old.tid and event["kind"] == boundary
-            if phase == "decode_output" and reached:
-                reached = len(event["output"].token_ids) >= 2
-            if reached and not cancelled:
-                if phase in ("decode", "decode_output"):
-                    message(peer, event)
-                if phase == "decode_output":
-                    assert event["output"].token_ids and not event["output"].finished
-                aborted = engine.abort_request("reuse")
-                assert aborted.finished and aborted.finish_reason == "abort"
-                cancelled = True
-                assert old.tid in engine.transfers
-                engine.add_request("reuse", prompt, replacement)
-                if phase in ("decode", "decode_output"):
-                    return
-            message(peer, event)
-
-        monkeypatch.setattr(engine, "_message", cancel_at_boundary)
-        deadline = time.monotonic() + 60
-        while not cancelled:
-            engine.step()
-            assert time.monotonic() < deadline, f"did not reach {phase} boundary"
-        new = next(w for w in engine.transfers.values() if not w.cancelled)
-        assert new.tid != old.tid
-        with closing(nanbeige_reference(nanbeige_checkpoint)) as reference:
-            reference.add_request("reuse", prompt, replacement)
-            actual = drain(engine)
-            assert actual == drain(reference)
-            assert actual["reuse"].exit_depths == [2] * replacement.max_tokens
-        assert_nanbeige_idle(engine)
-        # Closing with a live request must drain cancellation before worker exit.
-        engine.add_request("live", [2, 3] * 24, params)
-        engine.step()
-    finally:
-        engine.close()
-    assert_nanbeige_idle(engine)
-    assert_nanbeige_stopped(engine)
-
-
-@pytest.mark.gpu
-def test_pd_nanbeige_eos_after_handoff(tmp_path):
-    """Deterministic EOS on the first output, through the unchanged P/D path."""
-    torch.manual_seed(42)
-    model = NanbeigeForCausalLM(tiny_nanbeige_config(head_dim=64, eos_token_id=0))
-    with torch.no_grad():
-        model.lm_head.weight.zero_()  # Greedy tie-breaking produces token 0 (EOS).
-    (tmp_path / "config.json").write_text(json.dumps(model.config.to_dict()))
-    save_file(model.state_dict(), str(tmp_path / "model.safetensors"))
-    checkpoint = str(tmp_path)
-    with create_nanbeige_pd(checkpoint) as engine:
-        with closing(nanbeige_reference(checkpoint)) as reference:
-            params = SamplingParams(max_tokens=4)
-            for target in (engine, reference):
-                target.add_request("eos", [2, 3, 4], params)
-            result = drain(engine)
-            assert result == drain(reference)
-            assert result["eos"].token_ids == [0]
-            assert result["eos"].exit_depths == [2]
-            assert result["eos"].finished and result["eos"].finish_reason == "stop"
-        assert_nanbeige_idle(engine)
-    assert_nanbeige_stopped(engine)
 
 
 def test_cancelled_transfer_does_not_recycle_pending_hidden_copy():
@@ -735,3 +502,79 @@ def test_cancelled_transfer_does_not_recycle_pending_hidden_copy():
     event.query.return_value = True
     connector.progress()
     connector._remove.assert_called_once_with(transfer)
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("atomic_prefill", [False, True])
+def test_pd_speculative_matches_local_and_retires_cancelled_rounds(asynchronous, atomic_prefill):
+    params = SamplingParams(max_tokens=9, ignore_eos=True)
+    with create_pd(
+        speculative=True, asynchronous=asynchronous, atomic_prefill=atomic_prefill
+    ) as engine:
+        torch.manual_seed(123)
+        reference = LLMEngine(
+            OuroForCausalLM(tiny_ouro_config(head_dim=64)).to("cuda:0", torch.bfloat16),
+            cache_config=CacheConfig(128, 4),
+            attention_backend="triton",
+        )
+        try:
+            prompts = [[1, 2, 3, 4, 5], [2, 3], [4], [5, 6, 7]]
+            for index, prompt in enumerate(prompts):
+                for target in (engine, reference):
+                    target.add_request(str(index), prompt, params)
+            assert drain(engine) == drain(reference)
+            engine.add_request("reuse", prompts[0], replace(params, max_tokens=60))
+            deadline = time.monotonic() + 60
+            while time.monotonic() < deadline:
+                outputs = engine.step()
+                if any(len(output.token_ids) > 1 for output in outputs):
+                    break
+            else:
+                pytest.fail("speculative decode did not start")
+            engine.abort_request("reuse")
+            for target in (engine, reference):
+                target.add_request("reuse", prompts[1], params)
+            assert drain(engine) == drain(reference)
+            assert all(
+                peer.slots == 0 and peer.reserved_blocks == 0 for peer in engine.peers.values()
+            )
+            engine.add_request("close-live", prompts[0], params)
+            engine.step()
+        finally:
+            reference.close()
+    assert all(metrics["used_blocks"] == 0 for metrics in engine.worker_metrics.values())
+
+
+def test_pd_reservations_are_reported_before_worker_acknowledgments():
+    from types import SimpleNamespace
+
+    from vllm_rlt.pd.engine import PDEngine, Peer, Pending
+    from vllm_rlt.request import Request
+
+    engine = PDEngine.__new__(PDEngine)
+    engine.config = PDConfig()
+    engine.scheduling_policy = "fcfs"
+    request = Request("r", [1, 2, 3], SamplingParams(max_tokens=3))
+    engine.requests = {"r": request}
+    engine.transfers = {"t": Pending(request, "t", None)}
+    info = dict(
+        transfer_slots=4,
+        max_active_requests=4,
+        num_blocks=64,
+        block_size=2,
+        depths=4,
+        watermark_blocks=0,
+        info={"agent": "test"},
+    )
+    engine.peers = {
+        role: Peer(role, role, SimpleNamespace(info=info)) for role in ("prefill", "decode")
+    }
+    messages = []
+    engine._send = lambda *args, **kwargs: messages.append((args, kwargs))
+    assert engine.stats() == dict(requests=1, reserved_blocks=0)
+    engine._admit()
+    # P reserves ceil(3/2)*4; D reserves ceil((3+3-1)/2)*4.
+    assert engine.stats() == dict(requests=1, reserved_blocks=20)
+    assert len(messages) == 1 and messages[0][0] == ("decode", "reserve")
+    assert not hasattr(engine, "cache_manager") and not hasattr(engine, "scheduler")

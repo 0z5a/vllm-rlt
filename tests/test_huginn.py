@@ -344,7 +344,9 @@ def test_huginn_graph_states_logits_and_kv_match_eager():
             states[0], _ = model.recurrent_prepared(
                 states[0], batches[0], caches[0], compute_gate=False
             )
-            states[1], _ = graphs.run(states[1], batches[1])
+            call = graphs.select(states[1], batches[1])
+            graphs.prepare_inputs(call, states[1])
+            states[1], _ = graphs.execute(call, states[1])
             torch.testing.assert_close(states[0], states[1], rtol=0, atol=0)
             for layer in model.recurrent_kv_layers:
                 for eager, replay in zip(

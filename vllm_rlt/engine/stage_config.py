@@ -6,7 +6,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class StageConfig:
     stage_id: str = "local"
-    role: str = "mixed"
+    role: str = "prefill_decode"
 
     @property
     def accepts_prompt(self):
@@ -17,7 +17,7 @@ class StageConfig:
         return self.role != "prefill"
 
     def __post_init__(self):
-        if self.role not in ("prefill", "decode", "mixed"):
-            raise ValueError("stage role must be prefill, decode or mixed")
+        if self.role not in ("prefill", "decode", "prefill_decode"):
+            raise ValueError("stage role must be prefill, decode or prefill_decode")
         if not self.stage_id:
             raise ValueError("stage_id must not be empty")

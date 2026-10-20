@@ -3,7 +3,7 @@
 from typing import Protocol
 
 from vllm_rlt.core.scheduler import PrefillProgress
-from vllm_rlt.request import Request, Stage
+from vllm_rlt.request import Request, RequestPhase
 
 
 class StageConnector(Protocol):
@@ -19,7 +19,7 @@ class StageConnector(Protocol):
         self,
         request: Request,
         *,
-        phase: Stage,
+        phase: RequestPhase,
         start: int | None,
         progress: PrefillProgress,
         event,
@@ -40,6 +40,27 @@ class TransferConnector(StageConnector, Protocol):
     and staging, and ask StageEngine to mutate Request/compute/KV state. Transport
     completion, import activation and source retirement are distinct transitions.
     """
+
+    def startup_info(self) -> dict:
+        """Transport-specific handshake fields for the deployment coordinator."""
+        ...
+
+    @property
+    def has_pending(self) -> bool:
+        """Whether transfers or remote access still prevent owner shutdown."""
+        ...
+
+    def command(self, command: dict) -> bool:
+        """Handle a protocol command; return False for generic worker commands."""
+        ...
+
+    def output_finished(self, request_id: str) -> None:
+        """Release connector resources for a request retired by the engine."""
+        ...
+
+    def close(self) -> dict:
+        """Close drained transport resources and return final transport metrics."""
+        ...
 
     def progress(self) -> None:
         """Poll device/transport readiness and advance transfers without blocking."""

@@ -111,6 +111,10 @@ class ExecutionConfig:
     cuda_graph_max_batch_size: int = 128
     cuda_graph_max_graphs: int = 16
     cuda_graph_memory_reserve_bytes: int = 1024**3
+    # Shared switch for mapped pinned-memory reads; unsupported devices copy instead.
+    use_uva: bool = True
+    # Select packed prefill metadata staging (and require packed attention).
+    # The historical name is retained; use_uva controls its transfer mechanism.
     prefill_uva: bool = False
     # Split prompt prefill into a staged prelude plus one scheduling boundary per
     # recurrence depth. Atomic prefill keeps mainline behavior and remains the
@@ -120,6 +124,7 @@ class ExecutionConfig:
     def __post_init__(self):
         for name in (
             "prefill_uva",
+            "use_uva",
             "atomic_prefill",
             "async_scheduling",
             "multi_stream",

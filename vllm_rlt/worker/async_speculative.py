@@ -6,11 +6,10 @@ from dataclasses import dataclass
 import torch
 
 from vllm_rlt.config import ExecutionConfig
-from vllm_rlt.core.execution import Operation
 from vllm_rlt.core.kv_cache_manager import _Allocation
 from vllm_rlt.core.scheduler import SchedulerOutput
-from vllm_rlt.request import Request
-from vllm_rlt.worker.execution import ForwardBatch
+from vllm_rlt.request import Operation, Request
+from vllm_rlt.worker.executor import ForwardBatch
 from vllm_rlt.worker.sampler import RngRegistry
 from vllm_rlt.worker.speculative import SpeculativeResult, SpeculativeRunner
 
@@ -148,7 +147,7 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
     def _execute_recurrent_step(self, hidden, positions, tables, depth, allocations):
         table = tables[:, depth].contiguous()
         blocks = table.gather(1, (positions // self.cache.block_size)[:, None]).squeeze(1)
-        metadata = self.cache._prepare_device_batch(
+        metadata = self.metadata.prepare_device(
             allocations=allocations,
             position_ids=positions,
             write_blocks=blocks.long(),
@@ -156,8 +155,9 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             block_tables=table,
             context_lengths=(positions + 1).int(),
         )
-        hidden, _ = self.runtime.advance(hidden, (metadata,))
-        return hidden
+        forward = ForwardBatch(Operation.RECURRENT, hidden=hidden, metadata=(metadata,))
+        prepared = self.runtime.prepare(forward)
+        return self.runtime.forward(prepared).hidden
 
     def _prepare_round(self, batch):
         buffer = next((b for b in self.buffers if not b.leased), None)
@@ -327,6 +327,17 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             if state.event is not None:
                 state.event.synchronize()
             del self.states[request.request_id]
+
+    def discard_buffers(self):
+        """Reset round storage after both streams drain and all tickets retire.
+
+        A failed submission may own a buffer without having returned a ticket.
+        The engine orders draining and ticket retirement; this runner owns the
+        remaining buffer cleanup. No host result needs to be decoded here.
+        """
+        for buffer in self.buffers:
+            buffer.keepalive.clear()
+            buffer.leased = False
 
     def synchronize(self):
         self.compute_stream.synchronize()

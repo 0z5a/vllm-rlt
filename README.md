@@ -108,12 +108,12 @@ supported combinations.
 
 | Checkpoint | Implementation | Documented validation scope | Guide |
 | --- | --- | --- | --- |
-| Ouro-1.4B | Native Ouro | Existing runtime and benchmark coverage under their recorded configurations | [Runtime](docs/cdb_runtime.md), [accuracy](docs/accuracy.md) |
+| Ouro-1.4B | Native Ouro | Existing runtime and benchmark coverage under their recorded configurations | [Runtime](docs/runtime.md), [accuracy](docs/accuracy.md) |
 | Ouro-2.6B | Shared Ouro | Shares the Ouro implementation; not separately qualified, and 1.4B quality/performance results are not inherited | [Scope notes](docs/recipes/ouro_thinking.md#6-evidence-and-limitations) |
 | Ouro-1.4B-Thinking | Reuses Ouro | Bounded BF16, fixed-four-loop synchronous basic integration | [Shared recipe](docs/recipes/ouro_thinking.md) |
 | Ouro-2.6B-Thinking | Reuses Ouro | Bounded BF16, fixed-four-loop synchronous basic integration | [Shared recipe](docs/recipes/ouro_thinking.md) |
-| Nanbeige4.2-3B | Native Nanbeige | Fixed two-loop inference | [Runtime](docs/cdb_runtime.md) |
-| Huginn-0125 | Native Huginn | Synchronous fixed-depth, LAST_EXITED KV, CUDA Graph decode core and coda | [Runtime](docs/cdb_runtime.md) |
+| Nanbeige4.2-3B | Native Nanbeige | Fixed two-loop inference | [Runtime](docs/runtime.md) |
+| Huginn-0125 | Native Huginn | Synchronous fixed-depth, LAST_EXITED KV, CUDA Graph decode core and coda | [Runtime](docs/runtime.md) |
 
 Shared implementation does not qualify every checkpoint/feature combination;
 see the linked guides for validation scope and limitations. See
@@ -125,9 +125,11 @@ inference and CUDA Graphs for the recurrent core and decode coda.
 
 ## How It Works
 
-Full-depth prefill produces the first token through the coda. Each subsequent
-token passes through the prelude and a variable number of recurrent loops
-before sampling. Requests at different loop depths can share the same batch.
+Prompt tokens traverse the full recurrent depth before the coda produces the
+first output. With atomic prefill, a chunk's loops run in one submission; split
+prefill exposes loop boundaries for scheduling and compatible prefill/decode
+mixed batches. Each subsequent token passes through prelude, recurrence and
+coda. The diagram below illustrates the atomic-prefill path.
 
 ```mermaid
 flowchart LR
@@ -146,11 +148,11 @@ flowchart LR
 ```
 
 **Stage is the deployment and resource boundary; loop is the unit of execution
-and scheduling within a stage.** Prefill, decode and mixed stages share one
+and scheduling within a stage.** Prefill, decode and prefill_decode stages share one
 execution architecture.
 
 See the [architecture and flow diagrams](docs/unified_execution.md) and the
-[runtime guide](docs/cdb_runtime.md) for implementation details and supported
+[runtime guide](docs/runtime.md) for implementation details and supported
 configurations.
 
 <a href="docs/assets/inference/ouro-inference.mp4">

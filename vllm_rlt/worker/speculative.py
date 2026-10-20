@@ -9,11 +9,14 @@ from dataclasses import dataclass
 
 import torch
 
-from vllm_rlt.core.execution import Operation
 from vllm_rlt.core.scheduler import SchedulerOutput
+from vllm_rlt.request import Operation
+from vllm_rlt.worker.buffers import stage_metadata
 from vllm_rlt.worker.cuda_graph import CodaGraphs, RecurrentGraphs
-from vllm_rlt.worker.execution import ExecutionRuntime, ForwardBatch
+from vllm_rlt.worker.executor import ForwardBatch, ModelRuntime
 from vllm_rlt.worker.sampler import RngRegistry, Sampler
+from vllm_rlt.worker.submission_queue import SubmissionQueue
+from vllm_rlt.worker.tensors import StagedInputTensor
 
 
 @dataclass(frozen=True)
@@ -109,9 +112,15 @@ class SpeculativeRunner:
         compute_stream=None,
     ):
         self.model, self.cache, self.config = model, cache, config
-        self.runtime = runtime if runtime is not None else ExecutionRuntime(model, cache)
+        self.metadata = cache.metadata_builder
+        self.runtime = runtime if runtime is not None else ModelRuntime(model, cache)
         self.device = next(model.parameters()).device
         self.compute_stream = compute_stream
+        self.submissions = SubmissionQueue()
+        self.input_buffers = {
+            dtype: StagedInputTensor(dtype, self.device, use_uva=execution.use_uva)
+            for dtype in (torch.int64, torch.int32)
+        }
         # The engine injects one registry per engine so both sampling paths share
         # each request's RNG slot.
         self.rng = rng if rng is not None else RngRegistry()
@@ -124,23 +133,55 @@ class SpeculativeRunner:
     def _packed(self, packed):
         return packed and self.cache.attention_capabilities.packed_prefill
 
-    def _cores(self, hidden, ids, positions, depths, *, packed=False):
-        # Depth-independent metadata is prepared and copied once for all depths.
-        batches = self.cache._prepare_batches(
-            ids,
-            [[depth] * len(ids) for depth in depths],
-            positions,
-            packed_prefill=self._packed(packed),
+    def _prepare_inputs(self, batch):
+        """Plan all host-known inputs, then publish one snapshot per dtype."""
+        for buffer in self.input_buffers.values():
+            buffer.reset()
+        requests = batch.requests
+        tokens = self.input_buffers[torch.int64].append(
+            [span.request.input_token_id for span in requests]
         )
-        return self.runtime.advance(hidden, batches, graphs=self.graphs).hidden
 
-    def _core(self, hidden, ids, positions, depth, *, packed=False, batch=None):
-        if batch is None:
-            batch = self.cache._prepare_batch(
-                ids, [depth] * len(ids), positions, packed_prefill=self._packed(packed)
+        def metadata(ids, positions, depths, *, packed=False):
+            layouts = self.metadata.build(
+                ids,
+                [[depth] * len(ids) for depth in depths],
+                positions,
+                packed=self._packed(packed),
             )
-        hidden, _ = self.runtime.advance(hidden, (batch,), graphs=self.graphs)
-        return hidden
+            return stage_metadata(
+                layouts, lambda values, dtype: self.input_buffers[dtype].append(values)
+            )
+
+        steps = []
+        for offset in range(max(span.token_count for span in requests)):
+            active = [i for i, span in enumerate(requests) if offset < span.token_count]
+            ids = [requests[i].request.request_id for i in active]
+            positions = [requests[i].token_start + offset for i in active]
+            steps.append((active, metadata(ids, positions, range(self.config.draft_loops))))
+        ids, positions = [], []
+        for span in requests:
+            ids.extend([span.request.request_id] * span.token_count)
+            positions.extend(range(span.token_start, span.token_start + span.token_count))
+        verification = metadata(
+            ids, positions, range(self.config.draft_loops, self.config.target_loops), packed=True
+        )
+        uploaded = {dtype: buffer.upload() for dtype, buffer in self.input_buffers.items()}
+        tokens = uploaded[tokens.dtype].as_strided(
+            tokens.shape, tokens.stride(), tokens.storage_offset()
+        )
+        steps = [
+            (active, tuple(self.metadata.bind(kv, uploaded) for kv in layouts))
+            for active, layouts in steps
+        ]
+        verification = tuple(self.metadata.bind(kv, uploaded) for kv in verification)
+        return tokens, steps, verification
+
+    def _recurrent(self, hidden, metadata):
+        forward = ForwardBatch(
+            Operation.RECURRENT, hidden=hidden, metadata=metadata, graphs=self.graphs
+        )
+        return self.runtime.forward(self.runtime.prepare(forward)).hidden
 
     def _acquire_generator(self, request, logits):
         """Resolve this request's generator from the shared engine registry.
@@ -152,15 +193,18 @@ class SpeculativeRunner:
 
     def _coda(self, hidden):
         return self.runtime.forward(
-            ForwardBatch(
-                Operation.CODA,
-                hidden=hidden,
-                graphs=self.coda_graphs,
+            self.runtime.prepare(
+                ForwardBatch(
+                    Operation.CODA,
+                    hidden=hidden,
+                    graphs=self.coda_graphs,
+                )
             )
         ).logits
 
     @torch.inference_mode()
     def submit(self, batch):
+        self.submissions.begin()
         try:
             if self.compute_stream is not None:
                 self.compute_stream.wait_stream(torch.cuda.current_stream(self.device))
@@ -169,40 +213,28 @@ class SpeculativeRunner:
                 if self.compute_stream is not None
                 else nullcontext()
             ):
-                return self._submit_round(batch)
+                inputs, steps, verification = self._prepare_inputs(batch)
+                submission = self._submit_round(batch, inputs, steps, verification)
+                self.submissions.complete(submission.event)
+                return submission
         except Exception:
             # Failed submissions may not have recorded a completion event.
             if self.device.type == "cuda":
                 (self.compute_stream or torch.cuda.current_stream(self.device)).synchronize()
+            self.submissions.drain()
             raise
 
-    def _submit_round(self, batch):
+    def _submit_round(self, batch, inputs, steps, verification):
         scheduled_requests = batch.requests
         proposals = [[] for _ in scheduled_requests]
         states = [[] for _ in scheduled_requests]
         # Draft IDs stay on the device: each offset's IDs are the next offset's
         # prelude input, and all of them are read back once after verification.
         drafted = []
-        inputs = self.cache._stage(
-            [scheduled_request.request.input_token_id for scheduled_request in scheduled_requests],
-            torch.long,
-        )
-        # Each scheduled request includes the final shallow input needed for the bonus row.
-        # Drafting batches independent requests at every autoregressive step.
-        for offset in range(
-            max(scheduled_request.token_count for scheduled_request in scheduled_requests)
-        ):
-            # The rows still drafting at the previous offset are exactly this
-            # offset's active rows, in the same order, so their IDs are the inputs.
-            active = [
-                i
-                for i, scheduled_request in enumerate(scheduled_requests)
-                if offset < scheduled_request.token_count
-            ]
-            ids = [scheduled_requests[i].request.request_id for i in active]
-            positions = [scheduled_requests[i].token_start + offset for i in active]
+        # Each step consumes the previous step's GPU-resident sampled IDs.
+        for offset, (active, metadata) in enumerate(steps):
             hidden = self.runtime.forward(ForwardBatch(Operation.PRELUDE, tokens=inputs)).hidden
-            hidden = self._cores(hidden, ids, positions, range(self.config.draft_loops))
+            hidden = self._recurrent(hidden, metadata)
             drafting = []
             for row, i in enumerate(active):
                 states[i].append(hidden[row])
@@ -220,24 +252,9 @@ class SpeculativeRunner:
                     # Per-request RNG consumption order is unchanged; only the read moves.
                     inputs[row] = Sampler.draw(q, self._acquire_generator(request, logits[row]))
             drafted.append(([i for _, i in drafting], inputs))
-        # Group contiguous positions per request for causal ragged attention.
-        ids, positions = [], []
-        for scheduled_request in scheduled_requests:
-            ids.extend([scheduled_request.request.request_id] * scheduled_request.token_count)
-            positions.extend(
-                range(
-                    scheduled_request.token_start,
-                    scheduled_request.token_start + scheduled_request.token_count,
-                )
-            )
+        # Verification rows are contiguous by request, matching prepared metadata.
         hidden = torch.stack([h for request_states in states for h in request_states])
-        hidden = self._cores(
-            hidden,
-            ids,
-            positions,
-            range(self.config.draft_loops, self.config.target_loops),
-            packed=True,
-        )
+        hidden = self._recurrent(hidden, verification)
         logits = self._coda(hidden)
         event = None
         if self.device.type == "cuda":
@@ -245,7 +262,7 @@ class SpeculativeRunner:
             event.record(torch.cuda.current_stream(self.device))
         self.stats.rounds += len(scheduled_requests)
         self.stats.drafted_tokens += sum(len(rows) for rows, _ in drafted)
-        self.stats.verified_rows += len(ids)
+        self.stats.verified_rows += sum(span.token_count for span in scheduled_requests)
         return SpeculativeSubmission(self, batch, logits, drafted, proposals, event)
 
     @torch.inference_mode()

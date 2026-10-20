@@ -1,441 +1,193 @@
-# Stage deployment boundaries and unified execution
+# An inference foundation for loop models
 
-**Stage is the deployment and resource boundary; loop is the unit of execution
-and scheduling within a stage.**
+vllm-rlt aims to become both a foundation for executing loop-architecture models
+and a collection of engineering knowledge about how to run them well. Its purpose
+is to make current models useful while leaving behind implementations, design
+reasoning, and evidence that others can build on. A future RSI system or a highly
+customized inference engine should be able to draw from this work, whether it
+adopts the runtime, reuses a component, or learns from a measured tradeoff.
 
-This guide describes the current implementation. Open the
-[offline diagram viewer](diagrams/index.html) without a network connection or
-Mermaid plugin, or view the [architecture](diagrams/stage-architecture.svg),
-[execution flow](diagrams/unified-forward.svg) and
-[PD handoff sequence](diagrams/pd-handoff.svg) as SVGs. Each diagram also has a
-PNG export and editable `.mmd` source. Markdown viewers that support Mermaid
-render the diagrams below directly.
+The starting point is a need for an engine that treats recurrent depth as part
+of inference scheduling and state management. Executing a loop model is only
+part of that requirement: the engine must also be able to schedule between loops,
+combine compatible work, and track KV validity as requests advance through
+different depths. In an architecture that keeps these iterations inside an
+opaque model forward, exposing them changes assumptions across the scheduler,
+execution path, and cache lifecycle. It is a change to the engine's core
+contracts, rather than a feature that can be added through a model adapter.
+vllm-rlt takes an independent implementation approach so that these contracts can
+be designed around loop-level inference from the outset, instead of maintaining
+extensive changes across an existing engine's core.
 
-## 1. Architecture: the same StageEngine in every deployment stage
+vllm-rlt is an independently implemented inference engine and does not depend on
+vLLM. It draws on selected engineering conventions and feature designs from
+vLLM, including request scheduling, continuous batching, paged KV management,
+chunked prefill, and MRV2-inspired async-first execution and persistent-batch
+design. These are references for our own implementation, not a runtime or codebase
+that vllm-rlt extends.
 
-```mermaid
-flowchart TB
-    host["API / Deployment host / PD Coordinator<br/>Request routing · Process management · Control protocol"]
-    subgraph owner["Deployment and resource boundary · Stage A owner process"]
-      direction TB
-      config["StageEngine<br/>role → Capabilities and scheduling policy"]
-      subgraph control["Requests and scheduling"]
-        direction LR
-        req["Request registry<br/>Local requests and logical progress"]
-        sched["Scheduler<br/>PromptOnly / refill / mixed / speculation<br/>Readiness · Token budget · Loop scheduling"]
-        req <--> sched
-      end
-      subgraph execution["Unified execution · Within one device"]
-        direction TB
-        exe["Executor<br/>Single submission entry point"]
-        runner["ModelRunner<br/>metadata · buffer · event<br/>Optional streams: core / boundary / copy / readback"]
-        spec["Speculative controller<br/>Local draft / verify / acceptance"]
-        forward["ExecutionRuntime.forward<br/>PRELUDE · RECURRENT · CODA"]
-        fast["Preserved execution optimizations<br/>packed prefill · static decode · CUDA Graph"]
-        exe --> runner & spec
-        runner & spec --> forward
-        forward --> fast
-      end
-      kv["KVCacheManager<br/>Allocation · Valid ranges · Transfer lease"]
-      conn["Connector<br/>Local RequestTransfer / Staging slot owner<br/>reserve · progress · cancel · commit · ack"]
-      config --> req
-      sched -->|Request references and execution snapshots| exe
-      sched -.->|Capacity and validity| kv
-      runner -.->|Device access and resource binding| kv
-      conn -.->|Backpressure and readiness| sched
-      config -->|Submitted ranges + Completion event| conn
-      conn -->|Activate / Suspend / Release compute state / Release lease| config
-      transport["Transport · NIXL<br/>Registration · WRITE · Completion notifications"]
-      conn --> transport
-    end
-    subgraph peer["Separate deployment boundary · Stage B owner process"]
-      remote["Same StageEngine implementation<br/>Independent Request / Scheduler / KV / Executor"]
-    end
-    host --> config
-    host -.->|Deployment and control| remote
-    transport <-->|Across stages: KV / Hidden / Completion notifications| remote
-    classDef api fill:#e2e8f0,stroke:#64748b,color:#0f172a;
-    classDef engine fill:#dbeafe,stroke:#2563eb,color:#172554;
-    classDef compute fill:#dcfce7,stroke:#16a34a,color:#14532d;
-    classDef state fill:#ede9fe,stroke:#7c3aed,color:#3b0764;
-    classDef transport fill:#ffedd5,stroke:#ea580c,color:#7c2d12;
-    class host api;
-    class config,remote,sched,exe engine;
-    class runner,spec,forward,fast compute;
-    class req,kv state;
-    class conn,transport transport;
-    style owner fill:#f8fafc,stroke:#2563eb,stroke-width:2px
-    style control fill:#f5f3ff,stroke:#c4b5fd
-    style execution fill:#f0fdf4,stroke:#86efac
-    style peer fill:#eff6ff,stroke:#2563eb,stroke-width:2px
-```
+These ideas remain valuable for loop models. The additional challenge is that a
+token's computation can revisit recurrent layers at successive depths, and
+requests can take different paths through those depths. The runtime needs to
+represent that progress explicitly so that scheduling and resource management
+can make use of it.
 
-`StageConfig.role` defines the work a deployment accepts, not the operation of
-a particular forward call. `SchedulerConfig.mode` independently selects the
-scheduling policy within that stage. Initialization derives `accepts_prompt`
-and `produces_tokens` capabilities and selects PromptOnlyPolicy or the existing
-refill, mixed or speculative policy. The shared `_schedule` path calls
-`Scheduler.schedule`; it does not dispatch by deployment role.
+## Design philosophy
 
-The scheduler checks decode admission, and the readiness contract checks
-explicit routing for prompt-only requests. Every stage uses `submit`;
-submissions with no host output do not add result readback. For example, a
-mixed deployment role may use refill, mixed batching or local speculation.
-Speculation does not create a deployment stage: draft and verification stay
-within the local controller and GPU.
+**Stage is the deployment and resource boundary; loop is the basic unit of
+execution and scheduling within a stage.**
 
-**Request routing determines communication.** `connector.exports(request)`
-indicates that a request's prompt result must go downstream. A mixed stage can
-retain local requests while exporting others. Attaching a connector does not
-export every request, and a mixed role does not prohibit exports.
+Stage ownership remains explicit as prefill, decode, and speculative computation are
+arranged across resources; loop-level execution exposes the progress needed for
+mixed batching and depth-aware scheduling. We follow an async-first approach:
+input preparation and output collection have separate lifetimes, connected by
+submission identity and completion events, while persistent device state and
+reusable buffers avoid unnecessary reconstruction. A common execution contract
+preserves specialized layouts, continuous multi-loop execution, CUDA Graphs, and
+stream overlap. Through this independently implemented engine, we aim to build
+reusable foundations and practical knowledge for loop models, future RSI
+systems, and custom inference engines.
 
-The PD launcher still starts P and D processes, each using the same StageEngine.
-The single-stage API instantiates StageEngine in the caller's owner process;
-`LLMEngine` is a compatibility alias. There is no arbitrary-topology launcher,
-and scheduling a loop does not start or switch a process.
+## Why stages and loop-level execution are both needed
 
-## 2. Execution flow: unified submission and logical progress
+PD and speculative inference require flexible placement of computation and clear
+resource ownership. Stages let prefill, decode, and speculative computation use
+the same local execution machinery across deployment arrangements. Connectors
+handle cross-stage state transfer; local draft/verify work can stay within one
+stage.
 
-```mermaid
-flowchart TB
-    local(["Local request<br/>add_request"])
-    imported(["Cross-stage request<br/>Connector.reserve → Receive commit + All sequence numbers<br/>→ Engine.activate_import"])
-    req["Reuse the stage-local Request<br/>Snapshot token / depth positions per submission"]
-    schedule["StageEngine.step → Scheduler.schedule<br/>Select policy at initialization; no runtime role dispatch"]
-    ready{"Executable batch available?"}
-    wait["Yield this scheduling tick<br/>Await connector progress or pending execution"]
-    exe["Executor.submit → ticket"]
-    mode{"Speculative round?"}
-    ordinary["Ordinary execution<br/>ExecutionBatch → ModelRunner"]
-    speculative["Local speculative control<br/>Submit dependent draft / verify steps"]
-    forward["Shared ExecutionRuntime.forward<br/>PRELUDE / RECURRENT / CODA"]
-    resident["Continuous execution on device<br/>Atomic prefill: N loops / Speculative steps<br/>No cross-stage communication"]
-    progress["StageEngine applies submission results<br/>Advance logical progress under event / ticket constraints"]
-    route{"Explicit route for this request<br/>to export prompt results?"}
-    export["Connector.prefill_submitted<br/>Record dependencies / Stage hidden / Queue transfers<br/>Separate progress tick polls completion without blocking"]
-    next{"More work in this stage?"}
-    done(["Return output or await handoff acknowledgment<br/>Release resources according to lifetime"])
-    local & imported --> req --> schedule --> ready
-    ready -->|No| wait
-    wait -.->|Later tick| schedule
-    ready -->|Yes| exe --> mode
-    mode -->|No| ordinary --> forward
-    mode -->|Yes| speculative --> forward
-    forward --- resident
-    forward --> progress --> route
-    route -->|Yes| export --> next
-    route -->|No| next
-    next -->|Next loop / chunk / decode| schedule
-    next -->|Done or handed off| done
-    classDef entry fill:#e2e8f0,stroke:#64748b,color:#0f172a;
-    classDef control fill:#dbeafe,stroke:#2563eb,color:#172554;
-    classDef compute fill:#dcfce7,stroke:#16a34a,color:#14532d;
-    classDef decide fill:#fef3c7,stroke:#d97706,color:#78350f;
-    classDef transport fill:#ffedd5,stroke:#ea580c,color:#7c2d12;
-    class local,imported,done entry;
-    class req,schedule,exe,progress,wait control;
-    class ordinary,speculative,forward,resident compute;
-    class ready,mode,route,next decide;
-    class export transport;
-```
+Deployment flexibility alone is insufficient. If recurrent iterations remain
+hidden inside a model forward, the scheduler cannot regroup requests between
+loops. True loop-level inference exposes each request's operation, token range,
+recurrent depth, and KV validity to scheduling and execution. This enables
+compatible prefill chunks and decode tokens to share recurrent batches, while
+preserving each request's progress and exit decisions. Current mixed batching
+uses this capability; it does not include speculative rounds.
 
-All execution enters through `Executor.submit(batch)` and returns a ticket.
-There is no public `execute` entry point. `async_scheduling` controls collection
-timing rather than selecting another execution interface. Without pipelining,
-only tickets with host results need `collect()`. With pipelining, tickets are
-retained and collected according to dependencies while later work is submitted.
-Prefill and loop submissions without host results do not force a GPU wait to
-advance logical progress; events enforce device dependencies.
+Both boundaries are necessary: stage separates resource placement from execution,
+while loop-level scheduling makes iterative computation available for batching
+and control. Neither requires interrupting every loop. Consecutive loops can run
+in one submission, retaining atomic prefill, specialized layouts, CUDA Graphs,
+and asynchronous overlap without adding per-loop host synchronization.
 
-Ordinary speculation submits draft and verification in `submit()` and performs
-acceptance in `collect()`. Asynchronous speculation retains device-side
-acceptance and its two-round buffer pipeline. Ordinary, mixed and prompt-only
-requests advance through `_apply_prefill_progress`, which delegates split
-prefill to `_apply_split_prefill_progress`.
+## Architecture overview
 
-An atomic prefill ExecutionBatch contains PRELUDE plus N loops, with hidden
-states staying on device. A split prefill RECURRENT submission may return
-control to the scheduler; that does not imply exporting data. Chunk size,
-loop submission boundaries and stage communication boundaries are independent.
+![Stage ownership and loop-level execution](diagrams/stage-architecture.png)
 
-## 3. PD handoff and resource lifetimes
+[Open full-size PNG](diagrams/stage-architecture.png) ·
+[Open SVG](diagrams/stage-architecture.svg)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant C as Coordinator / Host
-    participant P as P · StageEngine
-    participant X as P · PD Connector
-    participant Y as D · PD Connector
-    participant D as D · StageEngine
-    Note over P,X: Same process, no RPC for loop execution
-    Note over Y,D: Same process, Connector owns transfer state and staging
-    C->>Y: reserve (transfer generation)
-    Y->>D: reserve_transfer(receiving=True)
-    Note over D: Create local Request · RECEIVING<br/>Reserve KV and pin lease
-    Y-->>C: reserved (mapping, slot, prefix hit)
-    C->>X: reserve (target mapping)
-    X->>P: reserve_transfer(receiving=False)
-    loop Each prompt submission
-        P->>P: Shared step → Executor → forward
-        P->>X: prefill_submitted (ranges + event)
-        Note over P,X: Logical progress advanced, GPU may still be running
-        X->>X: Queue transferable ranges, stage hidden for final range
-        Note over X,Y: Host drives progress, event.query + Transfer credits<br/>NIXL WRITE when ready, no CPU blocking
-        X-->>Y: KV / hidden and sequence completion notifications
-    end
-    X->>P: release_transfer_compute (ready event)
-    Note over P: Engine checks readiness and releases compute state<br/>Retain KV transfer lease
-    X-->>C: commit (expected count)
-    C->>Y: commit (not receive completion)
-    Y->>Y: Collect this generation's sequences and check compute capacity
-    Y->>D: activate_import (same local Request)
-    Note over D: Mark KV valid · Unpin import lease · Enter CODA
-    Y-->>C: activated
-    C->>X: acknowledge
-    X->>X: Committed + Compute state released<br/>+ Transport no longer accesses source resources
-    X->>P: release_transfer
-    X->>X: Reclaim staging slot
-    rect rgb(255, 244, 239)
-        Note over P,D: Cancellation: Connector stops submissions, Engine suspends scheduling and retains resources<br/>Release after local events and remote access finish, receiver waits for cancel_safe
-    end
-```
+The central stage owns its scheduling, execution, and resources. Optional
+upstream and downstream stages connect through connectors; without them, the
+stage receives requests and delivers outputs directly.
 
-Commit proves that submission has ended, not that reception has completed.
-The PD protocol uses a distinct transfer ID as its generation and a set of
-sequence numbers to prevent stale messages from activating a new request.
+Inside the scheduler, request A's prefill chunk at loop 2 joins request B's decode
+token at loop 3 and request C's decode token at loop 1 in one mixed recurrent
+batch. The colors follow each request into shared execution: batching does not
+require their phases or loop depths to match. Each request retains its own token
+range, depth, and KV state, then advances or exits independently. The scheduler
+can regroup the remaining work for the next loop.
 
-Cancellation first stops new submissions. Resources become reusable only after
-remote writes and local hidden-state staging copies finish. The cancellation
-path checks `last_event.query()` so a completed model event cannot cause early
-reuse while a staging copy is still running. Compute or transport failures
-retain the lease; the deployment owner follows the PD failure protocol to stop
-the remote writer before reclaiming receiving resources.
+PRELUDE and CODA remain separate operations; the illustrated mixing applies to
+compatible RECURRENT work, not speculative rounds. Consecutive loops can also
+run locally without a host synchronization after every iteration.
 
-## 4. File responsibilities and review order
+The scheduler is the control center: it selects operations, token ranges, and loop
+depths, forms compatible batches, and uses per-request progress to decide what
+runs next. Execution runs the selected operation. Its arrows show the model's
+PRELUDE → RECURRENT → CODA order, including recurrent repetition; they do not
+mean every submission runs all three operations.
 
-Paths below are relative to `vllm_rlt/`.
+## Inside one stage
 
-| File | Responsibility |
+![Stage processes, components and call relationships](diagrams/stage-components.png)
+
+[Open PNG](diagrams/stage-components.png) · [Open SVG](diagrams/stage-components.svg)
+
+Read the outer boundaries first: `StageClient` lives in the caller process;
+`StageWorker` runs in a spawned worker process. Inside that worker, `StageEngine`
+coordinates local inference, while the optional connector manages transport.
+Boxes show component membership, not exclusive ownership of every referenced
+tensor. Solid arrows show calls or returns; dashed lines identify shared
+references and lifecycle relationships. The `step()` area depicts StageEngine
+methods, not an additional controller class.
+
+**Client and worker.** StageClient starts and manages one worker through a
+`multiprocessing.Pipe`. It sends requests/control commands, keeps external-ID to
+execution-generation mappings and receives outputs/replies. Its `step()` polls
+outputs; it does not remotely execute a model loop. StageWorker loads the model,
+creates the engine and optional connector, and runs the local service loop:
+handle commands, advance transport, call `engine.step()`, send available outputs.
+Registering a request and completing its generation are separate events.
+
+**Engine and scheduler.** StageEngine calls Scheduler to select work. Scheduler
+owns its local Request registry, phase queues and policy, checks admission/KV
+capacity and returns selected operations, token ranges and depths. It does not
+invoke ModelRunner. StageEngine submits the returned batch, retains tickets,
+handles required results and applies progress, including requeueing and stop or
+retirement decisions. The engine drives this cycle even when the caller is not
+polling outputs.
+
+**Executor and runners.** Engine calls `Executor.submit(batch)`. Executor binds
+ordinary work into an execution batch and dispatches it to ModelRunner, or
+routes a speculative selection to the local round controller. StageEngine
+constructs these objects; Executor references them rather than creating another
+model/KV owner. Runners manage preparation, buffers, stream/event dependencies,
+execution and result storage; the ordinary runner also handles sampling after
+CODA. A returned ticket does not imply device completion.
+
+**Shared execution and resources.** ModelRunner constructs ModelRuntime and the
+speculative controller references that same runtime. Both use the worker-loaded
+model, the engine's KV manager and shared RNG registry. The runtime executes the
+selected PRELUDE, RECURRENT or CODA operation; the three labels are alternatives,
+not a mandatory three-step sequence in each submission. A submission can include
+multiple recurrent loops. Packed prefill, persistent decode buffers, graph replay
+and optional stream overlap remain execution choices behind this interface.
+
+| Resource / mechanism | Owner or coordination boundary |
 | --- | --- |
-| `engine/stage_config.py` | Deployment identity and accepts_prompt / produces_tokens capabilities; no loop progress |
-| `engine/stage_engine.py` | Stage resource owner; request creation, scheduling, submission and logical result application |
-| `engine/llm_engine.py` | Compatibility API name without duplicate execution logic |
-| `core/scheduler.py` | Local Request registry, queues, budgets, ScheduledRequest snapshots and readiness |
-| `core/scheduling_policy.py` | PromptOnly/refill/mixed/speculative policy selection and fairness |
-| `worker/executor.py` | Stage submission entry point; ordinary batch binding and speculative round dispatch |
-| `core/execution.py` | ExecutionBatch/StateSpan: immutable operation, position and depth bindings |
-| `worker/model_runner.py` | Metadata, streams, buffers, hidden/KV access, events and submission tickets |
-| `worker/execution.py` | Shared PRELUDE/RECURRENT/CODA model forward |
-| `worker/speculative.py` / `async_speculative.py` | Local draft, verification, acceptance and device state |
-| `engine/connector.py` | StageConnector execution notifications; TransferConnector progress/cancel/commit/ack lifetime contract |
-| `pd/connector.py` | RequestTransfer, staging slots, reservation and handoff protocol ownership |
-| `pd/transport.py` | NIXL connections, registration, transfers and completion notifications |
-| `pd/worker.py` | Process resources, control messages, connector.progress, shared engine.step and output delivery |
-| `pd/engine.py` | Coordinator: process/request routing, reservations, cancellation and failure ordering |
+| Worker process, channel and host-side ID mappings | StageClient; connected workers are coordinated by the deployment host |
+| Loaded model and local service loop | StageWorker; the engine and runners reference the same loaded model |
+| Request registry, phase queues and selection policy | Scheduler; StageEngine coordinates lifecycle and progress |
+| KV pages, mappings, validity and references/pins | KVCacheManager, shared by local scheduling and execution |
+| RNG registry and pending results | StageEngine; runners use the shared RNG, and tickets retain their result storage |
+| Input buffers, GPU events and readback storage | Runner/controller owners, retained until consumers finish |
+| Preemption snapshots | Engine-owned PreemptionManager, invoked through scheduler callbacks |
+| Transport staging and remote-access lifetime | Connector; local Request/KV changes are coordinated through StageEngine |
 
-Start with `StageEngine._schedule`, then `Executor.submit`, `ModelRunner.submit`
-and `ExecutionRuntime.forward`. Return to `StageEngine._update` and
-`_apply_prefill_progress` to review progress application.
+**Connector and deployment.** Worker calls `connector.progress()` independently
+of engine progress. Connector readiness/backpressure reaches Scheduler through
+the engine's readiness predicate. Import/export and safe release also coordinate
+with the engine; KV/hidden transport between peer connectors is distinct from
+Client/Worker control messages. The drawing shows those two communication paths
+separately. Detailed data movement is in the [stage handoff diagram](scheduler.md#3-request-handoff-between-reusable-stages).
 
-`ScheduledRequest` is not a second request lifecycle. It references the local
-Request and snapshots the selected token range, depth and phase. ExecutionBatch
-converts those references into operation bindings without reconstructing Request
-or preparing KV metadata; ModelRunner prepares metadata once. The snapshot is
-necessary because `Request.loops_done` can advance after submission while the
-submitted KV addresses must remain fixed. `ScheduledWork`, `ExecutionPlan`,
-`StageWorkers` and `worker_stage` dispatch have been removed.
+`prefill_decode`, `prefill` and `decode` use this same worker/engine structure.
+For PD, the deployment coordinator manages multiple StageClients and connectors;
+loop scheduling stays local. Mixed is a batching policy, and speculation is an
+optional local round controller, not another deployment role. Current mixed
+batches do not include speculative rounds. The launcher currently supports single
+stages and same-host PD GPU pools; other compositions require additional deployment
+support. See [runtime compatibility](runtime.md#execution-batches-and-mixed-scheduling).
 
-`request.Stage` retains existing lifecycle phase names such as
-PREFILLING_RECURRENT and CODA. It does not identify a process or create a
-worker; StageConfig defines deployment identity.
+`LLMEngine` is currently a compatibility alias for `StageEngine`, not another
+layer. An entrypoint variable named `engine` can hold a StageClient; the diagram
+uses concrete component names to avoid confusing that proxy with the local engine.
 
-### Handoff interfaces and state ownership
+Code: [StageClient](../vllm_rlt/engine/llm_engine.py),
+[StageWorker](../vllm_rlt/engine/worker.py),
+[StageEngine](../vllm_rlt/engine/stage_engine.py),
+[Scheduler](../vllm_rlt/core/scheduler.py),
+[Executor / ModelRuntime](../vllm_rlt/worker/executor.py),
+[ModelRunner](../vllm_rlt/worker/model_runner.py), and
+[connector contract](../vllm_rlt/engine/connector.py).
 
-| State | Owner | Cross-module operations and release conditions |
-| --- | --- | --- |
-| Local Request, execution progress and queues | StageEngine / Scheduler | Connector calls `suspend_transfer` rather than modifying queues |
-| Hidden states, runner slots and events | StageEngine / ModelRunner | `release_transfer_compute(request, ready_event=...)` checks identity and final staging event; returns False until ready |
-| KV allocation, validity and transfer lease | StageEngine / KVCacheManager | `activate_import` after all sequences arrive; `release_transfer` after remote access ends |
-| RequestTransfer, sequence numbers, commit/ack and staging slots | PDStageConnector | `reserve` once, nonblocking `progress`, reclaim slots after completion |
-| NIXL registrations, handles and notifications | NixlConnector | `submit` / `poll` / `busy` report transport state |
-| Processes, control channels and failure ordering | PDWorker / Coordinator | Host relays control; stop writers before reclaiming receiver resources |
+## Where the details live
 
-StageConnector is a lightweight execution-notification interface. Implementations
-that transfer across processes also implement the TransferConnector lifetime
-contract. `PDStageConnector.reserve` defines PD prompt reservation arguments;
-NIXL target mappings do not enter the shared forward interface. Imports currently
-hand off a complete prompt into CODA, not arbitrary intermediate loop states.
-
-PDWorker has no duplicate transfer registry and does not manipulate
-Request.hidden_state, scheduler queues or ModelRunner.release directly. The
-connector uses each RequestTransfer.outgoing flag to select direction, allowing
-imports and exports in one mixed stage to share the protocol. Launcher topology
-support is unchanged. Engine capacity checks count local compute requests as
-well as imports to prevent excess activation.
-
-Missing executable prefill queues are no longer unconditionally treated as
-communication waits. Early acknowledgments cannot bypass commit, compute
-release or transport completion. Normal transfer direction, chunk timing and
-nonblocking progress remain unchanged.
-
-## 5. Performance constraints
-
-- The former StageWorkers._receive global synchronization is removed.
-  Connectors use query / wait_event; normal submissions add no host synchronize.
-  Readback, bounded buffer reuse, preemption, error cleanup and shutdown may
-  still wait. This is not a claim that all synchronization has been eliminated.
-- Packed prefill, static buffers, graph replay, homogeneous chunk segments and
-  mixed gathering retain their physical paths. The shared contracts concern
-  operations and resource ownership.
-- Atomic PRELUDE plus N loops and draft/verify stay inside the current executor.
-  Internal loops do not become RPCs.
-- Scheduling without a connector does not scan communication state. Connected
-  requests use readiness checks without rebuilding Request.
-- Backpressure participates in queue and batch selection, so a nonempty but
-  blocked prompt queue cannot prevent local decode from running.
-
-## 6. Validation history and limitations
-
-The initial refactor replaced role-specific workers sharing a scheduler with
-stage resource ownership, merged PD's separate prefill progress loop, moved
-transfer preparation into the connector, and made exports request-specific.
-Tests cover readiness under backpressure, hidden-staging cancellation lifetimes
-and numerical comparisons for imports into independent resources.
-
-CPU coverage includes atomic/split and sync/async paths, mixed local/exported
-requests, generations, cancellation, failure lease retention and speculation.
-CPU simulated transfers do not establish NIXL/CUDA cross-process correctness.
-Real-model GPU smoke tests and three PD GPU handoff/cancellation tests are
-recorded in the workspace reports `experiments/stage-refactor-smoke-20261015`
-and `experiments/stage-refactor-extended-20261015`. These short runs do not
-establish steady-state capacity or qualify every feature combination.
-
-The initial CPU regression run passed **594 tests, with 176 skipped**; Ruff and
-`git diff --check` passed. Full collection encountered an existing `lm_eval`
-dependency conflict importing `transformers.AutoModelForVision2Seq`, affecting
-two GSM8K modules. The regression command excluded them:
-
-```bash
-pytest -q --disable-warnings --tb=short \
-  --ignore=tests/test_gsm8k_accuracy.py \
-  --ignore=tests/test_gsm8k_backends.py
-```
-
-CPU counts and GPU handoff/performance evidence are separate. The PD launcher
-does not yet accept speculation, mixed batching does not accept speculative
-verification rows, and arbitrary intermediate loop migration is not implemented.
-These are current support limits, not requirements of the unified engine.
-
-### Ownership-boundary validation
-
-The subsequent CPU regression passed **606 tests, with 176 skipped**, excluding
-the same two modules. Six real dual-GPU tests covered handoff, cancellation,
-graphs and request reuse; handoff/cancellation were repeated after the final
-capacity-wait change. New tests cover out-of-order commit/completion, import
-capacity, early acknowledgment, cancellation during hidden copies, stale
-notifications, bidirectional mixed handoff and Request identity during release.
-
-Two rounds of real-model smoke tests matched baseline outputs. Asynchronous
-speculation was approximately 2–3% slower, with substantial mixed/PD timing
-variation. Those runs neither establish no regression nor attribute the
-variation to the refactor. Configuration, raw data and source snapshots are in
-`experiments/stage-boundaries-20261015/report.md` in the workspace. That boundary
-change did not modify model forward, kernels, speculative controllers or graph
-execution paths; this alone is not performance attribution.
-
-### Submit-only interface validation (2026-10-15)
-
-Public execute entry points were removed from Executor, ModelRunner and
-SpeculativeRunner; the asynchronous speculative controller also uses submit.
-Collection follows dependencies rather than waiting immediately after every
-submission.
-
-Ouro-1.4B on B300 was warmed up twice and measured three times per version.
-Median throughput changes were −0.52% for ordinary non-pipelined decode,
-+0.20% for ordinary speculation, +0.85% for asynchronous speculation, +0.44%
-for mixed batching at concurrency 32, and −1.16% for split PD. Tokens and exit
-depths matched in all five groups. These short runs check obvious regressions;
-they do not establish stable speedups. Both PD versions logged the existing UCX
-CUDA-context shutdown error and exited with code 0. Raw results and reproduction
-scripts are in the workspace `experiments/submit-only-20261015/` directory.
-
-### Optional CUDA multi-stream execution
-
-`ExecutionConfig.multi_stream` independently controls CUDA multi-stream
-execution; CLI `--single-stream` disables it. `async_scheduling` controls early
-CPU submission and deferred result collection.
-
-| Work | Multi-stream enabled | Multi-stream disabled |
-| --- | --- | --- |
-| Standalone prelude, including chunk prelude | boundary stream | Shared compute stream |
-| Recurrent, including chunk and mixed recurrent | core stream | Shared compute stream |
-| Coda | boundary stream | Shared compute stream |
-| Routing / speculative result copies | copy stream | Shared compute stream |
-| Ordinary token/gate readback | readback stream | Shared compute stream |
-
-Full prefill's prelude plus N loops remains one continuous submission on the
-core stream. Draft/verify within a speculative round also stays continuous.
-Speculative controllers reuse worker streams instead of creating another set.
-Ordinary boundary operations retain their boundary stream.
-
-Chunk dependencies are established before `prepare_batch`, because hidden
-gather reads state written by the preceding submission. Ordinary async batches
-retain early CPU metadata preparation and wait for producers before computation.
-Completion events protect metadata buffers; request-specific dependencies avoid
-replacing stream events with global synchronization.
-
-Ordinary submissions record compute completion separately from readback
-completion. Request device dependencies, routing and chunk metadata reuse wait
-for compute; ticket `ready()` / `collect()` wait for readback. Independent
-sampled-token and sigmoid-result tensors supply readback. `record_stream`
-protects them if a ticket is canceled or discarded, without borrowing graph
-outputs that later execution will overwrite. Single-stream mode keeps these
-operations ordered on the same stream.
-
-Entire batches skip gate readback when async fixed-depth execution, tracing or
-the maximum loop boundary leaves no gate consumer. CUDA Graph computation
-remains unchanged. Mixed batches with some consuming rows retain their original
-index layout without sparse remapping. Routing/readback pools prefer completed
-buffers and wait only when all are busy. Page-table updates reuse pinned buffers
-and upload changed ranges. Prelude/coda routing generates only slot mappings,
-not recurrent-attention page tables.
-
-Chunk and mixed inputs reuse the `PrefillMetadataBuffers` pool. CPU writes are
-allowed only after the final consumer event; completed entries are preferred.
-Source tensor references remain alive while the GPU reads them. Request prompts
-are filled once in the pinned row for their runner state slot; subsequent chunks
-submit range descriptions. On NVIDIA CUDA, Triton reads pinned descriptions and
-prompts directly into the final GPU token batch, avoiding repeated CPU prompt
-concatenation and separate metadata H2D copies. Explicit `input_tokens` still
-overrides request input. Cancellation, completion and preemption release slots
-and prompt ownership after the existing completion events, preventing stale
-inputs when IDs or slots are reused.
-
-Mixed recurrent chunk/decode hidden states already reside on GPU. Triton uses
-pinned source addresses, strides, row counts and destination ranges to populate
-a reusable hidden batch and scatter results back to chunk and final hidden
-states, replacing per-request `torch.cat` / GPU `copy_`. Necessary hidden-state
-reordering remains. Ordinary decode retains its separate static-buffer/CUDA
-Graph path. CPU uses tensor operations; HIP uses device metadata copies without
-requiring UVA.
-
-A mixed deployment stage can use speculation, but scheduling `mode="mixed"`
-cannot currently combine with speculation. That combination needs scheduling
-budgets, verification input organization and acceptance/rollback support;
-it is independent of the multi-stream toggle.
-
-Multi-stream routing validation passed 229 GPU tests with 2 skipped, plus 89
-Huginn/speculation tests with 1 skipped. After dependency placement changed,
-104 chunk/async pipeline/async speculation tests passed. CPU regression passed
-610 tests with 182 skipped. Delayed chunk-prelude tests cover single/multi-stream
-and sync/async combinations, checking gathered hidden states against producers.
-
-The initial short performance comparison did not establish no regression:
-relative to the reverse-order baseline medians, ordinary non-pipelined decode
-was about −2.3%, async speculation −0.3%, and mixed concurrency 32 −6.3%, with
-matching tokens/depths. An earlier single-stream comparison also showed mixed
-slowdown, so stream switching alone could not explain it. PD timing varied too
-much for a speedup conclusion. Raw data and reproduction scripts are in the
-workspace `experiments/streams-feature-20261015/` directory. These are historical
-short-run observations, not a claim of a stable regression.
+| Question | Guide |
+| --- | --- |
+| Which loops can share a batch, and when does a request wait? | [Loop-level scheduler](scheduler.md) |
+| How are inputs prepared, transferred and executed? | [Runtime execution and configuration](runtime.md) |
+| Which KV history does a loop read, and who retains it? | [Model semantics](design.md) and [KV management](kv_cache_walkthrough.md) |
+| How do draft/verify rounds advance asynchronously? | [Asynchronous speculation](async-speculative.md) |
+| How do I launch and serve a configuration? | [First-run guide](launching.md) and [HTTP serving](serving.md) |

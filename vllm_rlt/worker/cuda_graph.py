@@ -1,7 +1,7 @@
 """Bounded recurrent-core graphs; request bookkeeping and sampling stay eager."""
 
 import math
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from types import SimpleNamespace
 
 import torch
@@ -85,6 +85,15 @@ def _copy_graph_inputs(entry, hidden, batch):
     entry.metadata.block_tables[:, : batch.block_tables.shape[1]].copy_(batch.block_tables)
 
 
+@dataclass
+class PreparedGraph:
+    """A selected graph (or eager fallback), with per-call metadata ownership."""
+
+    metadata: object
+    entry: object = None
+    inputs_ready: bool = False
+
+
 class RecurrentGraphs:
     def __init__(self, model, cache, execution, compute_gate):
         self.model, self.cache = model, cache
@@ -95,11 +104,9 @@ class RecurrentGraphs:
         self.last_event = None
         self.captures = self.replays = self.fallbacks = 0
 
-    @torch.inference_mode()
-    def run(self, hidden, batch):
+    def select(self, hidden, batch):
         count = len(batch.rows)
         packed = batch.cu_seqlens_q is not None
-        key = (count, len(batch.context_lengths), batch.max_seqlen_q if packed else 1, packed)
         if len(batch.position_ids) != count:
             batch = replace(
                 batch,
@@ -107,69 +114,91 @@ class RecurrentGraphs:
                 context_lengths=batch.context_lengths[:count],
                 block_tables=batch.block_tables[:count],
             )
+        key = (count, len(batch.context_lengths), batch.max_seqlen_q if packed else 1, packed)
+        frontier = {}
+        contiguous = True
+        for allocation, depth, pos in batch.rows:
+            row_key = (id(allocation), depth)
+            previous = frontier.get(row_key)
+            if previous is not None and pos != previous + 1:
+                contiguous = False
+                break
+            frontier[row_key] = pos
         if (
-            count > self.execution.cuda_graph_max_batch_size
-            or not count
+            not count
+            or count > self.execution.cuda_graph_max_batch_size
+            or not contiguous
             or (
                 key not in self.entries
                 and len(self.entries) >= self.execution.cuda_graph_max_graphs
             )
         ):
             self.fallbacks += 1
+            return PreparedGraph(batch)
+        entry = self.entries.get(key)
+        if entry is None:
+            entry = _graph_entry(
+                hidden, batch, self.cache, self.model.config.max_position_embeddings
+            )
+            entry.graph = None
+            self.entries[key] = entry
+        return PreparedGraph(batch, entry)
+
+    @torch.inference_mode()
+    def prepare_inputs(self, call, hidden):
+        batch, entry = call.metadata, call.entry
+        if entry is not None:
+            cache = self.cache
+            cache._require_live_batch(batch)
+            # Prefix validity is checked at consumption, after earlier loops have
+            # submitted their writes, not when all graph choices are selected.
+            seen = set()
+            for allocation, depth, pos in batch.rows:
+                key = (id(allocation), depth)
+                if key not in seen:
+                    for layer in cache.recurrent_layers:
+                        cache._require_prefix(allocation, layer, depth, pos)
+                    seen.add(key)
+            stream = torch.cuda.current_stream(cache.device)
+            if self.last_event is not None:
+                stream.wait_event(self.last_event)
+            _copy_graph_inputs(entry, hidden, batch)
+            if entry.graph is None:
+                proxy = _DeviceCache(cache)
+                entry.graph, entry.output = _capture(
+                    entry.hidden,
+                    self.capture_stream,
+                    self.pool,
+                    lambda: self.model.recurrent_prepared(
+                        entry.hidden, entry.metadata, proxy, compute_gate=self.compute_gate
+                    ),
+                )
+                self.captures += 1
+        call.inputs_ready = True
+
+    @torch.inference_mode()
+    def execute(self, call, hidden):
+        if not call.inputs_ready:
+            raise RuntimeError("graph inputs must be prepared before execution")
+        batch, entry = call.metadata, call.entry
+        call.inputs_ready = False
+        if entry is None:
             return self.model.recurrent_prepared(
                 hidden, batch, self.cache, compute_gate=self.compute_gate
             )
-        cache = self.cache
-        cache._require_live_batch(batch)
-        # A speculative verification batch may write consecutive positions at
-        # one depth. Its first position needs committed history; later rows are
-        # written together before attention reads them.
-        frontier = {}
-        for allocation, depth, pos in batch.rows:
-            row_key = (id(allocation), depth)
-            previous = frontier.get(row_key)
-            if previous is None:
-                for layer in cache.recurrent_layers:
-                    cache._require_prefix(allocation, layer, depth, pos)
-            elif pos != previous + 1:
-                self.fallbacks += 1
-                return self.model.recurrent_prepared(
-                    hidden, batch, cache, compute_gate=self.compute_gate
-                )
-            frontier[row_key] = pos
-        stream = torch.cuda.current_stream(cache.device)
-        if self.last_event is not None:
-            stream.wait_event(self.last_event)
-        entry = self.entries.get(key)
-        if entry is None:
-            entry = _graph_entry(hidden, batch, cache, self.model.config.max_position_embeddings)
-        _copy_graph_inputs(entry, hidden, batch)
-        if key not in self.entries:
-            proxy = _DeviceCache(cache)
-            entry.graph, entry.output = _capture(
-                entry.hidden,
-                self.capture_stream,
-                self.pool,
-                lambda: self.model.recurrent_prepared(
-                    entry.hidden, entry.metadata, proxy, compute_gate=self.compute_gate
-                ),
-            )
-            self.entries[key] = entry
-            self.captures += 1
         entry.graph.replay()
-        # Outputs must outlive reuse of graph-private buffers and the shared pool.
         output = tuple(t.clone() if t is not None else None for t in entry.output)
         self.last_event = torch.cuda.Event()
-        self.last_event.record(stream)
+        self.last_event.record(torch.cuda.current_stream(self.cache.device))
         for allocation, depth, pos in batch.rows:
-            for layer in cache.recurrent_layers:
-                allocation.written[cache._plane(depth)][layer].add(pos)
+            for layer in self.cache.recurrent_layers:
+                allocation.written[self.cache._plane(depth)][layer].add(pos)
         self.replays += 1
         return output
 
 
 class CodaGraphs:
-    """Capture decode coda and its head; commit boundary KV outside capture."""
+    """Select and stage coda inputs before replay; commit KV after submission."""
 
     def __init__(self, model, execution, cache=None):
         self.model, self.execution = model, execution
@@ -180,21 +209,15 @@ class CodaGraphs:
         self.last_event = None
         self.captures = self.replays = self.fallbacks = 0
 
-    @torch.inference_mode()
-    def run(self, hidden, batch=None):
+    def select(self, hidden, batch=None):
         count = len(hidden)
-        if self.cache is not None:
-            if (
-                batch is None
-                or not batch.writable
-                or len(batch.rows) != count
-                or batch.cu_seqlens_q is not None
-            ):
-                raise ValueError("coda graphs require matching decode rows and KV metadata")
-            self.cache._require_live_batch(batch)
-            for allocation, depth, position in batch.rows:
-                for layer in self.model.coda_kv_layers:
-                    self.cache._require_prefix(allocation, layer, depth, position)
+        if self.cache is not None and (
+            batch is None
+            or not batch.writable
+            or len(batch.rows) != count
+            or batch.cu_seqlens_q is not None
+        ):
+            raise ValueError("coda graphs require matching decode rows and KV metadata")
         if (
             not count
             or count > self.execution.cuda_graph_max_batch_size
@@ -204,14 +227,7 @@ class CodaGraphs:
             )
         ):
             self.fallbacks += 1
-            return (
-                self.model.coda_prepared(hidden, batch, self.cache)
-                if self.cache is not None
-                else self.model.coda(hidden)
-            )
-        stream = torch.cuda.current_stream(hidden.device)
-        if self.last_event is not None:
-            stream.wait_event(self.last_event)
+            return PreparedGraph(batch)
         entry = self.entries.get(count)
         if entry is None:
             entry = (
@@ -219,27 +235,56 @@ class CodaGraphs:
                 if self.cache is not None
                 else SimpleNamespace(hidden=torch.empty_like(hidden))
             )
-        if self.cache is not None:
-            _copy_graph_inputs(entry, hidden, batch)
-        else:
-            entry.hidden.copy_(hidden)
-        if count not in self.entries:
-            run = (
-                (
-                    lambda: self.model.coda_prepared(
-                        entry.hidden, entry.metadata, _DeviceCache(self.cache)
-                    )
-                )
-                if self.cache is not None
-                else lambda: self.model.coda(entry.hidden)
-            )
-            entry.graph, entry.output = _capture(entry.hidden, self.stream, self.pool, run)
+            entry.graph = None
             self.entries[count] = entry
-            self.captures += 1
+        return PreparedGraph(batch, entry)
+
+    @torch.inference_mode()
+    def prepare_inputs(self, call, hidden):
+        batch, entry = call.metadata, call.entry
+        if self.cache is not None:
+            self.cache._require_live_batch(batch)
+            for allocation, depth, position in batch.rows:
+                for layer in self.model.coda_kv_layers:
+                    self.cache._require_prefix(allocation, layer, depth, position)
+        if entry is not None:
+            stream = torch.cuda.current_stream(hidden.device)
+            if self.last_event is not None:
+                stream.wait_event(self.last_event)
+            if self.cache is not None:
+                _copy_graph_inputs(entry, hidden, batch)
+            else:
+                entry.hidden.copy_(hidden)
+            if entry.graph is None:
+                run = (
+                    (
+                        lambda: self.model.coda_prepared(
+                            entry.hidden, entry.metadata, _DeviceCache(self.cache)
+                        )
+                    )
+                    if self.cache is not None
+                    else (lambda: self.model.coda(entry.hidden))
+                )
+                entry.graph, entry.output = _capture(entry.hidden, self.stream, self.pool, run)
+                self.captures += 1
+        call.inputs_ready = True
+
+    @torch.inference_mode()
+    def execute(self, call, hidden):
+        if not call.inputs_ready:
+            raise RuntimeError("graph inputs must be prepared before execution")
+        batch, entry = call.metadata, call.entry
+        call.inputs_ready = False
+        if entry is None:
+            return (
+                self.model.coda_prepared(hidden, batch, self.cache)
+                if self.cache is not None
+                else self.model.coda(hidden)
+            )
         entry.graph.replay()
         output = entry.output.clone()
         self.last_event = torch.cuda.Event()
-        self.last_event.record(stream)
+        self.last_event.record(torch.cuda.current_stream(hidden.device))
         if self.cache is not None:
             for allocation, depth, position in batch.rows:
                 for layer in self.model.coda_kv_layers:
