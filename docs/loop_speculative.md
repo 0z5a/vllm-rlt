@@ -196,7 +196,7 @@ wave is at most 128 rows and therefore remains within the default limit.
 
 The additional greedy counters show where pruning saves work:
 
-| Concurrency | Loop verified rows / committed tokens | Loop + prune verified rows / committed tokens | Loop peak allocated |
+| Concurrency | Loop verified rows / committed tokens | Loop + prune verified rows / committed tokens | Loop peak allocated (GB, decimal) |
 | ---: | ---: | ---: | ---: |
 | 1 | 40 / 32 | 32 / 32 | 2.99 GiB |
 | 4 | 144 / 128 | 128 / 128 | 3.23 GiB |
@@ -242,7 +242,7 @@ with the recorded counters.
 In summary, the synchronous loop path is a clear win only at selected higher
 concurrency points: greedy throughput improves by 3-12% from C=32 in this
 benchmark, while low-concurrency runs regress by about 1-3%. Greedy pruning is
-strongest for a single request with an early mismatch (+13.8% at C=1), but adds
+strongest for a single request with an early mismatch (+13.9% at C=1), but adds
 little at larger batches because work already submitted in the current wave
 cannot be cancelled. Sampling remains workload-sensitive, ranging from a 22%
 regression to a 12% improvement for top-p and from a 9% regression to a 10%
