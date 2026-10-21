@@ -21,6 +21,8 @@ class BackendCapabilities:
     # Packed rows reproduce single-query decode exactly; speculative verification
     # relies on this to match serial decoding token for token.
     packed_matches_decode: bool = False
+    # Consume GPU-owned context lengths without a host read between submissions.
+    device_context_lengths: bool = False
 
 
 @dataclass
@@ -45,13 +47,17 @@ class AttentionBackend:
 
 _TORCH_CAPABILITIES = BackendCapabilities()
 _TRITON_CAPABILITIES = BackendCapabilities(
-    packed_prefill=True, cuda_graphs=True, async_scheduling=True
+    packed_prefill=True, cuda_graphs=True, async_scheduling=True, device_context_lengths=True
 )
 _FLASH_CAPABILITIES = {
-    2: BackendCapabilities(cuda_graphs=True, async_scheduling=True),
-    3: BackendCapabilities(cuda_graphs=True, async_scheduling=True),
+    2: BackendCapabilities(cuda_graphs=True, async_scheduling=True, device_context_lengths=True),
+    3: BackendCapabilities(cuda_graphs=True, async_scheduling=True, device_context_lengths=True),
     4: BackendCapabilities(
-        packed_prefill=True, cuda_graphs=True, async_scheduling=True, packed_matches_decode=True
+        packed_prefill=True,
+        cuda_graphs=True,
+        async_scheduling=True,
+        packed_matches_decode=True,
+        device_context_lengths=True,
     ),
 }
 _AUTO_PRIORITY = ("flash_attn_4", "flash_attn_3", "flash_attn_2", "triton", "torch")
@@ -110,7 +116,12 @@ def create_backend(
             implementation = _create_explicit(candidate, device, dtype, head_dim, block_size)
             missing = [
                 name
-                for name in ("packed_prefill", "cuda_graphs", "async_scheduling")
+                for name in (
+                    "packed_prefill",
+                    "cuda_graphs",
+                    "async_scheduling",
+                    "device_context_lengths",
+                )
                 if getattr(required_capabilities, name)
                 and not getattr(implementation.capabilities, name)
             ]
