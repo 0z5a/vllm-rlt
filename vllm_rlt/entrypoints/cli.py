@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import sys
 from dataclasses import asdict
 
@@ -11,7 +12,7 @@ from vllm_rlt.entrypoints.runtime_args import (
     profile_config_from_args,
     runtime_configs,
 )
-from vllm_rlt.models import OuroConfig, OuroForCausalLM
+from vllm_rlt.models import OuroConfig
 
 
 def _toy_ouro_config() -> OuroConfig:
@@ -65,10 +66,18 @@ def main():
     parser.add_argument(
         "--attention-backend",
         type=str.lower,
-        choices=["torch", "triton", "flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4"],
+        choices=[
+            "auto",
+            "torch",
+            "triton",
+            "flash_attn",
+            "flash_attn_2",
+            "flash_attn_3",
+            "flash_attn_4",
+        ],
         default="torch",
     )
-    parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
+    parser.add_argument("--mode", choices=["refill", "no_refill", "mixed"], default="refill")
     parser.add_argument("--max-tokens", type=int, default=16)
     parser.add_argument("--max-loops", type=int, default=None)
     parser.add_argument("--min-loops", type=int, default=None)
@@ -84,6 +93,7 @@ def main():
 
     add_runtime_args(parser)
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
     if not args.toy and not args.model:
         parser.error("--model is required unless --toy is used")
     if args.toy and args.prompt:
@@ -95,16 +105,11 @@ def main():
         profiling.resolve_activities(args.device)
     torch.manual_seed(args.seed)
     if args.toy:
-        if "nanbeige" in (args.model or "ouro").lower():
-            from vllm_rlt.models import NanbeigeForCausalLM
-
-            model = NanbeigeForCausalLM(_toy_nanbeige_config()).to(
-                device=args.device, dtype=getattr(torch, args.dtype)
-            )
-        else:
-            model = OuroForCausalLM(_toy_ouro_config()).to(
-                device=args.device, dtype=getattr(torch, args.dtype)
-            )
+        model = (
+            _toy_nanbeige_config()
+            if "nanbeige" in (args.model or "ouro").lower()
+            else _toy_ouro_config()
+        )
     else:
         model = args.model
     llm = LLM(
@@ -127,7 +132,7 @@ def main():
         ),
         attention_backend=args.attention_backend,
     )
-    model_depth = llm.engine.model.config.total_ut_steps
+    model_depth = llm.engine.model_config.total_ut_steps
     min_loops = args.min_loops if args.min_loops is not None else min(2, model_depth)
     params = SamplingParams(
         max_tokens=args.max_tokens,
