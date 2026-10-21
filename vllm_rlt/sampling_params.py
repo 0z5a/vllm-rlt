@@ -4,7 +4,11 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class LoopCDParams:
-    """Fixed guidance after complete one-based recurrent updates."""
+    """Fixed guidance after complete one-based recurrent updates.
+
+    Nonzero guidance requires atomic synchronous prefill and local execution;
+    split prefill and cross-stage reference transport are not supported.
+    """
 
     mode: str = "logits"
     reference_loop: int = 1

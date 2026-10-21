@@ -11,7 +11,7 @@ from tests.reference import dense_reference
 from vllm_rlt import CacheConfig, ExecutionConfig, LoopCDParams, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
-from vllm_rlt.request import Request, Stage
+from vllm_rlt.request import Request, RequestPhase
 from vllm_rlt.worker.loopcd import Reference, extrapolate, reserved_bytes
 
 
@@ -195,7 +195,7 @@ def test_first_readout_matches_independent_dense_oracle(prefill, decode, impleme
     expected = extrapolate(depths[-1][2][-1], depths[1][2][-1], 0.3)
     engine.add_request("a", prompt.tolist(), params)
     request = engine.scheduler.requests["a"]
-    while request.stage != Stage.CODA:
+    while request.phase != RequestPhase.CODA:
         engine.step()
     torch.testing.assert_close(request.hidden_state, depths[-1][0][-1], atol=4e-6, rtol=4e-5)
     ref = engine.model_runner.loopcd_references["a"]
@@ -203,11 +203,11 @@ def test_first_readout_matches_independent_dense_oracle(prefill, decode, impleme
     raw = request.hidden_state.clone()
     seen = []
 
-    def sample(logits, request):
+    def sample(logits, params, generator=None):
         seen.append(logits.clone())
         return logits.argmax()
 
-    engine.model_runner._sample_tensor = sample
+    engine.model_runner.sampler.sample = sample
     engine.step()
     torch.testing.assert_close(seen[0], expected, atol=5e-6, rtol=5e-5)
     torch.testing.assert_close(request.hidden_state, raw, atol=0, rtol=0)
@@ -253,15 +253,22 @@ def test_stale_reference_rejected(field):
         replace(ref, **{field: value}).check(request, 1, 0, 1)
 
 
-@pytest.mark.parametrize("case", ["unreserved", "reference", "early_exit", "prefix", "preemption"])
+@pytest.mark.parametrize(
+    "case", ["unreserved", "reference", "early_exit", "prefix", "preemption", "split", "stage"]
+)
 def test_unsupported_admission_rejected_before_request_allocation(case):
+    from vllm_rlt.engine.stage_config import StageConfig
+
     engine = LLMEngine(
         model_for(),
         cache_config=CacheConfig(
             num_blocks=256, block_size=2, enable_prefix_caching=case == "prefix"
         ),
         scheduler_config=SchedulerConfig(enable_preemption=case == "preemption"),
-        execution_config=ExecutionConfig(loopcd=case != "unreserved"),
+        execution_config=ExecutionConfig(
+            loopcd=case != "unreserved", atomic_prefill=case != "split"
+        ),
+        stage_config=StageConfig(role="prefill" if case == "stage" else "prefill_decode"),
     )
     params = params_for()
     if case == "reference":
@@ -274,12 +281,16 @@ def test_unsupported_admission_rejected_before_request_allocation(case):
     assert not engine.scheduler.requests
 
 
-@pytest.mark.parametrize("feature", ["async", "prefix", "shared"])
+@pytest.mark.parametrize("feature", ["async", "prefix", "shared", "split"])
 def test_shallow_prefill_capability_checked_before_allocation(feature):
     with pytest.raises(ValueError, match="prefill_depth override"):
         LLMEngine(
             model_for(),
-            execution_config=ExecutionConfig(prefill_depth=2, async_scheduling=feature == "async"),
+            execution_config=ExecutionConfig(
+                prefill_depth=2,
+                async_scheduling=feature == "async",
+                atomic_prefill=feature != "split",
+            ),
             cache_config=CacheConfig(
                 enable_prefix_caching=feature == "prefix",
                 layout="shared" if feature == "shared" else "last_exited",
@@ -327,7 +338,8 @@ def test_teacher_forced_continuation_against_dense_oracle(depth, strength, imple
     prompt, candidate = [4, 7, 9, 3, 12], [17, 8, 2]
     seen, owners = [], []
 
-    def observe(logits, request):
+    def observe(logits, params, generator=None):
+        request = engine.scheduler.requests["a"]
         index = len(request.generated_token_ids)
         if index == 0:
             owners.append(request)
@@ -347,12 +359,12 @@ def test_teacher_forced_continuation_against_dense_oracle(depth, strength, imple
         seen.append(index)
         return torch.tensor(selected)
 
-    engine.model_runner._sample_tensor = observe
+    engine.model_runner.sampler.sample = observe
     for run in range(2):
         if run:
             engine.add_request("a", [12, 3, 7], sampling)
             interrupted = engine.scheduler.requests["a"]
-            while interrupted.stage != Stage.CODA:
+            while interrupted.phase != RequestPhase.CODA:
                 engine.step()
             engine.abort_request("a")
         engine.add_request("a", prompt, sampling)

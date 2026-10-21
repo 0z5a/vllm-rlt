@@ -8,7 +8,7 @@ from tests.reference.continuation import OuroContinuation
 from vllm_rlt import CacheConfig, ExecutionConfig, LoopCDParams, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
-from vllm_rlt.request import Stage
+from vllm_rlt.request import RequestPhase
 
 
 @pytest.mark.parametrize("depth", [2, 3])
@@ -37,11 +37,11 @@ def test_retained_p4_history(depth, length, strength):
     )
     seen = []
 
-    def sample(logits, request):
+    def sample(logits, params, generator=None):
         seen.append(logits.detach().clone())
         return torch.tensor(continuation[len(seen) - 1], device=logits.device)
 
-    engine.model_runner._sample_tensor = sample
+    engine.model_runner.sampler.sample = sample
     engine.add_request("reuse", prompt, sampling)
     for index, token in enumerate(continuation):
         expected = reference.forward(
@@ -49,7 +49,7 @@ def test_retained_p4_history(depth, length, strength):
             4 if index == 0 else depth,
         )
         request = engine.scheduler.requests["reuse"]
-        while request.stage != Stage.CODA:
+        while request.phase != RequestPhase.CODA:
             engine.step()
         torch.testing.assert_close(request.hidden_state, expected[-1][0][-1], atol=1e-4, rtol=1e-4)
         cache = engine.cache_manager

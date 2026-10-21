@@ -37,7 +37,8 @@ def validate(model, params, execution, cache, scheduler, exit_config, speculativ
     if not execution.loopcd:
         raise ValueError("LoopCD requires ExecutionConfig(loopcd=True) for memory reservation")
     if (
-        execution.async_scheduling
+        not execution.atomic_prefill
+        or execution.async_scheduling
         or execution.prefill_uva
         or cache.layout != "last_exited"
         or cache.enable_prefix_caching
@@ -45,7 +46,8 @@ def validate(model, params, execution, cache, scheduler, exit_config, speculativ
         or speculative is not None
     ):
         raise ValueError(
-            "LoopCD requires synchronous last_exited without prefix/preemption/P-D/speculation"
+            "LoopCD requires atomic synchronous last_exited "
+            "without prefix/preemption/P-D/speculation"
         )
     maximum = params.max_loops or model.config.total_ut_steps
     prefill = execution.prefill_depth or model.config.total_ut_steps
