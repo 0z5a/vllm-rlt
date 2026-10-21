@@ -28,7 +28,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
           python -m pip install -e .
-          python -m pip install pytest ruff
+          python -m pip install pytest ruff==0.13.2
       - name: Ruff lint
         run: python -m ruff check .
       - name: Ruff format
