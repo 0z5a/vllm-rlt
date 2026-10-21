@@ -681,7 +681,7 @@ def test_speculative_inputs_reuse_owned_buffers_without_private_cache_staging(
         for _ in range(4):
             ticket = runner.submit(batch)
             result = ticket.collect()
-            assert result[0].token_ids
+            assert result.speculative[0].token_ids
             pointers.append(
                 {
                     dtype: tuple(
@@ -710,10 +710,10 @@ def test_speculative_input_slots_survive_three_submits_before_collection(use_uva
         assert len(batch.requests) == 3
         batches = [SchedulerOutput(RequestPhase.SPECULATIVE, [span]) for span in batch.requests]
         runner = e.speculative_runner
-        expected = [runner.submit(part).collect() for part in batches]
+        expected = [runner.submit(part).collect().speculative for part in batches]
         # The third submission wraps the two input slots before any host collection.
         # Only completion of their GPU readers permits the slots to be recycled.
         tickets = [runner.submit(part) for part in batches]
-        assert [ticket.collect() for ticket in tickets] == expected
+        assert [ticket.collect().speculative for ticket in tickets] == expected
     finally:
         e.close()
