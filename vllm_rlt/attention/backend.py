@@ -20,6 +20,8 @@ class BackendCapabilities:
     async_scheduling: bool = False
     # Reads an FP8 e4m3 KV pool with per-vector float32 scales.
     fp8_kv: bool = False
+    # Consume GPU-owned context lengths without a host read between submissions.
+    device_context_lengths: bool = False
 
 
 @dataclass
@@ -43,11 +45,15 @@ class AttentionBackend:
 
 
 _TORCH_CAPABILITIES = BackendCapabilities(fp8_kv=True)
-_TRITON_CAPABILITIES = BackendCapabilities(cuda_graphs=True, async_scheduling=True, fp8_kv=True)
+_TRITON_CAPABILITIES = BackendCapabilities(
+    cuda_graphs=True, async_scheduling=True, device_context_lengths=True, fp8_kv=True
+)
 _FLASH_CAPABILITIES = {
-    2: BackendCapabilities(cuda_graphs=True, async_scheduling=True),
-    3: BackendCapabilities(cuda_graphs=True, async_scheduling=True),
-    4: BackendCapabilities(packed_prefill=True, cuda_graphs=True, async_scheduling=True),
+    2: BackendCapabilities(cuda_graphs=True, async_scheduling=True, device_context_lengths=True),
+    3: BackendCapabilities(cuda_graphs=True, async_scheduling=True, device_context_lengths=True),
+    4: BackendCapabilities(
+        packed_prefill=True, cuda_graphs=True, async_scheduling=True, device_context_lengths=True
+    ),
 }
 _AUTO_PRIORITY = ("flash_attn_4", "flash_attn_3", "flash_attn_2", "triton", "torch")
 
@@ -105,7 +111,13 @@ def create_backend(
             implementation = _create_explicit(candidate, device, dtype, head_dim, block_size)
             missing = [
                 name
-                for name in ("packed_prefill", "cuda_graphs", "async_scheduling", "fp8_kv")
+                for name in (
+                    "packed_prefill",
+                    "cuda_graphs",
+                    "async_scheduling",
+                    "device_context_lengths",
+                    "fp8_kv",
+                )
                 if getattr(required_capabilities, name)
                 and not getattr(implementation.capabilities, name)
             ]
