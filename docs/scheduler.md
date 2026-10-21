@@ -774,10 +774,12 @@ transitions; receiving data does not mean decode has started.
 
 ## Progress and resource safety
 
-`StageEngine` applies per-request progress, then calls `Scheduler.enqueue()` for
-the next phase. In the async path, host progress can describe submitted work;
-CUDA events establish when the corresponding device state is ready. Queue
-membership alone is not completion evidence.
+`Scheduler` applies per-request progress and enqueues the next phase through
+`update_from_output()` / `update_after_submission()`; `StageEngine` applies the
+side effects (connector notifications, runner finalization and retirement). In
+the async path, host progress can describe submitted work; CUDA events establish
+when the corresponding device state is ready. Queue membership alone is not
+completion evidence.
 
 If B needs more KV after A has already been selected, preemption must not evict
 A. The local selected set is passed as an exclusion set to victim selection.

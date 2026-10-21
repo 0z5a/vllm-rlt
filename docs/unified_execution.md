@@ -150,7 +150,7 @@ and optional stream overlap remain execution choices behind this interface.
 | --- | --- |
 | Worker process, channel and host-side ID mappings | StageClient; connected workers are coordinated by the deployment host |
 | Loaded model and local service loop | StageWorker; the engine and runners reference the same loaded model |
-| Request registry, phase queues and selection policy | Scheduler; StageEngine coordinates lifecycle and progress |
+| Request registry, phase queues and selection policy | Scheduler; StageEngine coordinates lifecycle, pending tickets and runner/connector side effects |
 | KV pages, mappings, validity and references/pins | KVCacheManager, shared by local scheduling and execution |
 | RNG registry and pending results | StageEngine; runners use the shared RNG, and tickets retain their result storage |
 | Input buffers, GPU events and readback storage | Runner/controller owners, retained until consumers finish |
