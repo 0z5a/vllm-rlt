@@ -11,6 +11,7 @@ from vllm_rlt.config import ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.alias_kv_cache import AliasKVCacheManager
 from vllm_rlt.core.compact_kv_cache import CompactKVCacheManager
 from vllm_rlt.core.scheduler import SchedulerOutput
+from vllm_rlt.models.hrm_text import HrmTextForCausalLM
 from vllm_rlt.models.huginn import HuginnForCausalLM
 from vllm_rlt.request import Request, Stage
 from vllm_rlt.worker.buffers import Workspace
@@ -278,6 +279,20 @@ class ModelRunner:
 
     def _prefill_tokens(self, ids, positions, tokens):
         cache = self.cache_manager
+        if isinstance(self.model, HrmTextForCausalLM):
+            lengths_by_id = dict(zip(ids, (p + 1 for p in positions)))
+            read_lengths = (
+                [lengths_by_id[rid] for rid in ids] if self.model.config.prefix_lm else None
+            )
+            hidden = self.model.prelude(torch.tensor(tokens, device=self.device, dtype=torch.long))
+            for depth in range(self.model.config.total_ut_steps):
+                metadata = cache._prepare_batch(
+                    ids, [depth] * len(ids), positions, read_lengths=read_lengths
+                )
+                hidden, _ = self.model.recurrent_prepared(
+                    hidden, metadata, cache, compute_gate=False
+                )
+            return hidden
         if cache.layout == "last_exited" and getattr(cache.attention, "generation", None) == 4:
             # Prefill has genuinely ragged query sequences. Do not pad token rows
             # or reuse decode's per-query, model-max-width static page tables.

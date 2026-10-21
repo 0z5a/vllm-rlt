@@ -57,8 +57,16 @@ class AdmissionPlan:
 
 
 class Scheduler:
-    def __init__(self, config: SchedulerConfig, cache_manager, speculative_config=None):
+    def __init__(
+        self,
+        config: SchedulerConfig,
+        cache_manager,
+        speculative_config=None,
+        *,
+        atomic_prefill=False,
+    ):
         self.config = config
+        self.atomic_prefill = atomic_prefill
         self.cache_manager = cache_manager
         self.speculative_config = speculative_config
         self.requests: dict[str, Request] = {}
@@ -297,6 +305,8 @@ class Scheduler:
         """
         if stage == Stage.PREFILL:
             start = request.num_prefilled_tokens
+            if self.atomic_prefill:
+                return ScheduledItem(request, 0, len(request.prompt_token_ids))
             count = min(
                 token_budget, self.config.prefill_chunk_size, len(request.prompt_token_ids) - start
             )
@@ -338,6 +348,13 @@ class Scheduler:
         while queue and token_budget and len(items) < self.config.max_num_seqs and remaining:
             remaining -= 1
             request = self.requests[queue.popleft()]
+            if (
+                self.atomic_prefill
+                and stage == Stage.PREFILL
+                and len(request.prompt_token_ids) > token_budget
+            ):
+                queue.append(request.request_id)
+                continue
             item = self._make_scheduled_item(request, stage, token_budget)
             if stage in (Stage.PREFILL, Stage.PRELUDE, Stage.RECURRENT, Stage.SPECULATIVE):
                 frontier = (

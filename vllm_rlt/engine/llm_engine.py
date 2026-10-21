@@ -8,6 +8,7 @@ from vllm_rlt.core.memory import plan_cache
 from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.kernels.flash_attention import FLASH_BACKENDS
+from vllm_rlt.models.hrm_text import HrmTextForCausalLM
 from vllm_rlt.models.huginn import HuginnForCausalLM
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, Stage
@@ -48,6 +49,20 @@ class LLMEngine:
                 raise ValueError("Huginn requires synchronous scheduling without prefill UVA")
             if speculative_config is not None:
                 raise ValueError("Huginn speculative decoding is not yet supported")
+        if isinstance(model, HrmTextForCausalLM):
+            if (
+                cache_config.layout != "last_exited"
+                or cache_config.enable_prefix_caching
+                or scheduler_config.enable_preemption
+                or speculative_config is not None
+                or self.execution_config.prefill_uva
+                or attention_backend not in ("torch", "triton")
+                or self.exit_config.mode not in ("ouro", "ouro_delayed")
+            ):
+                raise ValueError(
+                    "HRM requires full-depth LAST_EXITED, torch/Triton and atomic prefill "
+                    "without prefix reuse, preemption or speculation"
+                )
         self.speculative_config = speculative_config
         if speculative_config is not None:
             if cache_config.layout != "last_exited":
@@ -135,7 +150,12 @@ class LLMEngine:
             or getattr(self.cache_manager.attention, "generation", None) != 4
         ):
             raise ValueError("prefill_uva requires CUDA FA4 with last_exited KV")
-        self.scheduler = Scheduler(scheduler_config, self.cache_manager, speculative_config)
+        self.scheduler = Scheduler(
+            scheduler_config,
+            self.cache_manager,
+            speculative_config,
+            atomic_prefill=isinstance(model, HrmTextForCausalLM),
+        )
         self.speculative_runner = (
             SpeculativeRunner(model, self.cache_manager, speculative_config, self.execution_config)
             if speculative_config is not None
@@ -180,6 +200,11 @@ class LLMEngine:
         if any(type(t) is not int or not 0 <= t < config.vocab_size for t in prompt_token_ids):
             raise ValueError("prompt token IDs must be integers within the model vocabulary")
         max_loops = params.max_loops or config.total_ut_steps
+        if isinstance(self.model, HrmTextForCausalLM):
+            if len(prompt_token_ids) > self.scheduler.config.max_num_batched_tokens:
+                raise ValueError("HRM atomic prompt exceeds max_num_batched_tokens")
+            if max_loops != config.total_ut_steps or params.exit_threshold != 1.0:
+                raise ValueError("HRM requires full H_cycles and exit_threshold=1")
         if max_loops > config.total_ut_steps or params.min_loops > max_loops:
             raise ValueError("requested loop bounds exceed the model's supported depth")
         if self.speculative_config is not None and (
