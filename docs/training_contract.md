@@ -1,6 +1,6 @@
 # Training rollout and full-weight publication
 
-`LLM` and `LLMEngine` expose the same full-update operations. `LLM` also accepts
+`LLM`, `StageClient`, and `LLMEngine` (the local `StageEngine` alias) expose the same full-update operations. `LLM` also accepts
 an existing `LLMEngine` or `PDEngine`, so framework adapters use the same generation
 and publication calls with either backend.
 
@@ -54,7 +54,8 @@ Existing exit, async and speculative configuration rules still apply. Self-specu
 uses a full-depth target. Selected-token scores are supported by synchronous
 self-speculation and ordinary asynchronous decoding; cross-round asynchronous
 self-speculation rejects logprobs requests at admission because its compact result
-buffers contain token IDs only. PD does not implement self-speculation. Publication
+buffers contain token IDs only. PD follows the same synchronous and asynchronous
+self-speculation limits on its decode workers. Publication
 adds no such restriction to ordinary early-exit or async rollouts. Trainers must
 replay full-depth prompt prefill and the returned decode depths rather than assume
 the entire sequence used K.
