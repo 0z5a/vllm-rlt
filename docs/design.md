@@ -12,9 +12,9 @@ PRELUDE prepares token hidden states. RECURRENT traverses the shared transformer
 core at a selected depth. CODA consumes the final hidden state and produces
 vocabulary logits. Some models also have attention/KV in prelude or coda.
 
-`ModelRunner.execute()` and `SpeculativeRunner.execute()` return `ModelRunnerOutput`
-directly; `Submission.collect()` and speculative tickets return the same typed
-result after readback. `Scheduler` applies completed results through
+`ModelRunner.submit()` and `SpeculativeRunner.submit()` return execution tickets whose
+`collect()` method yields a typed `ModelRunnerOutput` after readback (`SpeculativeRunner.execute()`
+also returns `ModelRunnerOutput` directly). `Scheduler` applies completed results through
 `update_from_output()` and records asynchronous submissions through
 `update_after_submission()`, while `StageEngine` coordinates submission,
 pending tickets, connector hooks, and retirement.

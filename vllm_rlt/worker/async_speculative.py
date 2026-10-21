@@ -76,7 +76,6 @@ class SpeculativeRoundTicket:
                     SpeculativeResult(
                         values[start : start + accepted + 1],
                         accepted,
-                        scheduled_request.token_count - 1,
                     )
                 )
                 start += scheduled_request.token_count

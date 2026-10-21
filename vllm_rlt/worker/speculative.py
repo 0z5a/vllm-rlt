@@ -290,7 +290,7 @@ class SpeculativeRunner:
                     candidates[i], targets[start : start + scheduled_request.token_count]
                 )
                 start += scheduled_request.token_count
-                results.append(SpeculativeResult(tokens, accepted, len(candidates[i])))
+                results.append(SpeculativeResult(tokens, accepted))
                 continue
             start += scheduled_request.token_count
             # Sampling keeps sequential rejection; RNG consumption order is unchanged.
@@ -313,5 +313,5 @@ class SpeculativeRunner:
                     self._acquire_generator(request, rows[-1]),
                 )
                 tokens.append(int(token.item()))
-            results.append(SpeculativeResult(tokens, accepted, len(candidates[i])))
+            results.append(SpeculativeResult(tokens, accepted))
         return results

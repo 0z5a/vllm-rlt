@@ -5,7 +5,7 @@ from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import CacheConfig, ExecutionConfig, ExitConfig, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.memory import plan_cache
-from vllm_rlt.core.scheduler import PrefillProgress, Scheduler
+from vllm_rlt.core.scheduler import Scheduler
 from vllm_rlt.engine.connector import StageConnector
 from vllm_rlt.engine.preemption import PreemptionManager
 from vllm_rlt.engine.stage_config import StageConfig
@@ -487,22 +487,6 @@ class StageEngine:
                 stream=self.model_runner.core_stream,
             )
 
-    def _apply_prefill_progress(self, batch, scheduled_request):
-        """One prompt frontier update for local and remotely consumed outputs."""
-        request = scheduled_request.request
-        phase = batch.phase_for(scheduled_request)
-        event = self.model_runner.events.get(request.request_id)
-        progress = self.scheduler._apply_prefill_progress(scheduled_request, phase, event=event)
-        self._notify_connector_prefill(scheduled_request, phase, progress)
-        return progress
-
-    def _apply_split_prefill_progress(
-        self, request, phase, scheduled_request, *, event=None
-    ) -> PrefillProgress:
-        return self.scheduler._apply_split_prefill_progress(
-            request, phase, scheduled_request, event=event
-        )
-
     def reserve_transfer(
         self, request_id, prompt_token_ids, sampling_params, *, receiving, trace_id=None
     ):
@@ -619,11 +603,7 @@ class StageEngine:
         for scheduled_request, phase, progress in update.prefill:
             self._notify_connector_prefill(scheduled_request, phase, progress)
         if update.exited:
-            if self.execution_config.async_scheduling:
-                self.model_runner.finalize_many(update.exited)
-            else:
-                for request in update.exited:
-                    self.model_runner.finalize(request)
+            self.model_runner.finalize_many(update.exited)
         if self.speculative_runner is not None:
             self.speculative_runner.stats.committed_tokens += update.committed_tokens
             self.speculative_runner.stats.accepted_tokens += update.accepted_tokens
@@ -631,13 +611,15 @@ class StageEngine:
             self._finish(request, request.finish_reason)
         return [RequestOutput.from_request(request) for request in update.outputs]
 
-    def _update(self, batch, result: ModelRunnerOutput | None) -> list[RequestOutput]:
-        for scheduled_request in batch.requests:
-            if batch.phase_for(scheduled_request) == RequestPhase.PRELUDE:
-                self._pending_exit_signals.pop(scheduled_request.request.request_id, None)
+    def _update(
+        self, batch, result: ModelRunnerOutput | None, *, delivered: bool = False
+    ) -> list[RequestOutput]:
         return self._apply_update(
             self.scheduler.update_from_output(
-                batch, result, request_events=self.model_runner.events
+                batch,
+                result,
+                request_events=self.model_runner.events,
+                delivered=delivered,
             )
         )
 
@@ -714,7 +696,7 @@ class StageEngine:
                 # Bootstrap uses the same submit contract; only actual host
                 # results (the first sampled token) require collection here.
                 ticket = self.executor.submit(batch)
-                result = replace(ticket.collect(), output_indices=()) if ticket.has_result else None
+                result = ticket.collect() if ticket.has_result else None
                 outputs.extend(self._update(batch, result))
         elif self._pending_speculative:
             outputs.extend(self._collect_speculative())
@@ -725,7 +707,7 @@ class StageEngine:
         return outputs
 
     def _deliver_coda(self, ticket):
-        return self._update(ticket.batch, ticket.collect())
+        return self._update(ticket.batch, ticket.collect(), delivered=True)
 
     def _collect_coda(self, wait=False):
         outputs = []

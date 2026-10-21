@@ -280,6 +280,16 @@ def test_old_request_signal_is_discarded_without_collect(monkeypatch):
     assert drain(engine)[-1].prompt_token_ids == [3]
 
 
+def test_stale_lookahead_signal_raises():
+    engine = make_engine()
+    params = SamplingParams(max_tokens=2, exit_threshold=0.99, ignore_eos=True)
+    engine.add_request("a", [2], params)
+    wait_for_signal(engine, "a")
+    del engine._pending_exit_signals["a"]
+    with pytest.raises(RuntimeError, match="stale lookahead signal"):
+        engine.step()
+
+
 def test_async_recurrent_collects_each_prior_score_after_next_submit(monkeypatch):
     engine = make_engine()
     engine.add_request("a", [2], SamplingParams(max_tokens=3, exit_threshold=0.99, ignore_eos=True))
@@ -361,7 +371,21 @@ def test_mixed_recurrent_and_split_prefill_progression_through_scheduler(asynchr
         if engine.scheduler.requests["decode"].generated_token_ids:
             break
     engine.add_request("prompt", [4, 5, 6, 7], params)
-    actual = {out.request_id: out for out in drain(engine) if out.finished}
+    saw_mixed_batch = False
+    actual = {}
+    for _ in range(100):
+        if not engine.has_unfinished_requests():
+            break
+        for out in engine.step():
+            if out.finished:
+                actual[out.request_id] = out
+        batch = engine.last_schedule
+        if batch is not None and {batch.phase_for(item) for item in batch.requests} == {
+            RequestPhase.RECURRENT,
+            RequestPhase.PREFILLING_RECURRENT,
+        }:
+            saw_mixed_batch = True
+    assert saw_mixed_batch
     assert actual["decode"].token_ids == expected["decode"].token_ids
     assert actual["decode"].exit_depths == expected["decode"].exit_depths
     assert actual["prompt"].token_ids == expected["prompt"].token_ids

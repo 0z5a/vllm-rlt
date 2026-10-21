@@ -134,8 +134,10 @@ GPU dependencies or authorize early resource reuse.
 
 ### F — Apply progress: what should each request do next?
 
-StageEngine applies progress and result-dependent decisions per Request, then
-calls `Scheduler.enqueue()` for its next phase. The four labels show common
+`Scheduler` applies progress and result-dependent decisions per `Request` (via
+`update_from_output()` and `update_after_submission()`) and enqueues its next
+phase, while `StageEngine` applies side effects (connector notifications, runner
+finalization, and retirement). The four labels show common
 continuations: another loop, another prompt chunk, the next generated token, or
 CODA after recurrence exits. The blue return arrow leads back to B, not A:
 continuing requests keep their admitted resources.
@@ -798,8 +800,9 @@ their own lifetimes beyond one CPU scheduling call.
 Start with `Scheduler.schedule()` and `create_scheduling_policy()`, then follow
 `take_phases()` and `_make_scheduled_request()`. Read `_admit()` and
 `_plan_admission()` for capacity behavior. Progress application lives in
-`StageEngine._update()` and `_apply_split_prefill_progress()`, with separate
-asynchronous result handling in the same engine.
+`Scheduler.update_from_output()`, `Scheduler.update_after_submission()`, and
+`Scheduler._apply_split_prefill_progress()`, coordinated by `StageEngine._update()`
+and `StageEngine._apply_update()`.
 
 Relevant regressions are [scheduler selection](../tests/test_scheduler_selection.py),
 [split prefill and mixed execution](../tests/test_split_prefill.py),

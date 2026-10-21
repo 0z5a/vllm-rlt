@@ -1249,11 +1249,7 @@ class ModelRunner:
                 device_values=device_values,
                 depths=prepared.depths,
                 positions=prepared.positions,
-                output_indices=(
-                    prepared.output_indices
-                    if self.execution_config.async_scheduling and batch.operation == Operation.CODA
-                    else ()
-                ),
+                output_indices=prepared.output_indices,
                 operation=batch.operation,
             )
         except Exception:

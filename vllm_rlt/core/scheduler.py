@@ -802,6 +802,7 @@ class Scheduler:
         result: ModelRunnerOutput | None = None,
         *,
         request_events: dict[str, object] | None = None,
+        delivered: bool = False,
     ) -> SchedulerUpdate:
         """Apply completed sync work or delivered async results; never wait here."""
         if result is None:
@@ -858,9 +859,10 @@ class Scheduler:
                     update.exited.append(request)
                 self.enqueue(request, RequestPhase.CODA if should_exit else RequestPhase.RECURRENT)
             elif phase == RequestPhase.CODA:
-                delivered = bool(result.output_indices)
                 if delivered:
-                    if result.output_indices[row] != len(request.generated_token_ids):
+                    if not result.output_indices or result.output_indices[row] != len(
+                        request.generated_token_ids
+                    ):
                         raise RuntimeError("out-of-order coda delivery")
                     if request.num_output_placeholders != 1:
                         raise RuntimeError("invalid pending output count")
@@ -897,13 +899,13 @@ class Scheduler:
                 update.committed_tokens += emitted
                 update.accepted_tokens += min(spec.accepted_count, emitted)
                 if request.finish_reason is None:
+                    # Async work may already be writing the next round: never truncate it.
                     if result.frontiers is None:
                         # The final correction/bonus token has not been forwarded.
                         self.cache_manager.truncate_suffix(
                             request.request_id, scheduled_request.token_start + emitted
                         )
                         request.loops_done = 0
-                    # Async work may already be writing the next round: never truncate it.
                     if request.request_id not in self.queues[RequestPhase.SPECULATIVE]:
                         self.enqueue(request, RequestPhase.SPECULATIVE)
                 update.outputs.append(request)
@@ -954,7 +956,11 @@ class Scheduler:
                 request.num_speculative_rounds += 1
                 self.enqueue(request, RequestPhase.SPECULATIVE)
             elif phase == RequestPhase.RECURRENT:
-                consume_signal = self.needs_exit_signal(request)
+                consume_signal = (
+                    request.loops_done > 0
+                    and request.sampling_params.exit_threshold < 1
+                    and self.needs_exit_signal(request)
+                )
                 request.loops_done += 1
                 should_exit = (
                     self._trace_exit(request)
@@ -963,9 +969,10 @@ class Scheduler:
                     >= (request.sampling_params.max_loops or self.total_ut_steps)
                 )
                 signal = signals.get(row) if signals else None
-                if consume_signal and signal is not None:
+                if consume_signal:
                     if (
-                        signal.request is not request
+                        signal is None
+                        or signal.request is not request
                         or signal.position != request.position
                         or signal.depth != request.loops_done - 1
                     ):
