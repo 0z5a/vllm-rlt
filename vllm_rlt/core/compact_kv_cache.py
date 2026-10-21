@@ -101,12 +101,23 @@ class CompactKVCacheManager(AliasKVCacheManager):
                 if for_write and (depth, position) not in versions:
                     versions[depth, position] = self._free_records.pop()
                 records.append(versions.get((depth, position), -1))
-            pointer_values = [self._maps[id(a)].data_ptr() for a, _, _ in rows]
-            pointers = self._stage(pointer_values, torch.int64)
-            widths = self._stage([a.max_tokens for a, _, _ in rows], torch.int32)
-            query_depths = self._stage(depths, torch.int32)
-            position_ids = self._stage([p for _, _, p in rows], torch.int64)
-            record_ids = self._stage(records, torch.int64)
+            n = len(rows)
+            wide = self._stage(
+                [self._maps[id(a)].data_ptr() for a, _, _ in rows]
+                + [p for _, _, p in rows]
+                + records
+                + [record // self.block_size for record in records]
+                + [record % self.block_size for record in records],
+                torch.int64,
+            )
+            narrow = self._stage(
+                [a.max_tokens for a, _, _ in rows]
+                + [depth for _, depth, _ in rows]
+                + [p + 1 for _, _, p in rows],
+                torch.int32,
+            )
+            pointers, position_ids, record_ids = wide[:n], wide[n : 2 * n], wide[2 * n : 3 * n]
+            widths, query_depths = narrow[:n], narrow[n : 2 * n]
             if for_write and rows:
                 if self.device.type == "cuda":
                     from vllm_rlt.kernels.record_map import publish_records
@@ -121,10 +132,10 @@ class CompactKVCacheManager(AliasKVCacheManager):
                     rows=rows,
                     allocations=tuple(dict(zip(request_ids, (a for a, _, _ in rows))).items()),
                     position_ids=position_ids,
-                    write_blocks=record_ids // self.block_size,
-                    write_offsets=record_ids % self.block_size,
+                    write_blocks=wide[3 * n : 4 * n],
+                    write_offsets=wide[4 * n : 5 * n],
                     block_tables=torch.empty((len(rows), 0), dtype=torch.int32, device=self.device),
-                    context_lengths=position_ids.to(torch.int32) + 1,
+                    context_lengths=narrow[2 * n : 3 * n],
                     writable=for_write,
                     query_depths=query_depths,
                     record_map_pointers=pointers,
