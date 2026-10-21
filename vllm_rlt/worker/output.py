@@ -21,6 +21,7 @@ class ExitSignal:
 class SpeculativeResult:
     token_ids: list[int]
     accepted_count: int
+    draft_count: int = 0
 
 
 @dataclass(frozen=True, kw_only=True)

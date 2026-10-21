@@ -10,11 +10,19 @@ from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
-from vllm_rlt.request import Stage
+from vllm_rlt.request import RequestPhase
 from vllm_rlt.worker.model_runner import Submission
 
 
-def make_engine(*, asynchronous=True, preemption=False, token_budget=16):
+def make_engine(
+    *,
+    asynchronous=True,
+    preemption=False,
+    token_budget=16,
+    mode="refill",
+    atomic_prefill=True,
+    prefill_chunk_size=16,
+):
     torch.manual_seed(123)
     model = OuroForCausalLM(tiny_ouro_config())
     with torch.no_grad():
@@ -24,12 +32,17 @@ def make_engine(*, asynchronous=True, preemption=False, token_budget=16):
         model,
         cache_config=CacheConfig(64, 2),
         scheduler_config=SchedulerConfig(
+            mode=mode,
             max_num_seqs=4,
             max_num_batched_tokens=token_budget,
+            prefill_chunk_size=prefill_chunk_size,
             enable_preemption=preemption,
         ),
         exit_config=ExitConfig("ouro_delayed"),
-        execution_config=ExecutionConfig(async_scheduling=asynchronous),
+        execution_config=ExecutionConfig(
+            async_scheduling=asynchronous,
+            atomic_prefill=atomic_prefill,
+        ),
     )
 
 
@@ -47,7 +60,7 @@ def wait_for_signal(engine, request_id):
     for _ in range(100):
         engine.step()
         request = engine.scheduler.requests[request_id]
-        if request.generated_token_ids and request.stage == Stage.RECURRENT:
+        if request.generated_token_ids and request.phase == RequestPhase.RECURRENT:
             if request_id in engine._pending_exit_signals:
                 return request
     pytest.fail("recurrent signal was not retained")
@@ -75,10 +88,10 @@ def test_delayed_signal_consumption_at_max_and_threshold(
     enqueue = engine.scheduler.enqueue
     delayed_signal = engine.scheduler._delayed_signal
 
-    def record_enqueue(request, stage):
-        if stage == Stage.CODA and request.generated_token_ids:
+    def record_enqueue(request, phase):
+        if phase == RequestPhase.CODA and request.generated_token_ids:
             probabilities.append(request.remaining_probability)
-        return enqueue(request, stage)
+        return enqueue(request, phase)
 
     def record_signal(request, score, depth):
         consumed.setdefault(len(request.generated_token_ids), []).append(depth)
@@ -103,8 +116,8 @@ def test_async_pending_signal_survives_preemption_and_resume():
     request = wait_for_signal(engine, "a")
     retained = engine._pending_exit_signals["a"]
     engine.add_request("new", [4], SamplingParams(max_tokens=1, ignore_eos=True))
-    assert engine.preemption.preempt(engine.scheduler.requests["new"])
-    assert request.stage == Stage.WAITING
+    assert engine.scheduler.preempt(engine.scheduler.requests["new"])
+    assert request.phase == RequestPhase.WAITING
     assert engine._pending_exit_signals["a"] is retained
     actual = drain(engine)
     assert [out for out in actual if out.request_id == "a"][-1] == expected
@@ -167,7 +180,7 @@ def test_sync_result_application_failure_aborts_only_selected_batch(monkeypatch)
         engine.add_request(rid, [2], SamplingParams(max_tokens=1, ignore_eos=True))
     original = engine.scheduler.update_from_output
 
-    def fail(batch, result):
+    def fail(batch, result, **kwargs):
         raise RuntimeError("result application failed")
 
     monkeypatch.setattr(engine.scheduler, "update_from_output", fail)
@@ -183,10 +196,12 @@ def test_async_result_application_failure_synchronizes_and_aborts_all(monkeypatc
     engine = make_engine()
     engine.add_request("a", [2], SamplingParams(max_tokens=2))
     engine.add_request("b", [3], SamplingParams(max_tokens=2))
+    engine.step()  # PREFILL
+    engine.step()  # CODA submit
     synchronize = Mock(wraps=engine.model_runner.synchronize)
     monkeypatch.setattr(engine.model_runner, "synchronize", synchronize)
 
-    def fail(batch, result):
+    def fail(batch, result, **kwargs):
         raise RuntimeError("result application failed")
 
     monkeypatch.setattr(engine.scheduler, "update_from_output", fail)
@@ -234,7 +249,7 @@ def test_old_request_coda_delivery_is_discarded():
     engine.step()
     engine.step()
     old_ticket = engine._pending_coda[0]
-    old_request = old_ticket.batch.items[0].request
+    old_request = old_ticket.batch.requests[0].request
     engine.abort_request("a")
     engine.add_request("a", [3], params)
     assert engine.scheduler.requests["a"] is not old_request
@@ -261,7 +276,7 @@ def test_old_request_signal_is_discarded_without_collect(monkeypatch):
 
     monkeypatch.setattr(old_handle.ticket, "collect", forbidden_collect)
     engine.step()  # first RECURRENT submission of the new request
-    assert engine.scheduler.requests["a"] is not old_handle.ticket.batch.items[0].request
+    assert engine.scheduler.requests["a"] is not old_handle.ticket.batch.requests[0].request
     assert drain(engine)[-1].prompt_token_ids == [3]
 
 
@@ -274,16 +289,18 @@ def test_async_recurrent_collects_each_prior_score_after_next_submit(monkeypatch
     recurrent_submissions = 0
     submitted_at = {}
 
-    def record_submit(batch):
+    def record_submit(scheduled_batch=None, *, batch=None):
         nonlocal recurrent_submissions
-        ticket = submit(batch)
-        if batch.stage == Stage.RECURRENT:
+        ticket = (
+            submit(scheduled_batch, batch=batch) if batch is not None else submit(scheduled_batch)
+        )
+        if ticket.batch.phase == RequestPhase.RECURRENT:
             recurrent_submissions += 1
             submitted_at[id(ticket)] = recurrent_submissions
         return ticket
 
     def record_collect(ticket):
-        if ticket.batch.stage == Stage.RECURRENT:
+        if ticket.batch.phase == RequestPhase.RECURRENT:
             observed.append((submitted_at[id(ticket)], recurrent_submissions))
         return collect(ticket)
 
@@ -321,3 +338,31 @@ def test_finish_waits_for_runner_then_polls_prefix_before_free(monkeypatch):
     monkeypatch.setattr(engine.scheduler, "finish", record_finish)
     assert engine.step()[0].finished
     assert order == ["release", "poll", "free"]
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_mixed_recurrent_and_split_prefill_progression_through_scheduler(asynchronous):
+    reference = make_engine(asynchronous=False)
+    params = SamplingParams(max_tokens=3, min_loops=1, exit_threshold=0.5, ignore_eos=True)
+    reference.add_request("decode", [2, 3], params)
+    reference.add_request("prompt", [4, 5, 6, 7], params)
+    expected = {out.request_id: out for out in drain(reference) if out.finished}
+
+    engine = make_engine(
+        asynchronous=asynchronous,
+        mode="mixed",
+        atomic_prefill=False,
+        prefill_chunk_size=2,
+        token_budget=4,
+    )
+    engine.add_request("decode", [2, 3], params)
+    for _ in range(10):
+        engine.step()
+        if engine.scheduler.requests["decode"].generated_token_ids:
+            break
+    engine.add_request("prompt", [4, 5, 6, 7], params)
+    actual = {out.request_id: out for out in drain(engine) if out.finished}
+    assert actual["decode"].token_ids == expected["decode"].token_ids
+    assert actual["decode"].exit_depths == expected["decode"].exit_depths
+    assert actual["prompt"].token_ids == expected["prompt"].token_ids
+    assert actual["prompt"].exit_depths == expected["prompt"].exit_depths
