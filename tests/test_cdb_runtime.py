@@ -608,6 +608,32 @@ def test_cuda_dynamic_async_respects_buffers_and_matches_sync(layout, multi_stre
 
 
 @pytest.mark.gpu
+@pytest.mark.parametrize("free_mib", [128, 512])
+def test_cuda_graph_reserve_reduces_budget_with_fixed_memory_inputs(monkeypatch, free_mib):
+    from vllm_rlt.core.memory import plan_cache
+
+    base = model().to(device="cuda", dtype=torch.bfloat16)
+    mib = 1024**2
+    # Exercise both driver-free and utilization-limited budgets. Keep the real
+    # model probe, but freeze measurements so allocator history cannot affect
+    # the comparison between graph-enabled and graph-disabled plans.
+    monkeypatch.setattr(torch.cuda, "mem_get_info", lambda device: (free_mib * mib, 512 * mib))
+    monkeypatch.setattr(torch.cuda, "memory_reserved", lambda device: 64 * mib)
+    monkeypatch.setattr(torch.cuda, "memory_allocated", lambda device: 16 * mib)
+    monkeypatch.setattr(torch.cuda, "max_memory_allocated", lambda device: 24 * mib)
+    cache = CacheConfig(block_size=2, gpu_memory_utilization=0.5, memory_reserve_bytes=0)
+    scheduler = SchedulerConfig(max_num_seqs=2, max_num_batched_tokens=3)
+    execution = ExecutionConfig(cuda_graph_memory_reserve_bytes=32 * mib)
+
+    _, eager = plan_cache(base, cache, scheduler, execution, "triton")
+    _, graphed = plan_cache(base, cache, scheduler, replace(execution, cuda_graphs=True), "triton")
+
+    assert eager["cuda_graph_reserve_bytes"] == 0
+    assert graphed["cuda_graph_reserve_bytes"] == 32 * mib
+    assert eager["kv_budget_bytes"] - graphed["kv_budget_bytes"] == 32 * mib
+
+
+@pytest.mark.gpu
 def test_cuda_memory_plan_reclaims_allocator_residue_on_recreation():
     import gc
 

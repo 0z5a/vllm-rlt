@@ -1116,7 +1116,8 @@ def test_cuda_split_prefill_survives_decode_graph_capture_and_replay():
     assert eager[0] == graphed[0]
     assert eager[1]["cuda_graph_reserve_bytes"] == 0
     assert graphed[1]["cuda_graph_reserve_bytes"] == graph_reserve
-    assert eager[1]["kv_budget_bytes"] >= graphed[1]["kv_budget_bytes"] + graph_reserve
+    # Independent startup profiles can differ in allocator state and measured peak.
+    # The reserve deduction is tested with fixed inputs in test_cdb_runtime.py.
     assert eager[1]["static_buffer_bytes"] == eager[2] > 0
     assert graphed[1]["static_buffer_bytes"] == graphed[2] > 0
     before_resume, after_resume = graphed[3]

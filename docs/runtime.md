@@ -27,24 +27,38 @@ revision. Dated measurements are retained in the
 
 ## Configuration
 
+`LLM` starts a spawned worker process. In Python scripts, create it inside
+`main()` and use the `if __name__ == "__main__":` guard shown below. The context
+manager closes the worker when inference finishes or raises.
+
 ```python
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, LLM, SchedulerConfig
 
-llm = LLM(
-    model,
-    cache_config=CacheConfig(layout="shared", gpu_memory_utilization=0.9),
-    scheduler_config=SchedulerConfig(
-        prefill_chunk_size=128,
-        max_prefill_batches_before_decode=1,
-        admission_scan_limit=64,
-        max_admission_bypasses=8,
-    ),
-    exit_config=ExitConfig(mode="random_lookahead", seed=7),
-    execution_config=ExecutionConfig(
-        async_scheduling=True, static_buffers=True, pad_to_power_of_two=True,
-    ),
-    attention_backend="triton",  # Choose a backend supporting the requested features
-)
+
+def main():
+    with LLM(
+        "../models/Ouro-1.4B",
+        device="cuda",
+        cache_config=CacheConfig(layout="shared", gpu_memory_utilization=0.9),
+        scheduler_config=SchedulerConfig(
+            prefill_chunk_size=128,
+            max_prefill_batches_before_decode=1,
+            admission_scan_limit=64,
+            max_admission_bypasses=8,
+        ),
+        exit_config=ExitConfig(mode="random_lookahead", seed=7),
+        execution_config=ExecutionConfig(
+            async_scheduling=True,
+            static_buffers=True,
+            pad_to_power_of_two=True,
+        ),
+        attention_backend="triton",  # Choose a backend supporting the requested features
+    ) as llm:
+        outputs = llm.generate(["Explain continuous depth batching."])
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 The default exit mode remains `ouro`, with the original cumulative hazard policy. For random lookahead, sigmoid is a direct score for exiting after one more loop, not a hazard/CDF. `SamplingParams.exit_threshold` compares this score directly. Threshold 1 disables adaptive exit; `max_loops` always caps execution. Adaptive lookahead cannot exit before round 2, although an explicitly configured hard maximum of 1 is honored. All prompt tokens still run the model's full depth.
@@ -130,18 +144,26 @@ are discarded and corrected by the target. The feature is opt-in.
 ```python
 from vllm_rlt import LLM, SamplingParams, SpeculativeConfig
 
-llm = LLM(
-    "../models/Ouro-1.4B",
-    device="cuda",
-    attention_backend="flash_attn_4",
-    speculative_config=SpeculativeConfig(
-        num_speculative_tokens=4, draft_loops=2, target_loops=4,
-    ),
-)
-outputs = llm.generate(
-    ["Explain why the sky is blue."],
-    SamplingParams(max_tokens=64, max_loops=4, exit_threshold=1.0),
-)
+
+def main():
+    with LLM(
+        "../models/Ouro-1.4B",
+        device="cuda",
+        attention_backend="flash_attn_4",
+        speculative_config=SpeculativeConfig(
+            num_speculative_tokens=4,
+            draft_loops=2,
+            target_loops=4,
+        ),
+    ) as llm:
+        outputs = llm.generate(
+            ["Explain why the sky is blue."],
+            SamplingParams(max_tokens=64, max_loops=4, exit_threshold=1.0),
+        )
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 Equivalent offline CLI (select an available GPU through `CUDA_VISIBLE_DEVICES`):

@@ -6,20 +6,30 @@ backends can consume its GPU-owned context lengths; `auto` selects against this
 capability as well as hardware, dtype and block size. Draft depth is configurable, with `d=2, D=4`
 as the initial validation configuration. The target depth must match the model.
 
+`LLM` starts a spawned worker process. In Python scripts, create it inside
+`main()` and use the `if __name__ == "__main__":` guard shown below. The context
+manager closes the worker when inference finishes or raises.
+
 ```python
 from vllm_rlt import LLM, ExecutionConfig, SamplingParams, SpeculativeConfig
 
-llm = LLM(
-    "artifacts/models/Ouro-1.4B",
-    device="cuda",
-    attention_backend="flash_attn_4",  # Or triton / another compatible paged backend.
-    execution_config=ExecutionConfig(async_scheduling=True, cuda_graphs=True),
-    speculative_config=SpeculativeConfig(num_speculative_tokens=4),
-)
-outputs = llm.generate(
-    ["Explain speculative decoding."],
-    SamplingParams(temperature=0, max_loops=4, exit_threshold=1.0, max_tokens=64),
-)
+
+def main():
+    with LLM(
+        "artifacts/models/Ouro-1.4B",
+        device="cuda",
+        attention_backend="flash_attn_4",  # Or triton / another compatible paged backend.
+        execution_config=ExecutionConfig(async_scheduling=True, cuda_graphs=True),
+        speculative_config=SpeculativeConfig(num_speculative_tokens=4),
+    ) as llm:
+        outputs = llm.generate(
+            ["Explain speculative decoding."],
+            SamplingParams(temperature=0, max_loops=4, exit_threshold=1.0, max_tokens=64),
+        )
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 The CLI combines `--async-scheduling --attention-backend flash_attn_4 --cuda-graphs

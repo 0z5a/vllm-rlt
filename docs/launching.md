@@ -226,22 +226,32 @@ Save the following as `example.py` in the repository root, then run
 `python example.py` from the activated environment. Stop the HTTP server first
 if it uses the same GPU.
 
+`LLM` starts a spawned worker process. In Python scripts, create it inside
+`main()` and use the `if __name__ == "__main__":` guard shown below. The context
+manager closes the worker when inference finishes or raises.
+
 ```python
 from vllm_rlt import CacheConfig, LLM, SamplingParams
 
-llm = LLM(
-    './artifacts/models/Ouro-1.4B',
-    device='cuda',
-    attention_backend='triton',
-    cache_config=CacheConfig(num_blocks=64),
-)
-outputs = llm.generate(
-    ['The capital of France is', '2 + 2 ='],
-    SamplingParams(max_tokens=32, min_loops=2, max_loops=4, exit_threshold=0.7),
-)
-for output in outputs:
-    print(output.text)
-    print('Exit depths:', output.exit_depths)
+
+def main():
+    with LLM(
+        "./artifacts/models/Ouro-1.4B",
+        device="cuda",
+        attention_backend="triton",
+        cache_config=CacheConfig(num_blocks=64),
+    ) as llm:
+        outputs = llm.generate(
+            ["The capital of France is", "2 + 2 ="],
+            SamplingParams(max_tokens=32, min_loops=2, max_loops=4, exit_threshold=0.7),
+        )
+        for output in outputs:
+            print(output.text)
+            print("Exit depths:", output.exit_depths)
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 Results preserve input order. Prompt prefill runs at full depth; the exit
