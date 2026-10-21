@@ -21,12 +21,17 @@ class CacheConfig:
     watermark_ratio: float = 0.0
     alias_last_exited: bool = False
     compact_last_exited: bool = False
+    reclaim_skipped_credits: bool = False
 
     def __post_init__(self):
         if type(self.alias_last_exited) is not bool:
             raise ValueError("alias_last_exited must be a boolean")
         if type(self.compact_last_exited) is not bool:
             raise ValueError("compact_last_exited must be a boolean")
+        if type(self.reclaim_skipped_credits) is not bool:
+            raise ValueError("reclaim_skipped_credits must be a boolean")
+        if self.reclaim_skipped_credits and not self.compact_last_exited:
+            raise ValueError("reclaiming skipped credits requires compact storage")
         if self.alias_last_exited and self.compact_last_exited:
             raise ValueError("choose rectangular alias or compact storage")
         if (self.alias_last_exited or self.compact_last_exited) and (

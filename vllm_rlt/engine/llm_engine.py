@@ -108,6 +108,11 @@ class LLMEngine:
             enable_prefix_caching=cache_config.enable_prefix_caching,
             incremental_allocation=cache_config.incremental_allocation,
             watermark_ratio=cache_config.watermark_ratio,
+            **(
+                {"reclaim_skipped_credits": cache_config.reclaim_skipped_credits}
+                if cache_config.compact_last_exited
+                else {}
+            ),
         )
         if self.execution_config.prefill_uva and (
             parameter.device.type != "cuda"
