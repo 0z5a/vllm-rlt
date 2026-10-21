@@ -60,6 +60,10 @@ class DeviceKVMetadata:
     write_offsets: torch.Tensor
     block_tables: torch.Tensor
     context_lengths: torch.Tensor
+    # The device-owned path currently uses independent single-query rows.
+    # These layout fields also let recurrent graphs stage the same contract.
+    cu_seqlens_q: torch.Tensor | None = None
+    max_seqlen_q: int = 1
 
 
 @dataclass(frozen=True)

@@ -1,8 +1,9 @@
 # Cross-round asynchronous self-speculation
 
 This opt-in path uses fixed-depth Ouro, `last_exited` KV, greedy sampling,
-Triton attention, eager CUDA execution, and refill scheduling. Historical tests used H20;
-FlashAttention is not required. Draft depth is configurable, with `d=2, D=4`
+CUDA execution, and refill scheduling. Triton and compatible paged FlashAttention
+backends can consume its GPU-owned context lengths; `auto` selects against this
+capability as well as hardware, dtype and block size. Draft depth is configurable, with `d=2, D=4`
 as the initial validation configuration. The target depth must match the model.
 
 ```python
@@ -11,8 +12,8 @@ from vllm_rlt import LLM, ExecutionConfig, SamplingParams, SpeculativeConfig
 llm = LLM(
     "artifacts/models/Ouro-1.4B",
     device="cuda",
-    attention_backend="triton",
-    execution_config=ExecutionConfig(async_scheduling=True),
+    attention_backend="flash_attn_4",  # Or triton / another compatible paged backend.
+    execution_config=ExecutionConfig(async_scheduling=True, cuda_graphs=True),
     speculative_config=SpeculativeConfig(num_speculative_tokens=4),
 )
 outputs = llm.generate(
@@ -21,15 +22,42 @@ outputs = llm.generate(
 )
 ```
 
-The CLI combines `--async-scheduling --attention-backend triton
+The CLI combines `--async-scheduling --attention-backend flash_attn_4 --cuda-graphs
 --speculative-tokens 4 --draft-loops 2 --target-loops 4 --temperature 0`.
-Random sampling, adaptive exit, CUDA Graphs and preemption are rejected.
+Random sampling, adaptive exit and preemption remain rejected.
 PD can enable speculation on its decode stage. Incoming prompts wait for transfer
 completion and shared scheduler admission before CODA bootstraps local speculative
 rounds. Cancellation retains GPU resources until the final round completes.
 The speculative runner owns its compute and result-copy streams. Setting
 `multi_stream=False` orders the copy on the compute stream as well; cross-round
 CPU/GPU submission remains asynchronous, but D2H no longer overlaps computation.
+
+## CUDA Graph scope and ownership
+
+`cuda_graphs=True` captures the draft and verification recurrent cores and coda
+projection. Prelude, draft/verify control, acceptance, state advancement and
+result copies remain eager; this is not a graph of an entire speculative round.
+The current verification path uses independent query rows for all backends,
+including FA4, rather than packed verification queries.
+
+Each graph entry has stable hidden/metadata storage. Actual positions, write
+addresses, context lengths and page tables are copied device-to-device before
+replay, without reading token positions or acceptance results on the CPU. Graph
+results are cloned before another replay can overwrite the shared output. Stream
+events order reuse; the round ticket still retains its own results and KV leases.
+Unlike ordinary graphs, these calls do not validate or advance the CPU written
+frontier, which intentionally lags in-flight speculative device progress.
+
+Graph keys use the actual query-row count. `cuda_graph_max_batch_size` therefore
+needs to cover verification rows (up to requests times `K+1`), not just request
+count. Shapes outside this limit or `cuda_graph_max_graphs` execute eagerly.
+First-use capture synchronizes and includes warmup; warm the actual shapes before
+timing steady-state execution. Recurrent and coda graph managers expose
+`captures`, `replays` and `fallbacks` separately.
+
+FA2/FA3 retain their hardware and page-size restrictions. Backend capability
+selection is not hardware qualification: the new GPU regressions cover Triton
+and FA4 on their test hardware; other generations need their own device runs.
 
 ## Execution and ownership
 
@@ -97,10 +125,12 @@ Inside a Slurm GPU allocation, use the repository environment:
 
 ```bash
 .venv/bin/python -m pytest tests/test_async_speculative.py --run-gpu -q
+.venv/bin/python -m pytest tests/test_async_speculative_graphs.py --run-gpu -q
 .venv/bin/python -m pytest tests/test_serving.py --run-gpu -k speculative -q
 ```
 
-The tests exercise two GPU rounds before CPU delivery, every rejection position,
+The tests exercise eager/graph output agreement, graph-limit fallback, page growth,
+FA4 execution, PD handoff, two GPU rounds before CPU delivery, rejection positions,
 K/length boundaries, mixed requests, prefix reuse, EOS, cancellation, ID reuse
 and partially submitted failures. CPU-only test results do not qualify the GPU
 path. Compare BF16 runs on the same hardware and Triton backend: synchronous

@@ -36,6 +36,8 @@ class StageWorker:
         device = torch.device(f"cuda:{device}" if isinstance(device, int) else device)
         torch.set_num_threads(1)
         if device.type == "cuda":
+            if device.index is None:
+                device = torch.device("cuda", torch.cuda.current_device())
             torch.cuda.set_device(device)
         torch.manual_seed(options["seed"])
         self.channel = channel

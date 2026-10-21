@@ -396,14 +396,15 @@ def test_speculative_policy_schedules_newly_imported_coda():
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("speculative", [False, True])
-def test_stage_client_cuda_async_generation_and_close(speculative):
+@pytest.mark.parametrize("device", ["cuda", torch.device("cuda"), "cuda:0", 0])
+def test_stage_client_cuda_async_generation_and_close(speculative, device):
     from vllm_rlt import SpeculativeConfig
     from vllm_rlt.engine.llm_engine import StageClient
 
     config = tiny_ouro_config(head_dim=64)
     client = StageClient(
         config,
-        device="cuda:0",
+        device=device,
         dtype="bfloat16",
         seed=123,
         cache_config=CacheConfig(128, 4),

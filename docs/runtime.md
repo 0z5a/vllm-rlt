@@ -163,8 +163,11 @@ Requires `last_exited`, fixed-depth `ouro` exits and refill scheduling without
 preemption. PD can configure speculation on its decode stage; imported prompts
 enter the common admission path before CODA and local draft/verify rounds.
 Mixed scheduling is not compatible with speculative rounds. Cross-round async
-requires greedy sampling, eager CUDA execution and Triton attention; it rejects
-CUDA Graphs. See [async self-speculation](async-speculative.md). Greedy and temperature/top-k/top-p sampling are supported; sampling
+requires greedy sampling and CUDA attention with device-owned context lengths
+(Triton or a compatible paged FlashAttention backend). CUDA Graphs can capture
+its recurrent cores and coda; draft/verify control and acceptance stay eager.
+See [async self-speculation](async-speculative.md) for graph limits and validation
+scope. Synchronous speculation supports greedy and temperature/top-k/top-p sampling; sampling
 preserves the target distribution in exact arithmetic, not identical text for
 the same seed. BF16 batch shapes can introduce numerical differences.
 

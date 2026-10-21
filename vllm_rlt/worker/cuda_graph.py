@@ -6,6 +6,13 @@ from types import SimpleNamespace
 
 import torch
 
+from vllm_rlt.worker.metadata import DeviceKVMetadata
+
+
+def _query_count(batch):
+    # Device-owned positions describe actual rows; ordinary metadata may include padding.
+    return len(batch.position_ids) if isinstance(batch, DeviceKVMetadata) else len(batch.rows)
+
 
 def _capture(hidden, stream, pool, run):
     """Warm and capture one stable-input graph on its own stream."""
@@ -53,7 +60,7 @@ class _DeviceCache:
 
 
 def _graph_entry(hidden, batch, cache, max_position_embeddings):
-    count, tables = len(batch.rows), len(batch.context_lengths)
+    count, tables = _query_count(batch), len(batch.context_lengths)
     width = math.ceil(max_position_embeddings / cache.block_size)
     return SimpleNamespace(
         hidden=torch.empty_like(hidden[:count]),
@@ -74,7 +81,7 @@ def _graph_entry(hidden, batch, cache, max_position_embeddings):
 
 
 def _copy_graph_inputs(entry, hidden, batch):
-    count = len(batch.rows)
+    count = _query_count(batch)
     entry.hidden.copy_(hidden[:count])
     entry.metadata.position_ids.copy_(batch.position_ids[:count])
     entry.metadata.write_blocks.copy_(batch.write_blocks[:count])
@@ -105,7 +112,7 @@ class RecurrentGraphs:
         self.captures = self.replays = self.fallbacks = 0
 
     def select(self, hidden, batch):
-        count = len(batch.rows)
+        count = _query_count(batch)
         packed = batch.cu_seqlens_q is not None
         if len(batch.position_ids) != count:
             batch = replace(
@@ -117,7 +124,8 @@ class RecurrentGraphs:
         key = (count, len(batch.context_lengths), batch.max_seqlen_q if packed else 1, packed)
         frontier = {}
         contiguous = True
-        for allocation, depth, pos in batch.rows:
+        host_rows = () if isinstance(batch, DeviceKVMetadata) else batch.rows
+        for allocation, depth, pos in host_rows:
             row_key = (id(allocation), depth)
             previous = frontier.get(row_key)
             if previous is not None and pos != previous + 1:
@@ -153,7 +161,10 @@ class RecurrentGraphs:
             # Prefix validity is checked at consumption, after earlier loops have
             # submitted their writes, not when all graph choices are selected.
             seen = set()
-            for allocation, depth, pos in batch.rows:
+            # Device-owned progress is ordered by the runner's stream. The CPU
+            # written frontier intentionally lags in-flight speculative rounds.
+            host_rows = () if isinstance(batch, DeviceKVMetadata) else batch.rows
+            for allocation, depth, pos in host_rows:
                 key = (id(allocation), depth)
                 if key not in seen:
                     for layer in cache.recurrent_layers:
@@ -190,7 +201,8 @@ class RecurrentGraphs:
         output = tuple(t.clone() if t is not None else None for t in entry.output)
         self.last_event = torch.cuda.Event()
         self.last_event.record(torch.cuda.current_stream(self.cache.device))
-        for allocation, depth, pos in batch.rows:
+        host_rows = () if isinstance(batch, DeviceKVMetadata) else batch.rows
+        for allocation, depth, pos in host_rows:
             for layer in self.cache.recurrent_layers:
                 allocation.written[self.cache._plane(depth)][layer].add(pos)
         self.replays += 1

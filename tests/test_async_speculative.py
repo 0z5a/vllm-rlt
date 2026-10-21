@@ -43,7 +43,7 @@ def test_scheduler_uses_upper_bound_and_releases_rejected_budget():
 
 
 def test_async_spec_rejects_cpu_before_cache_allocation():
-    with pytest.raises(ValueError, match="CUDA and Triton"):
+    with pytest.raises(ValueError, match="requires CUDA"):
         make_speculative_engine(tiny_ouro_model())
 
 
@@ -178,12 +178,11 @@ def test_async_rejects_random_sampling():
 
 
 @pytest.mark.gpu
-@pytest.mark.parametrize("backend", ["torch", "flash_attn_4"])
-def test_async_rejects_other_backends_before_loading_attention(backend):
-    with pytest.raises(ValueError, match="CUDA and Triton"):
+def test_async_rejects_host_reading_attention():
+    with pytest.raises(ValueError, match="device_context_lengths"):
         LLMEngine(
             tiny_ouro_model("cuda"),
-            attention_backend=backend,
+            attention_backend="torch",
             execution_config=ExecutionConfig(async_scheduling=True),
             speculative_config=SpeculativeConfig(3),
         )

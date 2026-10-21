@@ -67,14 +67,8 @@ class StageEngine:
                 raise ValueError("speculative target_loops must equal the model full depth")
             if self.exit_config.mode != "ouro":
                 raise ValueError("speculative decoding requires fixed-depth ouro exit mode")
-            if self.async_speculative and self.execution_config.cuda_graphs:
-                raise ValueError(
-                    "speculative decoding requires eager execution without CUDA graphs"
-                )
-            if self.async_speculative and (
-                parameter.device.type != "cuda" or attention_backend != "triton"
-            ):
-                raise ValueError("async speculative decoding requires CUDA and Triton attention")
+            if self.async_speculative and parameter.device.type != "cuda":
+                raise ValueError("async speculative decoding requires CUDA")
             if scheduler_config.enable_preemption or scheduler_config.mode != "refill":
                 raise ValueError(
                     "speculative decoding requires refill scheduling without preemption"
@@ -126,6 +120,7 @@ class StageEngine:
                 async_scheduling=(
                     parameter.device.type == "cuda" and self.execution_config.async_scheduling
                 ),
+                device_context_lengths=self.async_speculative,
             ),
         )
         num_blocks, self.memory_plan = plan_cache(
@@ -182,7 +177,7 @@ class StageEngine:
                 runtime=self.model_runner.runtime,
                 compute_stream=self.model_runner.core_stream,
             )
-            if speculative_config is not None
+            if speculative_config is not None and not self.async_speculative
             else None
         )
         if self.async_speculative:
@@ -193,6 +188,7 @@ class StageEngine:
                 self.cache_manager,
                 speculative_config,
                 scheduler_config,
+                execution=self.execution_config,
                 compute_stream=self.model_runner.core_stream,
                 copy_stream=self.model_runner.copy_stream,
                 rng=self.rng,

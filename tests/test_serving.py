@@ -775,13 +775,21 @@ def test_http_trace_selection_and_concurrent_reuse(asynchronous):
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("asynchronous", [False, pytest.param(True, marks=pytest.mark.gpu)])
-def test_speculative_http_and_stream_deliver_entire_committed_suffix(asynchronous):
+@pytest.mark.parametrize(
+    "asynchronous,graphs,backend",
+    [
+        (False, False, "torch"),
+        pytest.param(True, False, "triton", marks=pytest.mark.gpu),
+        pytest.param(True, True, "triton", marks=pytest.mark.gpu),
+        pytest.param(True, True, "flash_attn_4", marks=pytest.mark.gpu),
+    ],
+)
+def test_speculative_http_and_stream_deliver_entire_committed_suffix(asynchronous, graphs, backend):
     from vllm_rlt import ExecutionConfig, SpeculativeConfig
 
     def load():
         torch.manual_seed(123)
-        m = OuroForCausalLM(tiny_ouro_config()).to(
+        m = OuroForCausalLM(tiny_ouro_config(head_dim=64 if asynchronous else 8)).to(
             device="cuda" if asynchronous else "cpu",
             dtype=torch.bfloat16 if asynchronous else torch.float32,
         )
@@ -797,9 +805,9 @@ def test_speculative_http_and_stream_deliver_entire_committed_suffix(asynchronou
         return LLMEngine(
             m,
             speculative_config=SpeculativeConfig(4),
-            execution_config=ExecutionConfig(async_scheduling=asynchronous),
-            attention_backend="triton" if asynchronous else "torch",
-            cache_config=CacheConfig(128, 2),
+            execution_config=ExecutionConfig(async_scheduling=asynchronous, cuda_graphs=graphs),
+            attention_backend=backend,
+            cache_config=CacheConfig(128, 16 if asynchronous else 2),
         ), TinyTokenizer()
 
     direct, tokenizer = load()
@@ -827,5 +835,8 @@ def test_speculative_http_and_stream_deliver_entire_committed_suffix(asynchronou
             assert "".join(f["choices"][0]["text"] for f in frames if f["choices"]) == expected
             assert frames[-1]["usage"]["completion_tokens"] == 12
             assert worker.engine.speculative_runner.stats.accepted_tokens > 0
+            if graphs:
+                assert worker.engine.speculative_runner.graphs.replays > 0
+                assert worker.engine.speculative_runner.coda_graphs.replays > 0
 
     asyncio.run(run())

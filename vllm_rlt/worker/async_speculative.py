@@ -5,7 +5,6 @@ from dataclasses import dataclass
 
 import torch
 
-from vllm_rlt.config import ExecutionConfig
 from vllm_rlt.core.kv_cache_manager import _Allocation
 from vllm_rlt.core.scheduler import SchedulerOutput
 from vllm_rlt.request import Operation, Request
@@ -113,12 +112,13 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         config,
         scheduler,
         *,
+        execution,
         compute_stream,
         copy_stream,
         rng: RngRegistry | None = None,
         runtime=None,
     ):
-        super().__init__(model, cache, config, ExecutionConfig(), rng=rng, runtime=runtime)
+        super().__init__(model, cache, config, execution, rng=rng, runtime=runtime)
         self.compute_stream = compute_stream
         self.copy_stream = copy_stream
         self.compute_stream.wait_stream(torch.cuda.current_stream(self.device))
@@ -155,7 +155,9 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             block_tables=table,
             context_lengths=(positions + 1).int(),
         )
-        forward = ForwardBatch(Operation.RECURRENT, hidden=hidden, metadata=(metadata,))
+        forward = ForwardBatch(
+            Operation.RECURRENT, hidden=hidden, metadata=(metadata,), graphs=self.graphs
+        )
         prepared = self.runtime.prepare(forward)
         return self.runtime.forward(prepared).hidden
 

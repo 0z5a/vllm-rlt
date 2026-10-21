@@ -182,6 +182,191 @@ Code: [StageClient](../vllm_rlt/engine/llm_engine.py),
 [ModelRunner](../vllm_rlt/worker/model_runner.py), and
 [connector contract](../vllm_rlt/engine/connector.py).
 
+## Measured serving performance
+
+The October 2026 campaign compares Vanilla (unoptimized) execution, base optimizations,
+asynchronous self-speculation, two independent replicas, PD, and PD with
+asynchronous speculation. It measures the combined configurations below; it does
+not isolate the contribution of individual optimizations or qualify every
+architecture feature described above.
+
+### Protocol and comparison rules
+
+- **Model and hardware:** Ouro-1.4B, BF16, FlashAttention 4, B300, fixed four
+  loops, greedy decoding. Single-stage modes use one GPU; replicas and 1P1D use
+  two. No more than four GPUs were used concurrently during the campaign.
+- **Measurement:** three unprofiled repetitions per combination. Each repetition
+  uses 60 seconds of closed-loop admission followed by drain. Output throughput
+  includes the drain period and is summarized by the median. All selected
+  windows have zero new CUDA Graph captures. This is not a saturation sweep.
+- **Chart baseline:** base optimized is **1 for every metric and statistic**.
+  All other bars, including Vanilla, are divided by the matching base-optimized
+  value in the same workload. Change = `(candidate / baseline - 1) × 100%`.
+  Higher throughput and lower latency are better. Two-GPU comparisons against
+  the single-GPU base include the hardware increase. The
+  interpretation below uses paired comparisons: base optimized
+  vs Vanilla, then other candidates vs base optimized; their denominators are
+  explicitly distinguished from the new plots.
+- **Latency:** TTFT is client send to first output; TPOT is first-to-last output
+  time divided by `N - 1`; E2E is client send to response completion. Their mean,
+  p95 and p99 pool successful requests across repetitions. Client token-arrival
+  ITL pools all adjacent token intervals: tokens in one received chunk share a
+  timestamp, so intra-chunk intervals are zero. It excludes TTFT and never joins
+  requests. ITL is client delivery timing, not internal per-token compute time.
+  Mean TPOT weights requests equally; mean ITL weights intervals equally.
+- **Data:** W1–W5 use fixed lengths with EOS ignored. W6/W7 replay a fixed,
+  seeded selection of 256 ShareGPT first-human messages, without a chat template,
+  using natural EOS and an output cap of 512. Faster configurations cover more
+  inputs during the same admission window; actual input/output lengths differ.
+- **Qualification:** 26 combinations, 78 selected runs, 12,288 successful
+  requests, zero request failures. Full greedy output equivalence has **not**
+  passed across all configurations. Bounded diagnostics found batch sensitivity
+  and one BF16 logit tie; these do not explain all mismatches. Performance is
+  diagnostic, not an equal-quality speedup or production acceptance result.
+
+| Configuration | GPUs | Execution |
+| --- | ---: | --- |
+| Vanilla | 1 | Synchronous, no-refill; async execution, multi-stream, static buffers, padding, UVA, packed prefill and CUDA Graphs disabled |
+| Base optimized | 1 | Async scheduling, refill, multi-stream, static buffers, padding, UVA, packed prefill and CUDA Graphs enabled |
+| Async spec. | 1 | Base execution optimizations plus asynchronous self-speculation: draft depth 2, target depth 4, K=4 |
+| Two replicas | 2 | Two independent base-optimized servers; total concurrency split equally |
+| PD | 2 | One prefill worker and one decode worker, using base optimizations |
+| PD + async spec. | 2 | 1P1D with asynchronous speculation on the decode worker |
+
+The scheduler limit is 32 requests and 1,024 tokens; prefill chunks are 1,024
+tokens. KV capacity is 40,000 blocks × 16 tokens. Prefix caching, preemption,
+incremental KV allocation and adaptive early exit are disabled. Atomic prefill
+executes all recurrent loops for one chunk, not the entire long prompt at once.
+Base optimized uses `ouro_delayed`; Vanilla and speculation use `ouro` with fixed
+four target loops.
+
+| Workload | Input tokens | Output tokens | Concurrency |
+| --- | ---: | ---: | ---: |
+| W1 | 128 | 128 | 1 |
+| W2 | 128 | 128 | 32 |
+| W3 | 4096 | 128 | 1 |
+| W4 | 4096 | 128 | 32 |
+| W5 | 1024 | 512 | 8 |
+| W6 | ShareGPT, natural lengths | Natural EOS, cap 512 | 8 |
+| W7 | ShareGPT, natural lengths | Natural EOS, cap 512 | 32 |
+
+### Full comparison: baseline = 1, absolute values and changes
+
+Each workload has one figure combining **throughput, TTFT, TPOT, ITL and E2E**.
+Its three panels show **mean, p95 and p99 latency**. Throughput is the same
+three-run median in every panel; it is not a p95/p99 throughput measurement.
+The blue base-optimized bars are always exactly **1**. All other configurations,
+including Vanilla, use this same baseline. Thus a bar at 1.7 means 70% above the
+base-optimized value, and a bar at 0.6 means 40% below it.
+
+Every bar, including the baseline, has two label lines: **absolute value**, then
+**percentage change**. Units are printed below the metric: tok/s for throughput,
+ms for TTFT/TPOT/ITL, and seconds for E2E. Bar heights show ratios, not absolute
+units. Higher throughput is better; lower latency is better. Y-axis limits vary
+between panels to preserve large regressions without clipping them.
+
+Only measured configurations are plotted. All 26 measured combinations remain
+visible; Vanilla is included in both this full view and the README. Vanilla
+corresponds to the `plain` identifier in the original benchmark records.
+Percentiles pool samples across repetitions, rather than
+averaging per-run percentiles; small-sample tails are descriptive only.
+
+#### W1: 128 input / 128 output · concurrency 1
+
+![W1: throughput and mean/p95/p99 latency, with base optimized fixed at 1, absolute values, percentage changes and GPU counts](assets/performance/core-w1-comparison.png)
+
+[Full-size PNG](assets/performance/core-w1-comparison.png)
+
+#### W2: 128 input / 128 output · concurrency 32
+
+![W2: throughput and mean/p95/p99 latency, with base optimized fixed at 1, absolute values, percentage changes and GPU counts](assets/performance/core-w2-comparison.png)
+
+[Full-size PNG](assets/performance/core-w2-comparison.png)
+
+#### W3: 4096 input / 128 output · concurrency 1
+
+![W3: throughput and mean/p95/p99 latency, with base optimized fixed at 1, absolute values, percentage changes and GPU counts](assets/performance/core-w3-comparison.png)
+
+[Full-size PNG](assets/performance/core-w3-comparison.png)
+
+#### W4: 4096 input / 128 output · concurrency 32
+
+![W4: throughput and mean/p95/p99 latency, with base optimized fixed at 1, absolute values, percentage changes and GPU counts](assets/performance/core-w4-comparison.png)
+
+[Full-size PNG](assets/performance/core-w4-comparison.png)
+
+#### W5: 1024 input / 512 output · concurrency 8
+
+![W5: throughput and mean/p95/p99 latency, with base optimized fixed at 1, absolute values, percentage changes and GPU counts](assets/performance/core-w5-comparison.png)
+
+[Full-size PNG](assets/performance/core-w5-comparison.png)
+
+#### W6: ShareGPT · concurrency 8
+
+![W6: throughput and mean/p95/p99 latency, with base optimized fixed at 1, absolute values, percentage changes and GPU counts](assets/performance/core-w6-comparison.png)
+
+[Full-size PNG](assets/performance/core-w6-comparison.png)
+
+#### W7: ShareGPT · concurrency 32
+
+![W7: throughput and mean/p95/p99 latency, with base optimized fixed at 1, absolute values, percentage changes and GPU counts](assets/performance/core-w7-comparison.png)
+
+[Full-size PNG](assets/performance/core-w7-comparison.png)
+
+### Two-GPU resource efficiency
+
+The main comparison plots normalize every configuration to single-GPU base
+optimized.
+The table below additionally exposes per-GPU throughput and lets readers
+compare ordinary replicas and PD using the same two-GPU budget. Both deployment
+forms receive the same total concurrency; replica concurrency is split equally.
+
+| Workload | Configuration | GPUs | Total output tok/s | Output tok/s/GPU |
+| --- | --- | ---: | ---: | ---: |
+| W4 | Base optimized | 1 | 313.9 | 313.9 |
+| W4 | Two replicas | 2 | 525.0 | 262.5 |
+| W4 | PD | 2 | 453.9 | 226.9 |
+| W4 | PD + async spec. | 2 | 458.7 | 229.3 |
+| W6 | Base optimized | 1 | 370.6 | 370.6 |
+| W6 | Two replicas | 2 | 407.0 | 203.5 |
+| W6 | PD | 2 | 402.6 | 201.3 |
+| W6 | PD + async spec. | 2 | 642.5 | 321.2 |
+| W7 | Base optimized | 1 | 1,082.0 | 1,082.0 |
+| W7 | Two replicas | 2 | 1,234.5 | 617.2 |
+| W7 | PD | 2 | 1,185.5 | 592.7 |
+| W7 | PD + async spec. | 2 | 1,991.2 | 995.6 |
+
+PD alone does not exceed ordinary two-replica throughput in these three cases.
+At C8, PD + speculation adds little throughput over single-GPU speculation;
+at C32 its throughput is higher, but does not scale in proportion to GPU count.
+Two independent speculative replicas were not measured, so this campaign does
+not identify the best possible two-GPU deployment.
+
+### Workload interpretation and evidence
+
+| Case | Interpretation |
+| --- | --- |
+| W1 | Base optimization improves throughput 149.0% and mean E2E 60.1%; TTFT is slightly higher. |
+| W2 | Throughput improves 72.7% and mean E2E falls 42.4%, but ITL p99 rises 72.0%. Common-input first-sample token equality is 49/64 for base optimized vs Vanilla. |
+| W3 | Throughput improves 99.2% and mean E2E falls 49.8%; TTFT increases, especially p95. |
+| W4 | Base throughput is flat and generation intervals worsen. Two replicas have the highest measured throughput; PD smooths generation but adds first-token wait. All tested candidate modes match Vanilla on the 64 common-input first samples checked. |
+| W5 | Async speculation adds 75.8% throughput over base optimized and lowers mean E2E 46.0%, with worse ITL tails. Its common-input first-sample equality is 30/32 vs Vanilla. |
+| W6 | Single-GPU speculation adds 69.7% throughput and lowers mean E2E 40.7%, at higher TTFT and ITL tails. The second GPU has limited throughput return; PD TTFT p99 reaches 1,516 ms. |
+| W7 | Async speculation adds 47.7% throughput; PD + speculation adds 84.0%, using two GPUs. Base optimization itself raises ITL p99 by 8.3%; real-output lengths and coverage differ across modes. |
+
+Percentage comparisons in this interpretation use base optimized vs Vanilla,
+then other modes vs base optimized. In the plots, Vanilla is instead shown
+relative to base optimized; inverse comparisons have different percentages.
+Output-equality checks cover shared inputs' first samples only; they are not
+task accuracy scores.
+
+Measurements used a frozen working tree based on
+`c3ce15540d57893abb92b01f090c26659ebdf21c` **with local modifications**;
+the HEAD alone does not identify the measured runtime. Original measurements
+and checks are retained in the local `experiments/core-perf-20261021` campaign.
+Earlier PR #30/#31 measurements use different workloads and timing boundaries
+and are not mixed into these charts.
+
 ## Where the details live
 
 | Question | Guide |

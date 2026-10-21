@@ -203,6 +203,7 @@ def create_pd(
     max_num_batched_tokens=5,
     speculative=False,
     asynchronous=True,
+    prefix_caching=False,
 ):
     pytest.importorskip("nixl")
     from vllm_rlt.pd.engine import PDEngine
@@ -220,8 +221,8 @@ def create_pd(
             request_timeout=90,
             startup_timeout=90,
         ),
-        prefill_cache_config=CacheConfig(128, 4, layout),
-        decode_cache_config=CacheConfig(128, 4, layout),
+        prefill_cache_config=CacheConfig(128, 4, layout, enable_prefix_caching=prefix_caching),
+        decode_cache_config=CacheConfig(128, 4, layout, enable_prefix_caching=prefix_caching),
         prefill_scheduler_config=SchedulerConfig(
             max_num_seqs=2,
             max_num_batched_tokens=max_num_batched_tokens,
@@ -413,7 +414,8 @@ def test_engine_yields_while_waiting_for_remote_kv(async_scheduling):
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("p_cache,d_cache", [(True, True), (True, False), (False, True)])
-def test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs(p_cache, d_cache):
+@pytest.mark.parametrize("graph", [False, True])
+def test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs(p_cache, d_cache, graph):
     from vllm_rlt.pd.engine import PDEngine
 
     cfg = tiny_ouro_config(head_dim=64)
@@ -440,7 +442,7 @@ def test_pd_prefix_reuse_reduces_transfers_and_preserves_outputs(p_cache, d_cach
             max_num_seqs=1, max_num_batched_tokens=1, policy="priority", enable_preemption=True
         ),
         exit_config=ExitConfig("trace", depths_by_request={"t": [4, 2, 3, 1, 4, 2]}),
-        execution_config=ExecutionConfig(async_scheduling=True),
+        execution_config=ExecutionConfig(async_scheduling=True, cuda_graphs=graph),
         attention_backend="triton",
         seed=123,
     )
@@ -505,12 +507,19 @@ def test_cancelled_transfer_does_not_recycle_pending_hidden_copy():
 
 
 @pytest.mark.gpu
-@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("asynchronous,graph", [(False, False), (False, True), (True, False)])
 @pytest.mark.parametrize("atomic_prefill", [False, True])
-def test_pd_speculative_matches_local_and_retires_cancelled_rounds(asynchronous, atomic_prefill):
+@pytest.mark.parametrize("prefix_caching", [False, True])
+def test_pd_speculative_matches_local_and_retires_cancelled_rounds(
+    asynchronous, graph, atomic_prefill, prefix_caching
+):
     params = SamplingParams(max_tokens=9, ignore_eos=True)
     with create_pd(
-        speculative=True, asynchronous=asynchronous, atomic_prefill=atomic_prefill
+        speculative=True,
+        asynchronous=asynchronous,
+        atomic_prefill=atomic_prefill,
+        prefix_caching=prefix_caching,
+        graph=graph,
     ) as engine:
         torch.manual_seed(123)
         reference = LLMEngine(
@@ -524,6 +533,13 @@ def test_pd_speculative_matches_local_and_retires_cancelled_rounds(asynchronous,
                 for target in (engine, reference):
                     target.add_request(str(index), prompt, params)
             assert drain(engine) == drain(reference)
+            # Repeating a full-block prefix must exercise reuse on both stages,
+            # with speculative verification still matching cold local decoding.
+            for target in (engine, reference):
+                target.add_request("warm", prompts[0], params)
+            assert drain(engine) == drain(reference)
+            timing = next(m["timings"] for m in engine.metrics if m["request_id"] == "warm")
+            assert (timing["prefill_transfer_boundaries"][0][0] > 0) == prefix_caching
             engine.add_request("reuse", prompts[0], replace(params, max_tokens=60))
             deadline = time.monotonic() + 60
             while time.monotonic() < deadline:

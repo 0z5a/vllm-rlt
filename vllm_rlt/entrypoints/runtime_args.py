@@ -56,7 +56,7 @@ def add_runtime_args(parser):
     parser.add_argument(
         "--cuda-graphs",
         action="store_true",
-        help="Capture decode recurrent cores; prefill and sampling remain eager",
+        help="Capture decode recurrent cores and speculative coda; prefill/sampling stay eager",
     )
     parser.add_argument("--cuda-graph-max-batch-size", type=int, default=128)
     parser.add_argument("--cuda-graph-max-graphs", type=int, default=16)
