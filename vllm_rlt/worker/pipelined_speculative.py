@@ -34,7 +34,14 @@ class PipelinedSpeculativeStats:
 
 
 class PipelinedSpeculativeRunner:
-    """Runs pipelined self-speculative decoding on a recurrent model instance."""
+    """Runs pipelined self-speculative decoding on a recurrent model instance.
+
+    Note:
+        second_step (q2) is currently unsupported with physical KV cache execution
+        due to duplicate write collisions across sibling lanes. Initializing with
+        second_step != None raises NotImplementedError. Only single-proposal
+        schedules (second_step=None) are supported.
+    """
 
     def __init__(
         self,
@@ -43,6 +50,13 @@ class PipelinedSpeculativeRunner:
         schedule: PipelineSchedule,
         stop_tokens: set[int] | None = None,
     ) -> None:
+        if schedule.second_step is not None:
+            raise NotImplementedError(
+                f"second_step={schedule.second_step} (q2) is not supported with physical "
+                "KV cache execution due to duplicate write collisions across sibling lanes. "
+                "Set second_step=None."
+            )
+
         self.model = model
         self.cache = cache
         self.schedule = schedule

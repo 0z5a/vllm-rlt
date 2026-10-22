@@ -78,3 +78,14 @@ def test_pipelined_speculation_matches_native_losslessly(seed, prompt, length):
     assert ref_tokens == pipe_tokens
     assert runner.stats.committed_tokens == length
     assert runner.stats.cycles > 0
+
+
+@pytest.mark.parametrize("second_step", [2, 3])
+def test_second_step_rejected_at_construction(second_step):
+    """Verify that unsupported q2 schedules raise cleanly at construction."""
+    cfg = tiny_ouro_config(total_ut_steps=4)
+    model = OuroForCausalLM(cfg)
+    cache = make_cache(cfg)
+    sched = PipelineSchedule(stages=4, step_size=1, second_step=second_step)
+    with pytest.raises(NotImplementedError, match="second_step"):
+        PipelinedSpeculativeRunner(model, cache, sched)
