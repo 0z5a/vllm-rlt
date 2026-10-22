@@ -89,3 +89,17 @@ def test_second_step_rejected_at_construction(second_step):
     sched = PipelineSchedule(stages=4, step_size=1, second_step=second_step)
     with pytest.raises(NotImplementedError, match="second_step"):
         PipelinedSpeculativeRunner(model, cache, sched)
+
+
+@pytest.mark.parametrize("mismatched_stages", [2, 8])
+def test_stages_mismatch_rejected_at_construction(mismatched_stages):
+    """Verify that schedule.stages not matching model total_ut_steps raises ValueError."""
+    cfg = tiny_ouro_config(total_ut_steps=4)
+    model = OuroForCausalLM(cfg)
+    cache = make_cache(cfg)
+    sched = PipelineSchedule(stages=mismatched_stages, step_size=1)
+    with pytest.raises(
+        ValueError,
+        match=r"schedule\.stages .* must match .*model\.config\.total_ut_steps",
+    ):
+        PipelinedSpeculativeRunner(model, cache, sched)

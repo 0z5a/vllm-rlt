@@ -57,6 +57,15 @@ class PipelinedSpeculativeRunner:
                 "Set second_step=None."
             )
 
+        total_ut_steps = getattr(model.config, "total_ut_steps", None)
+        if callable(total_ut_steps):
+            total_ut_steps = total_ut_steps()
+        if total_ut_steps is not None and schedule.stages != total_ut_steps:
+            raise ValueError(
+                f"schedule.stages ({schedule.stages}) must match "
+                f"model.config.total_ut_steps ({total_ut_steps})"
+            )
+
         self.model = model
         self.cache = cache
         self.schedule = schedule
