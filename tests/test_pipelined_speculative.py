@@ -126,3 +126,29 @@ def test_huginn_rejected_at_construction():
     sched = PipelineSchedule(stages=loops, step_size=1)
     with pytest.raises(NotImplementedError, match="prelude"):
         PipelinedSpeculativeRunner(model, cache, sched)
+
+
+@pytest.mark.parametrize(
+    "prompt,max_new_tokens",
+    [
+        ([1, 2, 3], 8),
+        ([4, 12, 18, 22], 12),
+        ([5], 4),
+    ],
+)
+def test_speculative_stats_invariants(prompt, max_new_tokens):
+    """Verify acceptance counter invariants required by maintainer review."""
+    torch.manual_seed(42)
+    cfg = tiny_ouro_config(total_ut_steps=4)
+    model = OuroForCausalLM(cfg)
+    cache = make_cache(cfg)
+    sched = PipelineSchedule(stages=4, step_size=1, second_step=None)
+    runner = PipelinedSpeculativeRunner(model, cache, sched)
+
+    tokens = runner.generate("req_stats", prompt, max_new_tokens=max_new_tokens)
+    stats = runner.stats
+
+    assert stats.committed_tokens == len(tokens)
+    assert stats.accepted_proposals + stats.rejected_proposals == len(tokens) - 1
+    assert 0 <= stats.accepted_proposals <= len(tokens) - 1
+    assert stats.cycles >= 1

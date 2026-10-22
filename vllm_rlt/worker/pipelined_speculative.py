@@ -1,7 +1,11 @@
-"""Pipelined self-speculative execution engine for looped recurrent models.
+"""Experimental standalone pipelined self-speculative execution prototype.
 
 Executes concurrent pipeline lanes across different recurrent depths in a single
 continuous depth batch (CDB), reusing state bank slots and managing KV cache.
+
+Note:
+    This module is an experimental standalone prototype and is not yet integrated
+    into StageEngine, ModelRunner, the scheduler, or the serving CLI.
 """
 
 from __future__ import annotations
@@ -36,11 +40,17 @@ class PipelinedSpeculativeStats:
 class PipelinedSpeculativeRunner:
     """Runs pipelined self-speculative decoding on a recurrent model instance.
 
-    Note:
-        second_step (q2) is currently unsupported with physical KV cache execution
-        due to duplicate write collisions across sibling lanes. Initializing with
-        second_step != None raises NotImplementedError. Only single-proposal
-        schedules (second_step=None) are supported.
+    Experimental standalone prototype with the following current limitations:
+      - Standalone prototype: not wired into StageEngine, ModelRunner, KV leases/pins,
+        or continuous batching.
+      - Single-request: handles a single request_id per generate() call.
+      - Greedy only: supports argmax decoding without sampling, temperature, or RNG.
+      - No default EOS: stop conditions depend entirely on caller-provided stop_tokens.
+      - No chunked prefill: prefill processes the prompt in full.
+      - Architecture: Ouro-class models exposing prelude/recurrent_prepared/coda only;
+        Huginn/Raven models with *_prepared variants are not yet supported.
+      - Schedules: single-proposal schedules only (second_step=None); multi-proposal
+        schedules (second_step != None) raise NotImplementedError.
     """
 
     def __init__(
@@ -232,7 +242,13 @@ class PipelinedSpeculativeRunner:
         lanes: Sequence[PipelineLane],
         accepted_stage: int | None = None,
     ) -> None:
-        """Prune discarded state slots and roll back uncommitted KV suffix."""
+        """Prune discarded state slots from the state bank.
+
+        Note:
+            Uncommitted KV cache suffix is not rolled back here per cycle.
+            KV rollback/truncation to the committed frontier is performed at
+            the end of generate() via cache.truncate_suffix().
+        """
         live_slots = [lane.state for lane in lanes if lane.state is not None]
         self.slot_pool.retain(live_slots)
 
@@ -250,6 +266,7 @@ class PipelinedSpeculativeRunner:
         max_total = len(prompt_token_ids) + max_new_tokens + 16
         first_token = self.prefill(request_id, prompt_token_ids, max_total_tokens=max_total)
         if self.should_stop([first_token]):
+            self.stats.committed_tokens += 1
             self.retain_branches(())
             self.cache.truncate_suffix(request_id, self.prompt_len)
             return [first_token]
