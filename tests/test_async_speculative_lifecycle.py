@@ -6,14 +6,21 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from tests.helpers import tiny_ouro_config
+from tests.helpers import (
+    bootstrap_speculation,
+    tiny_ouro_config,
+)
 from vllm_rlt import CacheConfig, SamplingParams, SchedulerConfig, SpeculativeConfig
-from vllm_rlt.core.scheduler import ScheduledItem, SchedulerOutput
+from vllm_rlt.core.scheduler import ScheduledRequest, SchedulerOutput
 from vllm_rlt.engine.llm_engine import LLMEngine
 from vllm_rlt.models import OuroForCausalLM
-from vllm_rlt.request import Stage
+from vllm_rlt.request import RequestPhase
 from vllm_rlt.serving.worker import EngineWorker
-from vllm_rlt.worker.async_speculative import SpeculativeRequestState, SpeculativeRoundTicket
+from vllm_rlt.worker.async_speculative import (
+    AsyncSpeculativeRunner,
+    SpeculativeRequestState,
+    SpeculativeRoundTicket,
+)
 
 
 class Completion:
@@ -40,6 +47,8 @@ class InvalidHostResult:
 
 
 class CompletionRunner:
+    discard_buffers = AsyncSpeculativeRunner.discard_buffers
+
     def __init__(self, buffers, *, retirement_ready=True):
         self.buffers = buffers
         self.retirement_ready = retirement_ready
@@ -83,7 +92,7 @@ def prepared_engine(*, bad_second=False, first_frontier=4, retirement_ready=True
     )
     tickets = []
     for round_id, (rows, frontier) in enumerate([(3, first_frontier), (2, 6)]):
-        item = ScheduledItem(request, token_start=1 + round_id, token_count=rows)
+        scheduled_request = ScheduledRequest(request, token_start=1 + round_id, token_count=rows)
         host = torch.tensor(
             list(range(10 + 3 * round_id, 10 + 3 * round_id + rows)) + [rows - 1, frontier]
         )
@@ -97,7 +106,11 @@ def prepared_engine(*, bad_second=False, first_frontier=4, retirement_ready=True
         )
         tickets.append(
             SpeculativeRoundTicket(
-                SchedulerOutput(Stage.SPECULATIVE, [item]), buffer, (state,), (round_id,), rows
+                SchedulerOutput(RequestPhase.SPECULATIVE, [scheduled_request]),
+                buffer,
+                (state,),
+                (round_id,),
+                rows,
             )
         )
     original_runner = engine.speculative_runner
@@ -141,11 +154,11 @@ def test_discard_waits_for_copy_without_interpreting_payload():
 def test_cuda_serving_two_completed_rounds_isolate_decode_failure(
     monkeypatch, decode_failure, graphs
 ):
-    from tests.test_async_speculative import bootstrap, make_engine, tiny
+    from tests.test_async_speculative import make_engine, tiny
 
     engine = make_engine(tiny("cuda"), k=2, graphs=graphs)
     try:
-        bootstrap(engine, max_tokens=6)
+        bootstrap_speculation(engine, max_tokens=6)
         # Force full acceptance, so the two real queued rounds produce both
         # an intermediate snapshot and the terminal snapshot in the same tick.
         monkeypatch.setattr(
@@ -204,11 +217,11 @@ def test_cuda_serving_two_completed_rounds_isolate_decode_failure(
 @torch.inference_mode()
 @pytest.mark.parametrize("graphs", [False, True])
 def test_cuda_failure_cleanup_preserves_error_and_releases_real_buffers(bad_second, graphs):
-    from tests.test_async_speculative import bootstrap, make_engine, tiny
+    from tests.test_async_speculative import make_engine, tiny
 
     engine = make_engine(tiny("cuda"), k=2, graphs=graphs)
     try:
-        bootstrap(engine)
+        bootstrap_speculation(engine)
         engine.step()
         engine.step()
         tickets = engine._pending_speculative.copy()
@@ -217,7 +230,7 @@ def test_cuda_failure_cleanup_preserves_error_and_releases_real_buffers(bad_seco
         # Corrupt only the completed host payload; the real compute/copy
         # streams and pending buffer leases retain their production lifecycle.
         first = tickets[0]
-        first.buffer.host_result[first.rows + len(first.batch.items)] = 0
+        first.buffer.host_result[first.rows + len(first.batch.requests)] = 0
         if bad_second:
             tickets[1].buffer.host_result = InvalidHostResult()
         with pytest.raises(RuntimeError, match="frontier disagrees with committed prefix"):
@@ -257,9 +270,13 @@ def test_collected_ticket_retirement_has_no_second_host_wait():
 def test_failure_cleanup_preserves_primary_error_and_retires_all_buffers(bad_second):
     engine, tickets, _ = prepared_engine(bad_second=bad_second, first_frontier=0)
     runner = engine.speculative_runner
+    # A failed submission may have acquired storage without returning a ticket.
+    orphan = SimpleNamespace(leased=True, keepalive=[torch.tensor([123])])
+    runner.buffers.append(orphan)
     with pytest.raises(RuntimeError, match="frontier disagrees with committed prefix"):
         engine.step()
     assert runner.synchronizations == 1
+    assert not orphan.leased and not orphan.keepalive
     assert not engine._pending_speculative and not engine._retiring_speculative
     assert not engine.scheduler.requests and engine.cache_manager.num_used_blocks == 0
     assert all(not t.buffer.leased and not t.buffer.keepalive for t in tickets)

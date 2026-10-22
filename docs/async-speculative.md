@@ -1,31 +1,44 @@
 # Cross-round asynchronous self-speculation
 
 This opt-in path uses fixed-depth Ouro, `last_exited` KV, greedy sampling,
-Triton attention, eager or CUDA Graph execution, and refill scheduling. Historical tests used H20;
-FlashAttention is not required. Draft depth is configurable, with `d=2, D=4`
+CUDA execution, and refill scheduling. Triton and compatible paged FlashAttention
+backends can consume its GPU-owned context lengths; `auto` selects against this
+capability as well as hardware, dtype and block size. Draft depth is configurable, with `d=2, D=4`
 as the initial validation configuration. The target depth must match the model.
+
+`LLM` starts a spawned worker process. In Python scripts, create it inside
+`main()` and use the `if __name__ == "__main__":` guard shown below. The context
+manager closes the worker when inference finishes or raises.
 
 ```python
 from vllm_rlt import LLM, ExecutionConfig, SamplingParams, SpeculativeConfig
 
-llm = LLM(
-    "artifacts/models/Ouro-1.4B",
-    device="cuda",
-    attention_backend="triton",
-    execution_config=ExecutionConfig(async_scheduling=True),
-    speculative_config=SpeculativeConfig(num_speculative_tokens=2, draft_policy="adaptive"),
-)
-outputs = llm.generate(
-    ["Explain speculative decoding."],
-    SamplingParams(temperature=0, max_loops=4, exit_threshold=1.0, max_tokens=64),
-)
+
+def main():
+    with LLM(
+        "artifacts/models/Ouro-1.4B",
+        device="cuda",
+        attention_backend="flash_attn_4",  # Or triton / another compatible paged backend.
+        execution_config=ExecutionConfig(async_scheduling=True, cuda_graphs=True),
+        speculative_config=SpeculativeConfig(num_speculative_tokens=2),
+    ) as llm:
+        outputs = llm.generate(
+            ["Explain speculative decoding."],
+            SamplingParams(temperature=0, max_loops=4, exit_threshold=1.0, max_tokens=64),
+        )
+
+
+if __name__ == "__main__":
+    main()
 ```
 
-The CLI combines `--async-scheduling --attention-backend triton
+The CLI combines `--async-scheduling --attention-backend flash_attn_4 --cuda-graphs
 --speculative-tokens 2 --draft-loops 2 --target-loops 4 --temperature 0`.
-`--draft-policy adaptive` is the default for async speculation.
-Random sampling, adaptive exit, preemption and PD are rejected.
-The speculative runner owns its compute and result-copy streams. Setting
+Random sampling, adaptive exit and preemption remain rejected.
+PD can enable speculation on its decode stage. Incoming prompts wait for transfer
+completion and shared scheduler admission before CODA bootstraps local speculative
+rounds. Cancellation retains GPU resources until the final round completes.
+The model runner shares its compute and result-copy streams with speculation. Setting
 `multi_stream=False` orders the copy on the compute stream as well; cross-round
 CPU/GPU submission remains asynchronous, but D2H no longer overlaps computation.
 
@@ -66,6 +79,11 @@ graph. Graph inputs have stable addresses. Active page tables are still uploaded
 once per round, then copied into graph-owned metadata for each core replay.
 The LM head also uses graphs; prelude, metadata construction, argmax,
 acceptance/state updates and result copies remain outside capture.
+
+Speculation shares the stage's `ModelRuntime` and compute/copy streams with
+ordinary execution. Graph selection precedes execution; each recurrent input is
+staged after its producing traversal, before replay. Scheduler result application
+owns committed token progress and KV frontiers for both paths.
 
 The asynchronous speculative core and Ouro LM-head use a finite set of row
 buckets. For C=`max_num_seqs`, maximum K and token budget B, preferred sizes are
@@ -132,7 +150,8 @@ improvement; compare matched warmed eager/Graph runs and retain capture, replay
 and fallback counts from `speculative_runner.graphs` and `coda_graphs`.
 
 The current H100 results immediately below apply to inference runtime
-`c3a97d3`. Later sections retain historical H20 measurements at `08d3f99`,
+`c3a97d3`; they have not been rerun after the StageEngine/ModelRuntime integration.
+Later sections retain historical H20 measurements at `08d3f99`,
 bucketing/numerical diagnostics at `dfbb0f7`, and H100 exact-row measurements at
 `9eb01bb`/`73cfe4e`. Those earlier runtimes used fixed draft counts and different
 row/capture behavior; their numbers and validation claims remain scoped to those
@@ -635,11 +654,23 @@ Correctness reported by the reviewer: H100 GPU selections passed (212 tests at h
 
 ## Execution and ownership
 
+Speculative work enters through `Executor.submit()` like ordinary batches.
+The executor dispatches a speculative selection to its local round controller;
+the controller uses the same `ModelRuntime` for PRELUDE, RECURRENT and CODA.
+It retains its own draft/verify ordering, candidate state and acceptance logic.
+There is no cross-stage handoff for each speculative step.
+
+Prompt bootstrap uses the ordinary runner. Refill scheduling can use atomic
+prefill or `atomic_prefill=False` to yield between prompt loops. PD can import
+the completed prompt into the decode stage. These combinations do not enable
+mixed scheduling of prompt rows with speculative verification rows.
+
+
 The synchronous runner reads the acceptance result before constructing the next
 round. Cross-round submission needs a different ownership contract: the GPU must
 advance the next token and actual KV position while the CPU reserves a safe upper
-bound. `KVCacheManager._prepare_device_batch()` creates and validates a borrowed
-`_DeviceKVBatch` containing allocation identities and device access tensors,
+bound. `MetadataBuilder.prepare_device()` creates and validates a borrowed
+`DeviceKVMetadata` containing allocation identities and device access tensors,
 without retaining the manager. The runner owns those tensors and completion
 events, and retains allocations until the final GPU reader completes. The batch
 does not treat uncommitted positions as populated CPU KV. The scheduler tracks outstanding
@@ -687,10 +718,12 @@ Inside a Slurm GPU allocation, use the repository environment:
 
 ```bash
 .venv/bin/python -m pytest tests/test_async_speculative.py --run-gpu -q
+.venv/bin/python -m pytest tests/test_async_speculative_graphs.py --run-gpu -q
 .venv/bin/python -m pytest tests/test_serving.py --run-gpu -k speculative -q
 ```
 
-The tests exercise two GPU rounds before CPU delivery, every rejection position,
+The tests exercise eager/graph output agreement, graph-limit fallback, page growth,
+FA4 execution, PD handoff, two GPU rounds before CPU delivery, rejection positions,
 K/length boundaries, mixed requests, prefix reuse, EOS, cancellation, ID reuse
 and partially submitted failures. CPU-only test results do not qualify the GPU
 path. Compare BF16 runs on the same hardware and Triton backend: synchronous
@@ -702,7 +735,8 @@ The page-table snapshot uses flat reusable pinned/device storage. Each round
 views only `batch_size * max_loops * active_page_width` entries as a contiguous
 three-dimensional table, clears that region and copies it once. Inactive storage
 is untouched; ragged rows are padded within the active width. This reduces the
-number of entries prepared and submitted for H2D. The current measurements below
+number of entries prepared and submitted for H2D. The
+[recorded measurements](runtime-history.md#active-region-preparation-and-transfer)
 separate that reduction from end-to-end effects.
 
 ## Eager GPU validation (2026-10-10)
