@@ -186,18 +186,36 @@ def _paged_attention_merge_kernel(
     )
 
 
+try:
+    # The raw stream handle, read the way Triton's own launcher reads it (with the
+    # same public fallback): no Stream object per call.
+    from torch._C import _cuda_getCurrentRawStream as _current_raw_stream
+except ImportError:
+
+    def _current_raw_stream(index):
+        return torch.cuda.current_stream(index).cuda_stream
+
+
 # Eager partial-state buffers per (device, stream): grow-only, reused by every
 # call on that stream (calls on one stream are ordered, so they never overlap).
 # Only the kernel writes them. The engine decodes under torch.inference_mode, so
 # they can be inference tensors that a PyTorch in-place op outside it rejects.
+# At most _EAGER_STATE_LIMIT streams keep a buffer; a new stream evicts the oldest
+# entry. That is safe while its kernels still run: the caching allocator reuses a
+# freed block only on the stream that allocated it, which is the evicted key's own
+# stream, so the reuse is ordered after them.
 _EAGER_STATE = {}
+_EAGER_STATE_LIMIT = 16
 
 
 def _eager_state(device, rows, heads, block_d):
-    # The raw stream handle, as Triton's launcher reads it: no Stream object per call.
-    key = (device.index, torch._C._cuda_getCurrentRawStream(device.index))
+    key = (device.index, _current_raw_stream(device.index))
     state = _EAGER_STATE.get(key)
     if state is None or state[0] < rows * heads or state[1] != block_d:
+        # Only this miss path does bookkeeping; a hit stays one dict lookup.
+        _EAGER_STATE.pop(key, None)
+        while len(_EAGER_STATE) >= _EAGER_STATE_LIMIT:
+            del _EAGER_STATE[next(iter(_EAGER_STATE))]
         state = (
             rows * heads,
             block_d,
@@ -252,6 +270,8 @@ def paged_attention(q, key_cache, value_cache, block_tables, context_lengths):
         num_warps=4,
     )
     if capturing:
+        # Both kernels size PARTS from tl.num_programs(0), so the merge grid's
+        # dimension 0 must stay the split grid's: the same `rows`.
         _paged_attention_merge_kernel[(rows, heads)](
             parts,
             output,

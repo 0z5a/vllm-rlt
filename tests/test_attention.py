@@ -247,3 +247,28 @@ def test_split_kv_eager_workspace_crosses_inference_mode():
     torch.cuda.synchronize()
     for state in triton_attention._EAGER_STATE.values():
         assert torch.count_nonzero(state[-1]) == 0
+
+
+def test_split_kv_eager_workspace_is_bounded_per_stream(monkeypatch):
+    pytest.importorskip("triton")
+    from vllm_rlt.kernels import triton_attention
+
+    stream = [0]
+    monkeypatch.setattr(triton_attention, "_current_raw_stream", lambda index: stream[0])
+    monkeypatch.setattr(triton_attention, "_EAGER_STATE", {})
+    monkeypatch.setattr(triton_attention, "_EAGER_STATE_LIMIT", 3)
+    cpu = torch.device("cpu")
+    buffers = []
+    for handle in range(5):
+        stream[0] = handle
+        buffers.append(triton_attention._eager_state(cpu, 2, 4, 8)[0])
+    # The oldest streams were evicted; at most the limit keep a buffer.
+    assert [key[1] for key in triton_attention._EAGER_STATE] == [2, 3, 4]
+    # A hit on a resident stream reuses its buffer and keeps the order.
+    stream[0] = 3
+    assert triton_attention._eager_state(cpu, 1, 4, 8)[0] is buffers[3]
+    assert [key[1] for key in triton_attention._EAGER_STATE] == [2, 3, 4]
+    # Growth replaces the stream's buffer without evicting another stream.
+    grown = triton_attention._eager_state(cpu, 4, 4, 8)[0]
+    assert grown is not buffers[3] and grown.numel() > buffers[3].numel()
+    assert [key[1] for key in triton_attention._EAGER_STATE] == [2, 4, 3]
