@@ -57,7 +57,7 @@ class PipelineResult:
 class PipelineSchedule:
     """Schedule configuration and derived topology for looped recurrent pipelining.
 
-    stages: Total recurrent iterations S per token (e.g. 4 for Ouro, 32 for Huginn/Raven).
+    stages: Total recurrent iterations S per token (e.g. 4 for Ouro).
     step_size: Recurrent iterations K executed per cycle (q1 readout happens after K).
     second_step: Optional recurrent multiple X for q2 readout (logical scheduler only;
         currently unsupported in PipelinedSpeculativeRunner).

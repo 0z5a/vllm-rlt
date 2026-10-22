@@ -103,3 +103,26 @@ def test_stages_mismatch_rejected_at_construction(mismatched_stages):
         match=r"schedule\.stages .* must match .*model\.config\.total_ut_steps",
     ):
         PipelinedSpeculativeRunner(model, cache, sched)
+
+
+def test_huginn_rejected_at_construction():
+    """Verify that Huginn models lacking prelude/coda are rejected at construction."""
+    from tests.test_huginn import tiny_huginn_config
+    from vllm_rlt.models import HuginnForCausalLM
+
+    cfg = tiny_huginn_config()
+    model = HuginnForCausalLM(cfg)
+    loops = cfg.total_ut_steps() if callable(cfg.total_ut_steps) else cfg.total_ut_steps
+    cache = KVCacheManager(
+        num_layers=cfg.n_layers,
+        num_kv_heads=cfg.n_heads,
+        head_dim=cfg.head_dim,
+        num_blocks=128,
+        block_size=4,
+        max_loops=loops,
+        device="cpu",
+        dtype=torch.float32,
+    )
+    sched = PipelineSchedule(stages=loops, step_size=1)
+    with pytest.raises(NotImplementedError, match="prelude"):
+        PipelinedSpeculativeRunner(model, cache, sched)

@@ -66,6 +66,18 @@ class PipelinedSpeculativeRunner:
                 f"model.config.total_ut_steps ({total_ut_steps})"
             )
 
+        required_methods = ("prelude", "recurrent_prepared", "coda")
+        missing_methods = [
+            m for m in required_methods if not hasattr(model, m) or not callable(getattr(model, m))
+        ]
+        if missing_methods:
+            raise NotImplementedError(
+                f"model of type {type(model).__name__} is missing required method(s): "
+                f"{', '.join(missing_methods)}. PipelinedSpeculativeRunner requires models with "
+                "'prelude', 'recurrent_prepared', and 'coda' (e.g. OuroForCausalLM). "
+                "Huginn/Raven models use *_prepared variants and are not yet supported."
+            )
+
         self.model = model
         self.cache = cache
         self.schedule = schedule
