@@ -224,7 +224,11 @@ class Scheduler:
         """
         if (
             request is requesting_request
-            or request.phase in (RequestPhase.WAITING, RequestPhase.RECEIVING)
+            or request.phase == RequestPhase.RECEIVING
+            or (
+                request.phase == RequestPhase.WAITING
+                and (priority_only or not self.cache_manager.has_allocation(request.request_id))
+            )
             or request.num_output_placeholders
             or request.request_id in excluded
         ):
@@ -235,7 +239,9 @@ class Scheduler:
             request.sampling_params.priority > requesting_request.sampling_params.priority
         )
 
-    def _select_preemption_victim(self, requesting_request, *, priority_only, excluded):
+    def _select_preemption_victim(
+        self, requesting_request, *, priority_only, excluded, waiting_only=False
+    ):
         """Prefer lower priority, then a larger current-position KV footprint.
 
         Priority 10 loses to priority 0. The footprint tie-breaker uses
@@ -246,7 +252,8 @@ class Scheduler:
         candidates = (
             request
             for request in self.requests.values()
-            if self._is_preemption_candidate(
+            if (not waiting_only or request.phase == RequestPhase.WAITING)
+            and self._is_preemption_candidate(
                 request, requesting_request, priority_only=priority_only, excluded=excluded
             )
         )
@@ -259,16 +266,28 @@ class Scheduler:
             default=None,
         )
 
-    def preempt(self, requesting_request, *, priority_only=False, excluded=frozenset()):
-        """Select and suspend one safe victim, then move it back to admission."""
+    def preempt(
+        self, requesting_request, *, priority_only=False, excluded=frozenset(), waiting_only=False
+    ):
+        """Yield a priority slot or reclaim KV from one safe victim.
+
+        Priority admission keeps KV resident. Capacity pressure may also select
+        an already waiting resident request; offloading it preserves queue order.
+        Admission allocation retries only reclaim such waiting allocations.
+        """
         if self.suspend_callback is None:
             return False
         victim = self._select_preemption_victim(
-            requesting_request, priority_only=priority_only, excluded=excluded
+            requesting_request,
+            priority_only=priority_only,
+            excluded=excluded,
+            waiting_only=waiting_only,
         )
         if victim is None:
             return False
-        self.suspend_callback(victim)
+        self.suspend_callback(victim, offload_kv=not priority_only)
+        if victim.phase == RequestPhase.WAITING:
+            return True
         for queue in self.queues.values():
             while victim.request_id in queue:
                 queue.remove(victim.request_id)
@@ -280,7 +299,7 @@ class Scheduler:
 
         A full engine may make room for a higher-priority arrival. Scheduler
         suspends a selected victim and moves it to WAITING before admitting the
-        arrival. This operation can synchronize the runner and copy KV to CPU.
+        arrival. The victim retains KV until an allocation actually needs it.
         Admission runs before any batch is selected, so no request is excluded
         from preemption here.
         """
@@ -302,6 +321,8 @@ class Scheduler:
         False: snapshot exists, but restoration cannot obtain capacity yet.
         """
         restored = self.resume_callback(request) if self.resume_callback is not None else None
+        while restored is False and self.preempt(request, waiting_only=True):
+            restored = self.resume_callback(request)
         if restored is None:
             return ResumeResult.NOT_PREEMPTED
         if restored is False:
@@ -485,7 +506,13 @@ class Scheduler:
                     continue
 
                 plan = self._plan_admission(request, active_count)
-                if not self._commit_admission(request, plan):
+                admitted = self._commit_admission(request, plan)
+                while not admitted and self.preempt(request, waiting_only=True):
+                    # Recompute prefix claims and growth reservations after
+                    # releasing a resident allocation; the previous plan is stale.
+                    plan = self._plan_admission(request, active_count)
+                    admitted = self._commit_admission(request, plan)
+                if not admitted:
                     deferred.append(request_id)
                     if request.admission_bypasses >= self.config.max_admission_bypasses:
                         break
@@ -568,7 +595,7 @@ class Scheduler:
     def _ensure_execution_capacity(
         self, request: Request, frontier: int, *, selected: set[str]
     ) -> bool:
-        """Grow KV for this step; if needed, preempt one other request and retry.
+        """Grow KV for this step, reclaiming safe victims only while it is short.
 
         frontier is an exclusive token count, not a loop count. Another loop at
         the same token position normally uses existing capacity. selected holds
@@ -577,11 +604,10 @@ class Scheduler:
         instead of reading shared Scheduler state.
         """
         cache = self.cache_manager
-        if cache.ensure_capacity(request.request_id, frontier):
-            return True
-        if not self.preempt(request, excluded=frozenset(selected)):
-            return False
-        return cache.ensure_capacity(request.request_id, frontier)
+        while not cache.ensure_capacity(request.request_id, frontier):
+            if not self.preempt(request, excluded=frozenset(selected)):
+                return False
+        return True
 
     def _prelude_window_open(self, request: Request) -> bool:
         """Whether the next prompt chunk may be staged for this request.
