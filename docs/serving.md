@@ -43,8 +43,10 @@ remain separate from the stage-local model execution contract.
 Mixed scheduling means batching compatible prompt/decode recurrent work within
 one stage. It does not mean a worker role, and PD does not require it. For
 supported models, select it with `--mode mixed --no-atomic-prefill` and
-LAST_EXITED KV. PD can configure speculative decoding on the decode stage, but
-mixed scheduling and speculative rounds are not a supported combination.
+LAST_EXITED KV. Add `--wavefront-chunked-prefill` to batch ready prompt chunks
+from different recurrent depths; PD can enable this on its prefill scheduler.
+Speculative decoding requires refill scheduling and cannot join mixed recurrent
+batches. PD can configure speculation on its decode stage.
 See [runtime configuration](runtime.md#execution-batches-and-mixed-scheduling)
 for constraints and [the architecture](unified_execution.md) for ownership.
 

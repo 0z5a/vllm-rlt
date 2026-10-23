@@ -154,13 +154,13 @@ class SpeculativePolicy(SchedulingPolicy):
 
 
 class SplitPrefillPolicy(RefillPolicy):
-    """Refill ordering where each recurrence depth is its own batch boundary."""
+    """Refill ordering for staged prompt work and recurrent depth boundaries."""
 
     PREFILL_PHASES = (RequestPhase.PREFILLING_PRELUDE, RequestPhase.PREFILLING_RECURRENT)
 
 
 class MixedPolicy(SplitPrefillPolicy):
-    """Choose compatible prompt/generation loops; execution is policy-agnostic."""
+    """Choose compatible prompt/generation work; execution is policy-agnostic."""
 
     def schedule(self, scheduler, *, prefer_recurrent=False):
         if scheduler.has_ready(RequestPhase.RECURRENT) and scheduler.has_ready(
@@ -169,7 +169,16 @@ class MixedPolicy(SplitPrefillPolicy):
             return scheduler.take_phases(
                 (RequestPhase.RECURRENT, RequestPhase.PREFILLING_RECURRENT)
             )
-        return super().schedule(scheduler, prefer_recurrent=prefer_recurrent)
+        if prefer_recurrent and scheduler.has_ready(RequestPhase.RECURRENT):
+            return scheduler._take(RequestPhase.RECURRENT)
+        if (
+            scheduler.wavefront_chunked_prefill
+            and scheduler.has_ready(RequestPhase.PRELUDE)
+            and scheduler.has_ready(RequestPhase.PREFILLING_PRELUDE)
+        ):
+            return scheduler.take_phases((RequestPhase.PRELUDE, RequestPhase.PREFILLING_PRELUDE))
+        batch = super().schedule(scheduler, prefer_recurrent=prefer_recurrent)
+        return batch
 
 
 def create_scheduling_policy(
@@ -184,6 +193,9 @@ def create_scheduling_policy(
     Failing here keeps an unimplemented mode from silently changing
     semantics or returning an empty schedule forever.
     """
+    if scheduler_config.wavefront_chunked_prefill and atomic_prefill:
+        raise ValueError("wavefront_chunked_prefill requires split prefill")
+
     # Prompt-only phases do not use prompt/generation interleaving rules.
     if not produces_tokens:
         return PromptOnlyPolicy(scheduler_config, atomic_prefill=atomic_prefill)

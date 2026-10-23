@@ -47,14 +47,17 @@ class Request:
     num_speculative_rounds: int = 0
     input_token_tensor: torch.Tensor | None = field(default=None, repr=False)
     num_prefilled_tokens: int = 0
-    # Split prefill. [num_prefilled_tokens, num_preluded_tokens) is the staged
-    # chunk: its prelude output is resident and it advances one depth per batch.
+    # Split prefill: [num_prefilled_tokens, num_preluded_tokens) has resident
+    # hidden states; wavefront keeps multiple chunks at distinct depths here.
     num_preluded_tokens: int = 0
-    # Start of the resident chunk. It stays fixed while the final depth advances
-    # a partial chunk and is used for runner pool row addressing.
+    # Legacy split-prefill resident chunk base; WCPB bases every span independently.
     prefill_chunk_start: int = 0
     # Split prefill only: per-depth logical prompt frontiers.
     prefill_depth_ranges: list[list[int]] = field(default_factory=list, repr=False)
+    # Wavefront chunk slots are assigned relative to this cached-prefix origin.
+    prefill_window_origin: int = 0
+    # Earliest fully retired chunk; partial final-depth work still owns its slot.
+    prefill_reclaimable_tokens: int = 0
     # Host-side decode progress; ModelRunner events track pending device work.
     loops_done: int = 0
     pending_exit_depth: int | None = None
@@ -119,7 +122,7 @@ class StateSpan:
     # recurrent hidden state; its actual exit depth remains in request.loops_done.
     depth: int
     # None addresses the request's single resident hidden row. Otherwise the
-    # span addresses [token_start-chunk_start, ...] in its resident chunk.
+    # span addresses its resident chunk, using buffer_offset for a wavefront ring.
     chunk_start: int | None = None
     retain_chunk: bool = False
     retain_last: bool = True
@@ -127,6 +130,8 @@ class StateSpan:
     # For chunk PRELUDE, None reads the immutable request prompt range directly.
     # Explicit tokens override that source (also used by direct execution callers).
     input_tokens: tuple[int, ...] | None = None
+    # Offset in the request's staged prompt-state ring, snapshotted at scheduling.
+    buffer_offset: int | None = None
 
 
 @dataclass(frozen=True)

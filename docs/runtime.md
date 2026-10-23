@@ -124,12 +124,38 @@ scheduler_config = SchedulerConfig(
 execution_config = ExecutionConfig(atomic_prefill=False)
 ```
 
-CLI and serving accept `--mode mixed --no-atomic-prefill`. Mixed selects compatible recurrent work; PRELUDE and CODA remain separate operations.
+CLI and serving accept `--mode mixed --no-atomic-prefill`. Mixed selects compatible recurrent work; WCPB can also combine prompt and decode PRELUDE rows, while CODA remains separate.
 See [batch selection and feedback](scheduler.md#detail-mixed-loop-selection-and-feedback)
 for the selection order, shared budget and per-request progress.
 
-This policy currently requires non-atomic prompt scheduling and LAST_EXITED KV;
-it does not mix speculative rounds. Existing model restrictions still apply.
+### Wavefront chunked prefill
+
+`SchedulerConfig(wavefront_chunked_prefill=True)` opts into WCPB and requires
+`ExecutionConfig(atomic_prefill=False)` plus LAST_EXITED KV. It can run with
+refill or mixed scheduling. When combined with speculation, use refill mode;
+speculation cannot use preemption.
+
+The scheduler stages up to `total_ut_steps` chunks per request, then batches one
+ready chunk for each prompt depth. For four depths and chunk size two, recurrent
+batches advance `(chunk0, depth0)`, then `(chunk0, depth1)` with
+`(chunk1, depth0)`, then add `(chunk2, depth0)`, and so on. Each request is
+limited to a `total_ut_steps * prefill_chunk_size` resident hidden-state window;
+the global token budget and `max_num_seqs` still apply. Prompt state uses a ring
+window, while KV writes retain their absolute prompt positions and depth planes.
+
+Prompt work always reaches the model's full depth before CODA produces the first
+token. A request's `SamplingParams.max_loops` limits later decode work and does
+not shorten prompt prefill. Prefix reuse, preemption, PD export, and async
+execution follow the same full-depth frontier. CUDA Graph handling remains on
+the existing recurrent paths; WCPB does not add a new graph mode.
+
+Enable it from the CLI with `--no-atomic-prefill --wavefront-chunked-prefill`.
+Combine it with `--mode mixed` when prompt and decode recurrent work should share
+compatible batches; the wavefront option also works without mixed scheduling.
+
+This policy requires non-atomic prompt scheduling and LAST_EXITED KV. Speculative
+rounds are scheduled separately from mixed recurrent batches. Existing model
+restrictions still apply.
 Mixed graphs and asynchronous device execution have regression cases marked
 `gpu`; CPU tests validate the corresponding state machine, not GPU overlap or
 performance. Mixed gather/scatter uses the shared transfer machinery; this

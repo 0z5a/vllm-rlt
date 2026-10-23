@@ -56,7 +56,7 @@ def add_runtime_args(parser):
     parser.add_argument(
         "--cuda-graphs",
         action="store_true",
-        help="Capture decode recurrent cores and speculative coda; prefill/sampling stay eager",
+        help="Capture decode/wavefront recurrent cores and speculative coda; sampling stays eager",
     )
     parser.add_argument("--cuda-graph-max-batch-size", type=int, default=128)
     parser.add_argument("--cuda-graph-max-graphs", type=int, default=16)
@@ -69,6 +69,11 @@ def add_runtime_args(parser):
     parser.add_argument("--static-buffers", action="store_true")
     parser.add_argument("--pad-to-power-of-two", action="store_true")
     parser.add_argument("--prefill-chunk-size", type=int, default=128)
+    parser.add_argument(
+        "--wavefront-chunked-prefill",
+        action="store_true",
+        help="Batch ready prompt chunks across recurrence depths; requires split prefill",
+    )
     parser.add_argument("--max-prefill-batches-before-decode", type=int, default=1)
     parser.add_argument("--admission-scan-limit", type=int, default=64)
     parser.add_argument("--max-admission-bypasses", type=int, default=8)

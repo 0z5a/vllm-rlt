@@ -58,6 +58,8 @@ class StageEngine:
                 raise ValueError("Huginn prefix caching is not yet supported")
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()
+        if scheduler_config.wavefront_chunked_prefill and self.execution_config.atomic_prefill:
+            raise ValueError("wavefront_chunked_prefill requires split prefill")
         if getattr(model, "requires_boundary_kv", False):
             if not self.execution_config.atomic_prefill:
                 raise ValueError("Huginn requires atomic prefill")
@@ -480,6 +482,8 @@ class StageEngine:
                 start=(
                     scheduled_request.token_start
                     if phase == RequestPhase.PREFILL
+                    else progress.transfer_start
+                    if progress.transfer_start is not None
                     else scheduled_request.chunk_start
                 ),
                 progress=progress,
@@ -509,6 +513,8 @@ class StageEngine:
         hit = plan.cached_tokens
         request.num_prefilled_tokens = request.num_preluded_tokens = hit
         request.prefill_chunk_start = hit
+        request.prefill_window_origin = hit
+        request.prefill_reclaimable_tokens = hit
         request.prefill_depth_ranges[:] = Request.prefill_boundaries(
             count, self.model.config.total_ut_steps, start=hit
         )
@@ -575,6 +581,8 @@ class StageEngine:
         self.cache_manager.mark_imported_prefix(request.request_id, count, start=cached_tokens)
         self.cache_manager.publish_prefix(request.request_id, request.prompt_token_ids, count)
         request.num_prefilled_tokens = request.num_preluded_tokens = count
+        request.prefill_window_origin = count
+        request.prefill_reclaimable_tokens = count
         request.loops_done = self.model.config.total_ut_steps
         request.hidden_state = hidden
         # Keep RECEIVING until the scheduler grants a compute slot. The lease
@@ -592,6 +600,8 @@ class StageEngine:
         frontier = request.num_prefilled_tokens
         request.num_preluded_tokens = frontier
         request.prefill_chunk_start = frontier
+        request.prefill_window_origin = frontier
+        request.prefill_reclaimable_tokens = frontier
         request.prefill_depth_ranges[:] = Request.prefill_boundaries(
             len(request.prompt_token_ids),
             self.model.config.total_ut_steps,

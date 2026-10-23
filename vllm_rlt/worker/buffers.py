@@ -13,14 +13,13 @@ from vllm_rlt.worker.tensors import UvaBackedTensor, copy_tensor, use_uva_on
 def prefill_stage_rows(config, scheduler, execution) -> int:
     """Hidden rows per request that staged prompt prefill keeps resident.
 
-    Split prefill stages one chunk at a time, so a chunk is the unit that must
-    survive between two scheduling boundaries. Wavefront chunked prefill advances
-    several chunks of one prompt at different depths concurrently; it then keeps a
-    chunk per recurrence depth in flight, and this becomes
-    ``scheduler.prefill_chunk_size * config.total_ut_steps``.
+    Split prefill stages one chunk at a time. Wavefront prefill keeps at most one
+    chunk per full model depth in flight for each request.
     """
     if execution.atomic_prefill:
         return 0
+    if scheduler.wavefront_chunked_prefill:
+        return scheduler.prefill_chunk_size * config.total_ut_steps
     return scheduler.prefill_chunk_size
 
 
@@ -49,8 +48,9 @@ def execution_buffer_bytes(config, scheduler, cache, execution, element_size):
     # Split recurrent batches gather staged rows into a contiguous model input.
     if not execution.atomic_prefill:
         total += rows * hidden
+        span_capacity = rows if scheduler.wavefront_chunked_prefill else scheduler.max_num_seqs
         total += MAX_CONCURRENT_SUBMISSIONS * (
-            scheduler.max_num_seqs * (5 + 4 * 8) * 8 + max(rows, scheduler.prefill_chunk_size) * 8
+            span_capacity * (5 + 4 * 8) * 8 + max(rows, scheduler.prefill_chunk_size) * 8
         )
     return total
 

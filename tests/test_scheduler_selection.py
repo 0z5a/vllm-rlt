@@ -8,11 +8,11 @@ prefill worker, or outlive the request whose ID it names.
 
 import pytest
 import torch
+from vllm_rlt.models import OuroForCausalLM
 
 from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, ExecutionConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import RequestPhase
 
 
@@ -38,17 +38,41 @@ def params(max_tokens=5):
     return SamplingParams(max_tokens=max_tokens, ignore_eos=True)
 
 
-def test_batch_selection_is_never_preempted_by_a_later_item(monkeypatch):
+@pytest.mark.parametrize("wavefront", [False, True])
+def test_batch_selection_is_never_preempted_by_a_later_item(monkeypatch, wavefront):
     """Selecting A must stop B's capacity failure from evicting A."""
-    e = engine()
+    e = engine(atomic_prefill=not wavefront, wavefront_chunked_prefill=wavefront)
     for name in ("a", "b"):
         e.add_request(name, [1, 2], params())
     e.scheduler._admit()
     monkeypatch.setattr(e.cache_manager, "ensure_capacity", lambda rid, frontier: rid != "b")
-    batch = e.scheduler._take(RequestPhase.PREFILL)
+    phase = RequestPhase.PREFILLING_PRELUDE if wavefront else RequestPhase.PREFILL
+    batch = e.scheduler._take(phase)
     assert [scheduled_request.request.request_id for scheduled_request in batch.requests] == ["a"]
     assert e.preemption.preemptions == 0
-    assert e.scheduler.requests["a"].phase == RequestPhase.PREFILL
+    assert e.scheduler.requests["a"].phase == phase
+
+
+def test_wavefront_does_not_schedule_a_candidate_preempted_during_selection(monkeypatch):
+    e = engine(atomic_prefill=False, wavefront_chunked_prefill=True, prefill_chunk_size=2)
+    for name in ("a", "b"):
+        e.add_request(name, [1, 2, 3, 4], params())
+    e.scheduler._admit()
+    # A needs B's pages. B is already in the local candidate list when suspended.
+    monkeypatch.setattr(
+        e.cache_manager,
+        "ensure_capacity",
+        lambda rid, frontier: rid == "a" and not e.cache_manager.has_allocation("b"),
+    )
+
+    batch = e.scheduler._take(RequestPhase.PREFILLING_PRELUDE)
+
+    assert {item.request.request_id for item in batch.requests} == {"a"}
+    assert e.preemption.preemptions == 1
+    assert list(e.scheduler.queues[RequestPhase.WAITING]) == ["b"]
+    assert not e.scheduler.queues[RequestPhase.PREFILLING_PRELUDE]
+    assert e.scheduler.requests["b"].phase == RequestPhase.WAITING
+    e.close()
 
 
 def test_direct_take_does_not_inherit_an_earlier_batch_selection(monkeypatch):

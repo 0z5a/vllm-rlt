@@ -2,12 +2,12 @@
 
 import pytest
 import torch
+from vllm_rlt.models import OuroForCausalLM
 
 from tests.helpers import tiny_ouro_config
 from vllm_rlt import SamplingParams, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.scheduler import Scheduler, SchedulerOutput
-from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import ExecutionBatch, Operation, Request, RequestPhase, StateSpan
 from vllm_rlt.worker.executor import ForwardBatch, ModelRuntime, build_execution_batch
 
@@ -145,7 +145,7 @@ def test_mixed_policy_runs_real_combined_batches_with_matching_outputs(
     from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig
     from vllm_rlt.engine.llm_engine import LLMEngine
 
-    def run(mode, atomic=False):
+    def run(mode, atomic=False, wavefront=False):
         torch.manual_seed(123)
         engine = LLMEngine(
             OuroForCausalLM(tiny_ouro_config()).to(
@@ -158,6 +158,7 @@ def test_mixed_policy_runs_real_combined_batches_with_matching_outputs(
                 max_num_seqs=3,
                 max_num_batched_tokens=5,
                 prefill_chunk_size=4,
+                wavefront_chunked_prefill=wavefront,
             ),
             execution_config=ExecutionConfig(
                 atomic_prefill=atomic,
@@ -198,9 +199,19 @@ def test_mixed_policy_runs_real_combined_batches_with_matching_outputs(
             if batch is not None and batch.is_mixed:
                 phases = {batch.phase_for(i) for i in batch.requests}
                 if len(phases) == 2:
-                    # Both storage kinds pass through a single model invocation.
-                    if not graphs:
+                    recurrent_mix = phases == {
+                        RequestPhase.RECURRENT,
+                        RequestPhase.PREFILLING_RECURRENT,
+                    }
+                    # Recurrent storage kinds share one model invocation. Prelude
+                    # mixes use the same operation but do not call recurrent_core.
+                    if recurrent_mix and not graphs:
                         assert calls == [batch.num_tokens]
+                    elif not recurrent_mix:
+                        assert phases == {
+                            RequestPhase.PRELUDE,
+                            RequestPhase.PREFILLING_PRELUDE,
+                        }
                     assert batch.num_tokens <= 5
                     mixed.append(batch)
             if not engine.has_unfinished_requests():
@@ -212,9 +223,11 @@ def test_mixed_policy_runs_real_combined_batches_with_matching_outputs(
 
     expected, _ = run("refill", atomic=True)
     separated, _ = run("refill")
-    actual, mixed = run("mixed")
-    assert mixed
-    assert actual == separated == expected
+    original_mixed, original_batches = run("mixed")
+    wavefront_refill, _ = run("refill", wavefront=True)
+    actual, mixed = run("mixed", wavefront=True)
+    assert original_batches and mixed
+    assert actual == wavefront_refill == original_mixed == separated == expected
 
 
 def mixed_ready_engine():

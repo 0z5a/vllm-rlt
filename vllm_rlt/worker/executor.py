@@ -64,6 +64,7 @@ def build_execution_batch(scheduled_batch: SchedulerOutput, total_depths: int) -
                 )
                 if prompt_input and not chunk
                 else None,
+                buffer_offset=scheduled_request.buffer_offset if chunk else None,
             )
         )
         operations.add(operation)

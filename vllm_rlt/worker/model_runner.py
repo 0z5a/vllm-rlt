@@ -285,7 +285,9 @@ class ModelRunner:
         self.batch_input_buffers = (
             [
                 BatchInputBuffers(
-                    scheduler.max_num_seqs,
+                    scheduler.max_num_batched_tokens
+                    if scheduler.wavefront_chunked_prefill
+                    else scheduler.max_num_seqs,
                     max(scheduler.max_num_batched_tokens, scheduler.prefill_chunk_size),
                     self.device,
                     parameter.dtype,
@@ -395,7 +397,11 @@ class ModelRunner:
         max_rows = 0
         for index, span in enumerate(batch.spans):
             state_slot = self._ensure_request_slot(span.request)
-            chunk_offset = span.token_start - span.chunk_start
+            chunk_offset = (
+                span.buffer_offset
+                if span.buffer_offset is not None
+                else span.token_start - span.chunk_start
+            )
             keep_intermediate = span.retain_chunk
             segment = InputSegment(
                 state_slot,
@@ -451,7 +457,11 @@ class ModelRunner:
             slot = self._ensure_request_slot(request)
             chunk = None
             if span.chunk_start is not None:
-                start = span.token_start - span.chunk_start
+                start = (
+                    span.buffer_offset
+                    if span.buffer_offset is not None
+                    else span.token_start - span.chunk_start
+                )
                 chunk = self.prefill_states[slot, start : start + span.token_count]
                 source = chunk
             else:
@@ -539,6 +549,8 @@ class ModelRunner:
         metadata = prepared.batch_inputs
         if metadata.mixed:
             self._mixed_hidden(hidden, prepared, scatter=True)
+            return
+        if not any(span.retain_chunk for span in prepared.batch.spans):
             return
         if self.device.type == "cuda":
             from vllm_rlt.kernels.routing import scatter_segments_kernel

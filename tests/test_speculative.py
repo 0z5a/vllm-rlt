@@ -5,6 +5,7 @@ from collections import Counter
 
 import pytest
 import torch
+from vllm_rlt.models import OuroForCausalLM
 
 from tests.helpers import LocalLLM as LLM
 from tests.helpers import tiny_ouro_config
@@ -18,7 +19,6 @@ from vllm_rlt import (
 )
 from vllm_rlt.core.scheduler import ScheduledRequest, SchedulerOutput
 from vllm_rlt.engine.llm_engine import LLMEngine
-from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Request, RequestPhase
 from vllm_rlt.worker.sampler import Sampler
 from vllm_rlt.worker.speculative import greedy_accept, rejection_sample
@@ -567,7 +567,10 @@ def test_speculative_cuda_graph_matches_eager_with_ragged_replay(max_graph_rows)
 
 @pytest.mark.parametrize("chunk_size", [1, 3, 8])
 @pytest.mark.parametrize("budget", [2, 7])
-def test_split_prefill_and_speculation_share_forward_and_match_atomic(chunk_size, budget):
+@pytest.mark.parametrize("wavefront", [False, True])
+def test_split_prefill_and_speculation_share_forward_and_match_atomic(
+    chunk_size, budget, wavefront
+):
     from vllm_rlt.request import Operation
 
     def run(atomic):
@@ -577,6 +580,7 @@ def test_split_prefill_and_speculation_share_forward_and_match_atomic(chunk_size
             scheduler_config=SchedulerConfig(
                 max_num_batched_tokens=budget,
                 prefill_chunk_size=chunk_size,
+                wavefront_chunked_prefill=wavefront and not atomic,
             ),
             execution_config=ExecutionConfig(atomic_prefill=atomic),
         )
