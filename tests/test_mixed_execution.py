@@ -2,12 +2,12 @@
 
 import pytest
 import torch
-from vllm_rlt.models import OuroForCausalLM
 
 from tests.helpers import tiny_ouro_config
 from vllm_rlt import SamplingParams, SchedulerConfig
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.core.scheduler import Scheduler, SchedulerOutput
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import ExecutionBatch, Operation, Request, RequestPhase, StateSpan
 from vllm_rlt.worker.executor import ForwardBatch, ModelRuntime, build_execution_batch
 

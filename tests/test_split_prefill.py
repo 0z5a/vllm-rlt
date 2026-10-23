@@ -12,7 +12,6 @@ prompt_ordered` pins that order from admission to the last depth.
 
 import pytest
 import torch
-from vllm_rlt.models import OuroForCausalLM
 
 from tests.helpers import make_prefill_engine, tiny_ouro_config, tiny_ouro_model
 from vllm_rlt import CacheConfig, ExecutionConfig, ExitConfig, SamplingParams, SchedulerConfig
@@ -24,6 +23,7 @@ from vllm_rlt.core.scheduling_policy import (
     SplitPrefillPolicy,
 )
 from vllm_rlt.engine.llm_engine import LLMEngine
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Operation, Request, RequestPhase
 from vllm_rlt.worker.executor import build_execution_batch
 

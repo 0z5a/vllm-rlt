@@ -8,11 +8,11 @@ prefill worker, or outlive the request whose ID it names.
 
 import pytest
 import torch
-from vllm_rlt.models import OuroForCausalLM
 
 from tests.helpers import tiny_ouro_config
 from vllm_rlt import CacheConfig, ExecutionConfig, SamplingParams, SchedulerConfig
 from vllm_rlt.engine.llm_engine import LLMEngine
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import RequestPhase
 
 

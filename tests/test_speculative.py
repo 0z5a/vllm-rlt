@@ -5,7 +5,6 @@ from collections import Counter
 
 import pytest
 import torch
-from vllm_rlt.models import OuroForCausalLM
 
 from tests.helpers import LocalLLM as LLM
 from tests.helpers import tiny_ouro_config
@@ -19,6 +18,7 @@ from vllm_rlt import (
 )
 from vllm_rlt.core.scheduler import ScheduledRequest, SchedulerOutput
 from vllm_rlt.engine.llm_engine import LLMEngine
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.request import Request, RequestPhase
 from vllm_rlt.worker.sampler import Sampler
 from vllm_rlt.worker.speculative import greedy_accept, rejection_sample

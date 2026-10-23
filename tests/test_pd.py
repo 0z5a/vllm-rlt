@@ -5,7 +5,6 @@ from dataclasses import replace
 
 import pytest
 import torch
-from vllm_rlt.models import OuroForCausalLM
 
 from tests.helpers import tiny_ouro_config
 from vllm_rlt import (
@@ -18,6 +17,7 @@ from vllm_rlt import (
 )
 from vllm_rlt.core.kv_cache_manager import KVCacheManager
 from vllm_rlt.engine.llm_engine import LLMEngine
+from vllm_rlt.models import OuroForCausalLM
 from vllm_rlt.pd.config import PDConfig
 from vllm_rlt.pd.transport import kv_segments, partition_segments
 from vllm_rlt.profiling import Profiler
