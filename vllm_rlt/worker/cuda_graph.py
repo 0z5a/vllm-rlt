@@ -19,29 +19,21 @@ def _query_count(batch):
 
 
 def graph_capture_sizes(execution, preferred=()):
-    """Row buckets covering the row limit within cuda_graph_max_graphs entries.
+    """Prefer full-batch shapes, then spend remaining entries on smaller rows.
 
-    The default is a halving ladder from the row limit. Preferred sizes (e.g.
-    full-batch draft and verification rows, which bound every round) are kept
-    exactly, plus a halving ladder below the smallest, so steady full-batch
-    rounds replay without padding; if that set exceeds the entry limit, the
-    default is used. Rows above the largest bucket run eager.
+    Under a tight budget retain the largest preferred shapes, including the
+    maximum reachable row count. No preferred bucket exceeds the workload's
+    range. Callers without preferred sizes use a ladder from the global limit.
     """
     limit = cuda_graph_rows(execution)
-
-    def ladder(top):
-        sizes = [top]
-        while sizes[-1] > 1 and len(sizes) < execution.cuda_graph_max_graphs:
-            sizes.append((sizes[-1] + 1) // 2)
-        return sizes
-
-    preferred = {min(size, limit) for size in preferred if size > 0}
-    if not preferred:
-        return tuple(reversed(ladder(limit)))
-    sizes = preferred | set(ladder(min(preferred)))
-    if len(sizes) > execution.cuda_graph_max_graphs or 1 not in sizes:
-        return tuple(reversed(ladder(limit)))
-    return tuple(sorted(sizes))
+    budget = execution.cuda_graph_max_graphs
+    preferred = sorted({min(size, limit) for size in preferred if size > 0})
+    sizes = preferred[-budget:] if preferred else [limit]
+    size = sizes[0]
+    while size > 1 and len(sizes) < budget:
+        size = (size + 1) // 2
+        sizes.insert(0, size)
+    return tuple(sizes)
 
 
 def speculative_capture_sizes(execution, scheduler, speculative):
@@ -70,9 +62,15 @@ def _cache_full(owner, key):
     return full
 
 
-def _capture(hidden, stream, pool, run):
+def _capture(hidden, stream, pool, run, *, startup=False):
     """Warm and capture one stable-input graph on its own stream."""
-    torch.cuda.synchronize(hidden.device)
+    if startup:
+        # Startup inputs, model/KV initialization and prior pool replays are
+        # ordered on the producer stream. Each preceding capture is drained.
+        stream.wait_stream(torch.cuda.current_stream(hidden.device))
+    else:
+        # Runtime lazy capture may encounter other in-flight users of the cache.
+        torch.cuda.synchronize(hidden.device)
     try:
         with torch.cuda.stream(stream):
             for _ in range(2):
@@ -333,6 +331,7 @@ class DeviceRecurrentGraphs(RecurrentGraphs):
                 lambda: self.model.recurrent_prepared(
                     entry.hidden, entry.metadata, proxy, compute_gate=self.compute_gate
                 ),
+                startup=True,
             )
             self.entries[size] = entry
             self.captures += 1
@@ -383,8 +382,12 @@ class CodaGraphs:
         for size in self.capture_sizes:
             hidden = parameter.new_zeros((size, self.model.config.hidden_size))
             call = self.select(hidden)
-            self.prepare_inputs(call, hidden)
-            self.execute(call, hidden)
+            self.prepare_inputs(call, hidden, startup=True)
+            # Warm replay without allocating a clone that startup discards.
+            call.entry.graph.replay()
+            self.last_event = torch.cuda.Event()
+            self.last_event.record(torch.cuda.current_stream(hidden.device))
+            call.inputs_ready = False
         self.replays = 0
 
     def select(self, hidden, batch=None):
@@ -413,7 +416,7 @@ class CodaGraphs:
         return PreparedGraph(batch, entry)
 
     @torch.inference_mode()
-    def prepare_inputs(self, call, hidden):
+    def prepare_inputs(self, call, hidden, *, startup=False):
         batch, entry = call.metadata, call.entry
         if self.cache is not None:
             self.cache._require_live_batch(batch)
@@ -439,7 +442,9 @@ class CodaGraphs:
                     if self.cache is not None
                     else (lambda: self.model.coda(entry.hidden))
                 )
-                entry.graph, entry.output = _capture(entry.hidden, self.stream, self.pool, run)
+                entry.graph, entry.output = _capture(
+                    entry.hidden, self.stream, self.pool, run, startup=startup
+                )
                 self.captures += 1
         call.inputs_ready = True
 

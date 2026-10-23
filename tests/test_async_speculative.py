@@ -687,7 +687,7 @@ def test_bucketed_graphs_reuse_all_shapes_and_never_write_padding(dtype):
     # Padding points at block zero: a real unrelated allocation must stay intact.
     assert cache.allocate("guard", 2)
     allocations = []
-    for i in range(17):
+    for i in range(16):
         rid = f"manual-{i}"
         assert cache.allocate(rid, 2)
         allocations.append((rid, cache._get_allocation(rid)))
@@ -695,7 +695,7 @@ def test_bucketed_graphs_reuse_all_shapes_and_never_write_padding(dtype):
     assert initial_captures == (3, 3)
     # Fill every bucket, then use new row counts after the cache is full. Also
     # shrink a reused bucket: its former active rows must become inert.
-    for count in (5, 9, 17, 1, 3, 6, 10, 2, 16, 1):
+    for count in (8, 12, 16, 1, 3, 6, 10, 2, 15, 1):
         table = torch.tensor(
             [a.block_tables[0] for _, a in allocations[:count]],
             device="cuda",

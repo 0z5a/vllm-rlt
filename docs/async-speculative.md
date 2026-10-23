@@ -94,12 +94,14 @@ For C=256, K=2, B>=768 and an unset row limit, the buckets include exactly
 256, 512 and 768, plus 128, 64, 32, 16, 8, 4, 2, 1. The old geometric-only set
 would instead pad 256 rows to 384 when its top was 768.
 
-If the preferred set exceeds `cuda_graph_max_graphs` or cannot include one row
-within that limit, capture falls back to a halving ladder from the resolved row
-limit. Smaller calls replay the smallest fitting bucket and return only active
-rows. Counts above the largest captured size run eager, never capture lazily.
-A lower entry limit can therefore increase padding work. The native/synchronous
-graph caches retain their existing exact-shape behavior.
+Preferred buckets take priority over smaller ladder buckets. If they exceed
+`cuda_graph_max_graphs`, keep the largest preferred sizes, including the maximum
+reachable row count. Otherwise spend remaining entries on halving below the
+smallest preferred size. For C=4, K=2, B>=12 and three entries, the buckets are
+4, 8 and 12, even with a 128-row limit; startup does not capture unreachable
+32/64/128-row buckets. Smaller calls replay the smallest fitting bucket and
+return only active rows. Counts above the largest captured size run eager.
+The native/synchronous graph caches retain their exact-shape behavior.
 
 Padding receives zero hidden states and zero context lengths. A device-resident
 active-row count guards KV scatter in the captured kernel: inactive rows do not
@@ -113,7 +115,11 @@ core graphs retain their existing exact-shape behavior.
 All speculative buckets are warmed and captured during engine construction,
 before serving requests, with zero active core rows. No speculative capture or
 cache-capacity fallback occurs for a new row count covered by the captured
-sizes. Startup capture time and memory are costs of enabling this path; coarser buckets also
+sizes. Startup pre-capture waits for its input producer stream before warmup, retains
+capture-stream drains after warmup and on failure, and skips discarded coda
+output clones. Runtime lazy capture keeps its existing device-wide readiness
+barrier. PyTorch's graph context may additionally synchronize the device.
+Startup capture time and memory are costs of enabling this path; coarser buckets also
 add padded GPU work. Native bootstrap still uses its existing lazy exact-shape
 cache, so this is not a claim that all engine paths avoid cold capture.
 
@@ -202,6 +208,30 @@ can still change numerical results and greedy continuations, as the historical
 investigation below demonstrates. The approval discloses that six commits are
 by this reviewer, so it is not an independent review of those commits; manual
 GPU evidence does not replace CI.
+
+### Startup preparation follow-up
+
+The reviewer follow-up prioritizes reachable preferred buckets, removes discarded
+startup coda clones and replaces the explicit pre-warmup device barrier with a
+producer-stream dependency only for startup. Runtime lazy capture and failure
+drains are preserved. PyTorch 2.14.1's graph context still synchronizes internally.
+
+A single H20-3e, Ouro-1.4B `574fa66c` BF16, Triton 3.8.0 startup experiment used
+C=4, K=2, token budget 16, row limit 128 and three entries. The measurement covers
+only core+coda graph construction, warmup, capture and startup replay, with model
+loading excluded and kernels prewarmed. Each arm had one warmup and six timed
+trials in three alternating A/B/C/C/B/A blocks, with no unrelated active streams.
+
+| Startup arm | Buckets | Median (ms) | Min–max (ms) |
+|---|---|---:|---:|
+| Before follow-up (`805010d`) | 32, 64, 128 | 120.6 | 115.5–142.5 |
+| All three fixes | 4, 8, 12 | 110.6 | 109.7–116.8 |
+| Fixed buckets/clones, old explicit device synchronization | 4, 8, 12 | 114.0 | 109.3–121.3 |
+
+The synchronization-only ranges overlap; its benefit is small in this workload.
+These are warmed graph-preparation costs, not full cold-start or inference
+throughput measurements. The historical H100 inference tables retain their
+original source revisions.
 
 ### Historical bucketed-path validation (`dfbb0f7`, 2026-10-16)
 

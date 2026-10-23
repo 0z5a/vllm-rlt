@@ -142,7 +142,7 @@ def test_async_graph_memory_accounts_for_every_precaptured_bucket():
     rows = sum(speculative_capture_sizes(execution, scheduler, SpeculativeConfig(2)))
     retained = rows * model.config.vocab_size * next(model.parameters()).element_size()
     assert reserve == 3 * execution.cuda_graph_memory_reserve_bytes + retained
-    # Without preferred rows the full halving ladder from the limit is prepared.
+    # Preferred rows clipped to the global limit still cover the full ladder.
     wide = SchedulerConfig(max_num_seqs=1024, max_num_batched_tokens=1 << 16)
     sizes = speculative_capture_sizes(execution, wide, SpeculativeConfig(2))
     assert max(sizes) == 128 and min(sizes) == 1
@@ -198,8 +198,89 @@ def test_speculative_buckets_keep_full_batch_rows_exact_within_entry_limit():
     rows = ExecutionConfig(async_scheduling=True, cuda_graphs=True, cuda_graph_max_batch_size=768)
     sizes = speculative_capture_sizes(rows, scheduler, SpeculativeConfig(2))
     assert {256, 512, 768} <= set(sizes) and min(sizes) == 1 and len(sizes) <= 16
-    # Too many preferred sizes for the entry limit: the default halving ladder.
+    # A tight budget retains reachable preferred sizes, including the largest.
     few = ExecutionConfig(cuda_graph_max_batch_size=17, cuda_graph_max_graphs=3)
     small = SchedulerConfig(max_num_seqs=4, max_num_batched_tokens=16)
-    assert speculative_capture_sizes(few, small, SpeculativeConfig(3)) == graph_capture_sizes(few)
+    assert speculative_capture_sizes(few, small, SpeculativeConfig(3)) == (8, 12, 16)
     assert graph_capture_sizes(few) == (5, 9, 17)
+
+
+@pytest.mark.parametrize(
+    "budget,expected",
+    [(1, (12,)), (2, (8, 12)), (3, (4, 8, 12)), (4, (2, 4, 8, 12)), (5, (1, 2, 4, 8, 12))],
+)
+def test_speculative_buckets_prioritize_reachable_rows(budget, expected):
+    from vllm_rlt import SpeculativeConfig
+    from vllm_rlt.worker.cuda_graph import speculative_capture_sizes
+
+    execution = ExecutionConfig(cuda_graph_max_batch_size=128, cuda_graph_max_graphs=budget)
+    scheduler = SchedulerConfig(max_num_seqs=4, max_num_batched_tokens=16)
+    assert speculative_capture_sizes(execution, scheduler, SpeculativeConfig(2)) == expected
+
+
+@pytest.mark.parametrize("startup", [False, True])
+@pytest.mark.parametrize("fail", [False, True])
+def test_capture_startup_orders_producer_and_always_drains(monkeypatch, startup, fail):
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+
+    from vllm_rlt.worker.cuda_graph import _capture
+
+    events = []
+    producer = object()
+    stream = SimpleNamespace(
+        wait_stream=lambda other: events.append(("wait", other)),
+        synchronize=lambda: events.append("drain"),
+    )
+    monkeypatch.setattr(torch.cuda, "current_stream", lambda device: producer)
+    monkeypatch.setattr(torch.cuda, "synchronize", lambda device: events.append("device_sync"))
+    monkeypatch.setattr(torch.cuda, "stream", lambda stream: nullcontext())
+    monkeypatch.setattr(torch.cuda, "CUDAGraph", object)
+    monkeypatch.setattr(torch.cuda, "graph", lambda *args, **kwargs: nullcontext())
+
+    def run():
+        events.append("run")
+        if fail:
+            raise RuntimeError("warmup failure")
+        return "output"
+
+    if fail:
+        with pytest.raises(RuntimeError, match="warmup failure"):
+            _capture(SimpleNamespace(device="cuda:1"), stream, None, run, startup=startup)
+    else:
+        _, output = _capture(SimpleNamespace(device="cuda:1"), stream, None, run, startup=startup)
+        assert output == "output"
+    assert events[0] == (("wait", producer) if startup else "device_sync")
+    assert events[-1] == "drain"
+    assert events.count("run") == (1 if fail else 3)
+    assert events.count("drain") == (1 if fail else 2)
+
+
+@pytest.mark.gpu
+@torch.inference_mode()
+def test_coda_startup_does_not_clone_but_serving_owns_outputs(monkeypatch):
+    from tests.helpers import tiny_ouro_model
+    from vllm_rlt.worker.cuda_graph import CodaGraphs
+
+    model = tiny_ouro_model("cuda", torch.bfloat16)
+    graphs = CodaGraphs(model, ExecutionConfig(), bucketed=True, capture_sizes=(1, 4))
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("startup cloned a discarded output")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(torch.Tensor, "clone", forbidden)
+        graphs.prepare()
+    assert graphs.captures == 2 and graphs.replays == 0
+    assert graphs.last_event is not None
+    hidden = torch.ones(3, model.config.hidden_size, device="cuda", dtype=torch.bfloat16)
+    call = graphs.select(hidden)
+    graphs.prepare_inputs(call, hidden)
+    first = graphs.execute(call, hidden)
+    saved = first.clone()
+    call = graphs.select(hidden + 1)
+    graphs.prepare_inputs(call, hidden + 1)
+    second = graphs.execute(call, hidden + 1)
+    assert first.data_ptr() != second.data_ptr()
+    assert torch.equal(first, saved)
+    torch.cuda.synchronize()
