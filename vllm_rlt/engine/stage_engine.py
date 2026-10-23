@@ -78,7 +78,9 @@ class StageEngine:
                 raise ValueError("speculative decoding requires fixed-depth ouro exit mode")
             if self.async_speculative and parameter.device.type != "cuda":
                 raise ValueError("async speculative decoding requires CUDA")
-            if scheduler_config.enable_preemption or scheduler_config.mode != "refill":
+            if scheduler_config.mode != "refill" or (
+                self.async_speculative and scheduler_config.enable_preemption
+            ):
                 raise ValueError(
                     "speculative decoding requires refill scheduling without preemption"
                 )
