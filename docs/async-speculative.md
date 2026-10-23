@@ -209,6 +209,24 @@ investigation below demonstrates. The approval discloses that six commits are
 by this reviewer, so it is not an independent review of those commits; manual
 GPU evidence does not replace CI.
 
+### Capture and cyclic garbage collection
+
+Automatic Python cyclic GC is paused only across graph capture and restored
+after the capture stream drains, including failure paths. A caller that already
+disabled GC keeps that setting. Warmup runs with the caller's GC state; there is
+no unconditional heap collection for each bucket and no change to graph replay.
+
+This prevents collection of an unreachable old `CUDAGraph` from calling
+`cudaGraphExecDestroy` while a new capture is active. That call returned CUDA
+error 900 and invalidated capture on the tested torch 2.14.1/CUDA 13 environment.
+A deterministic regression retains the old graph through context setup, makes
+it unreachable inside capture, then lowers the automatic-GC threshold. It fails
+on `866985c` and passes with the guard. The combined graph/speculative regression
+run passes 206 tests (one NIXL skip; FlashAttention variants excluded), including
+the complete async-speculative test file that previously aborted. This resolves
+the reproduced capture/GC failure; historical failed runs remain recorded in the
+PR description.
+
 ### Startup preparation follow-up
 
 The reviewer follow-up prioritizes reachable preferred buckets, removes discarded
@@ -225,7 +243,7 @@ trials in three alternating A/B/C/C/B/A blocks, with no unrelated active streams
 | Startup arm | Buckets | Median (ms) | Min–max (ms) |
 |---|---|---:|---:|
 | Before follow-up (`805010d`) | 32, 64, 128 | 120.6 | 115.5–142.5 |
-| All three fixes | 4, 8, 12 | 110.6 | 109.7–116.8 |
+| Three startup fixes (`866985c`) | 4, 8, 12 | 110.6 | 109.7–116.8 |
 | Fixed buckets/clones, old explicit device synchronization | 4, 8, 12 | 114.0 | 109.3–121.3 |
 
 The synchronization-only ranges overlap; its benefit is small in this workload.

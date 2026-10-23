@@ -284,3 +284,111 @@ def test_coda_startup_does_not_clone_but_serving_owns_outputs(monkeypatch):
     assert first.data_ptr() != second.data_ptr()
     assert torch.equal(first, saved)
     torch.cuda.synchronize()
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize("failure", [None, "warmup", "capture", "drain"])
+def test_capture_restores_gc_state_on_success_and_failure(monkeypatch, enabled, failure):
+    import gc
+    from contextlib import contextmanager, nullcontext
+    from types import SimpleNamespace
+
+    from vllm_rlt.worker.cuda_graph import _capture
+
+    previous = gc.isenabled()
+    states, drains = [], []
+
+    def synchronize():
+        drains.append(gc.isenabled())
+        if failure == "drain" and len(drains) == 2:
+            raise RuntimeError("drain failure")
+
+    @contextmanager
+    def capturing(*args, **kwargs):
+        assert not gc.isenabled()
+        yield
+
+    def run():
+        states.append(gc.isenabled())
+        phase = "capture" if len(states) == 3 else "warmup"
+        if failure == phase:
+            raise RuntimeError(f"{phase} failure")
+        return "output"
+
+    stream = SimpleNamespace(synchronize=synchronize)
+    monkeypatch.setattr(torch.cuda, "synchronize", lambda device: None)
+    monkeypatch.setattr(torch.cuda, "stream", lambda stream: nullcontext())
+    monkeypatch.setattr(torch.cuda, "CUDAGraph", object)
+    monkeypatch.setattr(torch.cuda, "graph", capturing)
+    try:
+        (gc.enable if enabled else gc.disable)()
+        if failure:
+            with pytest.raises(RuntimeError, match=f"{failure} failure"):
+                _capture(SimpleNamespace(device="cuda"), stream, None, run)
+        else:
+            _, output = _capture(SimpleNamespace(device="cuda"), stream, None, run)
+            assert output == "output"
+        assert gc.isenabled() == enabled
+        assert states[:2] == ([enabled] if failure == "warmup" else [enabled, enabled])
+        if failure != "warmup":
+            assert states[2] is False
+            assert drains[-1] is False  # Drain before restoring GC, even on failure.
+    finally:
+        (gc.enable if previous else gc.disable)()
+
+
+@pytest.mark.gpu
+@torch.inference_mode()
+def test_capture_defers_collection_of_unreachable_old_graph():
+    import gc
+    import weakref
+
+    from vllm_rlt.worker.cuda_graph import _capture
+
+    previous, thresholds = gc.isenabled(), gc.get_threshold()
+    collected_during_capture = []
+    try:
+        # Keep the old graph live through context setup, then make it unreachable
+        # during capture and force automatic GC with a low allocation threshold.
+        gc.collect()
+        gc.disable()
+        hidden = torch.ones(16, device="cuda")
+        old = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(old):
+            old_output = hidden + 1
+        old.replay()
+        torch.cuda.synchronize()
+        reference = weakref.ref(
+            old,
+            lambda _: collected_during_capture.append(torch.cuda.is_current_stream_capturing()),
+        )
+        owners = [old]
+        del old
+        gc.set_threshold(10**9, 10**9, 10**9)
+        gc.enable()
+        stream = torch.cuda.Stream()
+        pool = torch.cuda.graph_pool_handle()
+
+        def run():
+            if torch.cuda.is_current_stream_capturing():
+                cycle = [owners.pop()]
+                cycle.append(cycle)
+                del cycle
+                gc.set_threshold(1, 0, 0)
+                for _ in range(8):
+                    list(range(16))
+            return hidden + 3
+
+        graph, output = _capture(hidden, stream, pool, run)
+        gc.set_threshold(*thresholds)
+        assert gc.isenabled()
+        graph.replay()
+        torch.cuda.synchronize()
+        assert torch.equal(output, torch.full_like(hidden, 4))
+        assert torch.equal(old_output, torch.full_like(hidden, 2))
+        gc.collect()
+        assert reference() is None
+        assert collected_during_capture == [False]
+    finally:
+        gc.set_threshold(*thresholds)
+        (gc.enable if previous else gc.disable)()

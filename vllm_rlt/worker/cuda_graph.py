@@ -1,5 +1,6 @@
 """Bounded recurrent-core graphs; request bookkeeping and sampling stay eager."""
 
+import gc
 import logging
 import math
 from dataclasses import dataclass, replace
@@ -71,19 +72,29 @@ def _capture(hidden, stream, pool, run, *, startup=False):
     else:
         # Runtime lazy capture may encounter other in-flight users of the cache.
         torch.cuda.synchronize(hidden.device)
+    gc_enabled = None
     try:
         with torch.cuda.stream(stream):
             for _ in range(2):
                 run()
         stream.synchronize()
         graph = torch.cuda.CUDAGraph()
+        # Collecting an unreachable old CUDAGraph here calls cudaGraphExecDestroy,
+        # which is forbidden during capture and invalidates the new graph.
+        # Pause automatic GC only across capture; do not collect on every bucket.
+        gc_enabled = gc.isenabled()
+        gc.disable()
         with torch.cuda.graph(graph, pool=pool, stream=stream):
             output = run()
         return graph, output
     finally:
         # A failed warmup can leave KV writes on the capture stream without a
         # compute-stream event. Drain it before tensor/allocation owners unwind.
-        stream.synchronize()
+        try:
+            stream.synchronize()
+        finally:
+            if gc_enabled:
+                gc.enable()
 
 
 class _DeviceCache:
