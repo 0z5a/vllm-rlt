@@ -606,7 +606,9 @@ def test_engine_split_prefill_transition_advances_the_same_frontier_contract():
             break
         assert len(batch.requests) == 1
         scheduled_request = batch.requests[0]
-        progress = e._apply_split_prefill_progress(request, batch.phase, scheduled_request)
+        progress = e.scheduler._apply_split_prefill_progress(
+            request, batch.phase, scheduled_request
+        )
         trace.append(
             (
                 batch.phase,
