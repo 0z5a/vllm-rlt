@@ -136,7 +136,10 @@ routes a speculative selection to the local round controller. StageEngine
 constructs these objects; Executor references them rather than creating another
 model/KV owner. Runners manage preparation, buffers, stream/event dependencies,
 execution and result storage; the ordinary runner also handles sampling after
-CODA. A returned ticket does not imply device completion.
+CODA. A returned ticket does not imply device completion. The
+[sync vs async speculation timeline](async-speculative.md#timeline-synchronous-versus-asynchronous-speculation)
+shows how GPU-owned next-token state lets consecutive rounds overlap result
+readback and CPU commit within this same stage.
 
 **Shared execution and resources.** ModelRunner constructs ModelRuntime and the
 speculative controller references that same runtime. Both use the worker-loaded
@@ -376,5 +379,5 @@ and are not mixed into these charts.
 | Which loops can share a batch, and when does a request wait? | [Loop-level scheduler](scheduler.md) |
 | How are inputs prepared, transferred and executed? | [Runtime execution and configuration](runtime.md) |
 | Which KV history does a loop read, and who retains it? | [Model semantics](design.md) and [KV management](kv_cache_walkthrough.md) |
-| How do draft/verify rounds advance asynchronously? | [Asynchronous speculation](async-speculative.md) |
+| How do draft/verify rounds advance asynchronously? | [Sync vs async timeline](async-speculative.md#timeline-synchronous-versus-asynchronous-speculation) |
 | How do I launch and serve a configuration? | [First-run guide](launching.md) and [HTTP serving](serving.md) |

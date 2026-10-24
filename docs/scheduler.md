@@ -495,7 +495,10 @@ model call and keeps each chunk/depth range in its metadata.
 
 Speculative draft/verify execution uses its own round controller. Its host decision
 points and buffer ownership must be read from that controller; the ordinary
-runner timeline is not a complete speculative-round diagram.
+runner timeline is not a complete speculative-round diagram. See the
+[sync vs async speculation timeline](async-speculative.md#timeline-synchronous-versus-asynchronous-speculation)
+for CPU submission/commit, compute and copy streams, and overlapping round
+lifetimes under the two-ticket limit.
 
 | Dependency | What must be ready? | Where it is enforced |
 | --- | --- | --- |
