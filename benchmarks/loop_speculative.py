@@ -103,6 +103,12 @@ def main():
     parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument("--top-k", type=int, default=-1)
     parser.add_argument("--cuda-graph-max-batch-size", type=int, default=128)
+    parser.add_argument(
+        "--cuda-graph-max-graphs",
+        type=int,
+        default=16,
+        help="Raise it when ragged rounds exhaust the cache; check the reported fallbacks",
+    )
     args = parser.parse_args()
     if not args.model.is_dir():
         parser.error("--model must be a complete local checkpoint directory")
@@ -112,8 +118,8 @@ def main():
         parser.error("temperature must be nonnegative and top-p must be in (0, 1]")
     if args.top_k == 0 or args.top_k < -1:
         parser.error("top-k must be -1 or positive")
-    if args.cuda_graph_max_batch_size < 1:
-        parser.error("cuda-graph-max-batch-size must be positive")
+    if min(args.cuda_graph_max_batch_size, args.cuda_graph_max_graphs) < 1:
+        parser.error("cuda-graph-max-batch-size and cuda-graph-max-graphs must be positive")
     torch.set_num_threads(1)
     texts = (
         json.loads(args.prompts.read_text())
@@ -144,6 +150,7 @@ def main():
     execution = ExecutionConfig(
         cuda_graphs=args.cuda_graphs,
         cuda_graph_max_batch_size=args.cuda_graph_max_batch_size,
+        cuda_graph_max_graphs=args.cuda_graph_max_graphs,
     )
     engines = {
         name: LLMEngine(
