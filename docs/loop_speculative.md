@@ -1,10 +1,10 @@
 # Loop-level speculative execution
 
-This opt-in synchronous path implements the mixed-depth batching portion proposed
-in [Issue #43](https://github.com/ThinkFlowLab/vllm-rlt/issues/43): advance shallow work
-for later token positions in the same recurrent call as deep work for earlier
-positions. It retains the existing finite speculative window and atomic round
-commit. The default remains the original block verifier.
+This opt-in round implements the mixed-depth batching part of
+[Issue #43](https://github.com/ThinkFlowLab/vllm-rlt/issues/43): shallow work for
+later token positions runs in the same recurrent call as deeper work for earlier
+positions. It keeps the finite speculative window, the shared verifier and the
+atomic round commit. The default remains the block round.
 
 ## Enable
 
@@ -18,55 +18,16 @@ SpeculativeConfig(
 ```
 
 The offline and serving CLI accept `--speculative-tokens 4 --loop-level-pipelining`.
-Greedy-only early suffix pruning can be enabled separately with
-`--early-rejection-pruning`; it is off by default. Top-p and top-k sampling are
-supported by the same loop pipeline, but sampling still verifies the complete
-finite window before applying rejection sampling. Early pruning is intentionally
-greedy-only because greedy acceptance is a deterministic candidate/argmax
-comparison, while sampling acceptance requires the target and proposal
-distributions, random draws and ordered correction sampling.
-Existing restrictions apply: `last_exited`, full fixed target depth, synchronous
-refill scheduling, and no preemption or PD.
+The restrictions of fixed-depth self-speculation apply unchanged. The loop round
+is a drop-in replacement for the block round inside `SpeculativeRunner.submit`, so
+it composes with deferred collection, several in-flight submissions, preemption
+between rounds and CUDA graphs.
 
-The implementation has three execution choices:
+## Schedule
 
-| Mode | Recurrent schedule | Verification | Intended use |
-| --- | --- | --- | --- |
-| Baseline | Complete all draft positions, then complete target depth | One batched verifier window | Reference path and default |
-| Loop | Advance active positions one depth per mixed-depth wave | Reorder completed target rows into the common verifier | Measure mixed-depth batching |
-| Loop + greedy prune | Loop schedule with target-ready rejection checks | Stop future suffix branches after the first mismatch | Optional greedy experiment |
-
-The loop mode is a synchronous pipeline. It does not add CUDA streams, reduce the
-number of recurrent rows, or retain hidden state across speculative rounds. Its
-possible benefit comes from the shape and timing of mixed-depth batches; metadata,
-Python scheduling, Coda fragmentation and dynamic CUDA Graph shapes are additional
-costs.
-
-## Execution and state
-
-### Loop-level flow
-
-The loop path keeps one branch for each active token position. A branch carries
-its request index, token offset, recurrent hidden state and current loop depth.
-Each wave advances every active branch by one depth. When a branch reaches the
-draft depth, its coda output starts a child branch while the parent continues
-toward the target depth. When a branch reaches the target depth, its target
-logits are saved for the existing verifier.
-
-The baseline executes all draft positions before block target verification. In
-the loop schedule, after A reaches the draft depth, B starts at depth 0 while A
-continues at a deeper level; C starts two waves later. Target rows are reordered
-into the common verifier only after their corresponding branches reach target
-depth. The waves are still launched sequentially on the current host path.
-
-This PR currently implements only the synchronous finite-window path. Mixed-
-depth waves are launched sequentially from the host; there are no CUDA streams,
-asynchronous scheduler overlap, cross-round hidden-state retention, preemption,
-or PD execution. The existing `SpeculativeResult` and atomic KV commit/rollback
-boundary are intentionally preserved.
-
-For K=2, d=2 and D=4, A is the last committed input, B and C are proposals.
-Numbers below are zero-based depths; columns are successive recurrent calls.
+For K=2, d=2 (`draft_loops`) and D=4 (`target_loops`), A is the last committed
+input and B and C are proposals. Numbers are zero-based depths; columns are
+successive recurrent calls ("waves").
 
 | Input position | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -74,182 +35,120 @@ Numbers below are zero-based depths; columns are successive recurrent calls.
 | B | | | 0 | 1 | 2 | 3 | | |
 | C | | | | | 0 | 1 | 2 | 3 |
 
-After A completes depth 1, its shallow head proposes B. Call 3 batches A at
-depth 2 and B at depth 0. After B completes depth 1, it proposes C while A's
-full-depth head produces the distribution that verifies B. These head rows are
-batched too. C's full-depth distribution supplies the bonus token.
+![Baseline and loop-level speculative scheduling](assets/loop-schedule-comparison.svg)
 
-Each branch stores its item index, position offset, hidden state and completed
-loop count. A child starts d calls behind its parent. Therefore, at every layer,
-the same-depth KV for earlier positions is already available before the child's
-attention. `_prepare_batch` supplies a separate depth plane and causal context
-length for every row. The pipeline uses single-query paged attention, not packed
-multi-query prefill. No shallow KV is copied into uncomputed deep planes.
+Offset `o` enters at wave `o*d`, after its parent's draft head chose its input, and
+advances one depth per wave. A child therefore starts `d` waves after its parent,
+so at every layer the same-depth KV of earlier positions is written before the
+child attends to it. Rows use single-query paged attention with their own depth
+plane and context length; adjacent positions are never packed into one prefill
+sequence. Each position and depth is computed exactly once.
 
-Each position/depth is computed exactly once. Proposals remain on the device and
-greedy target IDs are read back once per mixed-depth wave. For sampling, the
-filtered proposal distribution `q` is retained for each draft and the common
-verifier applies rejection sampling with the request's generator from the shared
-`RngRegistry`. Different GEMM shapes and the changed draft/verify interleaving can
-change BF16 results or the fixed-seed token sequence; same-seed agreement is not a
-general sampling correctness guarantee.
+`loop_waves(token_counts, d, D)` returns the schedule. It depends only on the
+token counts of the round, never on token values, so the whole round is planned
+before any kernel runs.
 
-Completed target logits are reordered into item/position order for the common
-verifier. `SpeculativeResult` and engine commit stay unchanged: keep KV through
-the initial input and accepted candidates; invalidate every depth's rejected
-suffix; leave correction/bonus unforwarded. Engine EOS/length handling and
-exception cleanup remain responsible for the request lifecycle.
+## Execution
 
-## Scope and benefit
+- `_prepare_loop_inputs` builds every wave's KV metadata and gather/scatter
+  indices on the host and uploads them in one snapshot per dtype, like the block
+  round's `_prepare_inputs`.
+- Branch states live in one buffer whose rows follow verification order
+  (contiguous by request, then offset). Each wave gathers its rows, runs one
+  mixed-depth recurrent call and scatters the states back.
+- After a wave, only rows that reached draft depth run the head. Their IDs (and,
+  for sampling, the filtered proposal `q` and the draw) stay on the device and
+  feed the children's prelude.
+- After the last wave, one head call produces all `K+1` verification rows per
+  request. Collection is the block round's `_collect_round`, so greedy acceptance,
+  rejection sampling and the single device-to-host read are shared.
 
-The default finite-window path does **not** implement cross-round hidden-state
-retention or the complete continuous LoopSpec algorithm. The optional greedy
-pruning path checks a target row when its coda output is ready and skips later
-suffix branches after rejection. Work that already entered the mixed-depth wave
-cannot be cancelled. Sampling still runs the complete window before
-verification. Greedy target and draft IDs are read back once per mixed-depth
-wave; the host-side rejection decision remains the pruning synchronization
-boundary. No new CUDA streams or asynchronous scheduler are introduced.
+Both rounds consume each request's generator in the same order: drafts by
+offset, then verification. On CPU in FP32 the two rounds produce identical tokens
+for the same seeds. On GPU in BF16 the two rounds run GEMMs with different row
+counts, which can select different kernels and round differently, so near-tied
+argmax or sampling decisions can diverge (see the measurements). This is the
+same class of difference as between batch sizes in ordinary decoding.
 
-### Why pruning is greedy-only
+Greedy early-rejection pruning is not supported: deciding per wave whether to
+start a child needs a host readback every wave, which the asynchronous
+submission path does not allow.
 
-For greedy decoding, a target row produces one deterministic token ID. Once that
-ID is available, the runner can compare it with the candidate and stop creating
-later branches for that request after the first mismatch. The already submitted
-rows still finish, but suffix rows that have not entered a wave are avoided.
+## Cost model
 
-Top-p and top-k use rejection sampling. Acceptance depends on the filtered target
-distribution `p`, the filtered draft distribution `q`, and a random uniform draw;
-on rejection, the correction token is drawn from `normalize(max(p - q, 0))`.
-A target argmax mismatch is therefore not equivalent to rejection: a candidate
-can differ from the target argmax and still be accepted, while a candidate that
-matches the argmax can still be rejected by the random draw. Applying the full
-decision as soon as each target row is ready would also require retaining every
-proposal distribution, preserving the request's RNG order, sampling a residual
-correction token, and invalidating all descendants generated from the rejected
-candidate. The current sampling path instead computes the finite window and
-applies the existing verifier in order, preserving its distribution and RNG
-behavior. Device-side batched acceptance can support sampling pruning in a later
-change.
+For a uniform round (every request has `K+1` rows), both rounds launch the same
+number of recurrent calls, `d*K + D`, over the same `(K+1)*D*C` rows for `C`
+requests. Only the row counts per call differ. With K=4, d=2, D=4:
 
-For a uniform window, both the original block verifier and this pipeline require
-`d*K + D` recurrent calls and `(K+1)*D` recurrent rows. Pipelining changes batch
-shapes and head batching, not total recurrent work or that critical path. Its
-cost also includes extra per-step metadata preparation and loss of the original
-verifier's packed FA4 attention. Speedup must be measured; mixing depths alone
-does not guarantee an improvement. Reducing round bubbles or wasted suffix work
-would require a follow-up design for acceptance and state lifetime.
+| Round | Recurrent calls by row count |
+| --- | --- |
+| Block | 10 calls of `C` rows (drafts), 2 calls of `5C` rows (verification) |
+| Loop | 4 calls of `C` rows, 8 calls of `2C` rows |
 
-## Correctness checks for Issue #43
+With `c(M)` the cost of one recurrent call over `M` rows, the loop round is faster
+only if `c(5C) - c(C) > 4 * (c(2C) - c(C))`. If `c` is affine in `M` — flat when
+weight-bandwidth bound, linear when compute bound — both sides are equal, so the
+schedule has no intrinsic advantage. Gains and losses come from where GEMM kernel
+selection changes `c(M)` between `C`, `2C` and `5C`, which depends on the GPU,
+the BLAS library and the model shape. Treat the mode as hardware-specific and
+measure it on the target deployment.
 
-The fixed-input oracle test runs the same token chain through native serial
-full-depth execution and the reuse path. It compares every loop-2 hidden row,
-every depth/layer KV row and the final target logits, and checks max absolute
-error, RMS error and target argmax mismatch rate in the assertion contract. The
-FP32 case is used to diagnose indexing or dependency mistakes; the BF16 case uses
-relaxed numerical tolerances to assess real model behavior.
+Two configuration effects can masquerade as schedule gains:
 
-Free greedy generation is checked at `K=1/2/4/8`, with the existing ragged
-single-request cases and an eight-request batch. The test requires exact token
-and exit-depth agreement with native generation and reports the first divergent
-position in the failure message. Sampling is checked independently with small
-analytical distributions after applying the actual top-p and top-k filters; the
-empirical samples must match the filtered target distribution within the
-sampling tolerance. Fixed-seed text equality is not required for sampling.
+- `cuda_graph_max_batch_size`: the block round's verification calls have `5C`
+  rows and fall back to eager execution once `5C` exceeds the limit, while the
+  loop round's `2C`-row waves still replay graphs.
+- `cuda_graph_max_graphs`: ragged rounds near the end of generation produce more
+  distinct wave sizes in the loop round and can exhaust the graph cache.
 
-In the focused 16,000-draw check, the maximum absolute deviation from the
-filtered target distribution was 0.003085 for top-p and 0.002593 for top-p plus
-top-k; the corresponding RMS deviations were 0.001781 and 0.001368. Both are
-below the test tolerance of 0.02.
+The benchmark reports graph fallbacks for both rounds; compare runs where both
+are zero.
 
-```bash
-python -m pytest -q tests/test_speculative.py \
-  -k 'reused_hidden_logits or issue43_greedy or filtered_top_p'
-```
+## Measurements (RTX 5090)
 
-## Parameters and results
+Ouro-1.4B (`574fa66c`), BF16, Triton attention, CUDA graphs with
+`--cuda-graph-max-batch-size 1024 --cuda-graph-max-graphs 128` (no fallbacks in
+either round), K=4, d=2, D=4, 16 prompts cycled over C requests, 128 new tokens,
+7 alternating paired repeats; torch 2.13.0+cu130, Triton 3.7.1, driver 580.
 
-The reference measurements use an Ouro-1.4B checkpoint on an NVIDIA A100-SXM4-40GB,
-BF16, Triton attention, CUDA Graphs, `K=4`, `draft_loops=2`, `target_loops=4`,
-32 generated tokens and three timed repetitions per point. The benchmark compares
-the original block verifier with the loop pipeline using the same prompts and
-prefill barrier. Throughput is aggregate committed decode throughput across all
-concurrent requests, measured in output tokens per second (`output tok/s`).
-It counts generated output tokens only, excludes prompt/prefill tokens and is
-not a per-request rate.
+Per-round time compares the schedules directly. Committed throughput also
+depends on acceptance, which differs once BF16 outputs diverge.
 
-For C=1 through C=64, the CUDA Graph limit is 128. The C=128 rows use limit 256
-because the loop's largest mixed-depth wave is approximately `2C` rows. The C=64
-wave is at most 128 rows and therefore remains within the default limit.
+| C | Block ms/round | Loop ms/round | Round-time ratio | `c(M)` prediction | Throughput ratio | Acceptance block / loop | Diverged request trials |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 44.80 | 52.97 | 0.846 | 0.846 | 0.846 | 0.884 / 0.884 | 0 / 7 |
+| 4 | 56.24 | 58.98 | 0.953 | 0.955 | 0.926 | 0.839 / 0.800 | 21 / 28 |
+| 8 | 59.26 | 61.28 | 0.967 | 0.980 | 1.024 | 0.804 / 0.828 | 28 / 56 |
+| 16 | 63.39 | 59.97 | 1.057 | 1.227 | 1.028 | 0.824 / 0.822 | 63 / 112 |
+| 32 | 63.13 | 63.14 | 1.000 | 1.067 | 1.088 | 0.800 / 0.836 | 126 / 224 |
+| 64 | 75.45 | 80.56 | 0.937 | 0.922 | 0.910 | 0.823 / 0.829 | 280 / 448 |
 
-### Greedy
+Ratios are block time over loop time (above 1 means the loop round is faster).
+Bootstrap 95% intervals of the paired throughput ratio are narrower than ±0.01
+at every point. Every repeat replays the same prompts and seeds, so these
+intervals reflect timing jitter only, not prompt or seed variance. C=128 did not fit with two resident engines on the 32 GB card.
 
-| Concurrency | Baseline (output tok/s) | Loop (output tok/s) | Change | Loop + greedy prune (output tok/s) | Change |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 58.6 | 56.9 | -2.8% | 66.7 | +13.9% |
-| 4 | 217.1 | 214.7 | -1.1% | 215.5 | -0.7% |
-| 8 | 420.3 | 409.8 | -2.5% | 412.0 | -2.0% |
-| 16 | 790.7 | 780.3 | -1.3% | 782.8 | -1.1% |
-| 32 | 1319.5 | 1473.7 | +11.7% | 1465.0 | +10.4% |
-| 64 | 2428.5 | 2648.4 | +9.1% | 2628.8 | +7.9% |
-| 128 | 4085.1 | 4229.6 | +3.5% | 4203.6 | +3.1% |
+The prediction uses a linear-layer-only proxy: graph-replayed time of all
+linear layers of one recurrent pass for M rows (`c(1)=1.90`, `c(2..16)≈2.66`,
+`c(20..32)≈2.0`, `c(64)=2.14`, `c(80..192)≈3.0-3.3`, `c(256)=4.46`,
+`c(320)=4.77`, `c(640)=7.94` ms). It excludes attention, norms and the head,
+so it matches best at small C. Nsight Compute shows the steps come from kernel
+selection: M=1 uses a GEMV kernel, M=2-16 a 16x16 WMMA GEMM that is about 48%
+slower, M=20-32 a split-K 32x32 WMMA GEMM that is faster than the GEMV, and M=80
+switches to a larger tile again.
 
-The additional greedy counters show where pruning saves work:
+Top-p (temperature 0.8, top-p 0.8, fixed per-request seeds):
 
-| Concurrency | Loop verified rows / committed tokens | Loop + prune verified rows / committed tokens | Loop peak allocated (GB, decimal) |
-| ---: | ---: | ---: | ---: |
-| 1 | 40 / 32 | 32 / 32 | 2.99 GiB |
-| 4 | 144 / 128 | 128 / 128 | 3.23 GiB |
-| 8 | 288 / 256 | 256 / 256 | 3.54 GiB |
-| 16 | 576 / 512 | 512 / 512 | 4.18 GiB |
-| 32 | 1152 / 1024 | 1024 / 1024 | 5.42 GiB |
-| 64 | 2304 / 2048 | 2048 / 2048 | 7.90 GiB |
-| 128 | 4608 / 4096 | 4096 / 4096 | 12.88 GiB |
+| C | Block ms/round | Loop ms/round | Round-time ratio | Throughput ratio |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 47.72 | 56.43 | 0.846 | 0.846 |
+| 16 | 73.52 | 71.97 | 1.021 | 0.985 |
+| 64 | 123.66 | 128.16 | 0.965 | 0.965 |
 
-### Sampling
-
-Sampling uses `temperature=0.8`, `top_p=0.8`, with `top_k=-1` for top-p and
-`top_k=7` for top-p + top-k. Early pruning is disabled. The C=128 rows use
-CUDA Graph max 256; all other rows use max 128.
-
-| Concurrency | Top-p baseline (output tok/s) | Top-p loop (output tok/s) | Change | Top-p + top-k baseline (output tok/s) | Top-p + top-k loop (output tok/s) | Change |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 61.9 | 58.5 | -5.5% | 51.6 | 46.8 | -9.4% |
-| 4 | 205.1 | 159.9 | -22.0% | 139.7 | 137.8 | -1.3% |
-| 8 | 295.4 | 330.2 | +11.8% | 236.3 | 254.2 | +7.5% |
-| 16 | 523.8 | 492.9 | -5.9% | 417.2 | 393.2 | -5.8% |
-| 32 | 662.2 | 723.9 | +9.3% | 519.3 | 532.2 | +2.5% |
-| 64 | 876.7 | 914.1 | +4.3% | 625.2 | 646.8 | +3.5% |
-| 128 | 1046.6 | 940.0 | -10.2% | 727.1 | 801.2 | +10.2% |
-
-The benchmark JSON also records median/min/max decode time, peak allocated
-memory, recurrent rounds, drafted/accepted tokens, verified rows and the first
-divergent output position. Greedy runs have identical outputs at every point;
-sampling divergence is expected when the same request generator is consumed in
-a different draft/verify order. It is not used as a distribution-correctness
-criterion.
-
-The results are workload-dependent. Loop-level scheduling does not reduce the
-number of recurrent rows; its potential benefit comes from mixed-depth batch
-shapes and device utilization. Metadata preparation, Python scheduling, Coda
-fragmentation and graph capture shape can outweigh that benefit. For example,
-the greedy loop reduces verified rows from 4608 to 4096 at C=128 only when
-early pruning is enabled, while the non-pruned loop keeps the same recurrent
-row count as baseline. The sampling rows also show that acceptance rate and
-round count change with the sampled path, so throughput should be read together
-with the recorded counters.
-
-In summary, the synchronous loop path is a clear win only at selected higher
-concurrency points: greedy throughput improves by 3-12% from C=32 in this
-benchmark, while low-concurrency runs regress by about 1-3%. Greedy pruning is
-strongest for a single request with an early mismatch (+13.9% at C=1), but adds
-little at larger batches because work already submitted in the current wave
-cannot be cancelled. Sampling remains workload-sensitive, ranging from a 22%
-regression to a 12% improvement for top-p and from a 9% regression to a 10%
-improvement for top-p plus top-k. These results show that mixed-depth scheduling
-alone does not guarantee a speedup; asynchronous overlap, state retention,
-device-side acceptance and more efficient dynamic compaction remain follow-up
-work.
+With the graph batch limit at 128 and C=32, the block round's 160-row
+verification calls fall back to eager (448 recurrent fallbacks) and its round
+time rises from 63.13 to 66.0 ms, while the loop round stays at 63.01 ms: a 4.7%
+"gain" that is entirely the graph limit.
 
 ## Validation
 
@@ -259,51 +158,37 @@ python -m ruff check .
 python -m ruff format --check vllm_rlt tests benchmarks
 
 # On an allocated CUDA device with Triton:
-python -m pytest -q tests/test_speculative.py --run-gpu -m gpu -k 'not flash_attn_4'
+python -m pytest -q --run-gpu -m gpu -k 'not flash_attn_4' \
+  tests/test_speculative.py tests/test_loop_speculative.py
 ```
 
-Tests exercise mixed depths including non-divisible d/D, actual hidden/logit/KV
-agreement against a serial reference, every rejection boundary and bonus,
-greedy/sampling batches, K=1/2/4/8, shortened windows, EOS, prefix reuse,
-incremental allocation, cancellation and partial execution failure. CUDA coverage
-checks eager/graph parity and one greedy readback per round.
+`tests/test_speculative.py` runs the existing speculative contracts in both modes:
+native greedy agreement with ragged rounds and budgets, the serial hidden/logit/KV
+oracle, every rejection boundary and bonus, EOS, prefix reuse and incremental
+allocation, seeded sampling, preemption between rounds, split prefill, deferred
+collection, several in-flight submissions, and CUDA graph/eager parity.
+`tests/test_loop_speculative.py` checks the schedule itself, per-round equivalence
+with the block round (results, verification logits, KV and stats) for d=1/2/3 and
+sampling, the head calls inside the loop, CLI/config handling, failure cleanup and
+rollback.
 
-The focused Issue #43 checks can be run without the full suite:
-
-```bash
-python -m pytest -q tests/test_speculative.py \
-  -k 'reused_hidden_logits or issue43_greedy or filtered_top_p'
-```
-
-For a bounded real-checkpoint feasibility run:
+Paired benchmark:
 
 ```bash
 python -m benchmarks.loop_speculative \
-  --model /path/to/local/Ouro-1.4B \
-  --cuda-graphs --k 4 --concurrency 1 --new-tokens 32 --repeats 3 \
-  --output /tmp/loop-speculative.json
-
-# Sampling variant (top-p + top-k):
-python -m benchmarks.loop_speculative \
-  --model /path/to/local/Ouro-1.4B \
-  --cuda-graphs --k 4 --concurrency 8 --new-tokens 32 --repeats 3 \
-  --temperature 0.8 --top-p 0.8 --top-k 7 \
-  --output /tmp/loop-speculative-top-p-top-k.json
+  --model /path/to/local/Ouro-1.4B --prompts prompts.json \
+  --cuda-graphs --cuda-graph-max-batch-size 1024 --cuda-graph-max-graphs 128 \
+  --k 4 --concurrency 16 --new-tokens 128 --repeats 7 \
+  --output /tmp/loop-speculative-c16.json
 ```
 
-The harness warms both engines, completes a common prefill barrier before timing,
-ignores EOS to commit equal work, synchronizes timing boundaries, alternates trial
-order, and saves raw timings, outputs, first divergences and runtime metadata.
-For large loop batches, `--cuda-graph-max-batch-size 256` allows Graph capture of
-the 2C mixed-depth wave when C=128; the default is 128.
-`--prompts` accepts a JSON list of strings; `--backend flash_attn_4` requires
-compatible hardware. Peak memory includes both resident engines; the recorded
-checkpoint config hash is not a weight hash. These checks cover fixed-input
-reuse and sampling distribution contracts, but do not replace Issue #43's
-long-context, serving-latency or full BF16 acceptance matrix.
+Both engines share one resident model. Prefill is excluded, trial order
+alternates and every request has a fixed seed, so sampled arms draw the same
+random numbers. The report contains the median of per-repeat paired ratios with a
+bootstrap interval, quartiles, per-round time, acceptance, CUDA graph counters,
+first divergent output positions and raw trials. Peak memory includes both
+engines; the checkpoint config hash is not a weight hash.
 
-Raw benchmark JSON is stored under `artifacts/loop-speculative/`; the extended
-run notes include the runtime metadata and per-repetition timings. This work is
-an opt-in implementation of the loop-level direction in Issue #43; it does not
-claim that mixed-depth scheduling reduces total recurrent work or improves every
-hardware and workload combination.
+This mode does not reduce recurrent work or the round's critical path, and does
+not implement cross-round hidden-state retention or the continuous LoopSpec
+algorithm from Issue #43.

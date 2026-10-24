@@ -13,7 +13,6 @@
     .draft { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.5; }
     .deep { fill: #fef3c7; stroke: #d97706; stroke-width: 1.5; }
     .verify { fill: #dcfce7; stroke: #16a34a; stroke-width: 1.5; }
-    .prune { fill: #fee2e2; stroke: #dc2626; stroke-width: 1.5; }
     .arrow { fill: none; stroke: #64748b; stroke-width: 2; marker-end: url(#arrow); }
     .thin-arrow { fill: none; stroke: #94a3b8; stroke-width: 1.5; marker-end: url(#arrow); }
   </style>
@@ -87,9 +86,9 @@
   <path class="thin-arrow" d="M652 521 C690 530 675 570 682 580"/>
 
   <rect class="verify" x="1010" y="440" width="125" height="42" rx="7"/>
-  <text class="small" x="1072" y="466" text-anchor="middle">reorder + verify</text>
+  <text class="small" x="1072" y="466" text-anchor="middle">one head + verify</text>
   <path class="arrow" d="M982 581 C1010 581 990 461 1010 461"/>
-  <text class="small" x="1010" y="525">target rows arrive</text>
+  <text class="small" x="1010" y="525">after the last wave</text>
 
   <rect class="draft" x="72" y="638" width="18" height="18" rx="3"/>
   <text class="small" x="98" y="652">shallow / draft depth</text>
@@ -97,5 +96,4 @@
   <text class="small" x="278" y="652">deep / target depth</text>
   <rect class="verify" x="430" y="638" width="18" height="18" rx="3"/>
   <text class="small" x="456" y="652">common verifier and commit</text>
-  <text class="small" x="760" y="652">Early prune: only unscheduled suffix branches can be removed.</text>
 </svg>
