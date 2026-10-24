@@ -3,9 +3,11 @@
 Each case runs C requests of exactly L real prompt tokens (Ouro-tokenized
 HotpotQA/2Wiki plain prompts, concatenated and left-truncated to L) with greedy
 decoding, ignore_eos and a fixed number of output tokens, always 4 loops.
-Decode throughput = C * (T - 1) / (t_done - t_first), where t_first is the first
-engine step after which every request has its first token (prefill complete) and
-t_done is when all have finished. Arms run in fresh processes, interleaved per repeat.
+Decode throughput = (tokens generated after t_first) / (t_done - t_first), where
+t_first is the first engine step after which every request has its first token
+(prefill complete) and t_done is when all have finished. Tokens that early requests
+generate while later prompts still prefill fall before t_first and are not counted.
+Arms run in fresh processes, interleaved per repeat.
 
 Arms (all Triton unless noted; graph arms use CUDA graphs up to the case batch)
   dense_eager  synchronous eager decode
