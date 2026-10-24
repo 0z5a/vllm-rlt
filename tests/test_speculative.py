@@ -449,6 +449,32 @@ def test_probability_filters_match_expected_and_apply_strict_top_k():
 
 
 @pytest.mark.parametrize(
+    "params",
+    [
+        SamplingParams(temperature=0.8, top_p=0.8),
+        SamplingParams(temperature=0.8, top_k=3, top_p=0.9),
+    ],
+)
+def test_rejection_sampling_respects_filtered_top_p_and_top_k(params, record_property):
+    """The acceptance rule targets the filtered p distribution, not raw logits."""
+    target_logits = torch.tensor([3.0, 2.1, 1.5, 0.4, -0.2, -1.0])
+    proposal_logits = torch.tensor([1.0, 2.8, 2.0, 1.2, 0.5, -0.5])
+    p = Sampler.probabilities(target_logits, params)
+    q = Sampler.probabilities(proposal_logits, params)
+    generator = torch.Generator().manual_seed(9173)
+    counts = torch.zeros_like(p)
+    for _ in range(16000):
+        candidate = int(torch.multinomial(q, 1, generator=generator))
+        token, _ = rejection_sample(candidate, p, q, generator)
+        counts[token] += 1
+    empirical = counts / counts.sum()
+    error = empirical - p
+    record_property("distribution_max_abs_error", float(error.abs().max()))
+    record_property("distribution_rms_error", float(error.square().mean().sqrt()))
+    torch.testing.assert_close(empirical, p, atol=0.02, rtol=0)
+
+
+@pytest.mark.parametrize(
     "kwargs",
     [
         dict(cache_config=CacheConfig(layout="shared")),
