@@ -8,13 +8,11 @@ uneven, without making chunks larger and reducing scheduling opportunities.
 
 ![Split prefill compared with wavefront chunked prefill](assets/Split-prefill-vs-wavefront-chunked-prefill.png)
 
-The figure is a dependency-level illustration, not an exact trace of current
-`ExecutionBatch` submissions. The current runner requires one operation per
-batch: PRELUDE ranges and RECURRENT ranges are submitted separately. Ordinary
-prefill can also execute its selected range through all recurrent depths in one
-plan. Actual submission counts depend on scheduler mode, token budget, and ready
-work; the numbered batches in the figure should not be read as measured latency
-or a fixed runtime schedule.
+The current runner requires one operation per batch: PRELUDE ranges and RECURRENT
+ranges are submitted separately. Ordinary prefill can also execute its selected range
+through all recurrent depths in one plan. Actual submission counts depend on scheduler
+mode, token budget, and ready work; the numbered batches in the figure should not be
+read as measured latency or a fixed runtime schedule.
 
 ## Execution model
 
