@@ -119,15 +119,10 @@ class ExecutionConfig:
     # Select packed prefill metadata staging (and require packed attention).
     # The historical name is retained; use_uva controls its transfer mechanism.
     prefill_uva: bool = False
-    # Split prompt prefill into staged PRELUDE and recurrent scheduling boundaries.
-    # Atomic prefill runs each prompt chunk to full depth in one submission.
-    atomic_prefill: bool = True
-
     def __post_init__(self):
         for name in (
             "prefill_uva",
             "use_uva",
-            "atomic_prefill",
             "async_scheduling",
             "multi_stream",
             "static_buffers",

@@ -77,10 +77,10 @@ the controller uses the same `ModelRuntime` for PRELUDE, RECURRENT and CODA.
 It retains its own draft/verify ordering, candidate state and acceptance logic.
 There is no cross-stage handoff for each speculative step.
 
-Prompt bootstrap uses the ordinary runner. Refill scheduling can use atomic
-prefill or `atomic_prefill=False` to yield between prompt loops. PD can import
-the completed prompt into the decode stage. These combinations do not enable
-mixed scheduling of prompt rows with speculative verification rows.
+Prompt bootstrap uses the ordinary runner. Refill scheduling returns to the
+scheduler after each prompt chunk, where ready speculative work can be selected.
+PD can import the completed prompt into the decode stage. These combinations do
+not enable mixed scheduling of prompt rows with speculative verification rows.
 
 
 The synchronous runner reads the acceptance result before constructing the next

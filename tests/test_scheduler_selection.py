@@ -21,7 +21,7 @@ def model():
     return OuroForCausalLM(tiny_ouro_config())
 
 
-def engine(max_num_seqs=2, atomic_prefill=True, **scheduler_options):
+def engine(max_num_seqs=2, **scheduler_options):
     return LLMEngine(
         model(),
         cache_config=CacheConfig(64, 2),
@@ -30,7 +30,7 @@ def engine(max_num_seqs=2, atomic_prefill=True, **scheduler_options):
             enable_preemption=True,
             **scheduler_options,
         ),
-        execution_config=ExecutionConfig(atomic_prefill=atomic_prefill),
+        execution_config=ExecutionConfig(),
     )
 
 
@@ -41,7 +41,7 @@ def params(max_tokens=5):
 @pytest.mark.parametrize("wavefront", [False, True])
 def test_batch_selection_is_never_preempted_by_a_later_item(monkeypatch, wavefront):
     """Selecting A must stop B's capacity failure from evicting A."""
-    e = engine(atomic_prefill=not wavefront, wavefront_chunked_prefill=wavefront)
+    e = engine(wavefront_chunked_prefill=wavefront)
     for name in ("a", "b"):
         e.add_request(name, [1, 2], params())
     e.scheduler._admit()
@@ -54,7 +54,7 @@ def test_batch_selection_is_never_preempted_by_a_later_item(monkeypatch, wavefro
 
 
 def test_wavefront_does_not_schedule_a_candidate_preempted_during_selection(monkeypatch):
-    e = engine(atomic_prefill=False, wavefront_chunked_prefill=True, prefill_chunk_size=2)
+    e = engine(wavefront_chunked_prefill=True, prefill_chunk_size=2)
     for name in ("a", "b"):
         e.add_request(name, [1, 2, 3, 4], params())
     e.scheduler._admit()
@@ -126,10 +126,9 @@ def test_reused_request_id_is_not_protected_by_the_previous_request():
 
 
 @pytest.mark.parametrize("boundary", [RequestPhase.PRELUDE, RequestPhase.CODA])
-@pytest.mark.parametrize("atomic_prefill", [True, False], ids=["atomic", "split"])
-def test_refill_runs_boundary_restored_during_admission(boundary, atomic_prefill):
+def test_refill_runs_boundary_restored_during_admission(boundary):
     """A sole resumed boundary must run in the admission step that restores it."""
-    e = engine(max_num_seqs=1, atomic_prefill=atomic_prefill)
+    e = engine(max_num_seqs=1)
     e.add_request("resumed", [1, 2], params(max_tokens=3))
     request = e.scheduler.requests["resumed"]
     for _ in range(20):

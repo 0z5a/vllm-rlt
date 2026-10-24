@@ -106,32 +106,37 @@ Ordinary and speculative runners share the model runtime without sharing their
 progress-control algorithms.
 
 `ExecutionBatch.loop_count` describes the recurrence included in a submission.
-PRELUDE can include subsequent recurrent loops; RECURRENT can advance several
-depths while loading and storing hidden state once. Only the final gate is
-returned from such a multi-loop call. A caller needing an exit decision after
-each depth must yield at those boundaries. Atomic prefill runs every depth of a
-prompt chunk locally through the same submission path.
+The scheduler sets it for each batch: ordinary prompt chunks execute their full
+depth locally, WCPB returns after each depth to regroup ready chunks, and a mixed
+prompt/decode recurrent batch returns after one depth for exit decisions and
+progress updates. When mixed mode has no ready decode work to join, prompt
+PRELUDE can include the full recurrence in the same submission. RECURRENT can
+advance several depths when the selected prompt frontier permits it.
 
-Speculation with refill scheduling can use loop-yielding chunked prefill through
-`ExecutionConfig(atomic_prefill=False)`. This does not allow speculative verification
-rows in mixed batches; see [speculative constraints](#fixed-loop-self-speculative-decoding).
+Speculation with refill scheduling is scheduled at prompt-chunk boundaries and
+does not require a prefill switch. It does not allow speculative verification
+rows in mixed batches; see
+[speculative constraints](#fixed-loop-self-speculative-decoding).
 
 ```python
 scheduler_config = SchedulerConfig(
     mode="mixed", max_num_seqs=8, max_num_batched_tokens=128,
     prefill_chunk_size=64,
 )
-execution_config = ExecutionConfig(atomic_prefill=False)
+execution_config = ExecutionConfig()
 ```
 
-CLI and serving accept `--mode mixed --no-atomic-prefill`. Mixed selects compatible recurrent work; WCPB can also combine prompt and decode PRELUDE rows, while CODA remains separate.
+`ExecutionConfig` controls execution resources; the scheduler derives the
+recurrent boundary from the selected batch. Mixed selects compatible recurrent
+work; WCPB can also combine prompt and decode PRELUDE rows, while CODA remains
+separate.
 See [batch selection and feedback](scheduler.md#detail-mixed-loop-selection-and-feedback)
 for the selection order, shared budget and per-request progress.
 
 ### Wavefront chunked prefill
 
 `SchedulerConfig(wavefront_chunked_prefill=True)` opts into WCPB and requires
-`ExecutionConfig(atomic_prefill=False)` plus LAST_EXITED KV. It can run with
+LAST_EXITED KV. It can run with
 refill or mixed scheduling. When combined with speculation, use refill mode;
 speculation cannot use preemption.
 
@@ -149,11 +154,11 @@ not shorten prompt prefill. Prefix reuse, preemption, PD export, and async
 execution follow the same full-depth frontier. CUDA Graph handling remains on
 the existing recurrent paths; WCPB does not add a new graph mode.
 
-Enable it from the CLI with `--no-atomic-prefill --wavefront-chunked-prefill`.
+Enable it from the CLI with `--wavefront-chunked-prefill`.
 Combine it with `--mode mixed` when prompt and decode recurrent work should share
 compatible batches; the wavefront option also works without mixed scheduling.
 
-This policy requires non-atomic prompt scheduling and LAST_EXITED KV. Speculative
+This policy requires staged prompt state and LAST_EXITED KV. Speculative
 rounds are scheduled separately from mixed recurrent batches. Existing model
 restrictions still apply.
 Mixed graphs and asynchronous device execution have regression cases marked
@@ -227,8 +232,9 @@ for the design.
 
 SHARED retains one physical KV plane and completes every loop for a prompt
 position before advancing that request. It is not interchangeable with packed,
-depth-major LAST_EXITED prefill. SHARED requires atomic prompt execution; split
-prefill and mixed scheduling require LAST_EXITED. See the
+depth-major LAST_EXITED prefill. SHARED supports full-depth prompt batches;
+mixed and wavefront scheduling require LAST_EXITED because they can create staged
+prompt work. See the
 [prefill ordering example](kv_layout_computation.md#5-prefill-execution-order)
 for the causal-history difference and its capacity implications.
 

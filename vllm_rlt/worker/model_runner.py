@@ -158,6 +158,7 @@ class ModelRunner:
         exit_config=None,
         execution_config=None,
         scheduler_config=None,
+        staged_prefill=None,
         rng: RngRegistry | None = None,
     ):
         self.model = model.eval()
@@ -210,7 +211,6 @@ class ModelRunner:
                 torch.nn.init.zeros_(head.bias)
             self.lookahead_head = head.to(device=self.device, dtype=parameter.dtype).eval()
             self.lookahead_head.requires_grad_(False)
-        self.split_prefill = not self.execution_config.atomic_prefill
         self.core_stream = self.boundary_stream = self.copy_stream = self.readback_stream = None
         if self.device.type == "cuda":
             self.core_stream = torch.cuda.Stream(device=self.device)
@@ -260,14 +260,17 @@ class ModelRunner:
         self.states = None
         # Prompt hidden states staged between split-prefill scheduling boundaries.
         # Sized by the same helper the memory plan reserves with.
-        stage_rows = prefill_stage_rows(model.config, scheduler, self.execution_config)
+        stage_rows = prefill_stage_rows(
+            model.config, scheduler, staged_prefill=staged_prefill
+        )
+        self.staged_prefill = stage_rows > 0
         self.prefill_states = (
             torch.empty(
                 (scheduler.max_num_seqs, stage_rows, model.config.hidden_size),
                 device=self.device,
                 dtype=parameter.dtype,
             )
-            if self.split_prefill
+            if self.staged_prefill
             else None
         )
         prefill_rows = scheduler.max_num_batched_tokens
@@ -279,7 +282,7 @@ class ModelRunner:
                 device=self.device,
                 dtype=parameter.dtype,
             )
-            if self.split_prefill
+            if self.staged_prefill
             else None
         )
         self.batch_input_buffers = (
@@ -295,7 +298,7 @@ class ModelRunner:
                 )
                 for _ in range(MAX_CONCURRENT_SUBMISSIONS)
             ]
-            if self.split_prefill
+            if self.staged_prefill
             else []
         )
         # Immutable prompt rows are filled once per request/runner-slot lifetime.
@@ -306,7 +309,7 @@ class ModelRunner:
                 torch.int64,
                 self.device,
             )
-            if self.split_prefill
+            if self.staged_prefill
             else None
         )
         self.prompt_token_owners = {}

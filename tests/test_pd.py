@@ -116,8 +116,7 @@ def drain(engine):
     return outputs
 
 
-@pytest.mark.parametrize("wavefront", [False, True])
-def test_pd_split_transfer_uses_chunk_origin_after_budget_contention(monkeypatch, wavefront):
+def test_pd_wavefront_transfer_uses_chunk_origin_after_budget_contention(monkeypatch):
     from contextlib import nullcontext
     from types import SimpleNamespace
 
@@ -142,9 +141,9 @@ def test_pd_split_transfer_uses_chunk_origin_after_budget_contention(monkeypatch
             max_num_seqs=2,
             max_num_batched_tokens=5,
             prefill_chunk_size=4,
-            wavefront_chunked_prefill=wavefront,
+            wavefront_chunked_prefill=True,
         ),
-        execution_config=ExecutionConfig(atomic_prefill=False),
+        execution_config=ExecutionConfig(),
         stage_config=StageConfig(role="prefill"),
     )
     transport = SimpleNamespace(inflight_bytes=0, busy=lambda tid: False)
@@ -178,39 +177,18 @@ def test_pd_split_transfer_uses_chunk_origin_after_budget_contention(monkeypatch
         )
         assert step() and connector.prefill_tokens == 0
 
-    if wavefront:
-        for _ in range(30):
-            if len(transfers) == 2:
-                break
-            assert step()
-        else:
-            pytest.fail("wavefront transfer did not complete")
-        assert any(
-            (item.token_start, item.token_count, item.chunk_start) == (1, 3, 0)
-            for batch in batches
-            for item in batch.requests
-            if item.request.request_id == "a"
-        )
+    for _ in range(30):
+        if len(transfers) == 2:
+            break
+        assert step()
     else:
-        for _ in range(config.total_ut_steps):
-            assert step()
-        assert (engine.scheduler.requests["a"].num_prefilled_tokens, connector.prefill_tokens) == (
-            1,
-            4,
-        )
-
-        for _ in range(config.total_ut_steps):
-            assert step()
-        final_scheduled_request = next(
-            scheduled_request
-            for scheduled_request in batches[-1].requests
-            if scheduled_request.request.request_id == "a"
-        )
-        assert (
-            final_scheduled_request.token_start,
-            final_scheduled_request.token_count,
-            final_scheduled_request.chunk_start,
-        ) == (1, 3, 0)
+        pytest.fail("wavefront transfer did not complete")
+    assert any(
+        (item.token_start, item.token_count, item.chunk_start) == (1, 3, 0)
+        for batch in batches
+        for item in batch.requests
+        if item.request.request_id == "a"
+    )
     assert (transfers, connector.prefill_tokens) == ([("b", 0, 4, True), ("a", 0, 4, True)], 8)
 
 
@@ -261,7 +239,7 @@ def create_pd(
     graph=False,
     layout="last_exited",
     multi=False,
-    atomic_prefill=True,
+    mode="refill",
     wavefront_chunked_prefill=False,
     prefill_chunk_size=3,
     max_num_batched_tokens=5,
@@ -288,6 +266,7 @@ def create_pd(
         prefill_cache_config=CacheConfig(128, 4, layout, enable_prefix_caching=prefix_caching),
         decode_cache_config=CacheConfig(128, 4, layout, enable_prefix_caching=prefix_caching),
         prefill_scheduler_config=SchedulerConfig(
+            mode=mode,
             max_num_seqs=2,
             max_num_batched_tokens=max_num_batched_tokens,
             prefill_chunk_size=prefill_chunk_size,
@@ -300,7 +279,6 @@ def create_pd(
         speculative_config=SpeculativeConfig(3) if speculative else None,
         execution_config=ExecutionConfig(
             async_scheduling=asynchronous,
-            atomic_prefill=atomic_prefill,
             static_buffers=graph,
             pad_to_power_of_two=graph,
             cuda_graphs=graph,
@@ -352,13 +330,13 @@ def test_pd_generation_refill_cancel_and_reuse_matches_local(graph, layout):
 
 
 @pytest.mark.gpu
-def test_pd_split_prefill_matches_atomic_transfer_boundaries_and_overlaps():
+def test_pd_wavefront_matches_atomic_transfer_boundaries_and_overlaps():
     prompt = list(range(1, 33))
     params = SamplingParams(max_tokens=4, min_loops=1, ignore_eos=True)
     runs = {}
-    for atomic_prefill, wavefront in ((True, False), (False, False), (False, True)):
+    for wavefront in (False, True):
         with create_pd(
-            atomic_prefill=atomic_prefill,
+            mode="refill",
             wavefront_chunked_prefill=wavefront,
             prefill_chunk_size=16,
             max_num_batched_tokens=16,
@@ -366,19 +344,17 @@ def test_pd_split_prefill_matches_atomic_transfer_boundaries_and_overlaps():
             e.add_request("pd", prompt, params, trace_id="t")
             output = drain(e)["pd"]
             timings = next(m["timings"] for m in e.metrics if m["request_id"] == "pd")
-            runs[(atomic_prefill, wavefront)] = (
+            runs[wavefront] = (
                 output.token_ids,
                 output.exit_depths,
                 timings["prefill_transfer_boundaries"],
                 timings["prefill_transfer_overlaps"],
             )
 
-    atomic = runs[(True, False)]
-    split = runs[(False, False)]
-    wavefront = runs[(False, True)]
-    assert split[:2] == wavefront[:2] == atomic[:2]
-    assert atomic[2] == split[2] == wavefront[2] == ((0, 16), (16, 32), 2)
-    assert split[3] > 0 and wavefront[3] > 0
+    atomic, wavefront = runs[False], runs[True]
+    assert wavefront[:2] == atomic[:2]
+    assert atomic[2] == wavefront[2] == ((0, 16), (16, 32), 2)
+    assert wavefront[3] > 0
 
 
 @pytest.mark.gpu
@@ -580,16 +556,16 @@ def test_cancelled_transfer_does_not_recycle_pending_hidden_copy():
 
 @pytest.mark.gpu
 @pytest.mark.parametrize("asynchronous,graph", [(False, False), (False, True), (True, False)])
-@pytest.mark.parametrize("atomic_prefill", [False, True])
+@pytest.mark.parametrize("wavefront", [False, True])
 @pytest.mark.parametrize("prefix_caching", [False, True])
 def test_pd_speculative_matches_local_and_retires_cancelled_rounds(
-    asynchronous, graph, atomic_prefill, prefix_caching
+    asynchronous, graph, wavefront, prefix_caching
 ):
     params = SamplingParams(max_tokens=9, ignore_eos=True)
     with create_pd(
         speculative=True,
         asynchronous=asynchronous,
-        atomic_prefill=atomic_prefill,
+        wavefront_chunked_prefill=wavefront,
         prefix_caching=prefix_caching,
         graph=graph,
     ) as engine:

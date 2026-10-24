@@ -706,16 +706,16 @@ def test_split_prefill_and_speculation_share_forward_and_match_atomic(
 ):
     from vllm_rlt.request import Operation
 
-    def run(atomic):
+    def run(wavefront):
         e = engine(
             model(),
             cache_config=CacheConfig(256, 2),
             scheduler_config=SchedulerConfig(
                 max_num_batched_tokens=budget,
                 prefill_chunk_size=chunk_size,
-                wavefront_chunked_prefill=wavefront and not atomic,
+                wavefront_chunked_prefill=wavefront,
             ),
-            execution_config=ExecutionConfig(atomic_prefill=atomic),
+            execution_config=ExecutionConfig(),
         )
         assert e.speculative_runner.runtime is e.model_runner.runtime
         operations = set()
@@ -736,9 +736,13 @@ def test_split_prefill_and_speculation_share_forward_and_match_atomic(
     assert run(False) == run(True)
 
 
-@pytest.mark.parametrize("atomic", [False, True])
-def test_common_submit_entry_preserves_prefill_and_speculative_results(atomic, monkeypatch):
-    e = engine(model(), execution_config=ExecutionConfig(atomic_prefill=atomic))
+@pytest.mark.parametrize("wavefront", [False, True])
+def test_common_submit_entry_preserves_prefill_and_speculative_results(wavefront, monkeypatch):
+    e = engine(
+        model(),
+        scheduler_config=SchedulerConfig(wavefront_chunked_prefill=wavefront),
+        execution_config=ExecutionConfig(),
+    )
     calls = []
     submit = e.executor.submit
 
