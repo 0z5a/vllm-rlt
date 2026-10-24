@@ -152,16 +152,11 @@ class SpeculativeConfig:
     draft_loops: int = 2
     target_loops: int = 4
     loop_level_pipelining: bool = False
-    early_rejection_pruning: bool = False
 
     def __post_init__(self):
         for name in ("num_speculative_tokens", "draft_loops", "target_loops"):
             _positive(name, getattr(self, name))
         if self.draft_loops >= self.target_loops:
             raise ValueError("draft_loops must be smaller than target_loops")
-        for name in (
-            "loop_level_pipelining",
-            "early_rejection_pruning",
-        ):
-            if type(getattr(self, name)) is not bool:
-                raise ValueError(f"{name} must be a boolean")
+        if type(self.loop_level_pipelining) is not bool:
+            raise ValueError("loop_level_pipelining must be a boolean")
