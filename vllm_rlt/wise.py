@@ -8,8 +8,11 @@ reference: the cached K/V of earlier tokens were computed under their own
 supports, and the query block is the single decode row. Prefill stays dense.
 
 Support is request-local: it is tagged with (request, position), rebuilt for
-every token, and a reuse depth refuses support from another position or an
-incomplete discovery window.
+every token, and a reuse depth never uses support from another position or an
+incomplete discovery window. When a token's discovery is not complete, its
+remaining depths attend densely instead: discovery depths that ran in a packed
+batch (prefill attention records no support), or a KV offload between discovery
+and reuse (``free`` releases the support). ``fallbacks`` counts those rows.
 """
 
 import math
@@ -81,8 +84,11 @@ class WiseState:
         )
         self.slots: dict[str, int] = {}
         self.free_slots = list(reversed(range(config.max_slots)))
-        # request -> (position, discovery depths completed for that position)
-        self.tags: dict[str, tuple[int, frozenset]] = {}
+        # request -> (position, discovery depths completed for that position); a
+        # position whose discovery window was broken has depths None (dense to the end).
+        self.tags: dict[str, tuple[int, frozenset | None]] = {}
+        # Decode rows that attended densely because their discovery was incomplete.
+        self.fallbacks = 0
         self._batch = None
         self._plan = None
         # Set when WISE only drafts for speculative decoding: target decode stays dense.
@@ -152,7 +158,11 @@ class WiseState:
                     previous = frozenset()
                 expected = frozenset(d for d in self.config.discovery_depths if d < depth)
                 if previous != expected:
-                    raise RuntimeError("WISE discovery out of order for this request and position")
+                    # An earlier discovery depth of this token did not record support.
+                    self.tags[request_id] = (position, None)
+                    self.fallbacks += 1
+                    modes.append(MODE_DENSE)
+                    continue
                 self.tags[request_id] = (position, previous | {depth})
                 first = depth == self.config.discovery_depths[0]
                 modes.append(MODE_DISCOVER if first else MODE_DISCOVER_UNION)
@@ -161,7 +171,9 @@ class WiseState:
                 if not isinstance(override, float) and (
                     done is None or done != (position, frozenset(self.config.discovery_depths))
                 ):
-                    raise RuntimeError("WISE reuse without this position's complete discovery")
+                    self.fallbacks += 1
+                    modes.append(MODE_DENSE)
+                    continue
                 modes.append(MODE_SPARSE)
             else:
                 modes.append(MODE_DENSE)
@@ -307,7 +319,9 @@ class WiseState:
         )
 
     def mean_density(self):
-        """Selected / causal blocks over every discovery or fixed-support selection so far."""
+        """Selected / causal blocks of the support the reuse depths attend: the union
+        over each token's discovery depths (or the fixed support), averaged over every
+        (row, layer, head) selection so far."""
         selected, causal = self.stats.tolist()
         return selected / max(causal, 1)
 

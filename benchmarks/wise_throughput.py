@@ -171,11 +171,18 @@ def timed(llm, prompts, tokens, tag="r"):
             if all(len(r.generated_token_ids) >= 1 for r in live):
                 torch.cuda.synchronize()
                 first = time.perf_counter()
+                # Early requests may decode while later prompts still prefill; those
+                # tokens belong to the prefill interval, not to the decode count.
+                requests = engine.scheduler.requests
+                before = sum(
+                    len(outputs[i]) if i in outputs else len(requests[i].generated_token_ids)
+                    for i in ids
+                )
     torch.cuda.synchronize()
     done = time.perf_counter()
     tokens_out = [outputs[i] for i in ids]
     assert all(len(t) == tokens for t in tokens_out)
-    return first - start, done - first, tokens_out
+    return first - start, done - first, tokens_out, len(ids) * tokens - before
 
 
 def run_one(a):
@@ -188,8 +195,10 @@ def run_one(a):
     blocks = llm.engine.cache_manager.num_free_blocks
     # Same batch size, short prompts: compiles kernels and captures decode graphs untimed.
     timed(llm, [p[-64:] for p in prompts], 8, tag="warm")
-    prefill, decode, tokens = timed(llm, prompts, a.output_tokens)
     wise = llm.engine.cache_manager.wise
+    if wise is not None:
+        wise.stats.zero_()  # support density of the timed cohort only
+    prefill, decode, tokens, decoded = timed(llm, prompts, a.output_tokens)
     record = {
         "length": length,
         "concurrency": concurrency,
@@ -198,7 +207,8 @@ def run_one(a):
         "output_tokens": a.output_tokens,
         "prefill_s": prefill,
         "decode_s": decode,
-        "decode_tok_s": concurrency * (a.output_tokens - 1) / decode,
+        "decode_tokens": decoded,
+        "decode_tok_s": decoded / decode,
         "end_to_end_tok_s": concurrency * a.output_tokens / (prefill + decode),
         "free_blocks_at_start": blocks,
         "support_density": wise.mean_density() if wise is not None else None,

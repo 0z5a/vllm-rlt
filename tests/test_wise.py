@@ -29,6 +29,7 @@ from vllm_rlt.kernels.wise_attention import (
     wise_scratch,
 )
 from vllm_rlt.models import OuroForCausalLM
+from vllm_rlt.request import RequestPhase
 from vllm_rlt.wise import WiseConfig
 
 pytestmark = pytest.mark.gpu
@@ -158,10 +159,12 @@ def test_union_discovery_ors_into_the_first_support():
     )
     a = select_support(*block_mass(mm, ms, lengths.long()), 0.95)
     before = first.clone()
-    _, mm, ms, union, _ = _launch(q2, k, v, tables, lengths, MODE_DISCOVER_UNION, first)
+    _, mm, ms, union, stats = _launch(q2, k, v, tables, lengths, MODE_DISCOVER_UNION, first)
     b = select_support(*block_mass(mm, ms, lengths.long()), 0.95)
     assert torch.equal(union[:, 0].bool(), a | b)
     assert torch.equal(before[:, 0].bool(), a)
+    # Density counts the reused union: the union adds only the blocks it newly sets.
+    assert stats.tolist() == [int((a | b).sum() - a.sum()), 0]
 
 
 def test_sparse_rows_equal_masked_softmax_over_selected_blocks():
@@ -287,20 +290,83 @@ def test_async_wise_matches_synchronous_wise(model, graphs):
     assert llm.engine.cache_manager.wise.mean_density() < 1
 
 
-def test_reuse_without_discovery_is_rejected(model):
+def test_incomplete_discovery_falls_back_to_dense(model):
     llm = _llm(model, WiseConfig(max_model_len=1024, max_slots=8))
     wise = llm.engine.cache_manager.wise
-    wise.tags["x"] = (5, frozenset({0}))
-    with pytest.raises(RuntimeError):
 
-        class Batch:
-            allocations = (("x", object()),)
+    class Batch:
+        allocations = (("x", object()),)
 
+    def plan(depth, position):
         b = Batch()
-        b.rows = ((b.allocations[0][1], 2, 5),)
-        b.context_lengths = torch.tensor([6], device="cuda", dtype=torch.int32)
+        b.rows = ((b.allocations[0][1], depth, position),)
+        b.context_lengths = torch.tensor([position + 1], device="cuda", dtype=torch.int32)
+        b.block_tables = torch.zeros((1, 64), device="cuda", dtype=torch.int32)
         wise.mark(b, [True])
-        wise.plan(b)
+        return wise.plan(b)["modes"].tolist()
+
+    # Depth 0 ran in a packed batch (no support recorded): depth 1 and the reuse
+    # depths of that token attend densely; the next token discovers again.
+    assert plan(1, 5) == [MODE_DENSE] and plan(2, 5) == [MODE_DENSE]
+    assert plan(0, 6) == [MODE_DISCOVER] and plan(1, 6) == [MODE_DISCOVER_UNION]
+    assert plan(2, 6) == [MODE_SPARSE]
+    # Support released between discovery and reuse (KV offload) or another position's.
+    wise.release("x")
+    assert plan(3, 6) == [MODE_DENSE] and plan(2, 7) == [MODE_DENSE]
+    assert wise.fallbacks == 4
+
+
+def test_offload_between_discovery_and_reuse_resumes_densely(model):
+    prompt = [int(t) for t in (torch.arange(300) * 3) % 60 + 2]
+    # Every token runs all four depths, so suspension can fall between 1 and 2.
+    params = SamplingParams(
+        max_tokens=8, ignore_eos=True, exit_threshold=1.0, min_loops=4, max_loops=4
+    )
+
+    def engine(override):
+        return LLM(
+            model,
+            attention_backend="triton",
+            cache_config=CacheConfig(num_blocks=512, block_size=16),
+            scheduler_config=SchedulerConfig(
+                max_num_seqs=1,
+                max_num_batched_tokens=512,
+                prefill_chunk_size=512,
+                enable_preemption=True,
+            ),
+            wise_config=WiseConfig(max_model_len=1024, max_slots=8, support_override=override),
+        ).engine
+
+    dense = engine("dense")
+    dense.add_request("r", prompt, params)
+    while dense.has_unfinished_requests():
+        outputs = [o for o in dense.step() if o.finished]
+    reference = outputs[0].token_ids
+
+    e = engine("all")
+    e.add_request("r", prompt, params)
+    request = e.scheduler.requests["r"]
+    discovery = len(e.cache_manager.wise.config.discovery_depths)
+    for _ in range(200):
+        e.step()
+        if (
+            request.phase == RequestPhase.RECURRENT
+            and request.loops_done == discovery
+            and request.generated_token_ids
+        ):
+            break
+    else:
+        pytest.fail("request did not stop between discovery and reuse")
+    e.add_request("pressure", [3, 4], SamplingParams(max_tokens=1, ignore_eos=True))
+    assert e.scheduler.preempt(e.scheduler.requests["pressure"])
+    assert e.preemption.snapshots["r"]["kv"] is not None
+    e.abort_request("pressure")
+    finished = []
+    while e.has_unfinished_requests():
+        finished += [o for o in e.step() if o.finished]
+    assert e.preemption.resumptions == 1
+    assert e.cache_manager.wise.fallbacks > 0
+    assert [o.token_ids for o in finished] == [reference]
 
 
 def _flash(generation, page):
@@ -453,3 +519,30 @@ def test_triton_wise_kernel_beside_flash_prefill(model, generation):
     real = engine(None)
     assert all(len(o.token_ids) == 10 for o in real.generate(prompts, params))
     assert real.engine.cache_manager.wise.mean_density() < 1
+
+
+@pytest.mark.parametrize("graphs", [False, True])
+def test_mixed_packed_fa4_decode_rows_fall_back_to_dense(model, graphs):
+    _flash(4, 16)
+    # Staggered lengths: later prompts' chunks share packed batches with decode rows.
+    prompts = [[int(t) for t in (torch.arange(200 + 150 * i) * (i + 3)) % 60 + 2] for i in range(3)]
+    params = SamplingParams(max_tokens=10, ignore_eos=True)
+
+    def engine(override):
+        return LLM(
+            model,
+            attention_backend="flash_attn_4",
+            cache_config=CacheConfig(num_blocks=512, block_size=16),
+            scheduler_config=SchedulerConfig(
+                max_num_seqs=4, max_num_batched_tokens=96, prefill_chunk_size=64, mode="mixed"
+            ),
+            execution_config=ExecutionConfig(atomic_prefill=False, cuda_graphs=graphs),
+            wise_config=WiseConfig(max_model_len=1024, max_slots=8, support_override=override),
+        )
+
+    reference = [o.token_ids for o in engine("dense").generate(prompts, params)]
+    forced = engine("all")
+    assert [o.token_ids for o in forced.generate(prompts, params)] == reference
+    assert forced.engine.cache_manager.wise.fallbacks > 0
+    real = engine(None)
+    assert all(len(o.token_ids) == 10 for o in real.generate(prompts, params))

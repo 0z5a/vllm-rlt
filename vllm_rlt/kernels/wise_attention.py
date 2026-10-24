@@ -248,11 +248,16 @@ def _wise_finish_kernel(
         below = tl.sum((tl.cumsum(ranked_mass, axis=0) < ETA * total).to(tl.int32), axis=0)
         keep_count = tl.maximum(tl.minimum(below + 1, count), 1)
         chosen = (index < keep_count).to(tl.uint8)
+        # STATS counts the support the reuse depths attend: the first discovery
+        # adds its selection and causal blocks, a union adds only the blocks it sets.
         if mode == 3:
-            chosen = chosen | tl.load(support + order)
+            previous = tl.load(support + order)
+            chosen = chosen | previous
+            tl.atomic_add(STATS, tl.sum((chosen - previous).to(tl.int64), axis=0))
+        else:
+            tl.atomic_add(STATS, keep_count.to(tl.int64))
+            tl.atomic_add(STATS + 1, count.to(tl.int64))
         tl.store(support + order, chosen)
-        tl.atomic_add(STATS, keep_count.to(tl.int64))
-        tl.atomic_add(STATS + 1, count.to(tl.int64))
 
 
 def wise_scratch(rows, heads, head_dim, max_blocks, device):
