@@ -1,12 +1,16 @@
-"""Matched synchronous baseline/pipeline feasibility check on a local Ouro model.
+"""Paired block/loop-level speculative decode comparison on a local Ouro model.
 
-Exclude prefill, interleave trials, and retain raw timings and generated tokens.
-This small experiment is not the full RFC #43 accuracy/performance acceptance matrix.
+Both engines share one resident model. Prefill is excluded, trial order alternates,
+and every request has a fixed seed, so both arms see the same RNG draws: sampled
+runs compare equal acceptance instead of two different random acceptance paths.
+Raw timings, generated tokens and CUDA graph counters are retained. This is not
+the full RFC #43 accuracy/performance acceptance matrix.
 """
 
 import argparse
 import hashlib
 import json
+import random
 import statistics
 import subprocess
 import time
@@ -27,16 +31,26 @@ from vllm_rlt.models import OuroForCausalLM, load_tokenizer
 from vllm_rlt.worker.speculative import SpeculativeStats
 
 
+def graph_counters(runner):
+    return {
+        name: None
+        if graphs is None
+        else dict(captures=graphs.captures, replays=graphs.replays, fallbacks=graphs.fallbacks)
+        for name, graphs in (("recurrent", runner.graphs), ("coda", runner.coda_graphs))
+    }
+
+
 @torch.inference_mode()
-def trial(engine, prompts, new_tokens, temperature, top_p, top_k):
-    params = SamplingParams(
-        max_tokens=new_tokens + 1,
-        ignore_eos=True,
-        temperature=temperature,
-        top_p=top_p,
-        top_k=top_k,
-    )
+def trial(engine, prompts, new_tokens, temperature, top_p, top_k, seed):
     for i, prompt in enumerate(prompts):
+        params = SamplingParams(
+            max_tokens=new_tokens + 1,
+            ignore_eos=True,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            seed=seed + i,
+        )
         engine.add_request(str(i), prompt, params)
     # Hold decode until all requests have crossed the first-output barrier.
     while any(not r.generated_token_ids for r in engine.scheduler.requests.values()):
@@ -46,7 +60,9 @@ def trial(engine, prompts, new_tokens, temperature, top_p, top_k):
     torch.cuda.reset_peak_memory_stats()
     start = time.perf_counter()
     outputs = {}
+    steps = 0
     while engine.has_unfinished_requests():
+        steps += 1
         for output in engine.step():
             if output.finished:
                 outputs[output.request_id] = output.token_ids
@@ -61,6 +77,7 @@ def trial(engine, prompts, new_tokens, temperature, top_p, top_k):
         )
     return dict(
         seconds=elapsed,
+        steps=steps,
         committed_tokens=committed,
         tokens_per_second=committed / elapsed,
         peak_allocated_bytes=torch.cuda.max_memory_allocated(),
@@ -78,14 +95,10 @@ def main():
     parser.add_argument("--cuda-graphs", action="store_true")
     parser.add_argument("--k", type=int, default=4)
     parser.add_argument("--draft-loops", type=int, default=2)
-    parser.add_argument(
-        "--early-rejection-pruning",
-        action="store_true",
-        help="Enable greedy early rejection pruning for the pipeline engine",
-    )
     parser.add_argument("--concurrency", type=int, default=1)
-    parser.add_argument("--new-tokens", type=int, default=32)
-    parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--new-tokens", type=int, default=128)
+    parser.add_argument("--repeats", type=int, default=7)
+    parser.add_argument("--seed", type=int, default=0, help="Seed of request 0; request i adds i")
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--top-p", type=float, default=1.0)
     parser.add_argument("--top-k", type=int, default=-1)
@@ -144,7 +157,6 @@ def main():
                 draft_loops=args.draft_loops,
                 target_loops=model.config.total_ut_steps,
                 loop_level_pipelining=enabled,
-                early_rejection_pruning=enabled and args.early_rejection_pruning,
             ),
         )
         for name, enabled in [("baseline", False), ("pipeline", True)]
@@ -159,6 +171,7 @@ def main():
                 args.temperature,
                 args.top_p,
                 args.top_k,
+                args.seed,
             )
         for repeat in range(args.repeats):
             order = list(engines) if repeat % 2 == 0 else list(reversed(engines))
@@ -170,23 +183,45 @@ def main():
                     args.temperature,
                     args.top_p,
                     args.top_k,
+                    args.seed,
                 )
                 raw[name].append(result)
                 print(
                     f"{name} repeat={repeat}: {result['tokens_per_second']:.2f} tokens/s",
                     flush=True,
                 )
+        graphs = {name: graph_counters(e.speculative_runner) for name, e in engines.items()}
     finally:
         for engine in engines.values():
             engine.close()
-    summary = {
-        name: dict(
-            median_seconds=statistics.median(r["seconds"] for r in trials),
-            min_seconds=min(r["seconds"] for r in trials),
-            max_seconds=max(r["seconds"] for r in trials),
+
+    def acceptance(stats):
+        return stats["accepted_tokens"] / max(stats["drafted_tokens"], 1)
+
+    summary = {}
+    for name, trials in raw.items():
+        seconds = sorted(r["seconds"] for r in trials)
+        quartiles = statistics.quantiles(seconds, n=4) if len(seconds) > 1 else seconds * 3
+        summary[name] = dict(
+            median_seconds=statistics.median(seconds),
+            q1_seconds=quartiles[0],
+            q3_seconds=quartiles[2],
+            min_seconds=seconds[0],
+            max_seconds=seconds[-1],
+            median_tokens_per_second=statistics.median(r["tokens_per_second"] for r in trials),
+            median_step_ms=statistics.median(1e3 * r["seconds"] / r["steps"] for r in trials),
+            acceptance=[acceptance(r["stats"]) for r in trials],
         )
-        for name, trials in raw.items()
-    }
+    # Repeats pair adjacent baseline/pipeline trials; report the paired ratio and a
+    # bootstrap interval of its median rather than a ratio of independent medians.
+    ratios = [b["seconds"] / p["seconds"] for b, p in zip(raw["baseline"], raw["pipeline"])]
+    rng = random.Random(0)
+    boot = sorted(statistics.median(rng.choices(ratios, k=len(ratios))) for _ in range(2000))
+    paired = dict(
+        ratios=ratios,
+        median=statistics.median(ratios),
+        ci95=[boot[49], boot[1949]],
+    )
     agreement = []
     for baseline, pipeline in zip(raw["baseline"], raw["pipeline"]):
         agreement.append(
@@ -212,16 +247,21 @@ def main():
         scheduler=asdict(scheduler),
         execution=asdict(execution),
         summary=summary,
-        speedup=summary["baseline"]["median_seconds"] / summary["pipeline"]["median_seconds"],
+        speedup=paired["median"],
+        paired_speedup=paired,
+        cuda_graphs=graphs,
         first_divergent_output_positions=agreement,
         trials=raw,
-        limitations="Small greedy feasibility check; not BF16 acceptance validation. "
+        limitations="Paired decode-throughput check; not BF16 acceptance validation. "
         "Peak memory includes both resident engines. Checkpoint config hash does not hash weights.",
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
     print(
-        json.dumps(dict(summary=summary, speedup=report["speedup"], divergence=agreement), indent=2)
+        json.dumps(
+            dict(summary=summary, paired_speedup=paired, graphs=graphs, divergence=agreement),
+            indent=2,
+        )
     )
 
 
