@@ -518,7 +518,6 @@ class StageEngine:
         count = len(prompt_token_ids)
         hit = plan.cached_tokens
         request.num_prefilled_tokens = request.num_preluded_tokens = hit
-        request.prefill_chunk_start = hit
         request.prefill_window_origin = hit
         request.prefill_reclaimable_tokens = hit
         request.prefill_depth_ranges[:] = Request.prefill_boundaries(
@@ -605,7 +604,6 @@ class StageEngine:
             return
         frontier = request.num_prefilled_tokens
         request.num_preluded_tokens = frontier
-        request.prefill_chunk_start = frontier
         request.prefill_window_origin = frontier
         request.prefill_reclaimable_tokens = frontier
         request.prefill_depth_ranges[:] = Request.prefill_boundaries(

@@ -1119,7 +1119,7 @@ def test_split_preemption_rewinds_and_recomputes_the_resident_chunk(completed_de
     assert e.scheduler.preempt(requester)
     assert e.preemption.snapshots["victim"]["phase"] is RequestPhase.PREFILLING_PRELUDE
     assert request.num_preluded_tokens == request.num_prefilled_tokens
-    assert request.prefill_chunk_start == request.num_prefilled_tokens
+    assert request.prefill_reclaimable_tokens == request.num_prefilled_tokens
     assert all(left == request.num_prefilled_tokens for left, _ in request.prefill_depth_ranges)
     assert e.cache_manager.num_used_blocks == 0
 

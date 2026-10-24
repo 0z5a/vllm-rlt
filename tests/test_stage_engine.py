@@ -124,6 +124,7 @@ def test_independent_stage_resources_preserve_output_after_import(atomic, asynch
             d.cache_manager.value_cache[dst].copy_(p.cache_manager.value_cache[src])
     assert d.accept_import(target, source.hidden_state.clone())
     assert d.scheduler.requests["r"] is target
+    assert target.prefill_reclaimable_tokens == len(prompt)
     assert p.release_transfer(source)
     local.add_request("r", prompt, params)
     assert drain(d) == drain(local)

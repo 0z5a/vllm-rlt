@@ -452,7 +452,6 @@ class Scheduler:
         # A reused prompt prefix is already prefilled at every depth, so the
         # staged window starts closed at that frontier and opens for the rest.
         request.num_preluded_tokens = plan.cached_tokens
-        request.prefill_chunk_start = plan.cached_tokens
         request.prefill_window_origin = plan.cached_tokens
         request.prefill_reclaimable_tokens = plan.cached_tokens
         if request.prefill_depth_ranges:
@@ -573,7 +572,7 @@ class Scheduler:
             start = request.num_prefilled_tokens
             if start >= request.num_preluded_tokens:
                 return ScheduledRequest(
-                    request, start, 0, depth=0, chunk_start=request.prefill_chunk_start
+                    request, start, 0, depth=0, chunk_start=request.prefill_reclaimable_tokens
                 )
             first_token_depth = request.prefill_depth(start)
             # One run per depth frontier: every token of the run already completed
@@ -593,7 +592,7 @@ class Scheduler:
                 start,
                 count,
                 depth=first_token_depth,
-                chunk_start=request.prefill_chunk_start,
+                chunk_start=request.prefill_reclaimable_tokens,
                 completes_prompt=(
                     first_token_depth == len(request.prefill_depth_ranges) - 1
                     and start + count == len(request.prompt_token_ids)
@@ -985,7 +984,7 @@ class Scheduler:
             loop_count = 0 if phase == RequestPhase.PREFILLING_PRELUDE else 1
 
         if phase == RequestPhase.PREFILLING_PRELUDE:
-            request.prefill_chunk_start = start
+            request.prefill_reclaimable_tokens = start
             request.num_preluded_tokens = end
             depth = 0
         else:
@@ -1023,7 +1022,7 @@ class Scheduler:
             request.num_prefilled_tokens,
             event,
         )
-        request.prefill_chunk_start = end
+        request.prefill_reclaimable_tokens = end
         prompt_complete = end == len(request.prompt_token_ids)
         if prompt_complete:
             request.loops_done = total_depths
@@ -1088,7 +1087,6 @@ class Scheduler:
                     raise RuntimeError("wavefront prelude contains a prompt-range gap")
                 frontier += item.token_count
             request.num_preluded_tokens = frontier
-            request.prefill_chunk_start = request.prefill_reclaimable_tokens
             progress = PrefillProgress(False, False, transfer_start)
             representative = scheduled_requests[0]
             next_phase = (
@@ -1120,7 +1118,6 @@ class Scheduler:
                     if item.chunk_start != request.prefill_reclaimable_tokens:
                         raise RuntimeError("wavefront completed prompt chunks out of order")
                     request.prefill_reclaimable_tokens = chunk_end
-                    request.prefill_chunk_start = chunk_end
                     chunk_complete = True
                     representative = item
 

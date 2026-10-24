@@ -50,13 +50,12 @@ class Request:
     # Split prefill: [num_prefilled_tokens, num_preluded_tokens) has resident
     # hidden states; wavefront keeps multiple chunks at distinct depths here.
     num_preluded_tokens: int = 0
-    # Legacy split-prefill resident chunk base; WCPB bases every span independently.
-    prefill_chunk_start: int = 0
     # Split prefill only: per-depth logical prompt frontiers.
     prefill_depth_ranges: list[list[int]] = field(default_factory=list, repr=False)
     # Wavefront chunk slots are assigned relative to this cached-prefix origin.
     prefill_window_origin: int = 0
-    # Earliest fully retired chunk; partial final-depth work still owns its slot.
+    # End of the completed prefix and start of the oldest resident chunk. Advance
+    # only after final-depth completion releases that chunk's hidden-state slot.
     prefill_reclaimable_tokens: int = 0
     # Host-side decode progress; ModelRunner events track pending device work.
     loops_done: int = 0
