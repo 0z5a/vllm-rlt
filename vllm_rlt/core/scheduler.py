@@ -33,8 +33,9 @@ class ScheduledRequest:
     chunk_start: int | None = None
     completes_prompt: bool = False
     phase: RequestPhase | None = None
-    # Offset in the runner-owned prompt-state window, if this is wavefront work.
-    buffer_offset: int | None = None
+    # Row offset in the request's prefill hidden-state buffer. None lets the runner
+    # derive token_start - chunk_start.
+    prefill_hidden_row_offset: int | None = None
 
 
 @dataclass(frozen=True)
@@ -621,7 +622,7 @@ class Scheduler:
         chunk_end = min(len(request.prompt_token_ids), chunk_start + chunk_size)
         total_depths = len(request.prefill_depth_ranges)
         slot = ((chunk_start - origin) // chunk_size) % total_depths
-        buffer_offset = slot * chunk_size + chunk_offset
+        prefill_hidden_row_offset = slot * chunk_size + chunk_offset
 
         if phase == RequestPhase.PREFILLING_PRELUDE:
             window_end = min(
@@ -651,7 +652,7 @@ class Scheduler:
                 and depth == total_depths - 1
                 and start + count == len(request.prompt_token_ids)
             ),
-            buffer_offset=buffer_offset,
+            prefill_hidden_row_offset=prefill_hidden_row_offset,
         )
 
     def _ensure_execution_capacity(

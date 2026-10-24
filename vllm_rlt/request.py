@@ -120,8 +120,8 @@ class StateSpan:
     # for boundary-layer KV addressing when required. CODA consumes the final
     # recurrent hidden state; its actual exit depth remains in request.loops_done.
     depth: int
-    # None addresses the request's single resident hidden row. Otherwise the
-    # span addresses its resident chunk, using buffer_offset for a wavefront ring.
+    # None lets the runner derive token_start - chunk_start. Otherwise this is a
+    # row offset into the request's prefill hidden-state buffer, including its ring slot.
     chunk_start: int | None = None
     retain_chunk: bool = False
     retain_last: bool = True
@@ -129,8 +129,9 @@ class StateSpan:
     # For chunk PRELUDE, None reads the immutable request prompt range directly.
     # Explicit tokens override that source (also used by direct execution callers).
     input_tokens: tuple[int, ...] | None = None
-    # Offset in the request's staged prompt-state ring, snapshotted at scheduling.
-    buffer_offset: int | None = None
+    # Row offset in the request's prefill hidden-state buffer. None lets the runner
+    # derive token_start - chunk_start.
+    prefill_hidden_row_offset: int | None = None
 
 
 @dataclass(frozen=True)

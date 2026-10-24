@@ -401,8 +401,8 @@ class ModelRunner:
         for index, span in enumerate(batch.spans):
             state_slot = self._ensure_request_slot(span.request)
             chunk_offset = (
-                span.buffer_offset
-                if span.buffer_offset is not None
+                span.prefill_hidden_row_offset
+                if span.prefill_hidden_row_offset is not None
                 else span.token_start - span.chunk_start
             )
             keep_intermediate = span.retain_chunk
@@ -461,8 +461,8 @@ class ModelRunner:
             chunk = None
             if span.chunk_start is not None:
                 start = (
-                    span.buffer_offset
-                    if span.buffer_offset is not None
+                    span.prefill_hidden_row_offset
+                    if span.prefill_hidden_row_offset is not None
                     else span.token_start - span.chunk_start
                 )
                 chunk = self.prefill_states[slot, start : start + span.token_count]

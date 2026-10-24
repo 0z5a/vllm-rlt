@@ -134,9 +134,17 @@ def test_final_depth_prefill_scatter_retains_only_coda_hidden_per_item(wavefront
     batch = SchedulerOutput(
         RequestPhase.PREFILLING_RECURRENT,
         [
-            ScheduledRequest(mid, 0, 2, depth=1, chunk_start=0, buffer_offset=offset),
             ScheduledRequest(
-                final, 0, 2, depth=3, chunk_start=0, completes_prompt=True, buffer_offset=offset
+                mid, 0, 2, depth=1, chunk_start=0, prefill_hidden_row_offset=offset
+            ),
+            ScheduledRequest(
+                final,
+                0,
+                2,
+                depth=3,
+                chunk_start=0,
+                completes_prompt=True,
+                prefill_hidden_row_offset=offset,
             ),
         ],
     )
@@ -192,9 +200,24 @@ def test_wavefront_final_depth_does_not_store_any_chunk_hidden(monkeypatch, mixe
     slot = runner._ensure_request_slot(request)
     runner.prefill_states.fill_(7)
     spans = (
-        StateSpan(request, 0, 2, 3, chunk_start=0, retain_chunk=False, buffer_offset=4),
         StateSpan(
-            request, 2, 2, 3, chunk_start=2, retain_chunk=False, retain_last=True, buffer_offset=6
+            request,
+            0,
+            2,
+            3,
+            chunk_start=0,
+            retain_chunk=False,
+            prefill_hidden_row_offset=4,
+        ),
+        StateSpan(
+            request,
+            2,
+            2,
+            3,
+            chunk_start=2,
+            retain_chunk=False,
+            retain_last=True,
+            prefill_hidden_row_offset=6,
         ),
     )
     if not mixed:
@@ -746,7 +769,9 @@ def test_wavefront_prefill_batches_ready_depths_and_reuses_retired_ring_slots():
     prelude = e.scheduler.schedule()
     assert prelude.phase is RequestPhase.PREFILLING_PRELUDE
     assert len(prelude.requests) == TOTAL_DEPTHS
-    assert [(item.chunk_start, item.buffer_offset) for item in prelude.requests] == [
+    assert [
+        (item.chunk_start, item.prefill_hidden_row_offset) for item in prelude.requests
+    ] == [
         (0, 0),
         (2, 2),
         (4, 4),
@@ -761,7 +786,7 @@ def test_wavefront_prefill_batches_ready_depths_and_reuses_retired_ring_slots():
         assert batch is not None
         if batch.phase == RequestPhase.PREFILLING_PRELUDE:
             reused = batch.requests[0]
-            assert (reused.chunk_start, reused.buffer_offset) == (8, 0)
+            assert (reused.chunk_start, reused.prefill_hidden_row_offset) == (8, 0)
         else:
             recurrent_trace.append([(item.token_start, item.depth) for item in batch.requests])
         e._update(batch, None)
