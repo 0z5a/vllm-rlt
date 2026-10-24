@@ -134,9 +134,7 @@ def test_final_depth_prefill_scatter_retains_only_coda_hidden_per_item(wavefront
     batch = SchedulerOutput(
         RequestPhase.PREFILLING_RECURRENT,
         [
-            ScheduledRequest(
-                mid, 0, 2, depth=1, chunk_start=0, prefill_hidden_row_offset=offset
-            ),
+            ScheduledRequest(mid, 0, 2, depth=1, chunk_start=0, prefill_hidden_row_offset=offset),
             ScheduledRequest(
                 final,
                 0,
@@ -769,9 +767,7 @@ def test_wavefront_prefill_batches_ready_depths_and_reuses_retired_ring_slots():
     prelude = e.scheduler.schedule()
     assert prelude.phase is RequestPhase.PREFILLING_PRELUDE
     assert len(prelude.requests) == TOTAL_DEPTHS
-    assert [
-        (item.chunk_start, item.prefill_hidden_row_offset) for item in prelude.requests
-    ] == [
+    assert [(item.chunk_start, item.prefill_hidden_row_offset) for item in prelude.requests] == [
         (0, 0),
         (2, 2),
         (4, 4),
@@ -1058,8 +1054,7 @@ def test_cpu_async_split_frontier_advances_once_per_submission():
     assert all(left == right for left, right in request.prefill_depth_ranges)
     assert 0 < len(held) < 15  # Wavefront batches some chunk-depth tasks together.
     assert all(
-        batch.loop_count
-        == (0 if batch.phase == RequestPhase.PREFILLING_PRELUDE else 1)
+        batch.loop_count == (0 if batch.phase == RequestPhase.PREFILLING_PRELUDE else 1)
         for batch in held_batches
     )
     assert e.model_runner.split_prefill_submissions == len(held)
@@ -1804,7 +1799,9 @@ def test_chunk_streams_wait_before_hidden_gather(monkeypatch, async_scheduling, 
         cache_config=CacheConfig(64, 4),
         scheduler_config=SchedulerConfig(
             wavefront_chunked_prefill=True,
-            max_num_seqs=1, max_num_batched_tokens=4, prefill_chunk_size=4
+            max_num_seqs=1,
+            max_num_batched_tokens=4,
+            prefill_chunk_size=4,
         ),
         execution_config=ExecutionConfig(
             async_scheduling=async_scheduling, multi_stream=multi_stream
@@ -1920,9 +1917,7 @@ def test_mixed_hidden_buffers_wait_for_strided_decode_and_chunk_producers(multi_
         scheduler_config=SchedulerConfig(
             mode="mixed", max_num_seqs=2, max_num_batched_tokens=4, prefill_chunk_size=2
         ),
-        execution_config=ExecutionConfig(
-            multi_stream=multi_stream, use_uva=use_uva
-        ),
+        execution_config=ExecutionConfig(multi_stream=multi_stream, use_uva=use_uva),
         attention_backend="triton",
     )
     runner = e.model_runner

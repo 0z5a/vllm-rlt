@@ -341,9 +341,7 @@ def test_cpu_preparation_defers_transfers_and_hidden_gather(monkeypatch, device,
     e = LLMEngine(
         tiny_ouro_model().to(device),
         cache_config=CacheConfig(64, 2),
-        scheduler_config=SchedulerConfig(
-            mode="mixed", max_num_seqs=1, max_num_batched_tokens=4
-        ),
+        scheduler_config=SchedulerConfig(mode="mixed", max_num_seqs=1, max_num_batched_tokens=4),
         execution_config=ExecutionConfig(),
         attention_backend="triton" if device == "cuda" else "torch",
     )
@@ -537,7 +535,9 @@ def test_forward_consumes_prepared_inputs(
         exit_config=ExitConfig("random_lookahead"),
         scheduler_config=SchedulerConfig(
             mode="refill" if atomic else "mixed",
-            max_num_seqs=3, max_num_batched_tokens=8, prefill_chunk_size=3
+            max_num_seqs=3,
+            max_num_batched_tokens=8,
+            prefill_chunk_size=3,
         ),
         execution_config=ExecutionConfig(
             static_buffers=static_buffers,

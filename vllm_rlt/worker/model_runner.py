@@ -260,9 +260,7 @@ class ModelRunner:
         self.states = None
         # Prompt hidden states staged between split-prefill scheduling boundaries.
         # Sized by the same helper the memory plan reserves with.
-        stage_rows = prefill_stage_rows(
-            model.config, scheduler, staged_prefill=staged_prefill
-        )
+        stage_rows = prefill_stage_rows(model.config, scheduler, staged_prefill=staged_prefill)
         self.staged_prefill = stage_rows > 0
         self.prefill_states = (
             torch.empty(

@@ -266,9 +266,7 @@ def test_spawned_mixed_worker_matches_local_without_connector(asynchronous):
             scheduler_config=SchedulerConfig(
                 mode="mixed", max_num_seqs=3, max_num_batched_tokens=4, prefill_chunk_size=3
             ),
-            execution_config=ExecutionConfig(
-                async_scheduling=asynchronous, static_buffers=True
-            ),
+            execution_config=ExecutionConfig(async_scheduling=asynchronous, static_buffers=True),
             exit_config=ExitConfig("ouro_delayed" if asynchronous else "ouro"),
         ),
     )

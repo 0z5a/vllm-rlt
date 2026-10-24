@@ -192,17 +192,13 @@ def create_scheduling_policy(
     Failing here keeps an unimplemented mode from silently changing
     semantics or returning an empty schedule forever.
     """
-    staged_prefill = requires_staged_prefill(
-        scheduler_config, produces_tokens=produces_tokens
-    )
+    staged_prefill = requires_staged_prefill(scheduler_config, produces_tokens=produces_tokens)
 
     # Prompt-only phases do not use prompt/generation interleaving rules.
     if not produces_tokens:
         return PromptOnlyPolicy(
             scheduler_config,
-            staged_prefill=requires_staged_prefill(
-                scheduler_config, produces_tokens=False
-            ),
+            staged_prefill=requires_staged_prefill(scheduler_config, produces_tokens=False),
         )
 
     # The remaining compatibility checks apply to generation scheduling.

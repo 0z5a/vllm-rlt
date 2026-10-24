@@ -824,9 +824,7 @@ class Scheduler:
         phases = {batch.phase_for(item) for item in batch.requests}
         if RequestPhase.PREFILL in phases:
             return self.total_ut_steps
-        if phases.intersection(
-            (RequestPhase.PRELUDE, RequestPhase.CODA, RequestPhase.SPECULATIVE)
-        ):
+        if phases.intersection((RequestPhase.PRELUDE, RequestPhase.CODA, RequestPhase.SPECULATIVE)):
             return 0
         if phases.intersection((RequestPhase.PREFILLING_RECURRENT, RequestPhase.RECURRENT)):
             return 1
