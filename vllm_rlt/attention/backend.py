@@ -3,7 +3,7 @@
 import importlib
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import torch
 
@@ -47,7 +47,7 @@ class AttentionBackend:
 
 _TORCH_CAPABILITIES = BackendCapabilities()
 _TRITON_CAPABILITIES = BackendCapabilities(
-    packed_prefill=True, cuda_graphs=True, async_scheduling=True, device_context_lengths=True
+    cuda_graphs=True, async_scheduling=True, device_context_lengths=True
 )
 _FLASH_CAPABILITIES = {
     2: BackendCapabilities(cuda_graphs=True, async_scheduling=True, device_context_lengths=True),
@@ -114,6 +114,13 @@ def create_backend(
     for candidate in candidates:
         try:
             implementation = _create_explicit(candidate, device, dtype, head_dim, block_size)
+            if candidate == "triton" and required_capabilities.packed_prefill:
+                # Packed BF16 prefill has different arithmetic from per-row decode.
+                # Opt in for prefill_uva without changing existing split/mixed or
+                # Huginn boundary attention when that option is disabled.
+                implementation.capabilities = replace(
+                    implementation.capabilities, packed_prefill=True
+                )
             missing = [
                 name
                 for name in (
