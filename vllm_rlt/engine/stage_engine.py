@@ -29,6 +29,19 @@ class SignalHandle:
     row: int
 
 
+def _huginn_prefix_cache_experiment() -> bool:
+    """Opt-in: let Huginn share immutable prompt prefixes (VLLM_RLT_HUGINN_PREFIX_CACHE=1).
+
+    Huginn prefill runs every recurrence depth for every prompt token and writes the
+    prelude/coda KV at depth 0, so a completed prompt prefix holds valid KV in every
+    plane a later request can read. Combine with VLLM_RLT_HUGINN_POSITION_NOISE=1 so a
+    cached run draws the same recurrent-state noise as a cold one.
+    """
+    import os
+
+    return os.environ.get("VLLM_RLT_HUGINN_PREFIX_CACHE", "0") == "1"
+
+
 class StageEngine:
     """Single-device loop-level engine with synchronous or pipelined scheduling."""
 
@@ -55,7 +68,7 @@ class StageEngine:
         if getattr(model, "requires_boundary_kv", False):
             if cache_config.layout != "last_exited":
                 raise ValueError("Huginn requires last_exited KV")
-            if cache_config.enable_prefix_caching:
+            if cache_config.enable_prefix_caching and not _huginn_prefix_cache_experiment():
                 raise ValueError("Huginn prefix caching is not yet supported")
         self.exit_config = exit_config or ExitConfig()
         self.execution_config = execution_config or ExecutionConfig()

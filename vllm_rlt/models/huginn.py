@@ -8,6 +8,7 @@ coda attention use depth zero; recurrent attention uses its own depth plane.
 
 import json
 import math
+import os
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -198,6 +199,50 @@ class HuginnBlock(nn.Module):
         return self.norm_4(self.mlp(self.norm_3(hidden)) + hidden)
 
 
+# Opt-in: draw each token's recurrent-state noise from a counter-based hash of
+# (request seed, position, channel) instead of the request's sequential RNG stream.
+# The sample is then independent of batching, prefill chunking and prefix-cache
+# hits, so a cached-prefix generation reproduces the cold run token for token.
+POSITION_NOISE = os.environ.get("VLLM_RLT_HUGINN_POSITION_NOISE", "0") == "1"
+
+
+_GOLDEN = 0x9E3779B97F4A7C15 - (1 << 64)  # SplitMix64 increment as a signed int64
+
+
+def _lsr(x, bits):
+    """Logical right shift of an int64 tensor."""
+    return (x >> bits) & ((1 << (64 - bits)) - 1)
+
+
+def position_keyed_state_noise(seeds, positions, width, std, dtype):
+    """Truncated normal (mean 0, ``std``, within 3 std) keyed by (seed, position, channel).
+
+    Three chained SplitMix64-style mixes (seed, then position, then channel) produce
+    24 uniform bits per element; the inverse normal CDF maps them onto the truncated
+    range. int64 arithmetic wraps on every backend, so CPU and CUDA agree bitwise.
+    """
+    rows = seeds.shape[0]
+    channel = torch.arange(width, dtype=torch.int64, device=seeds.device)
+
+    def mix(v):
+        v = (v ^ _lsr(v, 30)) * -4658895280553007687
+        v = (v ^ _lsr(v, 27)) * -7723592293110705685
+        return v ^ _lsr(v, 31)
+
+    # Stage-wise: mix the seed, then fold in the position, then the channel. Each
+    # stage is a bijection, so (seed, position, channel) triples never alias the
+    # way a single linear combination of the three could.
+    x = mix(seeds[:, None] * -7046029254386353131 + _GOLDEN)
+    x = mix(x + positions[:, None] * 6364136223846793005 + _GOLDEN)
+    x = mix(x + channel[None, :] * 1442695040888963407 + _GOLDEN)
+    uniform = _lsr(x, 40).to(torch.float32) * (1.0 / 16777216.0)  # 24 bits -> [0, 1)
+    uniform = uniform * (1.0 - 2.0 / 16777216.0) + 1.0 / 16777216.0  # (0, 1), away from the edges
+    lower = 0.5 * (1.0 + math.erf(-3.0 / math.sqrt(2.0)))
+    probability = lower + uniform * (1.0 - 2.0 * lower)
+    z = torch.special.ndtri(probability).clamp_(-3.0, 3.0)
+    return (z * std).to(dtype).reshape(rows, width)
+
+
 class HuginnForCausalLM(nn.Module):
     """Huginn-0125 with eager KV boundaries and a graphable recurrent core."""
 
@@ -257,21 +302,32 @@ class HuginnForCausalLM(nn.Module):
         freqs = self._freqs(batch)
         for block in self.transformer.prelude:
             hidden = block(hidden, freqs, batch, cache)
-        state = torch.empty_like(hidden)
-        start = 0
-        while start < len(state):
-            end = start + 1
-            generator = generators[start] if generators is not None else None
-            while end < len(state) and (generators is None or generators[end] is generator):
-                end += 1
-            torch.nn.init.trunc_normal_(
-                state[start:end],
-                std=self.config.initializer_range,
-                a=-3 * self.config.initializer_range,
-                b=3 * self.config.initializer_range,
-                generator=generator,
+        if POSITION_NOISE and generators is not None:
+            state = position_keyed_state_noise(
+                torch.tensor(
+                    [g.initial_seed() for g in generators], dtype=torch.int64, device=hidden.device
+                ),
+                batch.position_ids.to(torch.int64),
+                self.config.n_embd,
+                self.config.initializer_range,
+                hidden.dtype,
             )
-            start = end
+        else:
+            state = torch.empty_like(hidden)
+            start = 0
+            while start < len(state):
+                end = start + 1
+                generator = generators[start] if generators is not None else None
+                while end < len(state) and (generators is None or generators[end] is generator):
+                    end += 1
+                torch.nn.init.trunc_normal_(
+                    state[start:end],
+                    std=self.config.initializer_range,
+                    a=-3 * self.config.initializer_range,
+                    b=3 * self.config.initializer_range,
+                    generator=generator,
+                )
+                start = end
         state = state * math.sqrt(self.config.n_embd)
         return torch.cat((state, hidden), dim=-1)
 

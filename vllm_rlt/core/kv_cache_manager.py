@@ -373,14 +373,23 @@ class KVCacheManager:
             if key in self._prefixes:
                 continue
             end = (index + 1) * self.block_size
-            # Every depth and layer must have a contiguous written prefix.
+            # Every depth must have a contiguous written prefix in each layer it
+            # holds live KV for: all layers at depth zero, only the recurrent
+            # layers deeper (Huginn's prelude/coda write at depth zero only).
             # GPU completion alone does not establish this coverage.
-            if any(w.prefix < end for plane in allocation.written for w in plane):
+            if not self._prefix_complete(allocation, end):
                 break
             blocks = tuple(t[index] for t in allocation.block_tables)
             for b in blocks:
                 self._refs[b] += 1
             self._prefixes[key] = blocks
+
+    def _prefix_complete(self, allocation: _Allocation, end: int) -> bool:
+        for plane, written in enumerate(allocation.written):
+            layers = range(self.num_layers) if plane == 0 else self.recurrent_layers
+            if any(written[layer].prefix < end for layer in layers):
+                return False
+        return True
 
     def lookup_prefix(self, tokens):
         if not self.enable_prefix_caching:

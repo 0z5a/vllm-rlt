@@ -542,3 +542,133 @@ def test_packed_planes_match_unpacked_on_gpu():
     (unpacked, unpacked_peak), (packed, packed_peak) = runs
     assert packed == unpacked
     assert packed_peak * 5 == unpacked_peak * 3
+
+
+def test_huginn_prefix_cache_experiment_reuses_prompt_pages(monkeypatch):
+    """With the experiment gate, Huginn publishes completed prompt pages and reuses them.
+
+    Publication requires written coverage only for the layers each plane holds live
+    KV for (prelude/coda write at depth zero only). A cached-prefix run is
+    deterministic and token-identical to another cached-prefix run, but not to a
+    cold run: the recomputed suffix draws its recurrent-state noise from the start
+    of the request's RNG stream, where the cold run drew noise for the first prompt
+    tokens. Position-keyed state noise would close that gap; until then the
+    engine guard stays and this path is an experiment.
+    """
+    import pytest as _pytest
+
+    torch.manual_seed(42)
+    shared = HuginnForCausalLM(tiny_huginn_config(mean_recurrence=4)).eval()
+    params = SamplingParams(max_tokens=4, ignore_eos=True)
+    prompt = [4, 7, 3, 9, 2, 6, 1, 8]
+    with _pytest.raises(ValueError, match="prefix caching"):
+        LLMEngine(
+            shared,
+            cache_config=CacheConfig(num_blocks=128, block_size=2, enable_prefix_caching=True),
+        )
+    monkeypatch.setenv("VLLM_RLT_HUGINN_PREFIX_CACHE", "1")
+
+    def engine():
+        return LLMEngine(
+            shared,
+            cache_config=CacheConfig(num_blocks=128, block_size=2, enable_prefix_caching=True),
+            scheduler_config=SchedulerConfig(
+                max_num_seqs=2, max_num_batched_tokens=8, prefill_chunk_size=4
+            ),
+        )
+
+    def run(eng, name, tokens):
+        eng.add_request(name, tokens, params)
+        out = {}
+        while eng.has_unfinished_requests():
+            for o in eng.step():
+                if o.finished:
+                    out[o.request_id] = (list(o.token_ids), list(o.exit_depths))
+        return out[name]
+
+    warm, other = engine(), engine()
+    first = run(warm, "first", prompt)
+    assert warm.cache_manager.lookup_prefix(prompt), "the finished prompt should be published"
+    assert first == run(other, "first", prompt)  # cold runs agree with each other
+    hits = warm.cache_manager.prefix_hits
+    second = run(warm, "second", prompt)
+    assert warm.cache_manager.prefix_hits > hits  # prefill resumed after the cached pages
+    run(other, "second", prompt)
+    assert second == run(other, "second-again", prompt)  # cached runs are deterministic
+    assert second[1] == first[1]  # fixed depth either way
+    # A longer prompt sharing the prefix reuses only complete prompt blocks.
+    hits = warm.cache_manager.prefix_hits
+    run(warm, "third", prompt + [5, 3, 7, 7])
+    assert warm.cache_manager.prefix_hits - hits >= len(prompt) - 2
+    assert warm.cache_manager.num_used_blocks == 0
+
+
+def test_position_keyed_state_noise_is_a_truncated_normal_keyed_by_seed_and_position():
+    from vllm_rlt.models.huginn import position_keyed_state_noise
+
+    noise = position_keyed_state_noise(
+        torch.arange(64), torch.arange(64) * 37, 5280, 0.02, torch.float32
+    )
+    z = noise / 0.02
+    assert z.abs().max() <= 3.0
+    assert (
+        abs(z.mean().item()) < 0.01 and abs(z.std().item() - 0.987) < 0.01
+    )  # trunc N(0,1) on [-3,3]
+    assert 0.0005 < (z.abs() > 2.9).float().mean().item() < 0.002
+    # Same (seed, position) gives the same channel vector regardless of batch composition.
+    alone = position_keyed_state_noise(
+        torch.tensor([21]), torch.tensor([21 * 37]), 5280, 0.02, torch.float32
+    )
+    assert torch.equal(alone[0], noise[21])
+    # Different seed or position gives different noise.
+    other = position_keyed_state_noise(
+        torch.tensor([21, 22]), torch.tensor([21 * 37 + 1, 21 * 37]), 5280, 0.02, torch.float32
+    )
+    assert not torch.equal(other[0], noise[21]) and not torch.equal(other[1], noise[21])
+    # Adjacent seeds must not be channel-shifted copies of each other (a linear
+    # seed/channel combination before the mix would alias them exactly).
+    a = position_keyed_state_noise(torch.tensor([5]), torch.tensor([100]), 512, 0.02, torch.float32)
+    b = position_keyed_state_noise(torch.tensor([6]), torch.tensor([100]), 512, 0.02, torch.float32)
+    assert not torch.equal(a[0][:-1], b[0][1:]) and not torch.equal(a[0][1:], b[0][:-1])
+
+
+def test_position_keyed_noise_makes_huginn_independent_of_chunking_and_prefix_cache(monkeypatch):
+    """With position-keyed state noise a cached-prefix run reproduces the cold run exactly."""
+    import vllm_rlt.models.huginn as huginn_module
+
+    monkeypatch.setattr(huginn_module, "POSITION_NOISE", True)
+    monkeypatch.setenv("VLLM_RLT_HUGINN_PREFIX_CACHE", "1")
+    torch.manual_seed(42)
+    shared = HuginnForCausalLM(tiny_huginn_config(mean_recurrence=4)).eval()
+    params = SamplingParams(max_tokens=4, ignore_eos=True, seed=9)
+    prompt = [4, 7, 3, 9, 2, 6, 1, 8]
+
+    def engine(chunk, cache):
+        return LLMEngine(
+            shared,
+            cache_config=CacheConfig(num_blocks=128, block_size=2, enable_prefix_caching=cache),
+            scheduler_config=SchedulerConfig(
+                max_num_seqs=2, max_num_batched_tokens=8, prefill_chunk_size=chunk
+            ),
+        )
+
+    def run(eng, name, tokens):
+        eng.add_request(name, tokens, params)
+        out = {}
+        while eng.has_unfinished_requests():
+            for o in eng.step():
+                if o.finished:
+                    out[o.request_id] = (list(o.token_ids), list(o.exit_depths))
+        return out[name]
+
+    cold_chunk2 = run(engine(2, False), "a", prompt)
+    cold_chunk8 = run(engine(8, False), "b", prompt)
+    assert cold_chunk2 == cold_chunk8  # chunking no longer changes the noise
+    warm = engine(4, True)
+    assert run(warm, "first", prompt) == cold_chunk2
+    hits = warm.cache_manager.prefix_hits
+    assert run(warm, "second", prompt) == cold_chunk2  # cached prefix, identical tokens
+    assert warm.cache_manager.prefix_hits > hits
+    longer = prompt + [5, 3, 7, 7]
+    assert run(warm, "third", longer) == run(engine(4, False), "c", longer)
+    assert warm.cache_manager.num_used_blocks == 0
