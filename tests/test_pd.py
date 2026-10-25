@@ -105,33 +105,20 @@ def test_pd_configuration_validation(options):
         PDConfig(**options)
 
 
-def test_pd_coordinator_model_metadata_is_model_neutral():
-    from dataclasses import asdict
+def test_pd_rejects_huginn_before_spawning(monkeypatch):
+    from unittest.mock import Mock
 
-    from tests.helpers import tiny_nanbeige_config
     from vllm_rlt.models import HuginnConfig
-    from vllm_rlt.pd.engine import PDModelInfo
+    from vllm_rlt.pd.engine import PDEngine
 
-    def ready(config):
-        return dict(stage_id="stage-0", model=asdict(config))
-
-    for config in (tiny_ouro_config(), tiny_nanbeige_config()):
-        info = PDModelInfo.from_ready(ready(config))
-        assert info == PDModelInfo(
-            config.vocab_size, config.total_ut_steps, config.max_position_embeddings
-        )
-    # Huginn derives loop/context limits through properties, which asdict omits
-    # from the ready payload: fail at startup, not at request validation.
-    with pytest.raises(ValueError, match="model metadata lacks"):
-        PDModelInfo.from_ready(ready(HuginnConfig()))
-    payload = ready(tiny_ouro_config())
-    payload["model"]["vocab_size"] = True
-    with pytest.raises(ValueError, match="model metadata lacks"):
-        PDModelInfo.from_ready(payload)
+    clients = Mock()
+    monkeypatch.setattr("vllm_rlt.pd.engine.StageClient", clients)
+    with pytest.raises(ValueError, match="PD does not support Huginn"):
+        PDEngine(HuginnConfig())
+    clients.assert_not_called()
 
 
-def test_pd_nanbeige_startup_uses_worker_limits_for_request_validation(monkeypatch):
-    from dataclasses import asdict
+def test_pd_nanbeige_startup_uses_entry_config_for_request_validation(monkeypatch):
     from unittest.mock import Mock
 
     from tests.helpers import tiny_nanbeige_config
@@ -141,8 +128,9 @@ def test_pd_nanbeige_startup_uses_worker_limits_for_request_validation(monkeypat
 
     def ready_client(model, *, stage_config, **options):
         # Replace only the process boundary. The coordinator still constructs,
-        # adopts worker metadata, connects peers and validates real requests.
+        # connects peers and validates requests without model metadata in ready.
         assert model is config
+        assert options["model_config"].model_specific_config is config
         return Mock(
             ready=True,
             connected=True,
@@ -151,8 +139,6 @@ def test_pd_nanbeige_startup_uses_worker_limits_for_request_validation(monkeypat
                 kind="ready",
                 stage_id=stage_config.stage_id,
                 role=stage_config.role,
-                model=asdict(model),
-                model_type=model.to_dict()["model_type"],
                 fingerprint="same-model-and-cache",
                 info={"agent": stage_config.stage_id},
                 num_blocks=64,
@@ -165,6 +151,10 @@ def test_pd_nanbeige_startup_uses_worker_limits_for_request_validation(monkeypat
     monkeypatch.setattr("vllm_rlt.pd.engine.StageClient", clients)
     with PDEngine(config, attention_backend="triton") as engine:
         assert clients.call_count == 2
+        assert engine.model_config.model_specific_config is config
+        assert all(
+            call.kwargs["model_config"] is engine.model_config for call in clients.call_args_list
+        )
         # Accept the upper vocabulary/context boundaries at Nanbeige's depth.
         params = SamplingParams(
             max_tokens=config.max_position_embeddings, max_loops=config.total_ut_steps
