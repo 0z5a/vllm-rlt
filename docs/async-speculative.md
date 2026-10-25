@@ -163,46 +163,22 @@ The model runner shares its compute and result-copy streams with speculation. Se
 `multi_stream=False` orders the copy on the compute stream as well; cross-round
 CPU/GPU submission remains asynchronous, but D2H no longer overlaps computation.
 
-## Draft policy
+## Fixed draft length
 
-`SpeculativeConfig.draft_policy` / `--draft-policy` accepts `adaptive` (default)
-or `fixed`. **The adaptive default applies to all async speculation, with or
-without CUDA Graphs.** It does not enable async scheduling, speculation or
-Graphs by itself: those remain opt-in. Draft/target model depths stay fixed;
-adaptive draft counts do not enable adaptive model exit.
+Both async and synchronous speculation use `SpeculativeConfig(num_speculative_tokens=K)`
+or `--speculative-tokens K`. The configured draft count stays fixed, subject to
+output, context and scheduler token-budget limits that can shorten a round,
+including effective K=0. Draft and target model depths also stay fixed.
 
-With `adaptive`, `num_speculative_tokens=K` is the per-round maximum. Each round
-chooses K' in `[0, K]` using observed compute-stream round times and per-position
-acceptance estimates; K'=0 is a full-depth single-token round. The policy fits
-round cost online with regularized exponentially weighted least squares, uses a Beta prior for
-acceptance, and periodically explores other lengths. When Graphs are enabled,
-startup bucket replay timings initialize the cost prior. No new CPU token read
-is required to select the next round's length.
+Adaptive K, its timing/calibration hooks and policy configuration are split out
+of this PR. There is no `--draft-policy` option in this implementation. Historical
+adaptive measurements below are retained for attribution, not as evidence for
+the current default or an isolated adaptive-over-best-fixed-K improvement.
 
-The acceptance estimate is a population statistic conditional on the preceding
-candidates being accepted, indexed by offset within a draft. It estimates the
-expected committed-token count for the cost model; it does not predict whether
-the current request's next candidate will be accepted from its model state.
-The combined Graph/vectorization performance tables below do not isolate the
-benefit of adaptive K over the best fixed K.
-
-The cost fit uses scaled features and a persistent ridge of `1e-4` in normalized
-coordinates. Its information matrix is updated as
-`A = forgetting * A + x x^T + (1 - forgetting) * ridge * I` and solved by
-Cholesky, without recursively inflating an inverse covariance. The ridge bounds
-uncertainty in unobserved directions even for repeated collinear full batches.
-Non-finite observations are ignored; invalid fits recover to the calibrated
-prior and increment `fit_resets` in the policy summary. Negative extrapolated
-costs use the prior rather than becoming an artificially cheap candidate.
-A CPU regression exercises 80,000 rejected-draft rounds and a late timing change;
-additional cases check recovery from invalid coefficients or information state.
-
-For fixed K, use `SpeculativeConfig(num_speculative_tokens=2, draft_policy="fixed")`
-or append `--draft-policy fixed` to the CLI. This retains the configured proposal
-count, subject to ordinary output/context/token-budget limits that can shorten
-a round. Synchronous speculation continues to use fixed K regardless of this
-async policy setting. The diagnostic `draft_tokens_override`, when supplied,
-takes precedence over policy selection.
+The async runner gathers and scatters its two-column `(token, position)` slot
+state with the existing Triton routing kernels (`H=2`). Acceptance still computes
+each request's prefix match and correction independently. Slot allocation,
+round completion events and deferred retirement retain their existing owners.
 
 ## CUDA Graph execution
 
@@ -294,15 +270,15 @@ peaks. Enabling graphs does not establish a throughput
 improvement; compare matched warmed eager/Graph runs and retain capture, replay
 and fallback counts from `speculative_runner.graphs` and `coda_graphs`.
 
-The current H100 results immediately below apply to inference runtime
+The historical H100 results immediately below apply to inference runtime
 `c3a97d3`; they have not been rerun after the StageEngine/ModelRuntime integration.
 Later sections retain historical H20 measurements at `08d3f99`,
 bucketing/numerical diagnostics at `dfbb0f7`, and H100 exact-row measurements at
 `9eb01bb`/`73cfe4e`. Those earlier runtimes used fixed draft counts and different
 row/capture behavior; their numbers and validation claims remain scoped to those
-revisions. They are not measurements of current adaptive defaults.
+revisions. They do not qualify the current fixed-K routing implementation.
 
-### Current H100 results (`c3a97d3`, reviewed 2026-10-19)
+### Historical H100 results (`c3a97d3`, reviewed 2026-10-19)
 
 [Reviewer 0z5a's approval](https://github.com/InferMatrixLab/vllm-rlt/pull/127#pullrequestreview-5568912858) confirms that the six cherry-picked
 commits at `c3a97d3` match the validated `pr127-high-concurrency` branch one for
@@ -324,9 +300,11 @@ review table is reproduced below; values above 1 mean higher throughput.
 | K=4, default | 1.04 | 1.20 | 1.15 | 1.16 |
 | K=4, fixed K | 0.99 | 1.08 | 0.98 | 0.98 |
 
-“Default” means adaptive drafts plus the automatically derived row limit;
+In this historical table, “default” means adaptive drafts plus the automatically derived row limit;
 K=2/4 is the maximum proposal count, not a fixed count on every round. The
-`fixed K` row uses `draft_policy="fixed"`. Adaptive K=2/4 reaches 1.04–1.20×
+`fixed K` row used the then-available `draft_policy="fixed"` option.
+Adaptive K and that option are absent from the current implementation.
+Historical adaptive K=2/4 reaches 1.04–1.20×
 native in these C64–256 cases. Fixed K=4 ranges from 0.98–1.08× and still
 regresses in some cells, so this is not a general benefit from enabling Graphs
 or increasing K. The older short-output regressions below describe earlier
@@ -542,7 +520,7 @@ after every first token and completed bootstrap GPU work, counts the remaining
 inputs, KV capacity, token budget and hardware. Each mode warms a full request;
 mode order reverses between five paired repetitions. Profiling is disabled.
 
-The original H20 measurements use fixed K=2. Their C1/8 conditions fit the then-default 128-row limit. The CLI example below explicitly selects fixed drafts; the current adaptive H100 results above include K=2/4.
+The original H20 measurements use fixed K=2. Their C1/8 conditions fit the then-default 128-row limit. The CLI example below uses fixed drafts; the historical adaptive H100 results above include K=2/4.
 
 | Input | Concurrency | Native async Graph tok/s | Async spec eager tok/s | Async spec Graph tok/s | Paired Graph/eager speedup |
 | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -614,7 +592,7 @@ Set `RLT_MODEL_PATH` to the Ouro-1.4B checkpoint and run inside a GPU allocation
 ```bash
 vllm-rlt --model "$RLT_MODEL_PATH" --device cuda --dtype bfloat16 \
   --attention-backend triton --async-scheduling --cuda-graphs \
-  --speculative-tokens 2 --draft-policy fixed --draft-loops 2 --target-loops 4 \
+  --speculative-tokens 2 --draft-loops 2 --target-loops 4 \
   --max-loops 4 --exit-threshold 1 --temperature 0 \
   --max-tokens 64 --prompt "Explain why the sky appears blue."
 ```

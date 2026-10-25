@@ -2,8 +2,6 @@ import logging
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, cast
 
-import torch
-
 from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import (
     CacheConfig,
@@ -242,13 +240,6 @@ class StageEngine:
                 rng=self.rng,
                 runtime=self.model_runner.runtime,
             )
-        self.draft_policy = None
-        if self.async_speculative and speculative_config.draft_tokens_override is not None:
-            forced = speculative_config.draft_tokens_override
-            self.scheduler.draft_tokens = lambda starts: forced
-        elif self.async_speculative and speculative_config.draft_policy == "adaptive":
-            self.draft_policy = self._make_draft_policy(scheduler_config)
-            self.scheduler.draft_tokens = self.draft_policy.choose
         self.executor = Executor(self.model_runner, speculation=self.speculative_runner)
         self._pending_speculative = []
         self._retiring_speculative = {}
@@ -266,50 +257,6 @@ class StageEngine:
         if scheduler_config.enable_preemption:
             self.scheduler.suspend_callback = self.preemption.suspend
             self.scheduler.resume_callback = self.preemption.resume
-
-    def _make_draft_policy(self, scheduler_config):
-        from vllm_rlt.worker.cuda_graph import _bucket_size
-        from vllm_rlt.worker.draft_policy import (
-            AdaptiveDraftPolicy,
-            calibrated_prior,
-            round_features,
-            time_replays,
-        )
-
-        runner = cast("AsyncSpeculativeRunner", self.speculative_runner)
-        spec = self.speculative_config
-        bucket, prior = None, None
-        if runner.graphs is not None:
-            sizes = runner.graphs.capture_sizes
-            limit = sizes[-1]
-
-            # Rows above the largest bucket run eager: approximately linear.
-            def bucket(rows):
-                return _bucket_size(sizes, rows) if rows <= limit else rows
-
-            with torch.cuda.device(runner.device):
-                prior = calibrated_prior(
-                    time_replays(runner.graphs),
-                    time_replays(runner.coda_graphs),
-                    spec.draft_loops,
-                    spec.target_loops,
-                )
-        policy = AdaptiveDraftPolicy(
-            spec.num_speculative_tokens,
-            spec.draft_loops,
-            spec.target_loops,
-            token_budget=scheduler_config.max_num_batched_tokens,
-            bucket=bucket,
-            prior=prior,
-        )
-        runner.round_features = lambda items: round_features(
-            [item.token_start for item in items],
-            [item.token_count for item in items],
-            spec.draft_loops,
-            spec.target_loops,
-            bucket,
-        )
-        return policy
 
     @property
     def connector(self):
@@ -754,11 +701,8 @@ class StageEngine:
         if not ticket.ready():
             runner.readback_waits += 1
         result = ticket.collect()
-        if self.draft_policy is not None and ticket.timing is not None:
-            start, end, features = ticket.timing
-            self.draft_policy.observe_time(features, start.elapsed_time(end))
-        for scheduled_request, state, round_id, acceptance in zip(
-            ticket.batch.requests, ticket.states, ticket.rounds, result.speculative
+        for scheduled_request, state, round_id in zip(
+            ticket.batch.requests, ticket.states, ticket.rounds
         ):
             request = scheduled_request.request
             if (
@@ -770,10 +714,6 @@ class StageEngine:
             if state.delivered != round_id:
                 raise RuntimeError("out-of-order speculative round delivery")
             state.delivered += 1
-            if self.draft_policy is not None:
-                self.draft_policy.observe_acceptance(
-                    scheduled_request.token_count - 1, acceptance.accepted_count
-                )
         outputs = self._update(ticket.batch, result)
         ticket.retire()
         self._pending_speculative.pop(0)

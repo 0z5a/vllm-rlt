@@ -179,23 +179,9 @@ class SpeculativeConfig:
     num_speculative_tokens: int
     draft_loops: int = 2
     target_loops: int = 4
-    # Drafts per round when set, in [0, num_speculative_tokens]. Async rounds
-    # only; 0 is a full-depth single-token step (measurement/diagnostic knob).
-    draft_tokens_override: int | None = None
-    # "adaptive" (default): async rounds draft K' in [0, K], with K a maximum,
-    # chosen from measured round cost and acceptance (vllm_rlt.worker.draft_policy);
-    # "fixed" always drafts K. Synchronous speculation always drafts K.
-    draft_policy: str = "adaptive"
 
     def __post_init__(self):
         for name in ("num_speculative_tokens", "draft_loops", "target_loops"):
             _positive(name, getattr(self, name))
         if self.draft_loops >= self.target_loops:
             raise ValueError("draft_loops must be smaller than target_loops")
-        override = self.draft_tokens_override
-        if override is not None and (
-            type(override) is not int or not 0 <= override <= self.num_speculative_tokens
-        ):
-            raise ValueError("draft_tokens_override must be in [0, num_speculative_tokens]")
-        if self.draft_policy not in ("fixed", "adaptive"):
-            raise ValueError("draft_policy must be fixed or adaptive")

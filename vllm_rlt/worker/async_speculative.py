@@ -61,8 +61,6 @@ class SpeculativeRoundTicket:
     rows: int
     cached: ModelRunnerOutput | None = None
     retired: bool = False
-    # (start event, end event, round features) when round timing is enabled.
-    timing: tuple | None = None
 
     @property
     def has_result(self):
@@ -167,8 +165,6 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         self.submitted_before_collect = 0
         self.discarded_rounds = 0
         self.readback_waits = 0
-        # Set by the engine for the adaptive draft policy: callable(items) -> features.
-        self.round_features = None
 
     def _state(self, request, buffer):
         rid = request.request_id
@@ -302,7 +298,19 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         return SimpleNamespace(n=n, width=width, rows=len(request_rows), offsets=offsets, **views)
 
     def _draft(self, plan, tables, allocations):
-        slot_values = self.slot_values[plan.slots]
+        from vllm_rlt.kernels.routing import gather_kernel
+
+        slot_values = self.slot_values.new_empty((plan.n, 2))
+        gather_kernel[(plan.n, 1)](
+            self.slot_values,
+            plan.slots,
+            slot_values,
+            plan.n,
+            H=2,
+            IN_STRIDE=self.slot_values.stride(0),
+            OUT_STRIDE=slot_values.stride(0),
+            TILE=2,
+        )
         starts = slot_values[:, 1]
         tokens = torch.zeros((plan.n, plan.width), dtype=torch.long, device=self.device)
         tokens[:, 0] = slot_values[:, 0]
@@ -337,6 +345,8 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         return self._coda(hidden).argmax(-1)
 
     def _accept_and_update_state(self, plan, states, starts, tokens, target, buffer):
+        from vllm_rlt.kernels.routing import scatter_kernel
+
         count = len(target)
         buffer.result[:count].copy_(target)
         targets = torch.zeros((plan.n, plan.width), dtype=torch.long, device=self.device)
@@ -350,7 +360,16 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
         # candidates followed by the correction (or final bonus).
         next_tokens = targets.gather(1, accepted[:, None]).squeeze(1)
         next_positions = starts + accepted + 1
-        self.slot_values[plan.slots] = torch.stack((next_tokens, next_positions), 1)
+        next_values = torch.stack((next_tokens, next_positions), 1)
+        scatter_kernel[(plan.n, 1)](
+            next_values,
+            plan.slots,
+            self.slot_values,
+            H=2,
+            IN_STRIDE=next_values.stride(0),
+            OUT_STRIDE=self.slot_values.stride(0),
+            TILE=2,
+        )
         buffer.result[count : count + plan.n].copy_(accepted)
         buffer.result[count + plan.n : count + 2 * plan.n].copy_(next_positions)
         for state in states:
@@ -374,18 +393,10 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             if any(s.submitted > s.delivered for s in states):
                 self.submitted_before_collect += 1
             tables.copy_(host_tables, non_blocking=True)
-            timing = None
-            if self.round_features is not None:
-                start = torch.cuda.Event(enable_timing=True)
-                start.record(self.compute_stream)
             plan = self._round_plan(scheduled_requests, states, buffer)
             starts, tokens, hidden_blocks = self._draft(plan, tables, allocations)
             target = self._verify(plan, starts, hidden_blocks, tables, allocations)
             count = self._accept_and_update_state(plan, states, starts, tokens, target, buffer)
-            if self.round_features is not None:
-                end = torch.cuda.Event(enable_timing=True)
-                end.record(self.compute_stream)
-                timing = (start, end, self.round_features(scheduled_requests))
             buffer.compute_done = torch.cuda.Event()
             buffer.compute_done.record(self.compute_stream)
             for state in states:
@@ -402,7 +413,7 @@ class AsyncSpeculativeRunner(SpeculativeRunner):
             scheduled_request.token_count - 1 for scheduled_request in scheduled_requests
         )
         self.stats.verified_rows += count
-        return SpeculativeRoundTicket(batch, buffer, states, rounds, count, timing=timing)
+        return SpeculativeRoundTicket(batch, buffer, states, rounds, count)
 
     def request_ready(self, request):
         state = self.states.get(request.request_id)

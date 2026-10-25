@@ -99,13 +99,13 @@ for supported combinations and limitations.
 
 Fixed-depth greedy Ouro asynchronous self-speculation supports opt-in core/LM-head
 CUDA Graphs with compatible paged attention backends and row buckets captured at
-startup. All asynchronous speculation now defaults to adaptive drafts, with or without Graphs: K is a
-per-round maximum; `draft_policy="fixed"` / `--draft-policy fixed` retains fixed
-K. Synchronous speculation is unchanged. In reviewer-run H100 Ouro-1.4B BF16
-64/64 input/output trials at C64–256, adaptive K=2/4 defaults deliver
-1.04–1.20× native async Graph end-to-end throughput, including the tail; fixed
-K=4 ranges from 0.98–1.08×. These results apply to `c3a97d3` and are workload
-specific; they have not been rerun after the StageEngine/ModelRuntime integration.
+startup. Async and synchronous speculation use the configured fixed K, subject
+to output, context and scheduler limits. Adaptive K is split into separate work.
+Reviewer-run H100 Ouro-1.4B BF16 64/64 input/output trials at C64–256 reported
+0.98–1.08× native async Graph throughput for fixed K=4 at `c3a97d3`.
+The historical adaptive results do not describe this PR's defaults. These
+workload-specific measurements have not been rerun after the
+StageEngine/ModelRuntime integration or the routing-kernel change.
 BF16 padding can change greedy continuations relative to unpadded
 execution. See [configuration, validation and original H100 table](docs/async-speculative.md#cuda-graph-execution).
 

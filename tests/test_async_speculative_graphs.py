@@ -35,7 +35,7 @@ def make_engine(backend, *, graphs, max_rows=32, max_graphs=16, multi_stream=Tru
             cuda_graph_max_batch_size=max_rows,
             cuda_graph_max_graphs=max_graphs,
         ),
-        speculative_config=SpeculativeConfig(3, draft_policy="fixed"),
+        speculative_config=SpeculativeConfig(3),
     )
 
 
@@ -231,7 +231,7 @@ def test_pd_async_graphs_match_local_and_cancel_safely(backend):
             static_buffers=True,
             pad_to_power_of_two=True,
         ),
-        speculative_config=SpeculativeConfig(3, draft_policy="fixed"),
+        speculative_config=SpeculativeConfig(3),
         attention_backend=backend,
     )
     try:

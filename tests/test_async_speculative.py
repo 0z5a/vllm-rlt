@@ -35,7 +35,6 @@ def make_engine(
     max_graph_rows=128,
     max_graphs=16,
     max_num_seqs=4,
-    spec_kwargs=None,
 ):
     return LLMEngine(
         model,
@@ -56,10 +55,7 @@ def make_engine(
             cuda_graph_max_batch_size=max_graph_rows,
             cuda_graph_max_graphs=max_graphs,
         ),
-        # Mechanism tests pin K drafts per round unless a test opts into a policy.
-        speculative_config=SpeculativeConfig(
-            k, **({"draft_policy": "fixed"} | (spec_kwargs or {}))
-        ),
+        speculative_config=SpeculativeConfig(k),
     )
 
 
@@ -95,34 +91,6 @@ def test_scheduler_uses_upper_bound_and_releases_rejected_budget():
 def test_async_spec_rejects_cpu_before_cache_allocation():
     with pytest.raises(ValueError, match="requires CUDA"):
         make_speculative_engine(tiny_ouro_model())
-
-
-def test_adaptive_round_uses_only_ready_requests_and_skips_empty_decisions():
-    from types import SimpleNamespace
-
-    scheduler = Scheduler(
-        SchedulerConfig(max_num_seqs=2),
-        SimpleNamespace(ensure_capacity=lambda *_: True),
-        SpeculativeConfig(3),
-    )
-    for rid in ("blocked", "inflight", "ready"):
-        request = Request(rid, [2, 3], SamplingParams(max_tokens=8), generated_token_ids=[4])
-        scheduler.requests[rid] = request
-        scheduler.enqueue(request, RequestPhase.SPECULATIVE)
-    scheduler.requests["inflight"].num_speculative_rounds = 2
-    scheduler.execution_ready = lambda request: request.request_id != "blocked"
-    decisions = []
-
-    def choose(starts):
-        decisions.append(starts)
-        return 0
-
-    scheduler.draft_tokens = choose
-    batch = scheduler.take_phases((RequestPhase.SPECULATIVE,))
-    assert decisions == [[2]]
-    assert [(r.request.request_id, r.token_count) for r in batch.requests] == [("ready", 1)]
-    assert scheduler.take_phases((RequestPhase.SPECULATIVE,)) is None
-    assert decisions == [[2]]
 
 
 @pytest.mark.gpu
@@ -837,63 +805,48 @@ def test_bucketed_ragged_arrivals_match_eager_tokens(k, dtype):
 
 
 @pytest.mark.gpu
-@pytest.mark.parametrize("override", [0, 1])
-def test_forced_draft_count_matches_eager_and_fixed_k(override):
-    model = tiny("cuda")
-    results = []
-    for graphs, kwargs in (
-        (False, {}),
-        (False, {"draft_tokens_override": override}),
-        (True, {"draft_tokens_override": override}),
-    ):
-        engine = make_engine(
-            model,
-            k=3,
-            graphs=graphs,
-            max_graph_rows=None,
-            max_num_seqs=8,
-            budget=32,
-            spec_kwargs=kwargs,
-        )
-        for i in range(8):
-            engine.add_request(
-                str(i), [2 + i, 3, 4], SamplingParams(max_tokens=11, ignore_eos=True)
-            )
-        results.append({rid: o.token_ids for rid, o in drain(engine).items()})
-        if kwargs:
-            assert (
-                engine.speculative_runner.stats.drafted_tokens
-                <= override * engine.speculative_runner.stats.rounds
-            )
-        engine.close()
-    # FP32 greedy speculation commits the target model's tokens for every K.
-    assert results[0] == results[1] == results[2]
+def test_round_state_routing_matches_indexing_with_reused_slots(monkeypatch):
+    from vllm_rlt.kernels import routing
 
+    calls = {"gather": 0, "scatter": 0}
 
-@pytest.mark.gpu
-def test_adaptive_draft_policy_learns_and_preserves_fp32_greedy_tokens():
-    model = tiny("cuda")
-    results, policy = [], None
-    for kwargs in ({}, {"draft_policy": "adaptive"}):
-        engine = make_engine(
-            model,
-            k=3,
-            graphs=True,
-            max_graph_rows=None,
-            max_num_seqs=8,
-            budget=32,
-            spec_kwargs=kwargs,
-        )
-        for i in range(8):
-            engine.add_request(
-                str(i), [2 + i, 3, 4], SamplingParams(max_tokens=24, ignore_eos=True)
-            )
-        results.append({rid: o.token_ids for rid, o in drain(engine).items()})
-        if kwargs:
-            policy = engine.draft_policy
-            summary = policy.summary()
-            assert summary["observed_rounds"] > 0
-            assert sum(summary["choices"]) == policy.rounds
-            assert all(t == t for t in summary["theta"])  # finite fit
+    class CheckedKernel:
+        def __init__(self, name, kernel):
+            self.name, self.kernel = name, kernel
+
+        def __getitem__(self, grid):
+            def launch(*args, **kwargs):
+                # Other runtime routing may use the same kernels for hidden states.
+                check = kwargs.get("H") == 2
+                if check:
+                    source, slots, destination = args[:3]
+                    expected = destination.clone()
+                    if self.name == "gather":
+                        expected.copy_(source[slots])
+                    else:
+                        expected[slots] = source
+                self.kernel[grid](*args, **kwargs)
+                if check:
+                    # Check the complete pool, including untouched/free slots.
+                    assert torch.equal(destination, expected)
+                    calls[self.name] += 1
+
+            return launch
+
+    for name in calls:
+        attr = f"{name}_kernel"
+        monkeypatch.setattr(routing, attr, CheckedKernel(name, getattr(routing, attr)))
+
+    engine = make_engine(tiny("cuda"), k=4, graphs=True, max_num_seqs=4)
+    try:
+        for repetition in range(2):
+            for i, length in enumerate((13, 1, 7, 3)):
+                engine.add_request(
+                    str(i), [2 + i, 3], SamplingParams(max_tokens=length, ignore_eos=True)
+                )
+            outputs = drain(engine)
+            assert [len(outputs[str(i)].token_ids) for i in range(4)] == [13, 1, 7, 3]
+            assert not engine.speculative_runner.states
+        assert calls["gather"] == calls["scatter"] > 2
+    finally:
         engine.close()
-    assert results[0] == results[1]
