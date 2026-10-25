@@ -10,8 +10,8 @@ predicted round time:
     tokens(K') = n * (1 + sum over j <= K' of prod(p_i for i < j))
     time(K')   = theta . features(n, contexts, K')
 
-theta is fitted online by recursive least squares from compute-stream events
-around every submitted round (both events have completed when the round is
+theta is fitted online by regularized exponentially weighted least squares from
+compute-stream events around every submitted round (both events have completed when the round is
 collected), with a prior from the startup graph-bucket replay timings. p_i is
 the acceptance probability of draft position i given an accepted prefix, with
 a Beta prior, updated from collected rounds. A deterministic exploration
@@ -27,6 +27,33 @@ import torch
 # (thousands of tokens), constant. Coda calls are one per draft offset plus one,
 # an affine function of passes, so their fixed cost folds into those two terms.
 NUM_FEATURES = 5
+# Keep the small CPU solve well-scaled across pass, row and context features.
+FEATURE_SCALES = (16.0, 1024.0, 1024.0, 1024.0, 1.0)
+COST_RIDGE = 0.0001
+
+
+def _solve_cost(gram, rhs):
+    """Solve a symmetric positive-definite five-feature system without an inverse."""
+    lower = [[0.0] * NUM_FEATURES for _ in range(NUM_FEATURES)]
+    for r in range(NUM_FEATURES):
+        for c in range(r + 1):
+            value = gram[r][c] - math.fsum(lower[r][j] * lower[c][j] for j in range(c))
+            if not math.isfinite(value) or (r == c and value <= 0):
+                raise ArithmeticError("invalid cost information matrix")
+            lower[r][c] = math.sqrt(value) if r == c else value / lower[c][c]
+    forward = []
+    for r in range(NUM_FEATURES):
+        forward.append(
+            (rhs[r] - math.fsum(lower[r][j] * forward[j] for j in range(r))) / lower[r][r]
+        )
+    solution = [0.0] * NUM_FEATURES
+    for r in reversed(range(NUM_FEATURES)):
+        solution[r] = (
+            forward[r] - math.fsum(lower[j][r] * solution[j] for j in range(r + 1, NUM_FEATURES))
+        ) / lower[r][r]
+    if not all(math.isfinite(value) for value in solution):
+        raise ArithmeticError("invalid cost coefficients")
+    return solution
 
 
 def round_features(token_starts, counts, draft_loops, target_loops, bucket=None):
@@ -72,11 +99,13 @@ class AdaptiveDraftPolicy:
         self.bucket = bucket
         self.forgetting = forgetting
         self.explore_every = explore_every
-        self.theta = list(prior) if prior is not None else [0.05, 0.002, 0.002, 0.0, 0.1]
-        # Weak prior: the first measured rounds dominate the fit.
-        self.covariance = [
-            [(100.0 if r == c else 0.0) for c in range(NUM_FEATURES)] for r in range(NUM_FEATURES)
-        ]
+        if not 0 < forgetting <= 1:
+            raise ValueError("forgetting must be in (0, 1]")
+        self._prior = list(prior) if prior is not None else [0.05, 0.002, 0.002, 0.0, 0.1]
+        if len(self._prior) != NUM_FEATURES or not all(map(math.isfinite, self._prior)):
+            raise ValueError("cost prior must contain five finite coefficients")
+        self.fit_resets = 0
+        self._reset_cost_fit()
         # Per draft position: (accepted, stopped) counts with a Beta prior. Later
         # drafts condition on longer accepted prefixes and are accepted less often.
         self.position_counts = [list(alpha_prior) for _ in range(max_drafts)]
@@ -110,8 +139,24 @@ class AdaptiveDraftPolicy:
             total += prefix
         return total
 
+    def _reset_cost_fit(self):
+        self.theta = list(self._prior)
+        self._gram = [
+            [COST_RIDGE if r == c else 0.0 for c in range(NUM_FEATURES)]
+            for r in range(NUM_FEATURES)
+        ]
+        self._rhs = [COST_RIDGE * t * scale for t, scale in zip(self._prior, FEATURE_SCALES)]
+
     def predict_ms(self, features):
-        return max(1e-3, sum(t * x for t, x in zip(self.theta, features)))
+        prediction = sum(t * x for t, x in zip(self.theta, features))
+        if not math.isfinite(prediction):
+            self.fit_resets += 1
+            self._reset_cost_fit()
+            prediction = sum(t * x for t, x in zip(self.theta, features))
+        if prediction <= 0:
+            # An extrapolated negative cost must not look artificially cheap.
+            prediction = sum(t * x for t, x in zip(self._prior, features))
+        return max(1e-3, prediction)
 
     def choose(self, token_starts):
         """Drafts for a round over the eligible requests' current token starts."""
@@ -143,28 +188,51 @@ class AdaptiveDraftPolicy:
             self.position_counts[accepted][1] += 1
 
     def observe_time(self, features, elapsed_ms):
-        """Recursive least squares with exponential forgetting."""
-        if not math.isfinite(elapsed_ms) or elapsed_ms <= 0:
+        """Fit discounted observations with a persistent ridge toward the prior.
+
+        A = lambda*A + xx' + (1-lambda)*ridge*I. The fixed ridge bounds
+        uncertainty in unobserved directions instead of repeatedly inflating an
+        inverse covariance. Feature scaling and Cholesky avoid subtractive RLS
+        updates. Invalid observations are ignored; invalid fits restart safely.
+        """
+        if (
+            not math.isfinite(elapsed_ms)
+            or elapsed_ms <= 0
+            or len(features) != NUM_FEATURES
+            or not all(map(math.isfinite, features))
+        ):
             return
         predicted = self.predict_ms(features)
         self.observed += 1
         self.abs_error_ms += abs(predicted - elapsed_ms)
-        x, p, lam = features, self.covariance, self.forgetting
-        px = [sum(p[r][c] * x[c] for c in range(NUM_FEATURES)) for r in range(NUM_FEATURES)]
-        denominator = lam + sum(x[r] * px[r] for r in range(NUM_FEATURES))
-        gain = [v / denominator for v in px]
-        error = elapsed_ms - sum(t * v for t, v in zip(self.theta, x))
-        self.theta = [t + g * error for t, g in zip(self.theta, gain)]
-        self.covariance = [
-            [(p[r][c] - gain[r] * px[c]) / lam for c in range(NUM_FEATURES)]
+        x = [v / scale for v, scale in zip(features, FEATURE_SCALES)]
+        lam, ridge = self.forgetting, (1 - self.forgetting) * COST_RIDGE
+        gram = [
+            [
+                lam * self._gram[r][c] + x[r] * x[c] + (ridge if r == c else 0.0)
+                for c in range(NUM_FEATURES)
+            ]
             for r in range(NUM_FEATURES)
         ]
+        rhs = [
+            lam * value + v * elapsed_ms + ridge * prior * scale
+            for value, v, prior, scale in zip(self._rhs, x, self._prior, FEATURE_SCALES)
+        ]
+        try:
+            coefficients = _solve_cost(gram, rhs)
+        except (ArithmeticError, ValueError, OverflowError):
+            self.fit_resets += 1
+            self._reset_cost_fit()
+            return
+        self._gram, self._rhs = gram, rhs
+        self.theta = [v / scale for v, scale in zip(coefficients, FEATURE_SCALES)]
 
     def summary(self):
         return dict(
             alpha=self.alpha,
             acceptance=[self.acceptance(j) for j in range(self.max_drafts)],
             theta=list(self.theta),
+            fit_resets=self.fit_resets,
             choices=list(self.choices),
             observed_rounds=self.observed,
             mean_abs_error_ms=self.abs_error_ms / self.observed if self.observed else None,

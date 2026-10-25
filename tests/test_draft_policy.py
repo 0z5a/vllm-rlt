@@ -97,3 +97,62 @@ def test_async_speculation_adapts_by_default_and_cli_can_pin_k():
     add_runtime_args(parser)
     assert parser.parse_args([]).draft_policy == "adaptive"
     assert parser.parse_args(["--draft-policy", "fixed"]).draft_policy == "fixed"
+
+
+def test_repeated_full_batches_keep_cost_fit_finite_and_adapting():
+    import math
+
+    p = AdaptiveDraftPolicy(4, 2, 4, token_budget=4096)
+    truth = [0.05, 0.002, 0.002, 0.002, 0.1]
+    # Fixed C makes several features collinear. The original covariance update
+    # loses positive definiteness and eventually produces NaNs on this workload.
+    for round_id in range(80_000):
+        starts = [64 + round_id % 64] * 64
+        drafted = p.choose(starts)
+        features = p.uniform_features(64, float(sum(starts)), drafted)
+        elapsed = sum(t * x for t, x in zip(truth, features))
+        if round_id >= 75_000:
+            elapsed *= 3  # The long-lived fit must still follow changed timings.
+        p.observe_time(features, elapsed)
+        p.observe_acceptance(drafted, 0)
+        if round_id % 128 == 0:
+            assert all(math.isfinite(t) for t in p.theta)
+            for k in range(5):
+                estimate = p.predict_ms(p.uniform_features(64, float(sum(starts)), k))
+                assert math.isfinite(estimate) and estimate > 0.001
+    assert p.fit_resets == 0
+    p.explore_every = 0
+    assert p.choose([100] * 64) == 0  # Failing drafts must not become falsely cheap.
+    features = p.uniform_features(64, 6400.0, 0)
+    assert p.predict_ms(features) == pytest.approx(
+        3 * sum(t * x for t, x in zip(truth, features)), rel=0.02
+    )
+
+
+@pytest.mark.parametrize("broken", ["coefficients", "information", "rhs"])
+def test_invalid_cost_fit_recovers_and_keeps_learning(broken):
+    import math
+
+    p = policy(None)
+    if broken == "coefficients":
+        p.theta[0] = float("nan")
+    elif broken == "information":
+        p._gram[0][0] = float("inf")
+    else:
+        p._rhs[0] = float("nan")
+    features = p.uniform_features(64, 6400.0, 0)
+    for _ in range(200):
+        p.observe_time(features, 10.0)
+    assert p.fit_resets == 1
+    assert all(math.isfinite(t) for t in p.theta)
+    assert p.predict_ms(features) == pytest.approx(10.0, rel=0.01)
+
+
+def test_invalid_cost_observation_does_not_poison_fit():
+    p = policy(None)
+    before = list(p.theta)
+    features = p.uniform_features(64, 6400.0, 0)
+    for elapsed in (float("nan"), float("inf"), -1, 0):
+        p.observe_time(features, elapsed)
+    p.observe_time([float("nan")] * 5, 1)
+    assert p.observed == 0 and p.theta == before

@@ -51,7 +51,9 @@ def graph_memory_reserve(model, scheduler, execution, speculative=None):
 
 
 @torch.inference_mode()
-def plan_cache(model, cache, scheduler, execution, backend, *, speculative=None):
+def plan_cache(
+    model, cache, scheduler, execution, backend, *, speculative=None, staged_prefill=None
+):
     parameter = next(model.parameters())
     config, device = model.config, parameter.device
     per_block = (
@@ -133,7 +135,14 @@ def plan_cache(model, cache, scheduler, execution, backend, *, speculative=None)
             * (8 * config.head_dim + 8)
             * 4
         )
-    buffers = execution_buffer_bytes(config, scheduler, cache, execution, parameter.element_size())
+    buffers = execution_buffer_bytes(
+        config,
+        scheduler,
+        cache,
+        execution,
+        parameter.element_size(),
+        staged_prefill=staged_prefill,
+    )
     # Dynamic metadata at the largest supported context is small but not zero.
     metadata_width = math.ceil(config.max_position_embeddings / cache.block_size)
     metadata_rows = scheduler.max_num_batched_tokens

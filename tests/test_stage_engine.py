@@ -124,6 +124,7 @@ def test_independent_stage_resources_preserve_output_after_import(atomic, asynch
             d.cache_manager.value_cache[dst].copy_(p.cache_manager.value_cache[src])
     assert d.accept_import(target, source.hidden_state.clone())
     assert d.scheduler.requests["r"] is target
+    assert target.prefill_reclaimable_tokens == len(prompt)
     assert p.release_transfer(source)
     local.add_request("r", prompt, params)
     assert drain(d) == drain(local)
@@ -265,9 +266,7 @@ def test_spawned_mixed_worker_matches_local_without_connector(asynchronous):
             scheduler_config=SchedulerConfig(
                 mode="mixed", max_num_seqs=3, max_num_batched_tokens=4, prefill_chunk_size=3
             ),
-            execution_config=ExecutionConfig(
-                atomic_prefill=False, async_scheduling=asynchronous, static_buffers=True
-            ),
+            execution_config=ExecutionConfig(async_scheduling=asynchronous, static_buffers=True),
             exit_config=ExitConfig("ouro_delayed" if asynchronous else "ouro"),
         ),
     )
@@ -596,8 +595,9 @@ def test_transfer_reservation_preserves_active_prompt_growth(receiving, preempti
             max_num_batched_tokens=2,
             prefill_chunk_size=2,
             enable_preemption=preemption,
+            wavefront_chunked_prefill=True,
         ),
-        execution_config=ExecutionConfig(atomic_prefill=False),
+        execution_config=ExecutionConfig(),
     )
     params = SamplingParams(max_tokens=1, ignore_eos=True)
     try:
