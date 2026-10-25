@@ -584,7 +584,9 @@ class StageEngine:
             raise ValueError("request is not awaiting an import")
         count = len(request.prompt_token_ids)
         self.cache_manager.mark_imported_prefix(request.request_id, count, start=cached_tokens)
-        self.cache_manager.publish_prefix(request.request_id, request.prompt_token_ids, count)
+        self.cache_manager.publish_prefix(
+            request.request_id, request.prompt_token_ids, count, keys=request.prefix_keys
+        )
         request.num_prefilled_tokens = request.num_preluded_tokens = count
         request.prefill_window_origin = count
         request.prefill_reclaimable_tokens = count

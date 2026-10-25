@@ -250,3 +250,25 @@ def test_rng_registry_drop_removes_only_that_requests_slot():
     registry.drop("dropped")
     assert registry.peek("kept") is kept
     assert dropped is not kept
+
+
+def test_sample_batch_matches_per_row_sampling():
+    import torch
+
+    from vllm_rlt import SamplingParams
+    from vllm_rlt.worker.sampler import Sampler
+
+    sampler = Sampler()
+    logits = torch.randn(5, 11)
+    greedy = [SamplingParams(temperature=0)] * 4
+    assert torch.equal(
+        sampler.sample_batch(logits, greedy, [None] * 4),
+        torch.stack([sampler.sample(row, p, None) for row, p in zip(logits[:4], greedy)]),
+    )
+    mixed = [SamplingParams(temperature=0), SamplingParams(temperature=0.7, seed=3)]
+    generators = [None, torch.Generator().manual_seed(3)]
+    reference = [None, torch.Generator().manual_seed(3)]
+    assert torch.equal(
+        sampler.sample_batch(logits, mixed, generators),
+        torch.stack([sampler.sample(r, p, g) for r, p, g in zip(logits[:2], mixed, reference)]),
+    )

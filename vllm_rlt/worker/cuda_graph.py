@@ -168,12 +168,12 @@ class RecurrentGraphs:
             seen = set()
             # Device-owned progress is ordered by the runner's stream. The CPU
             # written frontier intentionally lags in-flight speculative rounds.
-            host_rows = () if isinstance(batch, DeviceKVMetadata) else batch.rows
-            for allocation, depth, pos in host_rows:
+            runs = () if isinstance(batch, DeviceKVMetadata) else cache.row_runs(batch)
+            for allocation, depth, start, _ in runs:
                 key = (id(allocation), depth)
                 if key not in seen:
                     for layer in cache.recurrent_layers:
-                        cache._require_prefix(allocation, layer, depth, pos)
+                        cache._require_prefix(allocation, layer, depth, start)
                     seen.add(key)
             stream = torch.cuda.current_stream(cache.device)
             if self.last_event is not None:
@@ -206,10 +206,11 @@ class RecurrentGraphs:
         output = tuple(t.clone() if t is not None else None for t in entry.output)
         self.last_event = torch.cuda.Event()
         self.last_event.record(torch.cuda.current_stream(self.cache.device))
-        host_rows = () if isinstance(batch, DeviceKVMetadata) else batch.rows
-        for allocation, depth, pos in host_rows:
+        runs = () if isinstance(batch, DeviceKVMetadata) else self.cache.row_runs(batch)
+        for allocation, depth, start, count in runs:
+            plane = allocation.written[self.cache._plane(depth)]
             for layer in self.cache.recurrent_layers:
-                allocation.written[self.cache._plane(depth)][layer].add(pos)
+                plane[layer].add_run(start, count)
         self.replays += 1
         return output
 

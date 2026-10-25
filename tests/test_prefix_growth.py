@@ -66,6 +66,46 @@ def test_prefix_refcounts_and_eviction():
     assert c.num_free_blocks == 12
 
 
+def _scanned_free_blocks(c):
+    # The pre-incremental definition: free list plus prefix-cache blocks held only by the cache.
+    return len(c._free_blocks) + sum(
+        c._refs[b] == 1 for blocks in c._prefixes.values() for b in blocks
+    )
+
+
+def test_incremental_evictable_count_matches_scan_under_random_operations():
+    import random
+
+    rng = random.Random(7)
+    c = KVCacheManager(1, 1, 4, 64, 2, 2, enable_prefix_caching=True)
+    live = {}
+    prompts = [[rng.randrange(1, 6) for _ in range(rng.randrange(3, 12))] for _ in range(6)]
+    for step in range(400):
+        action = rng.random()
+        if action < 0.45 and len(live) < 10:
+            prompt = rng.choice(prompts)
+            rid = f"r{step}"
+            hit = c.lookup_prefix(prompt)
+            if c.allocate(rid, len(prompt) + 2, prefix=hit):
+                live[rid] = prompt
+                c.mark_imported_prefix(rid, len(prompt), start=len(hit) * c.block_size)
+                c.publish_prefix(rid, prompt, len(prompt), keys=c.prefix_keys(prompt))
+        elif action < 0.8 and live:
+            rid = rng.choice(sorted(live))
+            del live[rid]
+            c.free(rid)
+        elif live:
+            rid = rng.choice(sorted(live))
+            c.ensure_capacity(rid, len(live[rid]) + 2)
+        assert c.num_free_blocks == _scanned_free_blocks(c), step
+        assert c._evictable_blocks >= 0
+    for rid in list(live):
+        c.free(rid)
+    assert c.num_free_blocks == _scanned_free_blocks(c) == 64
+    assert c.allocate("all", 64)
+    assert c.num_free_blocks == _scanned_free_blocks(c) == 0
+
+
 def test_incremental_growth_matches_reserved_generation():
     m = model()
     p = SamplingParams(max_tokens=9, exit_threshold=0, ignore_eos=True)

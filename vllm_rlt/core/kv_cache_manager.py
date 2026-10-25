@@ -46,6 +46,19 @@ class _WrittenPositions:
             self.pending.remove(self.prefix)
             self.prefix += 1
 
+    def add_run(self, start: int, count: int) -> None:
+        """Same result as ``add`` for ``start, ..., start + count - 1`` in order."""
+        end = start + count
+        if end <= self.prefix:
+            return
+        if start > self.prefix:
+            self.pending.update(range(start, end))
+            return
+        self.prefix = end
+        while self.prefix in self.pending:
+            self.pending.remove(self.prefix)
+            self.prefix += 1
+
     def __contains__(self, position: int) -> bool:
         return position < self.prefix or position in self.pending
 
@@ -153,6 +166,11 @@ class KVCacheManager:
         self.watermark_blocks = int(watermark_ratio * num_blocks) if incremental_allocation else 0
         self._refs = [0] * num_blocks
         self._prefixes = OrderedDict()
+        # Blocks referenced by a prefix entry, and how many of them only the cache
+        # holds (refs == 1). Maintained at every reference-count change so that
+        # num_free_blocks does not rescan the cache on each admission check.
+        self._prefix_blocks = set()
+        self._evictable_blocks = 0
         self._pending_prefixes = []
         self.prefix_hits = self.prefix_queries = 0
         if enable_prefix_caching and layout != "last_exited":
@@ -164,9 +182,14 @@ class KVCacheManager:
 
     @property
     def num_free_blocks(self) -> int:
-        return len(self._free_blocks) + sum(
-            self._refs[b] == 1 for blocks in self._prefixes.values() for b in blocks
-        )
+        return len(self._free_blocks) + self._evictable_blocks
+
+    def _retain(self, b):
+        """Increment a block's reference count, tracking cache-only blocks."""
+        before = self._refs[b]
+        self._refs[b] = before + 1
+        if b in self._prefix_blocks:
+            self._evictable_blocks += (before + 1 == 1) - (before == 1)
 
     @property
     def num_used_blocks(self) -> int:
@@ -188,12 +211,49 @@ class KVCacheManager:
             raise ValueError("max_tokens must be a positive integer")
         return ((max_tokens + self.block_size - 1) // self.block_size) * self.storage_depths
 
+    @staticmethod
+    def row_runs(batch):
+        """Rows of a host batch grouped into runs of consecutive positions.
+
+        Each run is ``(allocation, depth, start, count)``. Prefill chunks are one
+        run per request and depth, so per-layer bookkeeping touches one record
+        per run instead of one per token. The grouping is memoized on the batch,
+        which is immutable for its traversal.
+        """
+        runs = getattr(batch, "_runs", None)
+        if runs is None:
+            grouped = []
+            for allocation, depth, position in batch.rows:
+                last = grouped[-1] if grouped else None
+                if (
+                    last is not None
+                    and last[0] is allocation
+                    and last[1] == depth
+                    and last[2] + last[3] == position
+                ):
+                    last[3] += 1
+                else:
+                    grouped.append([allocation, depth, position, 1])
+            runs = tuple(tuple(run) for run in grouped)
+            object.__setattr__(batch, "_runs", runs)
+        return runs
+
     def _drop_refs(self, blocks):
         for b in blocks:
-            self._refs[b] -= 1
+            before = self._refs[b]
+            self._refs[b] = before - 1
             assert self._refs[b] >= 0
+            if b in self._prefix_blocks:
+                self._evictable_blocks += (before - 1 == 1) - (before == 1)
             if not self._refs[b]:
                 self._free_blocks.append(b)
+
+    def _evict_entry(self, blocks):
+        for b in blocks:
+            self._prefix_blocks.discard(b)
+            if self._refs[b] == 1:
+                self._evictable_blocks -= 1
+        self._drop_refs(blocks)
 
     def _claim(self, count):
         """Take ``count`` free blocks, evicting prefix entries only if that is enough.
@@ -201,14 +261,13 @@ class KVCacheManager:
         ``num_free_blocks`` already includes every block eviction could
         release. If it is still short, return ``None`` without evicting, so a
         failed admission, growth, resumption, or PD reservation does not
-        throw away prefixes it could not use anyway. ``num_free_blocks`` scans
-        every prefix entry, so it is only consulted when eviction is needed.
+        throw away prefixes it could not use anyway.
         """
         if len(self._free_blocks) < count and self.num_free_blocks < count:
             return None
         while len(self._free_blocks) < count and self._prefixes:
             _, blocks = self._prefixes.popitem(last=False)
-            self._drop_refs(blocks)
+            self._evict_entry(blocks)
         if len(self._free_blocks) < count:
             return None
         blocks = [self._free_blocks.pop() for _ in range(count)]
@@ -224,17 +283,26 @@ class KVCacheManager:
             digest = hashlib.sha256(digest + struct.pack(f"<{len(values)}q", *values)).digest()
             yield digest
 
+    def prefix_keys(self, tokens):
+        """Chained block keys of a prompt, excluding its final token.
+
+        A prompt's keys never change, so callers cache the tuple on the request
+        and pass a prefix of it to lookup_prefix/publish_prefix instead of
+        rehashing the prompt on every admission attempt.
+        """
+        return tuple(self._prefix_keys(tokens[:-1]))
+
     def poll_prefixes(self):
         pending, self._pending_prefixes = self._pending_prefixes, []
-        for request_id, allocation, tokens, length, event in pending:
+        for request_id, allocation, tokens, length, event, keys in pending:
             if self._allocations.get(request_id) is not allocation:
                 continue
             if event is not None and not event.query():
-                self._pending_prefixes.append((request_id, allocation, tokens, length, event))
+                self._pending_prefixes.append((request_id, allocation, tokens, length, event, keys))
                 continue
-            self.publish_prefix(request_id, tokens, length)
+            self.publish_prefix(request_id, tokens, length, keys=keys)
 
-    def publish_prefix(self, request_id, tokens, length, event=None):
+    def publish_prefix(self, request_id, tokens, length, event=None, *, keys=None):
         """Index complete prompt pages for reuse without copying their KV.
 
         length is the prefilled extent; len(tokens) is the full prompt length.
@@ -244,13 +312,19 @@ class KVCacheManager:
             return
         allocation = self._get_allocation(request_id)
         if event is not None:
-            self._pending_prefixes.append((request_id, allocation, tuple(tokens), length, event))
+            self._pending_prefixes.append(
+                (request_id, allocation, tuple(tokens), length, event, keys)
+            )
             return
         # Prefix entries retain KV, not the final hidden state needed by CODA.
         # Leave at least the last prompt token to recompute on a cache hit;
         # full-page alignment may leave additional tokens to recompute.
         publishable_tokens = min(length, len(tokens) - 1)
-        for index, key in enumerate(self._prefix_keys(tokens[:publishable_tokens])):
+        if keys is None:
+            keys = self._prefix_keys(tokens[:publishable_tokens])
+        else:
+            keys = keys[: publishable_tokens // self.block_size]
+        for index, key in enumerate(keys):
             if key in self._prefixes:
                 continue
             end = (index + 1) * self.block_size
@@ -260,15 +334,20 @@ class KVCacheManager:
                 break
             blocks = tuple(t[index] for t in allocation.block_tables)
             for b in blocks:
+                # The cache's own reference; the block becomes evictable once the
+                # publishing allocation (and any later sharer) releases it.
                 self._refs[b] += 1
+                self._prefix_blocks.add(b)
+                if self._refs[b] == 1:
+                    self._evictable_blocks += 1
             self._prefixes[key] = blocks
 
-    def lookup_prefix(self, tokens):
+    def lookup_prefix(self, tokens, *, keys=None):
         if not self.enable_prefix_caching:
             return ()
         self.poll_prefixes()
         found = []
-        for key in self._prefix_keys(tokens[:-1]):
+        for key in self._prefix_keys(tokens[:-1]) if keys is None else keys:
             blocks = self._prefixes.get(key)
             if blocks is None:
                 break
@@ -295,7 +374,7 @@ class KVCacheManager:
             raise ValueError("prefix exceeds initial KV frontier")
         claimed = [b for group in prefix for b in group]
         for b in claimed:
-            self._refs[b] += 1
+            self._retain(b)
         fresh = self._claim((pages - len(prefix)) * self.storage_depths)
         if fresh is None:
             self._drop_refs(claimed)
@@ -680,8 +759,8 @@ class KVCacheManager:
             return
         self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k[: len(batch.rows)]
         self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v[: len(batch.rows)]
-        for allocation, depth, position in batch.rows:
-            allocation.written[self._plane(depth)][layer].add(position)
+        for allocation, depth, start, count in self.row_runs(batch):
+            allocation.written[self._plane(depth)][layer].add_run(start, count)
 
     def _require_prefix(self, allocation, layer, depth, length):
         written = allocation.written[self._plane(depth)][layer]
@@ -723,8 +802,9 @@ class KVCacheManager:
             )
         if not batch.rows:
             return torch.empty_like(q)
-        for allocation, depth, position in batch.rows:
-            self._require_prefix(allocation, layer, depth, position + 1)
+        for allocation, depth, start, count in self.row_runs(batch):
+            # The run's last row carries the strongest requirement.
+            self._require_prefix(allocation, layer, depth, start + count)
         if batch.cu_seqlens_q is not None:
             return self.attention.prefill(
                 q,

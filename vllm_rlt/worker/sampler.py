@@ -59,6 +59,21 @@ class Sampler:
         """Draw one token from a normalized distribution as a 0-dim long tensor."""
         return torch.multinomial(probs, 1, generator=generator).squeeze(0)
 
+    def sample_batch(self, logits, params, generators):
+        """Sample one token per row; all-greedy batches use a single argmax launch.
+
+        ``logits`` has at least ``len(params)`` rows. Row ``i`` is sampled with
+        ``params[i]`` and ``generators[i]`` exactly as ``sample`` would; greedy rows
+        are independent of each other, so a batched argmax is the same result in
+        one kernel instead of one per row plus a stack.
+        """
+        rows = len(params)
+        if all(p.temperature == 0 for p in params):
+            return logits[:rows].argmax(-1)
+        return torch.stack(
+            [self.sample(row, p, g) for row, p, g in zip(logits[:rows], params, generators)]
+        )
+
     def sample(
         self,
         logits: torch.Tensor,

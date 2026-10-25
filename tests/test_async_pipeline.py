@@ -132,11 +132,11 @@ def test_delayed_eos_discards_next_work_and_reclaims_after_gpu_completion(
         eos = eos[0]
     samples = []
 
-    def sample(logits, params, generator):
+    def sample_batch(logits, params, generators):
         samples.append("a")
-        return logits.new_tensor(eos, dtype=torch.long)
+        return logits.new_full((len(params),), eos, dtype=torch.long)
 
-    monkeypatch.setattr(engine.model_runner.sampler, "sample", sample)
+    monkeypatch.setattr(engine.model_runner.sampler, "sample_batch", sample_batch)
     engine.add_request("a", [2], SamplingParams(max_tokens=5, exit_threshold=1))
     engine.step()
     engine.step()

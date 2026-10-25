@@ -372,7 +372,9 @@ class Scheduler:
             reserved += max(0, cache.required_blocks(tokens) - allocated)
         return reserved
 
-    def _plan_admission(self, request: Request, active_count: int) -> AdmissionPlan:
+    def _plan_admission(
+        self, request: Request, active_count: int, *, reserved_growth=None
+    ) -> AdmissionPlan:
         """Describe prefix reuse, physical allocation and logical admission cost.
 
         With 8 prompt tokens and 5 outputs, capacity is 12: the last sampled
@@ -385,7 +387,9 @@ class Scheduler:
         """
         cache = self.cache_manager
         capacity = len(request.prompt_token_ids) + request.sampling_params.max_tokens - 1
-        prefix = cache.lookup_prefix(request.prompt_token_ids)
+        if request.prefix_keys is None and cache.enable_prefix_caching:
+            request.prefix_keys = cache.prefix_keys(request.prompt_token_ids)
+        prefix = cache.lookup_prefix(request.prompt_token_ids, keys=request.prefix_keys)
         cached_tokens = len(prefix) * cache.block_size
         initial_tokens = min(
             len(request.prompt_token_ids), cached_tokens + self.config.prefill_chunk_size
@@ -399,7 +403,14 @@ class Scheduler:
             else capacity
         )
         required = cache.required_blocks(budget_tokens) - len(prefix) * cache.storage_depths
-        reserved = self._reserved_growth_blocks(reserve_outputs=reserve_outputs)
+        # Growth reservations only change when a request is admitted, resumed or
+        # preempted; one admission tick may pass a value computed once for all
+        # candidates instead of rescanning every request per candidate.
+        reserved = (
+            self._reserved_growth_blocks(reserve_outputs=reserve_outputs)
+            if reserved_growth is None
+            else reserved_growth
+        )
         # Allow an otherwise idle engine to start a large request.
         admission_headroom_blocks = cache.watermark_blocks if active_count else 0
         # num_free_blocks includes evictable prefix-only blocks. Reusing those
@@ -490,6 +501,10 @@ class Scheduler:
         waiting = self._order_waiting_requests()
         deferred = []
         scan_count = min(len(waiting), self.config.admission_scan_limit)
+        reserve_outputs = (
+            self.cache_manager.incremental_allocation and self.suspend_callback is None
+        )
+        reserved_growth = None  # valid until an admission, resume or preemption changes it
         for _ in range(scan_count):
             if not waiting:
                 break
@@ -507,27 +522,37 @@ class Scheduler:
                 # Imported and local requests compete in this same admission queue.
                 self.cache_manager.unpin_transfer(request_id, request_id)
                 self.enqueue(request, RequestPhase.CODA)
+                reserved_growth = None
             elif self.cache_manager.has_allocation(
                 request_id
             ) and self.cache_manager.has_transfer_lease(request_id):
                 # Outgoing transfer reservation already allocated the prompt KV.
                 self._enter_prefill(request)
+                reserved_growth = None
             else:
                 resume_result = self._try_resume(request)
                 if resume_result == ResumeResult.RESTORED:
                     active_count += 1
+                    reserved_growth = None
                     continue
                 if resume_result == ResumeResult.BLOCKED:
                     deferred.append(request_id)
                     continue
 
-                plan = self._plan_admission(request, active_count)
+                if reserved_growth is None:
+                    reserved_growth = self._reserved_growth_blocks(reserve_outputs=reserve_outputs)
+                plan = self._plan_admission(request, active_count, reserved_growth=reserved_growth)
                 admitted = self._commit_admission(request, plan)
                 while not admitted and self.preempt(request, waiting_only=True):
                     # Recompute prefix claims and growth reservations after
                     # releasing a resident allocation; the previous plan is stale.
-                    plan = self._plan_admission(request, active_count)
+                    reserved_growth = self._reserved_growth_blocks(reserve_outputs=reserve_outputs)
+                    plan = self._plan_admission(
+                        request, active_count, reserved_growth=reserved_growth
+                    )
                     admitted = self._commit_admission(request, plan)
+                if admitted:
+                    reserved_growth = None
                 if not admitted:
                     deferred.append(request_id)
                     if request.admission_bypasses >= self.config.max_admission_bypasses:
@@ -1020,6 +1045,7 @@ class Scheduler:
             request.prompt_token_ids,
             request.num_prefilled_tokens,
             event,
+            keys=request.prefix_keys,
         )
         request.prefill_reclaimable_tokens = end
         prompt_complete = end == len(request.prompt_token_ids)
@@ -1045,7 +1071,11 @@ class Scheduler:
             request.num_prefilled_tokens += scheduled_request.token_count
             final = request.num_prefilled_tokens == len(request.prompt_token_ids)
             self.cache_manager.publish_prefix(
-                request.request_id, request.prompt_token_ids, request.num_prefilled_tokens, event
+                request.request_id,
+                request.prompt_token_ids,
+                request.num_prefilled_tokens,
+                event,
+                keys=request.prefix_keys,
             )
             if final:
                 request.loops_done = self.total_ut_steps
@@ -1128,6 +1158,7 @@ class Scheduler:
                     request.prompt_token_ids,
                     request.num_prefilled_tokens,
                     event,
+                    keys=request.prefix_keys,
                 )
             if prompt_complete:
                 request.loops_done = self.total_ut_steps

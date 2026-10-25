@@ -356,3 +356,27 @@ def test_snapshot_refuses_leased_allocations():
     cache.pin_transfer("a", "t")
     with pytest.raises(RuntimeError, match="transfer"):
         cache.snapshot("a")
+
+
+def test_add_run_matches_sequential_add_and_row_runs_group_consecutive_positions():
+    import random
+
+    from vllm_rlt.core.kv_cache_manager import KVCacheManager, _WrittenPositions
+
+    rng = random.Random(3)
+    for _ in range(200):
+        a, b = _WrittenPositions(), _WrittenPositions()
+        for _ in range(rng.randrange(1, 8)):
+            start, count = rng.randrange(0, 12), rng.randrange(1, 6)
+            for position in range(start, start + count):
+                a.add(position)
+            b.add_run(start, count)
+            # Observable state: the contiguous prefix and membership of every position.
+            assert a.prefix == b.prefix
+            assert [p in a for p in range(24)] == [p in b for p in range(24)]
+    cache = make_cache()
+    assert cache.allocate("a", 6) and cache.allocate("b", 2)
+    batch = cache._prepare_batch(["a", "a", "a", "b", "a"], [0, 0, 1, 0, 0], [0, 1, 2, 0, 5])
+    runs = KVCacheManager.row_runs(batch)
+    assert [(d, s, c) for _, d, s, c in runs] == [(0, 0, 2), (1, 2, 1), (0, 0, 1), (0, 5, 1)]
+    assert KVCacheManager.row_runs(batch) is runs

@@ -67,6 +67,8 @@ class Request:
     compute_released: bool = False
     finish_reason: FinishReason | None = None
     exit_trace: tuple[int, ...] = field(default=(), repr=False)
+    # Prefix-cache block keys of the prompt, computed once on first admission attempt.
+    prefix_keys: tuple[bytes, ...] | None = field(default=None, repr=False)
 
     @staticmethod
     def prefill_boundaries(
