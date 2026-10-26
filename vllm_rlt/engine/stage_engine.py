@@ -117,9 +117,12 @@ class StageEngine:
                     "async scheduling requires ouro_delayed, random_lookahead or trace exit mode"
                 )
         if self.execution_config.prefill_uva and (
-            parameter.device.type != "cuda" or cache_config.layout != "last_exited"
+            parameter.device.type != "cuda"
+            or (cache_config.layout, cache_config.shared_prefill) == ("shared", "position")
         ):
-            raise ValueError("prefill_uva requires CUDA packed prefill with last_exited KV")
+            raise ValueError(
+                "prefill_uva requires CUDA packed prefill with last_exited or loop-order shared KV"
+            )
         if staged_prefill and cache_config.layout != "last_exited":
             raise ValueError("staged prefill requires last_exited KV planes")
         attention = create_backend(
@@ -161,6 +164,7 @@ class StageEngine:
             incremental_allocation=cache_config.incremental_allocation,
             watermark_ratio=cache_config.watermark_ratio,
             recurrent_layers=getattr(model, "recurrent_kv_layers", None),
+            shared_prefill=cache_config.shared_prefill,
         )
         self.scheduler = Scheduler(
             scheduler_config,

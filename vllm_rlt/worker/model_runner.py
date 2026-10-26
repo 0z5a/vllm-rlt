@@ -712,14 +712,14 @@ class ModelRunner:
         return (
             batch.operation == Operation.PRELUDE
             and batch.loop_count
-            and self.cache_manager.layout != "shared"
+            and self.cache_manager.packs_prompt_loops
             and self.cache_manager.attention_capabilities.packed_prefill
             and self.execution_config.prefill_uva
         )
 
     def _prepare_loop_inputs(self, batch, packed_metadata=None):
         cache = self.cache_manager
-        if cache.layout == "shared":
+        if not cache.packs_prompt_loops:
             return self._prepare_shared_loop_inputs(batch)
         ids, positions, tokens, requests, outputs, depths = [], [], [], [], [], []
         for span in batch.spans:

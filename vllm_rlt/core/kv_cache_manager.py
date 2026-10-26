@@ -103,6 +103,7 @@ class KVCacheManager:
         recurrent_layers: Sequence[int] | None = None,
         *,
         attention: AttentionBackend | None = None,
+        shared_prefill: str = "position",
     ):
         for name, value in (
             ("num_layers", num_layers),
@@ -121,6 +122,11 @@ class KVCacheManager:
         if layout not in {"last_exited", "shared"}:
             raise ValueError("unsupported KV layout")
         self.layout = layout
+        if shared_prefill not in {"position", "loop"}:
+            raise ValueError("shared_prefill must be 'position' or 'loop'")
+        if shared_prefill == "loop" and layout != "shared":
+            raise ValueError("shared_prefill='loop' requires shared KV")
+        self.shared_prefill = shared_prefill
         self.recurrent_layers = (
             tuple(range(num_layers)) if recurrent_layers is None else tuple(recurrent_layers)
         )
@@ -155,12 +161,15 @@ class KVCacheManager:
         self._prefixes = OrderedDict()
         self._pending_prefixes = []
         self.prefix_hits = self.prefix_queries = 0
-        if enable_prefix_caching and layout != "last_exited":
-            raise ValueError("prefix caching requires last_exited KV")
 
     @property
     def attention_capabilities(self) -> BackendCapabilities:
         return backend_capabilities(self.attention)
+
+    @property
+    def packs_prompt_loops(self) -> bool:
+        """Whether one prompt chunk may run a loop for all its positions at once."""
+        return self.layout == "last_exited" or self.shared_prefill == "loop"
 
     @property
     def num_free_blocks(self) -> int:

@@ -13,6 +13,11 @@ class CacheConfig:
     num_blocks: int | None = None
     block_size: int = 16
     layout: str = "last_exited"
+    # SHARED prompt order. "position" runs each prompt position through every
+    # loop before the next one, so later tokens read earlier tokens' final KV.
+    # "loop" advances a whole prompt chunk one loop at a time (packable): inside
+    # a chunk, loop d reads the chunk's own loop-d KV; earlier chunks are final.
+    shared_prefill: str = "position"
     gpu_memory_utilization: float = 0.9
     kv_cache_memory_bytes: int | None = None
     memory_reserve_bytes: int = 256 * 1024 * 1024
@@ -27,13 +32,15 @@ class CacheConfig:
                 raise ValueError(f"{name} must be a boolean")
         if not 0 <= self.watermark_ratio < 1:
             raise ValueError("watermark_ratio must be in [0, 1)")
-        if self.enable_prefix_caching and self.layout != "last_exited":
-            raise ValueError("prefix caching requires last_exited KV")
         if self.num_blocks is not None:
             _positive("num_blocks", self.num_blocks)
         _positive("block_size", self.block_size)
         if self.layout not in ("last_exited", "shared"):
             raise ValueError("layout must be 'last_exited' or 'shared'")
+        if self.shared_prefill not in ("position", "loop"):
+            raise ValueError("shared_prefill must be 'position' or 'loop'")
+        if self.shared_prefill == "loop" and self.layout != "shared":
+            raise ValueError("shared_prefill='loop' requires shared KV")
         if (
             not math.isfinite(self.gpu_memory_utilization)
             or not 0 < self.gpu_memory_utilization <= 1

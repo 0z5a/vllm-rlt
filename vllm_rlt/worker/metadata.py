@@ -173,7 +173,7 @@ class MetadataBuilder:
         if not depth_sets:
             raise ValueError("at least one depth assignment is required")
         if packed and (
-            cache.layout != "last_exited" or not cache.attention_capabilities.packed_prefill
+            not cache.packs_prompt_loops or not cache.attention_capabilities.packed_prefill
         ):
             raise ValueError("packed queries require a compatible attention backend and KV layout")
         first = tuple(cache._validate_rows(request_ids, depth_sets[0], positions))

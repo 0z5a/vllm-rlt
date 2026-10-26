@@ -284,6 +284,22 @@ C: loop 1 → 2 → 3 → 4
 
 Different requests can still be batched. Packing all positions of one prompt by loop would allow B's first loop to read A's first-loop KV instead of A's final KV, changing the current `shared` semantics.
 
+`CacheConfig(layout="shared", shared_prefill="loop")` opts into that packing.
+A prompt chunk then advances one loop at a time, as under `last_exited`, but
+every loop overwrites the single plane:
+
+```text
+chunk 1 (A, B): loop 1 → 2 → 3 → 4   B's loop d reads A's loop-d KV
+chunk 2 (C):    loop 1 → 2 → 3 → 4   C reads A and B at their final KV
+```
+
+Inside one chunk this is `last_exited` prefill (the plane ends equal to its
+deepest plane); across chunks, history is read at its final KV. The result
+therefore depends on chunk boundaries, and a one-token chunk reproduces the
+`position` order. This is the KV-sharing serving path of BeNice!
+(arXiv 2610.31633): the cache keeps only the final recurrence, prompt chunks
+use packed attention and `prefill_uva`, and decode is unchanged.
+
 ## 6. Capacity and feature implications
 
 For a request covering `T` token positions, block size `B`, and maximum loop count `D`, block requirements are:
@@ -297,8 +313,8 @@ shared:      ceil(T/B) physical blocks
 | --- | --- | --- |
 | Historical versions | Separate entries per loop; unexecuted depths receive the exit-depth values | Final version only |
 | Early-exit finalization copies | Required | Unnecessary |
-| Packing prompt positions within a request | Supported | Positions currently execute sequentially |
-| Prefix caching | Supported | Rejected by current configuration validation |
+| Packing prompt positions within a request | Supported | `shared_prefill="loop"` only; `"position"` executes them sequentially |
+| Prefix caching | Supported | Supported; cached pages hold final KV (exact for `"position"`, chunk-dependent for `"loop"`) |
 | Request block requirement for maximum depth D | D times the shared requirement | One storage plane |
 
 The cache pool is preallocated using `num_blocks`. With the same `num_blocks`, both layouts allocate the same KV tensor bytes; `shared` allows that pool to cover more token positions. Early exit under `last_exited` does not automatically release deeper storage because those positions retain the copied history.
