@@ -141,6 +141,26 @@ CODA. A returned ticket does not imply device completion. The
 shows how GPU-owned next-token state lets consecutive rounds overlap result
 readback and CPU commit within this same stage.
 
+**Pipelined speculation (experimental).** `--speculative-mode pipeline` with
+`--speculative-tokens 4 --draft-loops 1 --target-loops 4` selects the existing
+speculative runner's token pipeline. Each submission advances its live tokens
+by `draft_loops`; different requests and depths share the recurrent call.
+The runner retains hidden states between submissions, while Scheduler owns
+admission, committed outputs, EOS and KV allocation. Rejection discards dependent
+tokens; the returned KV frontier preserves surviving speculative work.
+The pipeline requires greedy sampling and `last_exited` KV. It supports
+`--async-scheduling`, `--cuda-graphs` and `--enable-preemption`, including their
+combination with compatible attention backends such as Triton and FA4.
+Asynchronous submission defers decision readback to ticket collection; each
+request has at most one pending pipeline step, while independent requests can
+progress. This does not provide block speculation's same-request cross-round
+GPU lookahead. Pending steps cannot be preempted. At a completed step boundary,
+preemption saves hidden states, loop depths and candidates with the existing KV
+snapshot, either resident or CPU-offloaded; resumption restores that exact state.
+The block mode remains the default.
+`--speculative-tokens` bounds the reserved lookahead window in pipeline mode;
+a smaller scheduler token budget may discard descendants and reduce overlap.
+
 **Shared execution and resources.** ModelRunner constructs ModelRuntime and the
 speculative controller references that same runtime. Both use the worker-loaded
 model, the engine's KV manager and shared RNG registry. The runtime executes the

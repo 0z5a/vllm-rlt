@@ -72,7 +72,14 @@ class StageEngine:
             if speculative_config is not None:
                 raise ValueError("Huginn speculative decoding is not yet supported")
         self.speculative_config = speculative_config
-        self.async_speculative = bool(speculative_config and self.execution_config.async_scheduling)
+        self.pipeline_speculative = bool(
+            speculative_config and speculative_config.mode == "pipeline"
+        )
+        self.async_speculative = bool(
+            speculative_config
+            and self.execution_config.async_scheduling
+            and not self.pipeline_speculative
+        )
         if speculative_config is not None:
             if cache_config.layout != "last_exited":
                 raise ValueError("speculative decoding requires last_exited KV")
@@ -108,7 +115,9 @@ class StageEngine:
         if self.execution_config.cuda_graphs and parameter.device.type != "cuda":
             raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
         if self.execution_config.async_scheduling:
-            if not self.async_speculative and self.exit_config.mode not in (
+            if not (
+                self.async_speculative or self.pipeline_speculative
+            ) and self.exit_config.mode not in (
                 "ouro_delayed",
                 "random_lookahead",
                 "trace",
@@ -276,8 +285,12 @@ class StageEngine:
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
         params = sampling_params or SamplingParams()
-        if self.async_speculative and params.temperature != 0:
-            raise ValueError("async speculative decoding currently requires greedy sampling")
+        if (
+            self.async_speculative
+            or (self.speculative_config and self.speculative_config.mode == "pipeline")
+        ) and params.temperature != 0:
+            mode = "async" if self.async_speculative else "pipeline"
+            raise ValueError(f"{mode} speculative decoding currently requires greedy sampling")
         if request_id in self._retiring_speculative:
             self._retire_speculative(wait=True, request_id=request_id)
         config = self.model.config
@@ -381,6 +394,8 @@ class StageEngine:
             self._finish(request, FinishReason.ABORT)
             return RequestOutput.from_request(request)
         self.preemption.discard_snapshot(request_id)
+        if self.speculative_runner is not None:
+            self.speculative_runner.release(request)
         self.model_runner.release(request_id)
         self._pending_exit_signals.pop(request_id, None)
         return RequestOutput.from_request(self.scheduler.abort(request_id))
@@ -648,6 +663,8 @@ class StageEngine:
                     queue.remove(request.request_id)
             self._retiring_speculative[request.request_id] = request
             return
+        if self.speculative_runner is not None:
+            self.speculative_runner.release(request)
         self.model_runner.release(request.request_id)
         self.cache_manager.poll_prefixes()
         self._pending_exit_signals.pop(request.request_id, None)
@@ -738,7 +755,9 @@ class StageEngine:
     def _step_async(self):
         # Hold readback buffers until their DMA completes, even for discarded scores.
         self._inflight = [t for t in self._inflight if not t.ready()]
-        outputs = self._collect_coda()
+        outputs = self._collect_coda(
+            wait=self.pipeline_speculative and len(self._pending_coda) >= 2
+        )
         batch = self._schedule(
             # If the preceding core is still running, boundary work can overlap
             # the independent next core. Once it has completed, refill first:
@@ -776,6 +795,10 @@ class StageEngine:
                 return outputs
         ticket = self.executor.submit(batch)
         self._inflight.append(ticket)
+        if batch.is_speculative:
+            self._pending_coda.append(ticket)
+            self.scheduler.update_after_submission(batch, completion=ticket.event)
+            return outputs
         if batch.phase == RequestPhase.CODA:
             self._pending_coda.append(ticket)
             runner = self.model_runner

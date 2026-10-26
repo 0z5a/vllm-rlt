@@ -245,6 +245,7 @@ class Scheduler:
                 and (priority_only or not self.cache_manager.has_allocation(request.request_id))
             )
             or request.num_output_placeholders
+            or request.num_speculative_rounds
             or request.request_id in excluded
         ):
             return False
@@ -1296,7 +1297,9 @@ class Scheduler:
                 depth = result.depths[row] if delivered else request.loops_done
                 if self._record_token(request, result.token_ids[row], depth):
                     update.finished.append(request)
-                elif not delivered:
+                elif not delivered or (
+                    self.speculative_config and self.speculative_config.mode == "pipeline"
+                ):
                     self.enqueue(
                         request,
                         RequestPhase.SPECULATIVE
@@ -1306,6 +1309,10 @@ class Scheduler:
                 update.outputs.append(request)
             elif phase == RequestPhase.SPECULATIVE:
                 spec = result.speculative[row]
+                if delivered and self.speculative_config.mode == "pipeline":
+                    request.num_speculative_rounds -= 1
+                    if request.num_speculative_rounds != 0:
+                        raise RuntimeError("invalid pending pipeline submission count")
                 if result.frontiers is not None:
                     request.num_output_placeholders -= scheduled_request.token_count
                     request.num_speculative_rounds -= 1
@@ -1329,7 +1336,10 @@ class Scheduler:
                     if result.frontiers is None:
                         # The final correction/bonus token has not been forwarded.
                         self.cache_manager.truncate_suffix(
-                            request.request_id, scheduled_request.token_start + emitted
+                            request.request_id,
+                            spec.kv_frontier
+                            if spec.kv_frontier is not None
+                            else scheduled_request.token_start + emitted,
                         )
                         request.loops_done = 0
                     if request.request_id not in self.queues[RequestPhase.SPECULATIVE]:
@@ -1396,13 +1406,17 @@ class Scheduler:
                 self.enqueue(request, RequestPhase.RECURRENT)
             elif phase == RequestPhase.CODA:
                 request.num_output_placeholders += 1
-                if request.num_scheduled_outputs < request.sampling_params.max_tokens:
+                if (
+                    not (self.speculative_config and self.speculative_config.mode == "pipeline")
+                    and request.num_scheduled_outputs < request.sampling_params.max_tokens
+                ):
                     update.next_prelude.append(row)
                     self.enqueue(request, RequestPhase.PRELUDE)
             elif phase == RequestPhase.SPECULATIVE:
-                request.num_output_placeholders += scheduled_request.token_count
                 request.num_speculative_rounds += 1
-                self.enqueue(request, RequestPhase.SPECULATIVE)
+                if self.speculative_config.mode != "pipeline":
+                    request.num_output_placeholders += scheduled_request.token_count
+                    self.enqueue(request, RequestPhase.SPECULATIVE)
             elif phase == RequestPhase.RECURRENT:
                 consume_signal = (
                     request.loops_done > 0
