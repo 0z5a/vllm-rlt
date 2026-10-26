@@ -141,6 +141,77 @@ def test_pd_default_budget_keeps_a_whole_long_prompt_in_flight():
     assert config.max_inflight_bytes % config.transfer_chunk_bytes == 0
 
 
+def test_pd_rejects_huginn_before_spawning(monkeypatch):
+    from unittest.mock import Mock
+
+    from vllm_rlt.models import HuginnConfig
+    from vllm_rlt.pd.engine import PDEngine
+
+    clients = Mock()
+    monkeypatch.setattr("vllm_rlt.pd.engine.StageClient", clients)
+    with pytest.raises(ValueError, match="PD does not support Huginn"):
+        PDEngine(HuginnConfig())
+    clients.assert_not_called()
+
+
+def test_pd_nanbeige_startup_uses_entry_config_for_request_validation(monkeypatch):
+    from unittest.mock import Mock
+
+    from tests.helpers import tiny_nanbeige_config
+    from vllm_rlt.pd.engine import PDEngine
+
+    config = tiny_nanbeige_config()
+
+    def ready_client(model, *, stage_config, **options):
+        # Replace only the process boundary. The coordinator still constructs,
+        # connects peers and validates requests without model metadata in ready.
+        assert model is config
+        assert options["model_config"].model_specific_config is config
+        return Mock(
+            ready=True,
+            connected=True,
+            stopped=True,
+            info=dict(
+                kind="ready",
+                stage_id=stage_config.stage_id,
+                role=stage_config.role,
+                fingerprint="same-model-and-cache",
+                info={"agent": stage_config.stage_id},
+                num_blocks=64,
+                block_size=16,
+                depths=model.total_ut_steps,
+            ),
+        )
+
+    clients = Mock(side_effect=ready_client)
+    monkeypatch.setattr("vllm_rlt.pd.engine.StageClient", clients)
+    with PDEngine(config, attention_backend="triton") as engine:
+        assert clients.call_count == 2
+        assert engine.model_config.model_specific_config is config
+        assert all(
+            call.kwargs["model_config"] is engine.model_config for call in clients.call_args_list
+        )
+        # Accept the upper vocabulary/context boundaries at Nanbeige's depth.
+        params = SamplingParams(
+            max_tokens=config.max_position_embeddings, max_loops=config.total_ut_steps
+        )
+        engine.add_request("valid", [config.vocab_size - 1], params)
+        assert engine.has_request("valid")
+        with pytest.raises(ValueError, match="valid model token IDs"):
+            engine.add_request("bad_token", [config.vocab_size], params)
+        with pytest.raises(ValueError, match="loop bounds exceed model depth"):
+            engine.add_request(
+                "bad_depth", [1], SamplingParams(max_loops=config.total_ut_steps + 1)
+            )
+        with pytest.raises(ValueError, match="exceeds context capacity"):
+            engine.add_request(
+                "bad_context", [1], SamplingParams(max_tokens=config.max_position_embeddings + 1)
+            )
+        assert engine.request_ids() == ("valid",)
+    assert engine.closed
+    assert not engine.has_unfinished_requests()
+
+
 def drain(engine):
     outputs = {}
     deadline = time.monotonic() + 90
@@ -678,22 +749,6 @@ def test_pd_reservations_are_reported_before_worker_acknowledgments():
     assert engine.stats() == dict(requests=1, reserved_blocks=20)
     assert len(messages) == 1 and messages[0][0] == ("decode", "reserve")
     assert not hasattr(engine, "cache_manager") and not hasattr(engine, "scheduler")
-
-
-def test_pd_coordinator_builds_the_reported_model_config():
-    """The coordinator must not assume Ouro: Huginn workers report Huginn's own config fields."""
-    from dataclasses import asdict
-
-    from vllm_rlt.models import HuginnConfig, OuroConfig
-    from vllm_rlt.pd.engine import _CONFIG_CLASSES
-
-    huginn = HuginnConfig()
-    rebuilt = _CONFIG_CLASSES["huginn_raven"](**asdict(huginn))
-    assert isinstance(rebuilt, HuginnConfig) and rebuilt == huginn
-    assert rebuilt.total_ut_steps == huginn.mean_recurrence
-    with pytest.raises(TypeError, match="n_embd"):
-        OuroConfig(**asdict(huginn))  # the old hard-coded path
-    assert _CONFIG_CLASSES["ouro"] is OuroConfig
 
 
 def test_nixl_backend_params_from_environment(monkeypatch):
