@@ -1,14 +1,15 @@
+from collections.abc import Iterable
 from dataclasses import replace
 
 import torch
 
-from vllm_rlt.engine.llm_engine import LLMEngine
+from vllm_rlt.engine.llm_engine import LLMEngine, StageClient
 from vllm_rlt.models import (
-    AutoModelForCausalLM,
     load_tokenizer,
-    resolve_model_config,
+    prepare_model,
     resolve_model_source,
 )
+from vllm_rlt.pd.engine import PDEngine
 from vllm_rlt.sampling_params import SamplingParams
 
 
@@ -21,8 +22,8 @@ class LLM:
         *,
         tokenizer=None,
         revision=None,
-        device="cpu",
-        dtype=torch.bfloat16,
+        device=None,
+        dtype=None,
         cache_config=None,
         scheduler_config=None,
         attention_backend="torch",
@@ -31,20 +32,23 @@ class LLM:
         speculative_config=None,
     ):
         self._tokenizer_source = None
-        if isinstance(model, str):
-            tokenizer_source = resolve_model_source(model)
-            model_name, revision, _ = resolve_model_config(model, revision=revision)
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                revision=revision,
-                device=device,
-                dtype=dtype,
-            )
-            if tokenizer is None:
-                self._tokenizer_source = (tokenizer_source, revision)
+        if isinstance(model, (LLMEngine, StageClient, PDEngine)):
+            self.tokenizer = tokenizer
+            self.engine = model
+            self._next_request_id = 0
+            return
+        tokenizer_source = resolve_model_source(model) if isinstance(model, str) else None
+        model, revision, model_config = prepare_model(model, revision=revision)
+        if tokenizer is None and tokenizer_source is not None:
+            self._tokenizer_source = (tokenizer_source, revision)
         self.tokenizer = tokenizer
-        self.engine = LLMEngine(
+        self.engine = StageClient(
             model,
+            model_config=model_config,
+            device=device,
+            dtype=dtype,
+            revision=revision,
+            seed=torch.initial_seed(),
             cache_config=cache_config,
             scheduler_config=scheduler_config,
             attention_backend=attention_backend,
@@ -97,12 +101,33 @@ class LLM:
             return [results[request_id] for request_id in request_ids]
         except Exception:
             for request_id in request_ids:
-                if request_id in self.engine.scheduler.requests:
+                if self.engine.has_request(request_id):
                     self.engine.abort_request(request_id)
             raise
 
     def start_profile(self, config, *, scheduled=False):
         return self.engine.start_profile(config, scheduled=scheduled)
+
+    def start_weight_update(self, version: int | None = None):
+        self.engine.start_weight_update(version)
+
+    def update_weights(self, weights: Iterable[tuple[str, torch.Tensor]]):
+        self.engine.update_weights(weights)
+
+    def finish_weight_update(self):
+        self.engine.finish_weight_update()
+
+    def get_weight_version(self) -> int:
+        return self.engine.get_weight_version()
+
+    def reset_prefix_cache(self):
+        self.engine.reset_prefix_cache()
+
+    def pause_generation(self):
+        self.engine.pause_generation()
+
+    def resume_generation(self):
+        self.engine.resume_generation()
 
     def stop_profile(self):
         return self.engine.stop_profile()

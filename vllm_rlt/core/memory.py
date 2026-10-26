@@ -18,7 +18,7 @@ def budget_blocks(available_bytes, bytes_per_block):
 
 
 @torch.inference_mode()
-def plan_cache(model, cache, scheduler, execution, backend):
+def plan_cache(model, cache, scheduler, execution, backend, *, staged_prefill=None):
     parameter = next(model.parameters())
     config, device = model.config, parameter.device
     per_block = (
@@ -66,6 +66,7 @@ def plan_cache(model, cache, scheduler, execution, backend):
         device=device,
         dtype=parameter.dtype,
         backend=backend,
+        recurrent_layers=getattr(model, "recurrent_kv_layers", None),
     )
     ids, positions = [], []
     for index, length in enumerate(lengths):
@@ -73,10 +74,19 @@ def plan_cache(model, cache, scheduler, execution, backend):
         probe.allocate(rid, length)
         ids.extend([rid] * length)
         positions.extend(range(length))
-    hidden = model.prelude(torch.zeros(count, dtype=torch.long, device=device))
+    tokens = torch.zeros(count, dtype=torch.long, device=device)
+    if getattr(model, "requires_boundary_kv", False):
+        boundary = probe._prepare_batch(ids, [0] * count, positions)
+        hidden = model.prelude_prepared(tokens, boundary, probe)
+    else:
+        hidden = model.prelude(tokens)
     for depth in range(config.total_ut_steps):
         hidden, _ = model.recurrent(hidden, ids, [depth] * count, positions, probe)
-    logits = model.coda(hidden)
+    logits = (
+        model.coda_prepared(hidden, boundary, probe)
+        if getattr(model, "requires_boundary_kv", False)
+        else model.coda(hidden)
+    )
     torch.cuda.synchronize(device)
     peak = max(0, torch.cuda.max_memory_allocated(device) - allocated)
     del hidden, logits, probe
@@ -90,12 +100,21 @@ def plan_cache(model, cache, scheduler, execution, backend):
             * (8 * config.head_dim + 8)
             * 4
         )
-    buffers = execution_buffer_bytes(config, scheduler, cache, execution, parameter.element_size())
+    buffers = execution_buffer_bytes(
+        config,
+        scheduler,
+        cache,
+        execution,
+        parameter.element_size(),
+        staged_prefill=staged_prefill,
+    )
     # Dynamic metadata at the largest supported context is small but not zero.
-    metadata = (
-        scheduler.max_num_batched_tokens
-        * math.ceil(config.max_position_embeddings / cache.block_size)
-        * 4
+    metadata_width = math.ceil(config.max_position_embeddings / cache.block_size)
+    metadata_rows = scheduler.max_num_batched_tokens
+    wide_capacity = metadata_rows * (config.total_ut_steps + 2)
+    narrow_capacity = metadata_rows * config.total_ut_steps * (metadata_width + 2) + 1
+    metadata = 3 * (
+        (1 << (wide_capacity - 1).bit_length()) * 8 + (1 << (narrow_capacity - 1).bit_length()) * 4
     )
     budget = min(free_before, int(total * cache.gpu_memory_utilization) - reserved)
     concurrent_peak = peak * (2 if execution.async_scheduling and execution.multi_stream else 1)

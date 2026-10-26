@@ -8,14 +8,14 @@ from functools import partial
 import torch
 
 from vllm_rlt.config import SchedulerConfig
-from vllm_rlt.engine.llm_engine import LLMEngine
+from vllm_rlt.engine.llm_engine import StageClient
 from vllm_rlt.entrypoints.runtime_args import (
     add_runtime_args,
     profile_config_from_args,
     runtime_configs,
 )
 from vllm_rlt.models import (
-    AutoModelForCausalLM,
+    ModelConfig,
     load_tokenizer,
     resolve_model_config,
     resolve_model_source,
@@ -41,14 +41,12 @@ def load_engine(args):
         decoder = getattr(getattr(tokenizer, "backend_tokenizer", None), "decoder", None)
         if not isinstance(decoder, ByteLevel):
             raise ValueError("serving requires the Ouro byte-level tokenizer")
-    model = AutoModelForCausalLM.from_pretrained(
+    engine = StageClient(
         source,
+        model_config=ModelConfig.from_dict(config),
         revision=revision,
         device=args.device,
-        dtype=getattr(torch, args.dtype),
-    )
-    engine = LLMEngine(
-        model,
+        dtype=args.dtype,
         **runtime_configs(args),
         scheduler_config=SchedulerConfig(
             policy=getattr(args, "scheduling_policy", "fcfs"),
@@ -57,6 +55,7 @@ def load_engine(args):
             max_num_batched_tokens=args.max_num_batched_tokens,
             mode=args.mode,
             prefill_chunk_size=getattr(args, "prefill_chunk_size", 128),
+            wavefront_chunked_prefill=getattr(args, "wavefront_chunked_prefill", False),
             max_prefill_batches_before_decode=getattr(args, "max_prefill_batches_before_decode", 1),
             admission_scan_limit=getattr(args, "admission_scan_limit", 64),
             max_admission_bypasses=getattr(args, "max_admission_bypasses", 8),
@@ -88,10 +87,18 @@ def main():
     parser.add_argument(
         "--attention-backend",
         type=str.lower,
-        choices=["torch", "triton", "flash_attn", "flash_attn_2", "flash_attn_3", "flash_attn_4"],
+        choices=[
+            "auto",
+            "torch",
+            "triton",
+            "flash_attn",
+            "flash_attn_2",
+            "flash_attn_3",
+            "flash_attn_4",
+        ],
         default="triton",
     )
-    parser.add_argument("--mode", choices=["refill", "no_refill"], default="refill")
+    parser.add_argument("--mode", choices=["refill", "no_refill", "mixed"], default="refill")
     parser.add_argument("--num-blocks", type=int, help="Override automatic KV sizing")
     parser.add_argument("--block-size", type=int, default=16)
     parser.add_argument("--max-num-seqs", type=int, default=8)
@@ -106,8 +113,8 @@ def main():
     add_runtime_args(parser)
     args = parser.parse_args()
     limits = ServingLimits(**{name: getattr(args, name) for name in defaults})
-    if args.device == "cpu" and args.attention_backend != "torch":
-        parser.error("CPU execution requires --attention-backend torch")
+    if args.device == "cpu" and args.attention_backend not in ("auto", "torch"):
+        parser.error("CPU execution requires --attention-backend torch or auto")
     torch.set_num_threads(args.cpu_threads)
     logging.basicConfig(level=logging.INFO)
     app = create_app(

@@ -141,7 +141,7 @@ class EngineWorker:
     def _tick(self, pending, cancellations):
         failures = []
         for request_id in cancellations:
-            if request_id in self.engine.scheduler.requests:
+            if self.engine.has_request(request_id):
                 self.engine.abort_request(request_id)
             self.decoders.pop(request_id, None)
         for channel in pending:
@@ -156,7 +156,10 @@ class EngineWorker:
             except ValueError as exc:
                 failures.append((request_id, ServingError.invalid_request(str(exc))))
         events = []
+        closed = set()
         for output in self.engine.step():
+            if output.request_id in closed:
+                continue
             decoder, delivered = self.decoders[output.request_id]
             try:
                 # A speculative round can commit several IDs. Decode every new
@@ -167,9 +170,10 @@ class EngineWorker:
                 )
                 self.decoders[output.request_id] = (decoder, len(output.token_ids))
             except ValueError as exc:
-                if not output.finished:
+                if self.engine.has_request(output.request_id):
                     self.engine.abort_request(output.request_id)
                 del self.decoders[output.request_id]
+                closed.add(output.request_id)
                 failures.append((output.request_id, ServingError.invalid_request(str(exc))))
                 continue
             events.append(
@@ -185,20 +189,17 @@ class EngineWorker:
             )
             if output.finished:
                 del self.decoders[output.request_id]
+                closed.add(output.request_id)
         return failures, events, self.engine.has_unfinished_requests()
 
     def _unload(self):
         if self.engine is not None:
-            for request_id in list(self.engine.scheduler.requests):
+            for request_id in self.engine.request_ids():
                 self.engine.abort_request(request_id)
             close = getattr(self.engine, "close", None)
             if close is not None:
                 close()
-            logger.info(
-                "engine cleanup: requests=%d kv_blocks=%d",
-                len(self.engine.scheduler.requests),
-                self.engine.cache_manager.num_used_blocks,
-            )
+            logger.info("engine cleanup: %s", self.engine.stats())
         self.decoders.clear()
         self.engine = None
         self.tokenizer = None

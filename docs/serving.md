@@ -19,8 +19,7 @@ gpu run --gpu-ids <available-id> --timeout 30m --note "Ouro HTTP serving" -- \
 ```
 
 BF16 weights, ordinary activations and KV are this frontend's primary target,
-consistent with the precision policy proposed in [PR #12](https://github.com/hsliuustc0106/vllm-rlt/pull/12).
-That policy is pending and is not yet part of this branch.
+as described in the [precision policy](precision-policy.md).
 The current model uses FP32 RMSNorm/RoPE intermediates and gate/sampling
 probabilities; Triton attention uses FP32 internal accumulation. Record the
 matrix multiplication backend/reduction flags separately. `--dtype float32`
@@ -33,6 +32,24 @@ leaves health unavailable and emits the cause in the server log. The first
 actual inference may include lazy library/kernel setup; validate it explicitly.
 `GET /v1/models` lists the configured `--served-model-name` (default
 `ByteDance/Ouro-1.4B`).
+
+## Stage deployment and batching
+
+Serving workers use the common stage engine. A local `prefill_decode` stage
+handles prompt and generation work; PD deploys prefill and decode stages and
+uses a connector for state transfer. Request submission and output delivery
+remain separate from the stage-local model execution contract.
+
+Mixed scheduling means batching compatible prompt/decode recurrent work within
+one stage. It does not mean a worker role, and PD does not require it. For
+supported models, select it with `--mode mixed` and LAST_EXITED KV; the
+scheduler chooses depth boundaries when decode work can join a recurrent batch.
+Add `--wavefront-chunked-prefill` to batch ready prompt chunks from different
+recurrent depths; PD can enable this on its prefill scheduler.
+Speculative decoding requires refill scheduling and cannot join mixed recurrent
+batches. PD can configure speculation on its decode stage.
+See [runtime configuration](runtime.md#execution-batches-and-mixed-scheduling)
+for constraints and [the architecture](unified_execution.md) for ownership.
 
 ## Completions contract
 
@@ -84,6 +101,19 @@ actual prompt/generated IDs, including generated EOS or other hidden special
 tokens, rather than from re-tokenizing the displayed text.
 The decoder processes each sampled token once, retaining only incomplete UTF-8
 bytes between events. Completed text is never decoded again.
+
+## Ouro-Thinking prompts
+
+For checkpoint setup, executable JSON/SSE examples, loop configuration,
+KV sizing and validation scope, see the
+[Ouro-Thinking recipe](recipes/ouro_thinking.md).
+
+The completions API contract here is unchanged for Thinking checkpoints: the
+server accepts a single pre-rendered `prompt` string, not `messages` or an
+`enable_thinking` field, and does not apply a chat template itself. Prepare the
+prompt on the client with the shared helper described in the recipe. Responses
+remain cleaned completion text with no separate reasoning field; decoding hides
+special tokens while retaining reasoning prose.
 
 ## Ownership, limits and errors
 
@@ -162,7 +192,7 @@ concurrency semaphore and ends at the last choice event, excluding client-side
 queueing and the usage/`[DONE]` tail. The historical offline M1 harness instead timestamps
 engine enqueue/steps and excludes HTTP/tokenization; the values are not
 interchangeable. The M1 harness has been removed; see the
-[archived baseline report](https://github.com/hsliuustc0106/vllm-rlt/blob/5bee22950357d93e3f7a3c6c87b8fbed004c9296/docs/benchmarks/m1-20260910.md)
+[archived baseline report](https://github.com/InferMatrixLab/vllm-rlt/blob/5bee22950357d93e3f7a3c6c87b8fbed004c9296/docs/benchmarks/m1-20260910.md)
 for its measurement scope.
 
 ## Validation
@@ -170,8 +200,14 @@ for its measurement scope.
 CPU tests use small models and real loopback sockets:
 
 ```bash
-OMP_NUM_THREADS=1 python -m pytest -q tests/test_serving.py tests/test_engine.py
+OMP_NUM_THREADS=1 python -m pytest -q \
+  tests/test_serving.py tests/test_engine.py tests/test_chat_template.py
 ```
+
+Chat-template tests cover input validation and forwarding of template options.
+Set `OURO_BASE_TOKENIZER`, `OURO_14B_THINKING_TOKENIZER` and
+`OURO_26B_THINKING_TOKENIZER` to prepared local checkpoint directories to also
+check their official templates; these opt-in tests never download assets.
 
 For real-model checks, validate the first inference after readiness and
 overlapping requests against direct engine execution for text, usage and finish

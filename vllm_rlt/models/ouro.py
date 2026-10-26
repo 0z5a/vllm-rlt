@@ -28,7 +28,8 @@ from vllm_rlt.layers import (
 )
 
 if TYPE_CHECKING:
-    from vllm_rlt.core.kv_cache_manager import KVCacheManager, _PreparedKVBatch
+    from vllm_rlt.core.kv_cache_manager import KVCacheManager
+    from vllm_rlt.worker.metadata import DeviceKVMetadata, KVMetadata
 
 
 @dataclass(frozen=True)
@@ -171,7 +172,7 @@ class OuroAttention(nn.Module):
         self,
         hidden: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        batch: "_PreparedKVBatch",
+        batch: "KVMetadata | DeviceKVMetadata",
         cache: "KVCacheManager",
     ) -> torch.Tensor:
         shape = (hidden.shape[0], -1, self.config.head_dim)
@@ -210,7 +211,7 @@ class OuroDecoderLayer(nn.Module):
         self,
         hidden: torch.Tensor,
         position_embeddings: tuple[torch.Tensor, torch.Tensor],
-        batch: "_PreparedKVBatch",
+        batch: "KVMetadata | DeviceKVMetadata",
         cache: "KVCacheManager",
     ) -> torch.Tensor:
         attention = self.self_attn(self.input_layernorm(hidden), position_embeddings, batch, cache)
@@ -300,6 +301,7 @@ class OuroForCausalLM(nn.Module):
         revision: str | None = None,
         device: torch.device | str = "cpu",
         dtype: torch.dtype = torch.bfloat16,
+        config: OuroConfig | None = None,
     ) -> "OuroForCausalLM":
         """Stream strictly checked safetensors into a meta model; never execute Hub code.
 
@@ -315,7 +317,10 @@ class OuroForCausalLM(nn.Module):
 
             source, revision, _ = resolve_model_config(path_or_repo, revision=revision)
             folder = Path(source)
-        config = OuroConfig.from_dict(json.loads((folder / "config.json").read_text()))
+        if config is None:
+            config = OuroConfig.from_dict(json.loads((folder / "config.json").read_text()))
+        elif not isinstance(config, OuroConfig):
+            raise TypeError("config must be an OuroConfig")
         index_path = folder / "model.safetensors.index.json"
         index = json.loads(index_path.read_text())["weight_map"] if index_path.is_file() else None
         if index is None:
