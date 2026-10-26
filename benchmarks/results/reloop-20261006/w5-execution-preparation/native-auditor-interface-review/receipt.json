@@ -1,0 +1,27 @@
+{
+  "status": "PASS_PUBLIC_HELP_IMPORTS_6_OLD_CONFIGS_AND_EMPTY_ORIGINAL7_MATRIX_ONLY",
+  "checked_unix": 1791269446.963318,
+  "source_checks": [
+    {
+      "source": "audit_w5_native_trials.py",
+      "source_sha256": "35b94e8cdd1d69d700feeeafee7ed714d674727ae39f606ae63872fe6827d5d6",
+      "actual_natural_returncode": 0,
+      "AST_identical_to_indexed_original": true
+    },
+    {
+      "source": "summarize_w5_raw_matrix.py",
+      "source_sha256": "57f9dc51cf81836de14f06f14182b5aae3857149da7eabefcd7d772f17704e23",
+      "actual_natural_returncode": 0,
+      "AST_identical_to_indexed_original": true
+    }
+  ],
+  "old_actual_config_manifest_and_archive_members_verified": 6,
+  "public_configuration_function_actual_passes": 6,
+  "matrix_actual_natural_returncode": 0,
+  "original_cases_retained": 7,
+  "missing_fresh_jobs": 42,
+  "Ruff_actual_exit": 0,
+  "new_native_4C_complete_positive": "NOT_RUN",
+  "whole_GPU_gate_resource_and_offbox": "NOT_PROVEN_BY_PREPARATION",
+  "new_GPU_or_model_jobs": 0
+}

@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "scope": "Ouro-1.4B full-checkpoint FP32 correctness qualification",
+  "model": "ByteDance/Ouro-1.4B",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "source_revision": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "production_base_revision": "d700ecca664da2e8f3122f66ad9d45de4295e45a",
+  "hardware": {
+    "gpu": "NVIDIA H100",
+    "gpu_count": 1,
+    "observed_memory_mib": 65247,
+    "driver": "595.91.07"
+  },
+  "software": {
+    "python": "3.12.1",
+    "torch": "2.12.1+cu130",
+    "cuda": "13.0",
+    "triton": "3.7.1",
+    "transformers": "4.54.1",
+    "tokenizers": "0.21.4",
+    "safetensors": "0.8.0",
+    "huggingface_hub": "0.35.3",
+    "numpy": "2.4.6",
+    "host_compiler": "GCC 11.5.0"
+  },
+  "dtype": "float32",
+  "tf32": false,
+  "w2": {
+    "backend": "triton",
+    "status": "PASS",
+    "cache_num_blocks": 128,
+    "cache_block_size": 4,
+    "cases": 12,
+    "readouts": 108,
+    "forced_continuations": 96,
+    "ownership_checks": 21,
+    "logical_K_positions": 82944,
+    "logical_V_positions": 82944,
+    "atol": 0.0001,
+    "rtol": 0.0001,
+    "reported_max_abs_errors": {
+      "state": 6.29425048828125e-05,
+      "key": 3.0994415283203125e-05,
+      "value": 1.0848045349121094e-05,
+      "logits": 5.698204040527344e-05,
+      "selected_lp": 2.86102294921875e-05,
+      "readout_state": 0.0
+    }
+  },
+  "public_fp32": {
+    "backend": "torch",
+    "status": "PASS",
+    "configured_kv_gib": 2,
+    "tokenizer_records": 52,
+    "parameters_exact_after_cast": 269,
+    "facade_outputs": 8,
+    "dense_readouts": 6
+  },
+  "offbox_review": {
+    "payload_SHA_checks": 103,
+    "recorded_selected_LP_pairs_recomputed": 114,
+    "maximum_selected_LP_error_over_original_budget": 0.009380616644215726,
+    "complete_KV_state_logit_vectors_persisted": false,
+    "independent_full_vector_replay": false,
+    "vector_evidence": "Original complete byte-pinned runtime assertions and reports",
+    "all_child_parent_resource_srun_exit_codes": 0,
+    "natural_release_verified": true
+  },
+  "qualification_elapsed_seconds": 63.3580482006073,
+  "compiler_retry": {
+    "prior_attempt": "FAILED_DRIVER_JIT_MODULE_LOAD_UNRESOLVED_LIBIMF_PUBLIC_UNRUN",
+    "retry": "COMMAND_SCOPED_EXISTING_GCC_AND_NEW_PRIVATE_CACHES",
+    "generated_host_module_unresolved_libimf_dependency": false,
+    "actual_host_build_argv": "NOT_TRACED"
+  },
+  "unmeasured": [
+    "performance_speedup",
+    "final_quality",
+    "HTTP",
+    "CUDA_Graph",
+    "original_64GiB_KV_profiles",
+    "original_102GiB_KV_profile",
+    "training"
+  ],
+  "raw_operational_evidence": "Preserved privately; summary excludes access and scheduling metadata"
+}

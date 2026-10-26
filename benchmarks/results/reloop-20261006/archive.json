@@ -1,0 +1,9 @@
+{
+  "scientific_archive": "w3-fp32-v2.tar.gz",
+  "bytes": 1442306,
+  "sha256": "d2e1c63bce3076bc980a68b958bb53c8ff417408208089ad02900d477892d225",
+  "payload_files": 109,
+  "manifest_sha256": "0e5b9f338d89e835bd66e15564a00ebde22ca861330da661f44e4d2c47cdb971",
+  "original_archive_sha256": "2cd4fbfe157d3faa6889fb372f13ce3db6e0009de270ceec135b52f603effae2",
+  "created_unix": 1791240757.3158898
+}

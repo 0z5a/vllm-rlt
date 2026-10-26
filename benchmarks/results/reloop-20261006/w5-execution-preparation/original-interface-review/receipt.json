@@ -1,0 +1,30 @@
+{
+  "status": "PASS_STATIC_AND_REAL_UNRESOLVED_INPUT_REJECTION_ONLY",
+  "checked_unix": 1791247306.6628218,
+  "sources": {
+    "resolve_w5_prompts.py": "48164e2c52b8da74018f98f745254745255e4cba737a4f51bc4d90df5b0b35b4",
+    "run_w5_cost_arm.py": "08b062e7126167e687f013985fdf3806d88a600e69d9ac238d50b45b42c083a7"
+  },
+  "checks": [
+    {
+      "name": "resolve_w5_prompts.py_help",
+      "actual_returncode": 0
+    },
+    {
+      "name": "run_w5_cost_arm.py_help",
+      "actual_returncode": 0
+    },
+    {
+      "name": "actual_unresolved_template_refused_before_admission_or_CUDA_import",
+      "actual_returncode": 1,
+      "model_output_dir_absent": true,
+      "input_template_sha256": "c42eb26b929e95d8b36c465810776d3004bd8ee4a2a6b0fd0993e2d8c005351f"
+    }
+  ],
+  "actual_canonical_tokenization": "NOT_RUN",
+  "actual_GPU_cost": "NOT_RUN",
+  "actual_model_start_count": 0,
+  "CUDA_or_torch_import_on_negative_path": "NOT_REACHED_BY_SOURCE_CONTROL_FLOW",
+  "future_required": "Real new-node canonical token IDs + owning controller whole-window/source/model/boot/locks/UUID/emptycompute/capacity prechecks + same-device offbox numerical gate; all3arms5warm5measure/twofresh",
+  "no_invented_selected_admitted_or_model_outputs": true
+}

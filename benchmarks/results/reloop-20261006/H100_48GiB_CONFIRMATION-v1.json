@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "paper_title": "Re:Loop",
+  "state": "INCOMPLETE",
+  "gpu": "NVIDIA H100",
+  "gpu_count": 1,
+  "dtype": "float32",
+  "attention_backend": "triton",
+  "cuda_graphs": false,
+  "common_KV_pool_bytes": 51539607552,
+  "B": 16,
+  "required_outputs": 1959,
+  "complete_outputs": 1827,
+  "not_run_budget_outputs": 132,
+  "actual_generated_tokens": 213498,
+  "original_admission_seconds": 1800,
+  "original_natural_drain_seconds": 600,
+  "original_max_new_tokens": 1024,
+  "original_generated_token_cap": 2006016,
+  "source_sha": "e8aa1ee57734bc5c1118c143ebdb68d0b53210a1",
+  "model_revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+  "actual_bound_protocol_sha256": "b467ea7d3fa57044c18da95fd877fa2c6a4f7abfcbf160533951e030c59bde5c",
+  "actual_records_sha256": "50368acf46b86ebaacf9789cc7b6a012dafe9bc71c73bb2894456f66abe55ea4",
+  "generation_counts": [
+    {
+      "arm_id": "A_P4D4_off",
+      "task": "gsm8k",
+      "required_n": 505,
+      "complete_n": 505,
+      "not_run_budget_n": 0
+    },
+    {
+      "arm_id": "A_P4D4_off",
+      "task": "humanevalplus",
+      "required_n": 148,
+      "complete_n": 148,
+      "not_run_budget_n": 0
+    },
+    {
+      "arm_id": "D_P4D3_on",
+      "task": "gsm8k",
+      "required_n": 505,
+      "complete_n": 505,
+      "not_run_budget_n": 0
+    },
+    {
+      "arm_id": "D_P4D3_on",
+      "task": "humanevalplus",
+      "required_n": 148,
+      "complete_n": 148,
+      "not_run_budget_n": 0
+    },
+    {
+      "arm_id": "C_P4D3_off",
+      "task": "gsm8k",
+      "required_n": 505,
+      "complete_n": 505,
+      "not_run_budget_n": 0
+    },
+    {
+      "arm_id": "C_P4D3_off",
+      "task": "humanevalplus",
+      "required_n": 148,
+      "complete_n": 16,
+      "not_run_budget_n": 132
+    }
+  ],
+  "mathematics": {
+    "denominator": 505,
+    "arms": [
+      {
+        "arm_id": "A_P4D4_off",
+        "n": 505,
+        "completed": 505,
+        "missing_or_unrun": 0,
+        "correct": 316,
+        "accuracy": 0.6257425742574257,
+        "hit_max_tokens": 0,
+        "status": "COMPLETE"
+      },
+      {
+        "arm_id": "D_P4D3_on",
+        "n": 505,
+        "completed": 505,
+        "missing_or_unrun": 0,
+        "correct": 301,
+        "accuracy": 0.596039603960396,
+        "hit_max_tokens": 4,
+        "status": "COMPLETE"
+      },
+      {
+        "arm_id": "C_P4D3_off",
+        "n": 505,
+        "completed": 505,
+        "missing_or_unrun": 0,
+        "correct": 287,
+        "accuracy": 0.5683168316831683,
+        "hit_max_tokens": 2,
+        "status": "COMPLETE"
+      }
+    ],
+    "comparisons": [
+      {
+        "candidate": "D_P4D3_on",
+        "baseline": "A_P4D4_off",
+        "n": 505,
+        "wins": 31,
+        "losses": 46,
+        "family_comparisons": 2,
+        "difference": -0.0297029702970297,
+        "lower": -0.09008988535465567,
+        "upper": 0.031290344982920076,
+        "status": "UNCERTAIN",
+        "scope": "primary mathematics confirmation; frozen family M2"
+      },
+      {
+        "candidate": "D_P4D3_on",
+        "baseline": "C_P4D3_off",
+        "n": 505,
+        "wins": 44,
+        "losses": 30,
+        "family_comparisons": 2,
+        "difference": 0.027722772277227723,
+        "lower": -0.03222355049747422,
+        "upper": 0.08709923492766208,
+        "status": "UNCERTAIN",
+        "scope": "exploratory same-depth attribution; not an additional confirmatory claim"
+      }
+    ]
+  },
+  "code": {
+    "denominator": 148,
+    "arms": [
+      {
+        "arm_id": "A_P4D4_off",
+        "n": 148,
+        "generated": 148,
+        "scored": 148,
+        "correct": 1,
+        "status": "COMPLETE"
+      },
+      {
+        "arm_id": "D_P4D3_on",
+        "n": 148,
+        "generated": 148,
+        "scored": 148,
+        "correct": 0,
+        "status": "COMPLETE"
+      },
+      {
+        "arm_id": "C_P4D3_off",
+        "n": 148,
+        "generated": 16,
+        "scored": 0,
+        "correct": null,
+        "status": "NOT_RUN"
+      }
+    ],
+    "comparisons": [
+      {
+        "candidate": "D_P4D3_on",
+        "baseline": "A_P4D4_off",
+        "n": 148,
+        "scope": "primary code confirmation; frozen family M2",
+        "status": "UNCERTAIN",
+        "interval": {
+          "n": 148,
+          "wins": 0,
+          "losses": 1,
+          "family_comparisons": 2,
+          "difference": -0.006756756756756757,
+          "lower": -0.0474900317031247,
+          "upper": 0.03366805626254722
+        }
+      },
+      {
+        "candidate": "D_P4D3_on",
+        "baseline": "C_P4D3_off",
+        "n": 148,
+        "scope": "exploratory same-depth attribution; no additional confirmation claim",
+        "status": "INCOMPLETE",
+        "interval": null
+      }
+    ],
+    "execution": "Original cooperative20M opcodes/5s per call; complete canonical reference; no repairs; not official EvalPlus timeout execution"
+  },
+  "family_comparisons": 2,
+  "noninferiority_margin": 0.01,
+  "natural_returns": {
+    "generator": 0,
+    "controller": 0,
+    "resource_step": 0,
+    "code_scorer_children": [
+      0,
+      0
+    ],
+    "code_controller": 1
+  },
+  "code_controller_return1_reason": "Global INCOMPLETE;132 code outputs absent from matched-off arm, no fabricated scores",
+  "transport_scope": "Original connection ended255; independently retained Node step0 and later full archive copy0; original transport failure is preserved",
+  "resource_release_scope": "Final fresh GPU/actor/locks release after original allocation end was not observed; no inferred release",
+  "full_archive_sha256": "e22ecc3cc89585287e94c09b27d8111ae59e57183bebbf0afd2aa5e2faa22873",
+  "full_manifest_task_payloads": 1300,
+  "C32_H100_fixed_work": "NOT_RUN",
+  "original_W5_full_matrix": "NOT_RUN",
+  "quality_NI_speed_memory_SOTA_claims": "NONE"
+}
