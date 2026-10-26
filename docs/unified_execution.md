@@ -141,51 +141,10 @@ CODA. A returned ticket does not imply device completion. The
 shows how GPU-owned next-token state lets consecutive rounds overlap result
 readback and CPU commit within this same stage.
 
-**Pipelined speculation (experimental).** `--speculative-mode pipeline` with
-`--speculative-tokens 4 --draft-loops 1 --target-loops 4` selects the existing
-speculative runner's token pipeline. Each submission advances its live tokens
-by `draft_loops`; different requests and depths share the recurrent call.
-The runner retains hidden states between submissions, while Scheduler owns
-admission, committed outputs, EOS and KV allocation. Rejection discards dependent
-tokens; the returned KV frontier preserves surviving speculative work.
-The pipeline requires greedy sampling and `last_exited` KV. It supports
-`--async-scheduling`, `--cuda-graphs` and `--enable-preemption`, including their
-combination with compatible attention backends such as Triton and FA4.
-Asynchronous submission defers decision readback to ticket collection; each
-request has at most one pending pipeline step, while independent requests can
-progress. This does not provide block speculation's same-request cross-round
-GPU lookahead. Pending steps cannot be preempted. At a completed step boundary,
-preemption saves hidden states, loop depths and candidates with the existing KV
-snapshot, either resident or CPU-offloaded; resumption restores that exact state.
-The block mode remains the default.
-`--speculative-tokens` bounds the reserved lookahead window in pipeline mode;
-a smaller scheduler token budget may discard descendants and reduce overlap.
-
-![Block and pipeline speculation at token granularity](diagrams/pipeline-token-batches.png)
-
-The figures use four target loops, one draft loop and block K=4. Each colored
-cell identifies an input token and its recurrent depth; `P` is PRELUDE and `C`
-is CODA. Processing `xi` predicts `x(i+1)`. Columns count recurrent executions,
-not measured time; block verification runs R2–R4 within one forward.
-
-In the accepted path, both green-framed S8 columns have delivered `x1`–`x5`.
-Block commits them together; pipeline commits one per step from S4 onward.
-After S8, pipeline retains `x5:R3`, `x6:R2` and `x7:R1`, so the next five
-outputs require five more recurrent executions instead of block's eight.
-The purple frames mark delivery through `x10`: pipeline S13 versus block S16.
-Ellipses omit the same intervals in both panels. This is a reduction in
-execution count under continuous acceptance, not an equivalent latency claim.
-[Open the accepted-path SVG](diagrams/pipeline-token-batches.svg).
-
-![Block and pipeline rejection with connected batch frames](diagrams/pipeline-token-rejection.png)
-
-The red frames connect the same rejection: block S8 and pipeline S5 replace
-`x2` with `x2′`, commit the correction, and discard dependent work. Block has
-already computed old `x2`–`x4` through R4; pipeline discards them at R3, R2 and
-R1 respectively. Both preserve the valid causal KV prefix through input `x1`.
-Pipeline S6–S8 show refilling from `P(x2′)`; neither further final-token output
-nor block recovery is shown before this figure ends at S8.
-[Open the rejection SVG](diagrams/pipeline-token-rejection.svg).
+**Pipelined speculation (experimental).** `--speculative-mode pipeline` reuses
+the shared speculative runner to advance tokens at different recurrent depths.
+See [pipelined self-speculation](async-speculative.md#pipelined-self-speculation)
+for configuration, state lifetimes, and token-level acceptance/rejection diagrams.
 
 **Shared execution and resources.** ModelRunner constructs ModelRuntime and the
 speculative controller references that same runtime. Both use the worker-loaded
