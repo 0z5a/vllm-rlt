@@ -161,6 +161,32 @@ The block mode remains the default.
 `--speculative-tokens` bounds the reserved lookahead window in pipeline mode;
 a smaller scheduler token budget may discard descendants and reduce overlap.
 
+![Block and pipeline speculation at token granularity](diagrams/pipeline-token-batches.png)
+
+The figures use four target loops, one draft loop and block K=4. Each colored
+cell identifies an input token and its recurrent depth; `P` is PRELUDE and `C`
+is CODA. Processing `xi` predicts `x(i+1)`. Columns count recurrent executions,
+not measured time; block verification runs R2–R4 within one forward.
+
+In the accepted path, both green-framed S8 columns have delivered `x1`–`x5`.
+Block commits them together; pipeline commits one per step from S4 onward.
+After S8, pipeline retains `x5:R3`, `x6:R2` and `x7:R1`, so the next five
+outputs require five more recurrent executions instead of block's eight.
+The purple frames mark delivery through `x10`: pipeline S13 versus block S16.
+Ellipses omit the same intervals in both panels. This is a reduction in
+execution count under continuous acceptance, not an equivalent latency claim.
+[Open the accepted-path SVG](diagrams/pipeline-token-batches.svg).
+
+![Block and pipeline rejection with connected batch frames](diagrams/pipeline-token-rejection.png)
+
+The red frames connect the same rejection: block S8 and pipeline S5 replace
+`x2` with `x2′`, commit the correction, and discard dependent work. Block has
+already computed old `x2`–`x4` through R4; pipeline discards them at R3, R2 and
+R1 respectively. Both preserve the valid causal KV prefix through input `x1`.
+Pipeline S6–S8 show refilling from `P(x2′)`; neither further final-token output
+nor block recovery is shown before this figure ends at S8.
+[Open the rejection SVG](diagrams/pipeline-token-rejection.svg).
+
 **Shared execution and resources.** ModelRunner constructs ModelRuntime and the
 speculative controller references that same runtime. Both use the worker-loaded
 model, the engine's KV manager and shared RNG registry. The runtime executes the
