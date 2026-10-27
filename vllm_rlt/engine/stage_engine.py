@@ -20,6 +20,7 @@ from vllm_rlt.engine.stage_config import StageConfig
 from vllm_rlt.profiling import Profiler
 from vllm_rlt.request import FinishReason, Request, RequestOutput, RequestPhase
 from vllm_rlt.sampling_params import SamplingParams
+from vllm_rlt.worker.attention_reference import AttentionReferenceStore
 from vllm_rlt.worker.executor import Executor
 from vllm_rlt.worker.model_runner import ModelRunner
 from vllm_rlt.worker.output import ExitSignal, ModelRunnerOutput
@@ -51,6 +52,7 @@ class StageEngine:
         exit_config=None,
         execution_config=None,
         speculative_config=None,
+        sparse_decode_attention_config=None,
         stage_config=None,
         connector: StageConnector | None = None,
     ):
@@ -118,6 +120,32 @@ class StageEngine:
                 scratch = 2 * scratch + 8 * scheduler_config.max_num_seqs * (
                     config.total_ut_steps * width
                 )
+        sparse_decode = sparse_decode_attention_config
+        self.sparse_decode_attention = sparse_decode
+        self.reference_store = None
+        if sparse_decode is not None and sparse_decode.enabled:
+            # This PR covers the asynchronous self-speculation cell; other
+            # integration rows are explicit capability failures for now.
+            if not self.async_speculative:
+                raise ValueError(
+                    "sparse decode attention currently requires asynchronous self-speculation"
+                )
+            if speculative_config.mode != "block":
+                raise ValueError("sparse decode attention currently requires block speculation")
+            # Two in-flight rounds may each hold every verification row, so the
+            # pool covers both rounds' live tokens with room for slot reuse.
+            self.reference_store = AttentionReferenceStore(
+                slots=2
+                * scheduler_config.max_num_seqs
+                * (speculative_config.num_speculative_tokens + 1),
+                layers=config.num_hidden_layers,
+                heads=config.num_attention_heads,
+                head_dim=config.head_dim,
+                key_bucket=sparse_decode.key_bucket or config.max_position_embeddings,
+                device=parameter.device,
+            )
+            scratch += self.reference_store.bytes
+        if speculative_config is not None or self.reference_store is not None:
             cache_config = replace(
                 cache_config, memory_reserve_bytes=cache_config.memory_reserve_bytes + scratch
             )
@@ -244,7 +272,13 @@ class StageEngine:
                 copy_stream=self.model_runner.copy_stream,
                 rng=self.rng,
                 runtime=self.model_runner.runtime,
+                reference_store=self.reference_store,
+                sparse_decode=self.sparse_decode_attention,
             )
+            if self.reference_store is not None:
+                # Reference lifecycle device work is ordered on the compute
+                # stream, after the readers that retire a slot.
+                self.reference_store.stream = self.model_runner.core_stream
         self.executor = Executor(self.model_runner, speculation=self.speculative_runner)
         self._pending_speculative = []
         self._retiring_speculative = {}

@@ -190,3 +190,28 @@ class SpeculativeConfig:
             raise ValueError("pipeline draft_loops must divide target_loops")
         if self.draft_loops >= self.target_loops:
             raise ValueError("draft_loops must be smaller than target_loops")
+
+
+@dataclass(frozen=True)
+class SparseDecodeAttentionConfig:
+    """Sparse decode attention group (RFC #156, section 7.2).
+
+    ``enabled`` recomputes attention contributions only for the retained keys
+    of the loop-2 reference; ``key_retention`` is the retained key fraction per
+    query and head relative to that query's causal key count, where ``1.0``
+    provides the full-retention control. ``key_bucket`` caps the retained
+    count and the reference index buffer; ``None`` derives it from the model
+    context so that full retention stays exact.
+    """
+
+    enabled: bool = False
+    key_retention: float = 1.0
+    key_bucket: int | None = None
+
+    def __post_init__(self):
+        if type(self.enabled) is not bool:
+            raise ValueError("enabled must be a boolean")
+        if not math.isfinite(self.key_retention) or not 0 < self.key_retention <= 1:
+            raise ValueError("key_retention must be in (0, 1]")
+        if self.key_bucket is not None:
+            _positive("key_bucket", self.key_bucket)
