@@ -543,12 +543,10 @@ cross-round submissions before collection remained active. The main throughput
 runs held all three engines resident, so their global allocation peaks must not
 be interpreted as isolated per-mode memory costs.
 
-![Matched eager and Graph request/zoom timelines](assets/performance/async-speculative-graphs.png)
-
-The figure uses independent ops-only profiles, concurrency 1 and input/output
-64/8. Both panels have the same time scale and align the same request or decode
-start. Bootstrap ends at the explicit device synchronization after the first
-token. Profiled times are diagnostic and do not replace the unprofiled table.
+The following observations use independent ops-only profiles, concurrency 1 and
+input/output 64/8. Bootstrap ends at the explicit device synchronization after
+the first token. Profiled times are diagnostic and do not replace the unprofiled
+table.
 
 | Decode observation | Async spec eager | Async spec Graph |
 | --- | ---: | ---: |
