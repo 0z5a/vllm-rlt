@@ -60,6 +60,7 @@ class SchedulerConfig:
     max_prefill_batches_before_decode: int = 1
     policy: str = "fcfs"
     enable_preemption: bool = False
+    wavefront_chunked_prefill: bool = False
 
     def __post_init__(self):
         for name in (
@@ -74,6 +75,8 @@ class SchedulerConfig:
             _positive(name, getattr(self, name))
         if type(self.enable_preemption) is not bool:
             raise ValueError("enable_preemption must be a boolean")
+        if type(self.wavefront_chunked_prefill) is not bool:
+            raise ValueError("wavefront_chunked_prefill must be a boolean")
         if self.policy not in ("fcfs", "priority"):
             raise ValueError("policy must be fcfs or priority")
         if self.mode not in ("refill", "no_refill", "mixed"):
@@ -116,16 +119,11 @@ class ExecutionConfig:
     # Select packed prefill metadata staging (and require packed attention).
     # The historical name is retained; use_uva controls its transfer mechanism.
     prefill_uva: bool = False
-    # Split prompt prefill into a staged prelude plus one scheduling boundary per
-    # recurrence depth. Atomic prefill keeps mainline behavior and remains the
-    # default until the split path is feature-complete.
-    atomic_prefill: bool = True
 
     def __post_init__(self):
         for name in (
             "prefill_uva",
             "use_uva",
-            "atomic_prefill",
             "async_scheduling",
             "multi_stream",
             "static_buffers",
@@ -151,6 +149,7 @@ class SpeculativeConfig:
     num_speculative_tokens: int
     draft_loops: int = 2
     target_loops: int = 4
+    mode: str = "block"
     # "truncate": draft reads out after draft_loops. "wise": draft runs every
     # target loop, with WISE working-set attention after draft_loops; the
     # verification recomputes those loops densely from the shared draft_loops state.
@@ -159,7 +158,13 @@ class SpeculativeConfig:
     def __post_init__(self):
         for name in ("num_speculative_tokens", "draft_loops", "target_loops"):
             _positive(name, getattr(self, name))
+        if self.mode not in ("block", "pipeline"):
+            raise ValueError("speculative mode must be block or pipeline")
+        if self.mode == "pipeline" and self.target_loops % self.draft_loops:
+            raise ValueError("pipeline draft_loops must divide target_loops")
         if self.draft_loops >= self.target_loops:
             raise ValueError("draft_loops must be smaller than target_loops")
         if self.draft_attention not in ("truncate", "wise"):
             raise ValueError("draft_attention must be 'truncate' or 'wise'")
+        if self.draft_attention == "wise" and self.mode != "block":
+            raise ValueError("draft_attention='wise' requires block speculation")
