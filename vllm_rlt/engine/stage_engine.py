@@ -72,6 +72,9 @@ class StageEngine:
             if speculative_config is not None:
                 raise ValueError("Huginn speculative decoding is not yet supported")
         self.speculative_config = speculative_config
+        self.pipeline_speculative = bool(
+            speculative_config and speculative_config.mode == "pipeline"
+        )
         self.async_speculative = bool(speculative_config and self.execution_config.async_scheduling)
         if speculative_config is not None:
             if cache_config.layout != "last_exited":
@@ -83,7 +86,9 @@ class StageEngine:
             if self.async_speculative and parameter.device.type != "cuda":
                 raise ValueError("async speculative decoding requires CUDA")
             if scheduler_config.mode != "refill" or (
-                self.async_speculative and scheduler_config.enable_preemption
+                self.async_speculative
+                and not self.pipeline_speculative
+                and scheduler_config.enable_preemption
             ):
                 raise ValueError(
                     "speculative decoding requires refill scheduling without preemption"
@@ -276,8 +281,12 @@ class StageEngine:
         if not isinstance(request_id, str) or not request_id:
             raise ValueError("request_id must be a nonempty string")
         params = sampling_params or SamplingParams()
-        if self.async_speculative and params.temperature != 0:
-            raise ValueError("async speculative decoding currently requires greedy sampling")
+        if (
+            self.async_speculative
+            or (self.speculative_config and self.speculative_config.mode == "pipeline")
+        ) and params.temperature != 0:
+            mode = "async" if self.async_speculative else "pipeline"
+            raise ValueError(f"{mode} speculative decoding currently requires greedy sampling")
         if request_id in self._retiring_speculative:
             self._retire_speculative(wait=True, request_id=request_id)
         config = self.model.config
@@ -381,6 +390,8 @@ class StageEngine:
             self._finish(request, FinishReason.ABORT)
             return RequestOutput.from_request(request)
         self.preemption.discard_snapshot(request_id)
+        if self.speculative_runner is not None:
+            self.speculative_runner.release(request)
         self.model_runner.release(request_id)
         self._pending_exit_signals.pop(request_id, None)
         return RequestOutput.from_request(self.scheduler.abort(request_id))
@@ -648,6 +659,8 @@ class StageEngine:
                     queue.remove(request.request_id)
             self._retiring_speculative[request.request_id] = request
             return
+        if self.speculative_runner is not None:
+            self.speculative_runner.release(request)
         self.model_runner.release(request.request_id)
         self.cache_manager.poll_prefixes()
         self._pending_exit_signals.pop(request.request_id, None)
@@ -695,6 +708,15 @@ class StageEngine:
     def _step_async_speculative(self):
         self._retire_speculative()
         outputs = []
+        # Waiting admissions need a quiescent point before the scheduler can
+        # select a victim. Victim selection remains entirely in Scheduler.
+        if (
+            self.pipeline_speculative
+            and self.scheduler.config.enable_preemption
+            and self.scheduler.queues[RequestPhase.WAITING]
+        ):
+            while self._pending_speculative:
+                outputs.extend(self._collect_speculative())
         # Submit ahead before collecting, even when a small round already
         # completed. Two leased buffers provide a hard global queue bound.
         if len(self._pending_speculative) == 2:
