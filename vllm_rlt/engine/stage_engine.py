@@ -67,7 +67,10 @@ class StageEngine:
                 raise ValueError(
                     "Huginn does not support staged prefill required by this scheduler"
                 )
-            if self.execution_config.async_scheduling or self.execution_config.prefill_uva:
+            if self.execution_config.async_scheduling or (
+                self.execution_config.prefill_uva
+                and not getattr(model, "packed_boundary_prefill", False)
+            ):
                 raise ValueError("Huginn requires synchronous scheduling without prefill UVA")
             if speculative_config is not None:
                 raise ValueError("Huginn speculative decoding is not yet supported")
@@ -149,7 +152,7 @@ class StageEngine:
             staged_prefill=staged_prefill,
         )
         self.cache_manager = KVCacheManager(
-            num_layers=config.num_hidden_layers,
+            num_layers=getattr(model, "kv_cache_layers", config.num_hidden_layers),
             num_kv_heads=config.num_key_value_heads,
             head_dim=config.head_dim,
             max_loops=config.total_ut_steps,
@@ -165,6 +168,7 @@ class StageEngine:
             watermark_ratio=cache_config.watermark_ratio,
             recurrent_layers=getattr(model, "recurrent_kv_layers", None),
             shared_prefill=cache_config.shared_prefill,
+            aux_planes=getattr(model, "aux_kv_planes", 0),
         )
         self.scheduler = Scheduler(
             scheduler_config,

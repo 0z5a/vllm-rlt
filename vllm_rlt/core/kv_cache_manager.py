@@ -4,6 +4,11 @@ LAST-EXITED copies the last computed per-layer KV into skipped deeper planes.
 SHARED overwrites a single plane and needs no exit copies. Optional incremental
 allocation separates logical capacity from physical pages. Immutable full-depth
 prompt blocks can be shared through the prefix cache.
+
+Auxiliary planes hold per-token KV that no loop depth owns, such as AsymLoop's
+encoder and global KV. With auxiliary planes the pool is cut into page groups:
+plane p of group g is block p * groups + g, so every plane's block for a page
+follows from any other plane's block without extra metadata.
 """
 
 import hashlib
@@ -104,6 +109,7 @@ class KVCacheManager:
         *,
         attention: AttentionBackend | None = None,
         shared_prefill: str = "position",
+        aux_planes: int = 0,
     ):
         for name, value in (
             ("num_layers", num_layers),
@@ -138,7 +144,18 @@ class KVCacheManager:
             type(layer) is not int or not 0 <= layer < num_layers for layer in self.recurrent_layers
         ):
             raise ValueError("recurrent_layers must be valid cache layer indices")
-        self.storage_depths = max_loops if layout == "last_exited" else 1
+        if not isinstance(aux_planes, Integral) or isinstance(aux_planes, bool) or aux_planes < 0:
+            raise ValueError("aux_planes must be a nonnegative integer")
+        if aux_planes and layout != "last_exited":
+            raise ValueError("auxiliary KV planes require last_exited KV")
+        self.aux_planes = int(aux_planes)
+        self.storage_depths = (max_loops if layout == "last_exited" else 1) + self.aux_planes
+        # Grouped pools allocate every plane of a page from one group (see module docstring).
+        self.block_groups = self.num_blocks // self.storage_depths if self.aux_planes else None
+        if self.block_groups == 0:
+            raise ValueError("auxiliary KV planes need at least one block per plane")
+        if self.block_groups is not None:
+            self.num_blocks = num_blocks = self.block_groups * self.storage_depths
         self.device = torch.device(device)
         self.dtype = dtype
         self.attention = attention or create_backend(
@@ -146,12 +163,16 @@ class KVCacheManager:
         )
         self.attention_info = self.attention.info
         self.backend = self.attention_info["selected_backend"]
+        if self.aux_planes and self.backend not in {"torch", "triton"}:
+            raise ValueError("auxiliary-plane attention requires the Torch or Triton backend")
         shape = (num_blocks, num_layers, block_size, num_kv_heads, head_dim)
         self.key_cache = torch.empty(shape, device=self.device, dtype=dtype)
         self.value_cache = torch.empty_like(self.key_cache)
         # Resolve an implicit CUDA index to the actual storage device once.
         self.device = self.key_cache.device
-        self._free_blocks = list(reversed(range(num_blocks)))
+        # Grouped pools list free page groups; each one stands for storage_depths blocks.
+        self._free_blocks = list(reversed(range(self.block_groups or num_blocks)))
+        self._free_unit = self.storage_depths if self.block_groups else 1
         self._allocations: dict[str, _Allocation] = {}
         self.enable_prefix_caching = enable_prefix_caching
         self.incremental_allocation = incremental_allocation
@@ -173,7 +194,7 @@ class KVCacheManager:
 
     @property
     def num_free_blocks(self) -> int:
-        return len(self._free_blocks) + sum(
+        return len(self._free_blocks) * self._free_unit + sum(
             self._refs[b] == 1 for blocks in self._prefixes.values() for b in blocks
         )
 
@@ -201,7 +222,8 @@ class KVCacheManager:
         for b in blocks:
             self._refs[b] -= 1
             assert self._refs[b] >= 0
-            if not self._refs[b]:
+            # Group blocks share one reference count history; plane 0 returns the group.
+            if not self._refs[b] and (self.block_groups is None or b < self.block_groups):
                 self._free_blocks.append(b)
 
     def _claim(self, count):
@@ -213,14 +235,22 @@ class KVCacheManager:
         throw away prefixes it could not use anyway. ``num_free_blocks`` scans
         every prefix entry, so it is only consulted when eviction is needed.
         """
-        if len(self._free_blocks) < count and self.num_free_blocks < count:
+        unit = self._free_unit
+        if count % unit:
+            raise ValueError("grouped KV pools claim whole page groups")
+        if len(self._free_blocks) * unit < count and self.num_free_blocks < count:
             return None
-        while len(self._free_blocks) < count and self._prefixes:
+        while len(self._free_blocks) * unit < count and self._prefixes:
             _, blocks = self._prefixes.popitem(last=False)
             self._drop_refs(blocks)
-        if len(self._free_blocks) < count:
+        if len(self._free_blocks) * unit < count:
             return None
-        blocks = [self._free_blocks.pop() for _ in range(count)]
+        if self.block_groups is None:
+            blocks = [self._free_blocks.pop() for _ in range(count)]
+        else:
+            # Plane-major, as allocate and ensure_capacity split claimed blocks.
+            groups = [self._free_blocks.pop() for _ in range(count // unit)]
+            blocks = [plane * self.block_groups + g for plane in range(unit) for g in groups]
         for b in blocks:
             assert self._refs[b] == 0
             self._refs[b] = 1
@@ -751,6 +781,94 @@ class KVCacheManager:
             batch.block_tables,
             batch.context_lengths,
         )
+
+    def _aux_plane(self, aux: int) -> int:
+        if type(aux) is not int or not 0 <= aux < self.aux_planes:
+            raise ValueError(f"auxiliary plane must be in [0, {self.aux_planes})")
+        return self.storage_depths - self.aux_planes + aux
+
+    def _aux_blocks(self, blocks: torch.Tensor, aux: int) -> torch.Tensor:
+        """Map any plane's blocks (tables or write addresses) to auxiliary plane ``aux``."""
+        groups = self.block_groups
+        return torch.remainder(blocks, groups) + self._aux_plane(aux) * groups
+
+    @torch.no_grad()
+    def _write_aux_prepared(self, aux, layer, batch, k, v) -> None:
+        """Write the batch rows' K/V to auxiliary plane ``aux`` of the same pages."""
+        self._validate_layer(layer)
+        plane = self._aux_plane(aux)
+        self._require_live_batch(batch)
+        rows = len(batch.position_ids) if isinstance(batch, DeviceKVMetadata) else len(batch.rows)
+        if isinstance(batch, KVMetadata) and not batch.writable:
+            raise ValueError("a read-only prepared KV batch cannot be written")
+        self._validate_tensor(k, len(batch.position_ids), "k")
+        self._validate_tensor(v, len(batch.position_ids), "v")
+        if not rows:
+            return
+        blocks = self._aux_blocks(batch.write_blocks, aux)
+        self.key_cache[blocks, layer, batch.write_offsets] = k[:rows]
+        self.value_cache[blocks, layer, batch.write_offsets] = v[:rows]
+        if isinstance(batch, KVMetadata):
+            for allocation, _, position in batch.rows:
+                allocation.written[plane][layer].add(position)
+
+    def _require_aux_prefix(self, batch, aux, layer):
+        if isinstance(batch, KVMetadata):
+            plane = self._aux_plane(aux)
+            for allocation, _, position in batch.rows:
+                if position + 1 > allocation.written[plane][layer].prefix:
+                    raise RuntimeError(
+                        f"uninitialized auxiliary KV history at layer {layer}, plane {plane}, "
+                        f"context length {position + 1}"
+                    )
+
+    def _paged_attention(self, layer, batch, q, block_tables, sources=1):
+        kwargs = {"sources": sources} if sources != 1 else {}
+        if batch.cu_seqlens_q is not None:
+            return self.attention.prefill(
+                q,
+                self.key_cache[:, layer],
+                self.value_cache[:, layer],
+                block_tables,
+                batch.context_lengths,
+                batch.cu_seqlens_q,
+                batch.max_seqlen_q,
+                **kwargs,
+            )
+        return self.attention(
+            q,
+            self.key_cache[:, layer],
+            self.value_cache[:, layer],
+            block_tables,
+            batch.context_lengths,
+            **kwargs,
+        )
+
+    @torch.no_grad()
+    def _attend_aux_prepared(self, aux, layer, batch, q) -> torch.Tensor:
+        """Causal attention over auxiliary plane ``aux`` alone (e.g. the encoder's own KV)."""
+        self._validate_layer(layer)
+        self._require_live_batch(batch)
+        self._validate_tensor(q, len(batch.position_ids), "q", query=True)
+        if isinstance(batch, KVMetadata) and not batch.rows:
+            return torch.empty_like(q)
+        self._require_aux_prefix(batch, aux, layer)
+        return self._paged_attention(layer, batch, q, self._aux_blocks(batch.block_tables, aux))
+
+    @torch.no_grad()
+    def _attend_with_aux_prepared(self, aux, layer, batch, q) -> torch.Tensor:
+        """One causal softmax over auxiliary plane ``aux`` and each row's own depth plane."""
+        self._validate_layer(layer)
+        self._require_live_batch(batch)
+        self._validate_tensor(q, len(batch.position_ids), "q", query=True)
+        if isinstance(batch, KVMetadata):
+            if not batch.rows:
+                return torch.empty_like(q)
+            for allocation, depth, position in batch.rows:
+                self._require_prefix(allocation, layer, depth, position + 1)
+        self._require_aux_prefix(batch, aux, layer)
+        tables = torch.cat((self._aux_blocks(batch.block_tables, aux), batch.block_tables), dim=1)
+        return self._paged_attention(layer, batch, q, tables, sources=2)
 
     @torch.no_grad()
     def finalize_token(self, request_id: str, position: int, exit_depth: int) -> None:

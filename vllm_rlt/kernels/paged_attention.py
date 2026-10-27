@@ -2,6 +2,8 @@
 
 Rows may represent different requests, positions, or recurrence depths. The
 manager selects each row's depth-specific block table before dispatching here.
+With ``sources=2`` a row's table is two equal-width tables whose keys share the
+row's causal length and one softmax.
 """
 
 import math
@@ -15,19 +17,23 @@ def torch_paged_attention(
     value_cache: torch.Tensor,
     block_tables: torch.Tensor,
     context_lengths: torch.Tensor,
+    sources: int = 1,
 ) -> torch.Tensor:
     """Reference attention over [physical block, token, KV head, dimension]."""
     output = torch.empty_like(q)
     block_size = key_cache.shape[1]
     head_groups = q.shape[1] // key_cache.shape[2]
     scale = 1.0 / math.sqrt(q.shape[-1])
+    width = block_tables.shape[1] // sources
     for row, length in enumerate(context_lengths.tolist()):
         if length == 0:
             output[row].zero_()
             continue
         token_positions = torch.arange(length, device=q.device)
-        blocks = block_tables[row, token_positions // block_size]
-        offsets = token_positions % block_size
+        blocks = torch.cat(
+            [block_tables[row, s * width + token_positions // block_size] for s in range(sources)]
+        )
+        offsets = (token_positions % block_size).repeat(sources)
         keys = key_cache[blocks, offsets].repeat_interleave(head_groups, dim=1)
         values = value_cache[blocks, offsets].repeat_interleave(head_groups, dim=1)
         scores = torch.einsum("hd,thd->ht", q[row].float(), keys.float()) * scale
@@ -42,6 +48,7 @@ def triton_paged_attention(
     value_cache: torch.Tensor,
     block_tables: torch.Tensor,
     context_lengths: torch.Tensor,
+    sources: int = 1,
 ) -> torch.Tensor:
     """Dispatch explicitly to Triton, with no silent reference fallback."""
     if q.device.type != "cuda":
@@ -51,25 +58,34 @@ def triton_paged_attention(
     # Keep Triton optional and avoid loading its runtime for CPU-only callers.
     from vllm_rlt.kernels.triton_attention import paged_attention
 
-    return paged_attention(q, key_cache, value_cache, block_tables, context_lengths)
+    return paged_attention(q, key_cache, value_cache, block_tables, context_lengths, sources)
 
 
 def triton_paged_prefill(
-    q, key_cache, value_cache, block_tables, context_lengths, cu_seqlens_q, max_seqlen_q
+    q, key_cache, value_cache, block_tables, context_lengths, cu_seqlens_q, max_seqlen_q, sources=1
 ):
     """Packed causal prefill with one block table per sequence (see triton_attention)."""
     from vllm_rlt.kernels.triton_attention import paged_prefill_attention
 
     return paged_prefill_attention(
-        q, key_cache, value_cache, block_tables, context_lengths, cu_seqlens_q, max_seqlen_q
+        q,
+        key_cache,
+        value_cache,
+        block_tables,
+        context_lengths,
+        cu_seqlens_q,
+        max_seqlen_q,
+        sources,
     )
 
 
 class TritonPagedAttention:
     """Triton single-query decode attention plus packed causal prefill."""
 
-    def __call__(self, q, key_cache, value_cache, block_tables, context_lengths):
-        return triton_paged_attention(q, key_cache, value_cache, block_tables, context_lengths)
+    def __call__(self, q, key_cache, value_cache, block_tables, context_lengths, sources=1):
+        return triton_paged_attention(
+            q, key_cache, value_cache, block_tables, context_lengths, sources
+        )
 
     def prefill(self, *args, **kwargs):
         return triton_paged_prefill(*args, **kwargs)

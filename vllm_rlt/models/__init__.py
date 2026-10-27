@@ -8,6 +8,7 @@ from typing import Any
 
 import torch
 
+from .asymloop import AsymLoopOuroForCausalLM
 from .config import ModelConfig, prepare_model
 from .huginn import HuginnConfig, HuginnForCausalLM
 from .nanbeige import NanbeigeConfig, NanbeigeForCausalLM
@@ -192,6 +193,7 @@ __all__ = [
     "NanbeigeForCausalLM",
     "HuginnConfig",
     "HuginnForCausalLM",
+    "AsymLoopOuroForCausalLM",
     "AutoModelForCausalLM",
     "resolve_local_model_path",
     "resolve_model_source",

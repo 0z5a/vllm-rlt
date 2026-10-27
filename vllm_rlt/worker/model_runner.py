@@ -615,7 +615,8 @@ class ModelRunner:
         return hidden
 
     def _prepare_prefill_coda(self, ids, positions, requests, kv=None):
-        if not getattr(self.model, "requires_boundary_kv", False):
+        # Prompt rows only need CODA when its layers keep KV for later tokens.
+        if not getattr(self.model, "requires_boundary_kv", False) or not self.model.coda_kv_layers:
             return None, None
         rows = [
             row

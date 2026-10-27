@@ -21,9 +21,11 @@ def budget_blocks(available_bytes, bytes_per_block):
 def plan_cache(model, cache, scheduler, execution, backend, *, staged_prefill=None):
     parameter = next(model.parameters())
     config, device = model.config, parameter.device
+    cache_layers = getattr(model, "kv_cache_layers", config.num_hidden_layers)
+    aux_planes = getattr(model, "aux_kv_planes", 0)
     per_block = (
         2
-        * config.num_hidden_layers
+        * cache_layers
         * cache.block_size
         * config.num_key_value_heads
         * config.head_dim
@@ -56,17 +58,18 @@ def plan_cache(model, cache, scheduler, execution, backend, *, staged_prefill=No
         for start in range(0, count, config.max_position_embeddings)
     ]
     probe = KVCacheManager(
-        num_layers=config.num_hidden_layers,
+        num_layers=cache_layers,
         num_kv_heads=config.num_key_value_heads,
         head_dim=config.head_dim,
         max_loops=config.total_ut_steps,
         num_blocks=sum(math.ceil(length / cache.block_size) for length in lengths)
-        * config.total_ut_steps,
+        * (config.total_ut_steps + aux_planes),
         block_size=cache.block_size,
         device=device,
         dtype=parameter.dtype,
         backend=backend,
         recurrent_layers=getattr(model, "recurrent_kv_layers", None),
+        aux_planes=aux_planes,
     )
     ids, positions = [], []
     for index, length in enumerate(lengths):
@@ -131,7 +134,7 @@ def plan_cache(model, cache, scheduler, execution, backend, *, staged_prefill=No
     # memory, particularly for tiny-model GPU tests with very small pages.
     useful_blocks = (
         math.ceil(config.max_position_embeddings / cache.block_size)
-        * (config.total_ut_steps if cache.layout == "last_exited" else 1)
+        * ((config.total_ut_steps if cache.layout == "last_exited" else 1) + aux_planes)
         * scheduler.max_num_seqs
     )
     blocks = min(budget_blocks(budget, per_block), useful_blocks)
