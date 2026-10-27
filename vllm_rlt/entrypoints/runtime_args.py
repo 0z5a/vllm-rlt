@@ -16,6 +16,7 @@ def add_runtime_args(parser):
         type=int,
         help="Enable fixed-loop self-speculation with K draft tokens",
     )
+    parser.add_argument("--speculative-mode", choices=["block", "pipeline"], default="block")
     parser.add_argument("--draft-loops", type=int, default=2)
     parser.add_argument("--target-loops", type=int, default=4)
     parser.add_argument("--enable-prefix-caching", action="store_true")
@@ -94,6 +95,7 @@ def runtime_configs(args):
             num_speculative_tokens=args.speculative_tokens,
             draft_loops=args.draft_loops,
             target_loops=args.target_loops,
+            mode=args.speculative_mode,
         )
         if args.speculative_tokens is not None
         else None,

@@ -365,3 +365,31 @@ def test_serving_delivers_two_snapshots_or_isolates_failure(
     assert healthy_events[-1][1].finish_reason == "length"
     assert not worker.decoders and engine.cache_manager.num_used_blocks == 0
     engine.close()
+
+
+@pytest.mark.parametrize("mode", ["block", "pipeline"])
+@pytest.mark.parametrize("with_stats", [False, True])
+def test_ticket_result_format_does_not_depend_on_statistics(mode, with_stats):
+    from vllm_rlt.request import Request
+    from vllm_rlt.worker.speculative import SpeculativeStats
+
+    request = Request("r", [1], SamplingParams(max_tokens=8))
+    batch = SchedulerOutput(
+        RequestPhase.SPECULATIVE, [ScheduledRequest(request, token_start=1, token_count=2)]
+    )
+    values = [11, 0, 1, 2, 1, 1] if mode == "pipeline" else [11, 12, 0, 2]
+    buffer = SimpleNamespace(
+        host_result=torch.tensor(values), copy_done=Completion(), leased=True, keepalive=[]
+    )
+    stats = SpeculativeStats() if with_stats else None
+    ticket = SpeculativeRoundTicket(batch, buffer, (), (), 2, mode=mode, stats=stats)
+    result = ticket.collect()
+    assert result.speculative[0].token_ids == [11]
+    assert result.speculative[0].accepted_count == 0
+    assert result.frontiers == [2]
+    assert ticket.collect() is result
+    assert buffer.copy_done.waits == 1
+    if stats is not None:
+        assert stats.drafted_tokens == stats.verified_rows == int(mode == "pipeline")
+    ticket.retire()
+    assert not buffer.leased

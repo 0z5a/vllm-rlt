@@ -445,3 +445,45 @@ def test_capture_survives_collecting_an_earlier_engines_garbage():
         gc.enable()
         model.recurrent_prepared = recurrent
     assert actual == expected
+
+
+@pytest.mark.gpu
+def test_bucketed_kv_graph_combines_active_rows_and_pipeline_write_mask():
+    from types import SimpleNamespace
+
+    from vllm_rlt.worker.cuda_graph import _DeviceCache
+
+    keys = torch.full((4, 1, 2, 1, 4), -1.0, device="cuda")
+    values = torch.full_like(keys, -2.0)
+    cache = SimpleNamespace(key_cache=keys, value_cache=values)
+    batch = SimpleNamespace(
+        active_rows=torch.zeros((), dtype=torch.int32, device="cuda"),
+        write_mask=torch.ones(5, dtype=torch.bool, device="cuda"),
+        write_blocks=torch.tensor([1, 2, 3, 0, 1], device="cuda"),
+        write_offsets=torch.tensor([0, 0, 0, 0, 1], device="cuda"),
+    )
+    k = torch.arange(20, dtype=torch.float32, device="cuda").view(5, 1, 4)
+    v = k + 100
+    proxy = _DeviceCache(cache)
+    proxy._write_prepared(0, batch, k, v)  # Compile before capture; no active rows.
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph):
+        proxy._write_prepared(0, batch, k, v)
+
+    for count, mask in (
+        (3, [True, False, True, True, True]),
+        (4, [False, True, False, True, True]),
+    ):
+        keys.fill_(-1)
+        values.fill_(-2)
+        batch.active_rows.fill_(count)
+        batch.write_mask.copy_(torch.tensor(mask, device="cuda"))
+        graph.replay()
+        expected_k, expected_v = torch.full_like(keys, -1), torch.full_like(values, -2)
+        for row in range(count):
+            if mask[row]:
+                block, offset = int(batch.write_blocks[row]), int(batch.write_offsets[row])
+                expected_k[block, 0, offset] = k[row]
+                expected_v[block, 0, offset] = v[row]
+        assert torch.equal(keys, expected_k)
+        assert torch.equal(values, expected_v)

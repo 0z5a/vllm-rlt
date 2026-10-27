@@ -13,6 +13,7 @@ def _write_kv(
     Blocks,
     Offsets,
     Active,
+    WriteMask,
     k_row: tl.constexpr,
     k_head: tl.constexpr,
     k_dim: tl.constexpr,
@@ -28,7 +29,10 @@ def _write_kv(
     TILE: tl.constexpr,
 ):
     row = tl.program_id(0)
-    if row < tl.load(Active):
+    enabled = row < tl.load(Active)
+    if WriteMask is not None:
+        enabled = enabled & tl.load(WriteMask + row)
+    if enabled:
         index = tl.program_id(1) * TILE + tl.arange(0, TILE)
         head, dim = index // DIM, index % DIM
         valid = index < HEADS * DIM
@@ -51,6 +55,7 @@ def write_graph_kv(key_cache, value_cache, batch, k, v):
         batch.write_blocks,
         batch.write_offsets,
         batch.active_rows,
+        batch.write_mask,
         *k.stride(),
         *v.stride(),
         *key_cache.stride(),

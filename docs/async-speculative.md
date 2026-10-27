@@ -1,6 +1,9 @@
-# Cross-round asynchronous self-speculation
+# Self-speculation
 
-This opt-in path uses fixed-depth Ouro, `last_exited` KV, greedy sampling,
+This guide covers cross-round asynchronous block speculation and
+[pipelined self-speculation](#pipelined-self-speculation).
+
+The cross-round asynchronous block path uses fixed-depth Ouro, `last_exited` KV, greedy sampling,
 CUDA execution, and refill scheduling. Triton and compatible paged FlashAttention
 backends can consume its GPU-owned context lengths; `auto` selects against this
 capability as well as hardware, dtype and block size. Draft depth is configurable, with `d=2, D=4`
@@ -155,7 +158,7 @@ if __name__ == "__main__":
 
 The CLI combines `--async-scheduling --attention-backend flash_attn_4 --cuda-graphs
 --speculative-tokens 2 --draft-loops 2 --target-loops 4 --temperature 0`.
-Random sampling, adaptive exit and preemption remain rejected.
+For the default block mode, random sampling, adaptive exit and preemption remain rejected.
 PD can enable speculation on its decode stage. Incoming prompts wait for transfer
 completion and shared scheduler admission before CODA bootstraps local speculative
 rounds. Cancellation retains GPU resources until the final round completes.
@@ -165,7 +168,8 @@ CPU/GPU submission remains asynchronous, but D2H no longer overlaps computation.
 
 ## Fixed draft length
 
-Both async and synchronous speculation use `SpeculativeConfig(num_speculative_tokens=K)`
+In the default block mode, async and synchronous speculation use
+`SpeculativeConfig(num_speculative_tokens=K)`
 or `--speculative-tokens K`. The configured draft count stays fixed, subject to
 output, context and scheduler token-budget limits that can shorten a round,
 including effective K=0. Draft and target model depths also stay fixed.
@@ -175,7 +179,7 @@ of this PR. There is no `--draft-policy` option in this implementation. Historic
 adaptive measurements below are retained for attribution, not as evidence for
 the current default or an isolated adaptive-over-best-fixed-K improvement.
 
-The async runner gathers and scatters its two-column `(token, position)` slot
+The block-mode async runner gathers and scatters its two-column `(token, position)` slot
 state with the existing Triton routing kernels (`H=2`). Acceptance still computes
 each request's prefix match and correction independently. Slot allocation,
 round completion events and deferred retirement retain their existing owners.
@@ -220,7 +224,11 @@ The native/synchronous graph caches retain their exact-shape behavior.
 
 Padding receives zero hidden states and zero context lengths. A device-resident
 active-row count guards KV scatter in the captured kernel: inactive rows do not
-load write addresses or write any KV, including during capture. Real positions,
+load write addresses or write any KV, including during capture. Pipeline mode
+also supplies a per-token write mask. Bucketed graphs retain a mask buffer whose
+active prefix is refreshed per replay and whose padding is false; KV stores
+require both a valid row and an enabled token. Block mode enables the real rows.
+Real positions,
 allocation checks, and per-depth block tables retain the same ownership. The
 Ouro head is row-independent. Block tables are no longer cleared per replay:
 inactive rows have zero context, and active rows read only the pages covered by
@@ -876,7 +884,122 @@ Cancellation removes scheduling eligibility immediately. KV allocations and
 device state survive until their final GPU user completes. Request object
 identity isolates stale tickets when a request ID is reused.
 
+## Pipelined self-speculation
+
+This experimental mode advances token positions at different loop depths in the
+same recurrent batch. Synchronous execution collects each step before advancing;
+asynchronous execution keeps token IDs, loop depths, hidden states and acceptance
+decisions on the GPU, allowing two steps of the same request to be submitted
+before CPU delivery.
+
+`--speculative-mode pipeline` with
+`--speculative-tokens 4 --draft-loops 1 --target-loops 4` selects the existing
+speculative runner's token pipeline. Each submission advances its live tokens
+by `draft_loops`; different requests and depths share the recurrent call.
+The runner retains hidden states between submissions, while Scheduler owns
+admission, committed outputs, EOS and KV allocation. Rejection discards dependent
+tokens; the returned KV frontier preserves surviving speculative work.
+The pipeline requires greedy sampling and `last_exited` KV. It supports
+`--async-scheduling`, `--cuda-graphs` and `--enable-preemption`, including their
+combination with compatible attention backends such as Triton and FA4.
+The asynchronous pipeline uses the same compute/copy streams and two leased result
+buffers as asynchronous block speculation. The compute stream advances or rejects
+token slots; the copy stream transfers compact results to pinned host storage.
+Collecting an older step never rewinds GPU state. Inactive slots have masked KV
+writes and zero attention lengths. Fixed-shape prelude/coda calls can include
+unused rows; this avoids a host dependency for selecting dynamic batch sizes.
+Pending steps cannot be preempted. Waiting admissions drain outstanding steps so
+Scheduler can select a victim at a completed step boundary. At that boundary,
+preemption saves hidden states, loop depths and candidates with the existing KV
+snapshot, either resident or CPU-offloaded; both execution modes use the same
+`PipelineState` snapshot format. Resumption restores that exact state.
+The block mode remains the default.
+Low-precision arithmetic can vary with batch composition, so block and pipeline
+outputs are not guaranteed to match token for token; evaluate task quality when
+comparing the two modes.
+
+`--speculative-tokens` bounds the reserved lookahead window in pipeline mode;
+a smaller scheduler token budget may discard descendants and reduce overlap.
+
+### Accepted tokens
+
+![Block and pipeline speculation at token granularity](diagrams/pipeline-token-batches.png)
+
+The figures use four target loops, one draft loop and block K=4. Each colored
+cell identifies an input token and its recurrent depth; `P` is PRELUDE and `C`
+is CODA. Processing `xi` predicts `x(i+1)`. Columns count recurrent executions,
+not measured time; block verification runs R2–R4 within one forward.
+Only valid tokens and used PRELUDE/CODA results are shown; inactive/padding rows
+and unused computations are omitted. Output labels mark GPU-ready target results.
+In asynchronous execution, copy-stream D2H and CPU collection occur later;
+GPU progress, including rejection recovery, does not wait for CPU delivery.
+
+In the accepted path, both green-framed S8 columns have produced `x1`–`x5`.
+Block produces them together; pipeline produces one per step from S4 onward.
+After S8, pipeline retains `x5:R3`, `x6:R2` and `x7:R1`, so the next five
+outputs require five more recurrent executions instead of block's eight.
+The purple frames mark GPU-ready results through `x10`: pipeline S13 versus block S16.
+Ellipses omit the same intervals in both panels. This is a reduction in
+execution count under continuous acceptance, not an equivalent latency claim.
+[Open the accepted-path SVG](diagrams/pipeline-token-batches.svg).
+
+### Rejection and recovery
+
+![Block and pipeline rejection with connected batch frames](diagrams/pipeline-token-rejection.png)
+
+The red frames connect the same rejection: block S8 and pipeline S5 replace
+`x2` with `x2′`, produce the correction, and discard dependent work. Block has
+already computed old `x2`–`x4` through R4; pipeline discards them at R3, R2 and
+R1 respectively. Both preserve the valid causal KV prefix through input `x1`.
+Pipeline S6–S8 show refilling from `P(x2′)`; neither further final-token output
+nor block recovery is shown before this figure ends at S8.
+[Open the rejection SVG](diagrams/pipeline-token-rejection.svg).
+
+### Evaluated and reverted: PRELUDE/CODA row selection
+
+An October 2026 experiment reduced boundary work without changing the recurrent
+pipeline. On the GPU, it selected the active depth-zero slot for PRELUDE and the
+root/newborn slots for CODA. Each request reserved one PRELUDE row and at most two
+CODA rows, retaining placeholders when an endpoint was absent. Native embedding,
+Linear and existing CODA graphs were reused; no device decision was read on the
+CPU and no custom GEMM was introduced. Gathered results were written back with
+`index_copy_`; a `where` preserved retained hidden state when no newborn existed.
+Two ordered CODA writes handled coincident root/newborn indices during fill.
+Windows of at most two rows kept the original CODA call because selection would
+not reduce its batch size.
+
+The comparison used Ouro-1.4B BF16 on one NVIDIA B300 per case, FA4, asynchronous
+scheduling and CUDA Graphs, draft/target depths 1/4, K=4, token budget 256 and
+prefill chunk size 1024. Fixed prompts produced 128 tokens with greedy sampling
+and EOS ignored. Two pipeline engines shared one model; after full-workload
+warmup, three interleaved repetitions were timed without a profiler. Timings
+include local scheduling and prefill, excluding HTTP/network overhead.
+
+| Input / concurrency | Original tok/s | Selected tok/s | Change | E2E p50, original → selected |
+| --- | ---: | ---: | ---: | ---: |
+| 128 / 8 | 790.27 | 785.78 | −0.57% | 0.988 → 1.000 s |
+| 4096 / 32 | 172.22 | 168.10 | −2.39% | 23.680 → 24.263 s |
+
+A separate interleaved short-input ablation measured 886.09 tok/s for its
+contemporaneous baseline, 881.12 for PRELUDE only (−0.56%), 881.24 for CODA only
+(−0.55%), and 882.04 for both (−0.46%). Both phases shifted in absolute speed;
+only within-phase comparisons are valid. All timed outputs matched the original
+pipeline, with zero graph captures/fallbacks during timing. A separate 256-question
+GSM8K evaluation at each draft depth 1/2 also matched all 512 original outputs.
+
+Paired ops-only/full profiles covered eight steps and 64 output tokens. Selecting
+CODA rows reduced its projection shape from 32 to 16 rows, but projection-kernel
+time barely changed (0.297 → 0.293 ms). Ordinary kernel launches increased from
+4,552 to 4,672, including 24 new `index_copy_` calls and eight additional argmax
+operations. Aggregate GPU kernel time was 45.08 → 44.95 ms; this is not E2E time.
+The saved work did not offset selection and result-copy overhead. The experiment
+was reverted; the runtime retains the simpler fixed-slot boundary calls. These
+results do not rule out a different implementation or workload benefiting.
+
 ## Validation
+
+The following commands and historical evidence concern the cross-round block
+path; they do not establish validation of the pipeline mode.
 
 Inside a Slurm GPU allocation, use the repository environment:
 
