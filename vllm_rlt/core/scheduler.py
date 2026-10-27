@@ -1297,9 +1297,7 @@ class Scheduler:
                 depth = result.depths[row] if delivered else request.loops_done
                 if self._record_token(request, result.token_ids[row], depth):
                     update.finished.append(request)
-                elif not delivered or (
-                    self.speculative_config and self.speculative_config.mode == "pipeline"
-                ):
+                elif not delivered:
                     self.enqueue(
                         request,
                         RequestPhase.SPECULATIVE
@@ -1309,12 +1307,12 @@ class Scheduler:
                 update.outputs.append(request)
             elif phase == RequestPhase.SPECULATIVE:
                 spec = result.speculative[row]
-                if delivered and self.speculative_config.mode == "pipeline":
-                    request.num_speculative_rounds -= 1
-                    if request.num_speculative_rounds != 0:
-                        raise RuntimeError("invalid pending pipeline submission count")
                 if result.frontiers is not None:
-                    request.num_output_placeholders -= scheduled_request.token_count
+                    request.num_output_placeholders -= (
+                        1
+                        if self.speculative_config.mode == "pipeline"
+                        else scheduled_request.token_count
+                    )
                     request.num_speculative_rounds -= 1
                     if request.num_output_placeholders < 0 or request.num_speculative_rounds < 0:
                         raise RuntimeError("invalid speculative reservation count")
@@ -1406,17 +1404,17 @@ class Scheduler:
                 self.enqueue(request, RequestPhase.RECURRENT)
             elif phase == RequestPhase.CODA:
                 request.num_output_placeholders += 1
-                if (
-                    not (self.speculative_config and self.speculative_config.mode == "pipeline")
-                    and request.num_scheduled_outputs < request.sampling_params.max_tokens
-                ):
+                if request.num_scheduled_outputs < request.sampling_params.max_tokens:
                     update.next_prelude.append(row)
                     self.enqueue(request, RequestPhase.PRELUDE)
             elif phase == RequestPhase.SPECULATIVE:
                 request.num_speculative_rounds += 1
-                if self.speculative_config.mode != "pipeline":
-                    request.num_output_placeholders += scheduled_request.token_count
-                    self.enqueue(request, RequestPhase.SPECULATIVE)
+                request.num_output_placeholders += (
+                    1
+                    if self.speculative_config.mode == "pipeline"
+                    else scheduled_request.token_count
+                )
+                self.enqueue(request, RequestPhase.SPECULATIVE)
             elif phase == RequestPhase.RECURRENT:
                 consume_signal = (
                     request.loops_done > 0

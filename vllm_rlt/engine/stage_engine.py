@@ -75,11 +75,7 @@ class StageEngine:
         self.pipeline_speculative = bool(
             speculative_config and speculative_config.mode == "pipeline"
         )
-        self.async_speculative = bool(
-            speculative_config
-            and self.execution_config.async_scheduling
-            and not self.pipeline_speculative
-        )
+        self.async_speculative = bool(speculative_config and self.execution_config.async_scheduling)
         if speculative_config is not None:
             if cache_config.layout != "last_exited":
                 raise ValueError("speculative decoding requires last_exited KV")
@@ -90,7 +86,9 @@ class StageEngine:
             if self.async_speculative and parameter.device.type != "cuda":
                 raise ValueError("async speculative decoding requires CUDA")
             if scheduler_config.mode != "refill" or (
-                self.async_speculative and scheduler_config.enable_preemption
+                self.async_speculative
+                and not self.pipeline_speculative
+                and scheduler_config.enable_preemption
             ):
                 raise ValueError(
                     "speculative decoding requires refill scheduling without preemption"
@@ -115,9 +113,7 @@ class StageEngine:
         if self.execution_config.cuda_graphs and parameter.device.type != "cuda":
             raise ValueError("CUDA graphs require CUDA with Triton or FlashAttention")
         if self.execution_config.async_scheduling:
-            if not (
-                self.async_speculative or self.pipeline_speculative
-            ) and self.exit_config.mode not in (
+            if not self.async_speculative and self.exit_config.mode not in (
                 "ouro_delayed",
                 "random_lookahead",
                 "trace",
@@ -712,6 +708,15 @@ class StageEngine:
     def _step_async_speculative(self):
         self._retire_speculative()
         outputs = []
+        # Waiting admissions need a quiescent point before the scheduler can
+        # select a victim. Victim selection remains entirely in Scheduler.
+        if (
+            self.pipeline_speculative
+            and self.scheduler.config.enable_preemption
+            and self.scheduler.queues[RequestPhase.WAITING]
+        ):
+            while self._pending_speculative:
+                outputs.extend(self._collect_speculative())
         # Submit ahead before collecting, even when a small round already
         # completed. Two leased buffers provide a hard global queue bound.
         if len(self._pending_speculative) == 2:
@@ -755,9 +760,7 @@ class StageEngine:
     def _step_async(self):
         # Hold readback buffers until their DMA completes, even for discarded scores.
         self._inflight = [t for t in self._inflight if not t.ready()]
-        outputs = self._collect_coda(
-            wait=self.pipeline_speculative and len(self._pending_coda) >= 2
-        )
+        outputs = self._collect_coda()
         batch = self._schedule(
             # If the preceding core is still running, boundary work can overlap
             # the independent next core. Once it has completed, refill first:
@@ -795,10 +798,6 @@ class StageEngine:
                 return outputs
         ticket = self.executor.submit(batch)
         self._inflight.append(ticket)
-        if batch.is_speculative:
-            self._pending_coda.append(ticket)
-            self.scheduler.update_after_submission(batch, completion=ticket.event)
-            return outputs
         if batch.phase == RequestPhase.CODA:
             self._pending_coda.append(ticket)
             runner = self.model_runner

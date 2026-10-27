@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="3400" height="2447" viewBox="0 0 3400 2447" role="img" aria-labelledby="title desc"><title id="title">All accepted: pipeline fill and steady progress</title><desc id="desc">Aligned recurrent steps, with S9–S12 and S14–S15 omitted in both panels. Both deliver through x10; pipeline does so at S13 versus block S16.</desc><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10" fill="#346bb0"/></marker></defs>
-<rect x="0" y="0" width="3400" height="2447" rx="0" fill="white" stroke="white" stroke-width="1.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="3400" height="2511" viewBox="0 0 3400 2511" role="img" aria-labelledby="title desc"><title id="title">All accepted: pipeline fill and steady progress</title><desc id="desc">Aligned recurrent steps, with S9–S12 and S14–S15 omitted in both panels. Both produce target results through x10; pipeline does so at S13 versus block S16.</desc><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10" fill="#346bb0"/></marker></defs>
+<rect x="0" y="0" width="3400" height="2511" rx="0" fill="white" stroke="white" stroke-width="1.5"/>
 <text x="45" y="53" font-family="DejaVu Sans,Arial,sans-serif" font-size="36" fill="#172f49" font-weight="700" text-anchor="start">All accepted · from pipeline fill to steady progress</text>
 <text x="45" y="91" font-family="DejaVu Sans,Arial,sans-serif" font-size="21" fill="#172f49" font-weight="400" text-anchor="start">Target = 4 loops · draft = 1 loop · block K = 4. P = PRELUDE; C = CODA. Processing xi predicts the next token.</text>
 <text x="45" y="125" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="400" text-anchor="start">Columns align recurrent steps, NOT elapsed time. Both panels omit the same S9–S12 and S14–S15 intervals (⋯).</text>
-<text x="45" y="158" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="400" text-anchor="start">Compare the same committed outputs: green frames reach x5; purple frames reach x10. Younger speculative work can remain in flight.</text>
+<text x="45" y="158" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="400" text-anchor="start">Compare the same GPU-ready outputs: green frames reach x5; purple frames reach x10. Younger speculative work can remain in flight.</text>
 <rect x="35" y="190" width="3330" height="1036" rx="8" fill="#f7faff" stroke="#c9d8eb" stroke-width="1.5"/>
 <rect x="35" y="190" width="3330" height="53" rx="8" fill="#264f85" stroke="#264f85" stroke-width="1.5"/>
 <text x="60" y="226" font-family="DejaVu Sans,Arial,sans-serif" font-size="27" fill="white" font-weight="700" text-anchor="start">Before · block speculation</text>
@@ -132,7 +132,7 @@
 <text x="75" y="890" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="400" text-anchor="start">x11</text>
 <text x="75" y="928" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="400" text-anchor="start">x12</text>
 <text x="58" y="981" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="700" text-anchor="start">3 · CODA + argmax</text>
-<text x="58" y="1007" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" fill="#172f49" font-weight="400" text-anchor="start">selected rows → next IDs</text>
+<text x="58" y="1007" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" fill="#172f49" font-weight="400" text-anchor="start">used results → next IDs</text>
 <rect x="318.0" y="956" width="228.33333333333334" height="92" rx="6" fill="#e8f4ef" stroke="#7da58f" stroke-width="1.5"/>
 <text x="432.1666666666667" y="980" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#172f49" font-weight="400" text-anchor="middle">x0:R1 → draft x1</text>
 <rect x="571.3333333333334" y="956" width="228.33333333333334" height="92" rx="6" fill="#e8f4ef" stroke="#7da58f" stroke-width="1.5"/>
@@ -157,13 +157,13 @@
 <text x="3218.8333333333335" y="980" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#172f49" font-weight="400" text-anchor="middle">C(x5–x9:R4)</text>
 <text x="3218.8333333333335" y="1003" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#172f49" font-weight="400" text-anchor="middle">all accepted</text>
 <text x="3218.8333333333335" y="1026" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#172f49" font-weight="400" text-anchor="middle">+ bonus x10</text>
-<text x="58" y="1082" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="700" text-anchor="start">4 · Output / collect</text>
-<text x="58" y="1108" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" fill="#172f49" font-weight="400" text-anchor="start">CPU-visible commit</text>
-<text x="2205.5" y="1080" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Commit x1–x5</text>
+<text x="58" y="1082" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="700" text-anchor="start">4 · GPU result ready</text>
+<text x="58" y="1108" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" fill="#172f49" font-weight="400" text-anchor="start">CPU delivery is async</text>
+<text x="2205.5" y="1080" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Ready x1–x5</text>
 <text x="2458.8333333333335" y="1080" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">⋯</text>
 <text x="2965.5" y="1080" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">⋯</text>
-<text x="3218.8333333333335" y="1080" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Commit x6–x10</text>
-<text x="60" y="1195" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" fill="#172f49" font-weight="400" text-anchor="start">S8 → S16: 8 more recurrent executions to deliver x6–x10. The omitted columns contain work, not idle time.</text>
+<text x="3218.8333333333335" y="1080" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Ready x6–x10</text>
+<text x="60" y="1195" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" fill="#172f49" font-weight="400" text-anchor="start">S8 → S16: 8 more recurrent executions to produce x6–x10. The omitted columns contain work, not idle time.</text>
 <rect x="35" y="1341" width="3330" height="1036" rx="8" fill="#f7faff" stroke="#c9d8eb" stroke-width="1.5"/>
 <rect x="35" y="1341" width="3330" height="53" rx="8" fill="#264f85" stroke="#264f85" stroke-width="1.5"/>
 <text x="60" y="1377" font-family="DejaVu Sans,Arial,sans-serif" font-size="27" fill="white" font-weight="700" text-anchor="start">After · pipeline speculation</text>
@@ -303,7 +303,7 @@
 <rect x="2598.0" y="2054" width="228.33333333333334" height="30" rx="6" fill="#fce5eb" stroke="#c86682" stroke-width="1.5"/>
 <text x="2712.1666666666665" y="2076" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" fill="#172f49" font-weight="400" text-anchor="middle">x12 · R1</text>
 <text x="58" y="2132" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="700" text-anchor="start">3 · CODA + argmax</text>
-<text x="58" y="2158" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" fill="#172f49" font-weight="400" text-anchor="start">selected rows → next IDs</text>
+<text x="58" y="2158" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" fill="#172f49" font-weight="400" text-anchor="start">used results → next IDs</text>
 <rect x="318.0" y="2107" width="228.33333333333334" height="92" rx="6" fill="#e8f4ef" stroke="#7da58f" stroke-width="1.5"/>
 <text x="432.1666666666667" y="2131" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#172f49" font-weight="400" text-anchor="middle">x0:R1 → draft x1</text>
 <rect x="571.3333333333334" y="2107" width="228.33333333333334" height="92" rx="6" fill="#e8f4ef" stroke="#7da58f" stroke-width="1.5"/>
@@ -333,21 +333,21 @@
 <rect x="2851.3333333333335" y="2107" width="228.33333333333334" height="92" rx="6" fill="#e8f4ef" stroke="#7da58f" stroke-width="1.5"/>
 <text x="2965.5" y="2131" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#172f49" font-weight="400" text-anchor="middle">⋯</text>
 <text x="3218.8333333333335" y="2149" font-family="DejaVu Sans,Arial,sans-serif" font-size="19" fill="#172f49" font-weight="400" text-anchor="middle">—</text>
-<text x="58" y="2233" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="700" text-anchor="start">4 · Output / collect</text>
-<text x="58" y="2259" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" fill="#172f49" font-weight="400" text-anchor="start">CPU-visible commit</text>
+<text x="58" y="2233" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="700" text-anchor="start">4 · GPU result ready</text>
+<text x="58" y="2259" font-family="DejaVu Sans,Arial,sans-serif" font-size="16" fill="#172f49" font-weight="400" text-anchor="start">CPU delivery is async</text>
 <text x="432.1666666666667" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">No final token</text>
 <text x="685.5" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">No final token</text>
 <text x="938.8333333333334" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">No final token</text>
-<text x="1192.1666666666667" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Commit x1</text>
-<text x="1445.5000000000002" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Commit x2</text>
-<text x="1698.8333333333335" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Commit x3</text>
-<text x="1952.1666666666667" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Commit x4</text>
-<text x="2205.5" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Commit x5</text>
+<text x="1192.1666666666667" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Ready x1</text>
+<text x="1445.5000000000002" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Ready x2</text>
+<text x="1698.8333333333335" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Ready x3</text>
+<text x="1952.1666666666667" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Ready x4</text>
+<text x="2205.5" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Ready x5</text>
 <text x="2458.8333333333335" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">⋯</text>
-<text x="2712.1666666666665" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Commit x10</text>
+<text x="2712.1666666666665" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">Ready x10</text>
 <text x="2965.5" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">⋯</text>
 <text x="3218.8333333333335" y="2231" font-family="DejaVu Sans,Arial,sans-serif" font-size="17" fill="#237b60" font-weight="400" text-anchor="middle">continues …</text>
-<text x="60" y="2346" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" fill="#172f49" font-weight="400" text-anchor="start">S8 → S13: 5 more recurrent executions to deliver x6–x10. This is 3 fewer executions (37.5%), not a measured latency percentage.</text>
+<text x="60" y="2346" font-family="DejaVu Sans,Arial,sans-serif" font-size="18" fill="#172f49" font-weight="400" text-anchor="start">S8 → S13: 5 more recurrent executions to produce x6–x10. This is 3 fewer executions (37.5%), not a measured latency percentage.</text>
 <text x="2459.3333333333335" y="751" font-family="DejaVu Sans,Arial,sans-serif" font-size="42" fill="#7b8ea8" font-weight="400" text-anchor="middle">⋯</text>
 <text x="2966.0" y="751" font-family="DejaVu Sans,Arial,sans-serif" font-size="42" fill="#7b8ea8" font-weight="400" text-anchor="middle">⋯</text>
 <text x="2459.3333333333335" y="1902" font-family="DejaVu Sans,Arial,sans-serif" font-size="42" fill="#7b8ea8" font-weight="400" text-anchor="middle">⋯</text>
@@ -359,4 +359,6 @@
 <rect x="2587.0" y="1451" width="250.33333333333334" height="861" rx="8" fill="none" stroke="#8058a5" stroke-width="3"/>
 <path d="M3218.8333333333335 1161L2712.1666666666665 1451" fill="none" stroke="#8058a5" stroke-width="3" marker-end="url(#arrow)"/>
 <text x="45" y="2412" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="400" text-anchor="start">Each S counts one recurrent loop execution. PRELUDE, CODA, collection costs and different token-row counts still affect actual performance.</text>
+<text x="45" y="2444" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="400" text-anchor="start">Only valid tokens and used P/C results are shown; inactive/padding rows and unused computations are omitted.</text>
+<text x="45" y="2476" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#172f49" font-weight="400" text-anchor="start">Async: copy-stream D2H and CPU collect occur later; GPU progress does not wait for CPU delivery.</text>
 </svg>

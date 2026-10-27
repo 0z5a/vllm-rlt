@@ -82,9 +82,9 @@ class SpeculativeSubmission:
         return self.event is None or self.event.query()
 
     def collect(self) -> ModelRunnerOutput:
-        if self.event is not None:
-            self.event.synchronize()
         if self.cached is None:
+            if self.event is not None:
+                self.event.synchronize()
             stream = self.runner.compute_stream
             with torch.cuda.stream(stream) if stream is not None else nullcontext():
                 self.cached = ModelRunnerOutput(
@@ -350,17 +350,13 @@ class SpeculativeRunner:
             token.depth += self.config.draft_loops
             if token.depth in (self.config.draft_loops, self.config.target_loops):
                 endpoints.append(i)
-        # Ticket-owned pinned readback remains live through cancellation/collection.
-        # Submission never consumes GPU decisions on the CPU.
+        # Synchronous execution reads decisions in collect(), before the next step.
         choices = (
             self._coda(hidden[endpoints]).argmax(-1)
             if endpoints
             else hidden.new_empty(0, dtype=torch.long)
         )
-        decisions = torch.empty(
-            choices.shape, dtype=torch.long, device="cpu", pin_memory=self.device.type == "cuda"
-        )
-        decisions.copy_(choices, non_blocking=self.device.type == "cuda")
+        decisions = choices
         event = None
         if self.device.type == "cuda":
             event = torch.cuda.Event()

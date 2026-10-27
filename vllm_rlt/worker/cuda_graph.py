@@ -40,8 +40,13 @@ class _DeviceCache:
 
     def _write_prepared(self, layer, batch, k, v):
         cache = self.cache
-        cache.key_cache[batch.write_blocks, layer, batch.write_offsets] = k
-        cache.value_cache[batch.write_blocks, layer, batch.write_offsets] = v
+        if batch.write_mask is not None:
+            from vllm_rlt.kernels.routing import masked_kv_store
+
+            masked_kv_store(cache.key_cache[:, layer], cache.value_cache[:, layer], k, v, batch)
+        else:
+            cache.key_cache[batch.write_blocks, layer, batch.write_offsets] = k
+            cache.value_cache[batch.write_blocks, layer, batch.write_offsets] = v
 
     def _attend_prepared(self, layer, batch, q):
         cache = self.cache
@@ -81,6 +86,11 @@ def _graph_entry(hidden, batch, cache, max_position_embeddings):
                 else None
             ),
             max_seqlen_q=batch.max_seqlen_q,
+            write_mask=(
+                torch.empty(count, device=cache.device, dtype=torch.bool)
+                if getattr(batch, "write_mask", None) is not None
+                else None
+            ),
         ),
     )
 
@@ -92,6 +102,8 @@ def _copy_graph_inputs(entry, hidden, batch):
     entry.metadata.write_blocks.copy_(batch.write_blocks[:count])
     entry.metadata.write_offsets.copy_(batch.write_offsets[:count])
     entry.metadata.context_lengths.copy_(batch.context_lengths)
+    if entry.metadata.write_mask is not None:
+        entry.metadata.write_mask.copy_(batch.write_mask)
     if batch.cu_seqlens_q is not None:
         entry.metadata.cu_seqlens_q.copy_(batch.cu_seqlens_q)
     entry.metadata.block_tables[:, : batch.block_tables.shape[1]].copy_(batch.block_tables)
@@ -126,7 +138,13 @@ class RecurrentGraphs:
                 context_lengths=batch.context_lengths[:count],
                 block_tables=batch.block_tables[:count],
             )
-        key = (count, len(batch.context_lengths), batch.max_seqlen_q if packed else 1, packed)
+        key = (
+            count,
+            len(batch.context_lengths),
+            batch.max_seqlen_q if packed else 1,
+            packed,
+            getattr(batch, "write_mask", None) is not None,
+        )
         frontier = {}
         contiguous = True
         host_rows = () if isinstance(batch, DeviceKVMetadata) else batch.rows
