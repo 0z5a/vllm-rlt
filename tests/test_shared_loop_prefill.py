@@ -18,7 +18,9 @@ def model(device="cpu", dtype=torch.float32):
     return OuroForCausalLM(tiny_ouro_config()).to(device=device, dtype=dtype)
 
 
-def engine(layout, chunk, *, order="position", prefix=False, device="cpu", backend="torch", uva=False):
+def engine(
+    layout, chunk, *, order="position", prefix=False, device="cpu", backend="torch", uva=False
+):
     dtype = torch.float32 if device == "cpu" else torch.bfloat16
     return LLMEngine(
         model(device, dtype),
@@ -108,7 +110,9 @@ def test_loop_order_depends_on_chunk_boundaries():
         for pair in zip(one["r"][0], two["r"][0])
         for a, b in zip(*pair)
     )
-    tail = max((k1[2:] - k2[2:]).abs().max().item() for (k1, _), (k2, _) in zip(one["r"][0], two["r"][0]))
+    tail = max(
+        (k1[2:] - k2[2:]).abs().max().item() for (k1, _), (k2, _) in zip(one["r"][0], two["r"][0])
+    )
     assert head < 1e-5 and tail > 1e3 * max(head, 1e-7)
 
 
