@@ -27,6 +27,7 @@ host-known: the runner decides both before it submits, so a submission never
 depends on a device readback.
 """
 
+import math
 from dataclasses import dataclass
 
 import torch
@@ -95,23 +96,20 @@ class SparseDecodePlan:
         return all(mode == DENSE for mode in self.modes)
 
 
-def retained_count(length: int, key_retention: float, key_bucket: int | None) -> int:
+def retained_count(length: int, key_retention: float) -> int:
     """How many keys a query with ``length`` legal keys retains.
 
-    The retention fraction is rounded to the nearest key. ``key_bucket`` caps
-    the retained count; ``None`` leaves the retention budget unbounded so that
-    ``key_retention=1.0`` stays a true full-retention control.
+    Follows the FlashLoop reference (``aeaadee``, ``select_decode_keys``):
+    ``k = min(length, max(1, ceil(length * key_retention)))``. The count is a
+    pure function of the retention fraction, so ``key_retention=1.0`` stays an
+    exact full-retention control; index-buffer capacity lives in the store and
+    never changes the algorithm.
     """
     if key_retention <= 0 or key_retention > 1:
         raise ValueError("key_retention must be in (0, 1]")
-    if key_bucket is not None and key_bucket < 1:
-        raise ValueError("key_bucket must be positive when set")
     if length < 1:
         return 0
-    budget = max(1, int(length * key_retention + 0.5))
-    if key_bucket is not None:
-        budget = min(budget, key_bucket)
-    return min(budget, length)
+    return min(length, max(1, math.ceil(length * key_retention)))
 
 
 def expand_kv(tensor: torch.Tensor, groups: int) -> torch.Tensor:
@@ -161,7 +159,11 @@ def reference_statistics(
     scores = torch.einsum("hd,lhd->hl", q.float(), expanded_keys) * scale
     probabilities = torch.softmax(scores, dim=-1)
     output = torch.einsum("hl,lhd->hd", probabilities, expanded_values)
-    count = retained_count(length, key_retention, key_bucket)
+    count = retained_count(length, key_retention)
+    # Buffer capacity never truncates the algorithm: a count above it fails
+    # loudly instead of silently degrading retention.
+    if key_bucket is not None and count > key_bucket:
+        raise ValueError(f"reference capacity {key_bucket} cannot hold {count} retained keys")
     positions = select_keys(probabilities, count)
     gathered = probabilities.gather(1, positions)
     # Index the per-head value rows: positions is [heads, count], so the head

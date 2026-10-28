@@ -199,9 +199,10 @@ class SparseDecodeAttentionConfig:
     ``enabled`` recomputes attention contributions only for the retained keys
     of the loop-2 reference; ``key_retention`` is the retained key fraction per
     query and head relative to that query's causal key count, where ``1.0``
-    provides the full-retention control. ``key_bucket`` caps the retained
-    count and the reference index buffer; ``None`` derives it from the model
-    context so that full retention stays exact.
+    provides the full-retention control. ``key_bucket`` is only the reference
+    index-buffer capacity, never an algorithm knob: the retained count follows
+    ``key_retention`` alone, and ``None`` sizes the buffer from the model
+    context and the retention fraction.
     """
 
     enabled: bool = False

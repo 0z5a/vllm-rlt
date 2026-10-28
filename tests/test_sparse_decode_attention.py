@@ -7,11 +7,13 @@ descendants, same-position replacement through incarnations, delayed
 completion and reference-slot reuse.
 """
 
+import math
+
 import pytest
 import torch
 
 from tests.helpers import bootstrap_speculation, make_speculative_engine, tiny_ouro_model
-from vllm_rlt import SparseDecodeAttentionConfig
+from vllm_rlt import SamplingParams, SparseDecodeAttentionConfig
 from vllm_rlt.attention.sparse import (
     CAPTURE,
     CONSUME,
@@ -81,15 +83,30 @@ def test_plan_groups_rows_by_mode():
     assert plan.reference_depth == REFERENCE_DEPTH
 
 
-def test_retained_count_rounds_and_caps():
-    assert retained_count(3, 0.667, None) == 2
-    assert retained_count(4, 1.0, None) == 4
-    assert retained_count(4, 1.0, 2) == 2
-    assert retained_count(0, 0.5, None) == 0
+def test_retained_count_follows_flashloop_ceil_rule():
+    # FlashLoop aeaadee select_decode_keys: k = min(N, max(1, ceil(N * r))).
+    assert retained_count(13, 0.1) == 2
+    assert retained_count(10, 0.1) == 1
+    assert retained_count(10, 0.5) == 5
+    assert retained_count(9, 0.5) == 5
+    assert retained_count(1, 0.1) == 1
+    assert retained_count(4, 1.0) == 4
+    assert retained_count(0, 0.5) == 0
     with pytest.raises(ValueError, match="key_retention"):
-        retained_count(4, 1.5, None)
-    with pytest.raises(ValueError, match="key_bucket"):
-        retained_count(4, 0.5, 0)
+        retained_count(4, 1.5)
+
+
+def test_reference_statistics_fail_when_capacity_cannot_hold_retained_keys():
+    # Capacity never truncates the algorithm: a count above it fails loudly.
+    q = torch.ones(1, 1)
+    keys = torch.log(torch.tensor([0.2, 0.3, 0.5])).reshape(3, 1, 1)
+    values = torch.ones(3, 1, 1)
+    with pytest.raises(ValueError, match="cannot hold"):
+        reference_statistics(q, keys, values, key_retention=0.5, key_bucket=1)
+    # The same query passes with sufficient capacity.
+    output, _, _, positions = reference_statistics(q, keys, values, key_retention=0.5, key_bucket=2)
+    assert positions.shape[1] == 2
+    assert output.shape == (1, 1)
 
 
 def test_reference_statistics_match_rfc_worked_example():
@@ -100,9 +117,7 @@ def test_reference_statistics_match_rfc_worked_example():
     q = torch.ones(1, 1)
     keys = torch.log(torch.tensor([0.1, 0.3, 0.6])).reshape(3, 1, 1)
     values = torch.tensor([10.0, 20.0, 30.0]).reshape(3, 1, 1)
-    output, contribution, mass, positions = reference_statistics(
-        q, keys, values, key_retention=0.667
-    )
+    output, contribution, mass, positions = reference_statistics(q, keys, values, key_retention=0.5)
     assert output.item() == pytest.approx(25.0)
     assert mass.item() == pytest.approx(0.9)
     assert contribution.item() == pytest.approx(24.0)
@@ -393,3 +408,63 @@ def test_async_sparse_reference_incarnations_advance_across_rounds():
     e.abort_request("r")
     drain(e)
     assert store.outstanding == 0
+
+
+@pytest.mark.gpu
+def test_sparse_engine_sizes_key_buffer_from_retention():
+    model = tiny("cuda")
+    e = make_speculative_engine(
+        model, sparse=SparseDecodeAttentionConfig(enabled=True, key_retention=0.25)
+    )
+    # None key_bucket derives the capacity from context x retention, not the
+    # full model context (FlashLoop ceil rule at the worst-case key count).
+    assert e.reference_store.key_bucket == math.ceil(model.config.max_position_embeddings * 0.25)
+
+
+@pytest.mark.gpu
+def test_sparse_engine_rejects_insufficient_key_bucket():
+    model = tiny("cuda")
+    with pytest.raises(ValueError, match="key_bucket"):
+        make_speculative_engine(
+            model,
+            sparse=SparseDecodeAttentionConfig(enabled=True, key_retention=1.0, key_bucket=4),
+        )
+
+
+@pytest.mark.gpu
+def test_sparse_engine_e2e_multiple_requests_abort_and_drain():
+    # Engine-level lifecycle e2e: concurrent rounds across requests, an abort
+    # in flight, and full slot reclamation without stale references.
+    model = tiny("cuda")
+    e = make_speculative_engine(
+        model, sparse=SparseDecodeAttentionConfig(enabled=True, key_retention=0.5)
+    )
+    store = e.reference_store
+    max_outstanding = 0
+    original_reserve = store.reserve
+
+    def counting_reserve(*args, **kwargs):
+        nonlocal max_outstanding
+        lease = original_reserve(*args, **kwargs)
+        max_outstanding = max(max_outstanding, store.outstanding)
+        return lease
+
+    store.reserve = counting_reserve
+    params = [SamplingParams(max_tokens=n, ignore_eos=True) for n in (5, 9, 50)]
+    for i in range(3):
+        e.add_request(str(i), [2, 3, 4], params[i])
+    outputs = {}
+    for _ in range(1000):
+        if outputs.get("0") is not None and outputs["0"].finished:
+            break
+        for output in e.step():
+            outputs[output.request_id] = output
+    # Abort one request mid-flight; the rest must finish cleanly.
+    if "2" not in outputs or not outputs["2"].finished:
+        e.abort_request("2")
+    outputs.update(drain(e))
+    assert outputs["0"].finished and len(outputs["0"].token_ids) == 5
+    assert outputs["1"].finished and len(outputs["1"].token_ids) == 9
+    assert store.outstanding == 0
+    assert len(store.free) == store.slots
+    assert max_outstanding > 0

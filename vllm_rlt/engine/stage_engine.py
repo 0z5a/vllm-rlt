@@ -1,4 +1,5 @@
 import logging
+import math
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, cast
 
@@ -132,6 +133,16 @@ class StageEngine:
                 )
             if speculative_config.mode != "block":
                 raise ValueError("sparse decode attention currently requires block speculation")
+            # The index buffer never truncates the algorithm: capacity must
+            # hold the worst-case retained count over the model context.
+            required_keys = math.ceil(config.max_position_embeddings * sparse_decode.key_retention)
+            capacity = sparse_decode.key_bucket or required_keys
+            if capacity < required_keys:
+                raise ValueError(
+                    f"sparse decode attention key_bucket {capacity} cannot hold "
+                    f"{required_keys} retained keys for key_retention "
+                    f"{sparse_decode.key_retention}; raise key_bucket or lower key_retention"
+                )
             # Two in-flight rounds may each hold every verification row, so the
             # pool covers both rounds' live tokens with room for slot reuse.
             self.reference_store = AttentionReferenceStore(
@@ -141,7 +152,7 @@ class StageEngine:
                 layers=config.num_hidden_layers,
                 heads=config.num_attention_heads,
                 head_dim=config.head_dim,
-                key_bucket=sparse_decode.key_bucket or config.max_position_embeddings,
+                key_bucket=capacity,
                 device=parameter.device,
             )
             scratch += self.reference_store.bytes
