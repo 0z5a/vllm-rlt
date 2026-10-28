@@ -1,5 +1,7 @@
 """Ordinary and synchronous block decode through the shared sparse contract."""
 
+from dataclasses import replace
+
 import pytest
 import torch
 
@@ -151,6 +153,78 @@ def test_backend_explicitly_declares_sparse_reference_support():
         required_capabilities=BackendCapabilities(sparse_decode=True),
     )
     assert selected.capabilities.sparse_decode
+
+
+@pytest.mark.parametrize("draft", [1, 2])
+def test_sparse_verification_matches_serial_same_input_hidden_logits_and_kv(draft):
+    from tests.helpers import make_cpu_cache
+    from tests.test_sparse_decode_attention import make_reference_store
+    from vllm_rlt.attention.sparse import reference_mode
+    from vllm_rlt.core.scheduler import ScheduledRequest, SchedulerOutput
+    from vllm_rlt.request import Request, RequestPhase
+
+    e = engine(draft=draft, retention=0.5)
+    model, cache = e.model, e.cache_manager
+    prefix, current = [3, 4, 5], 7
+    assert cache.allocate("r", 16)
+    for position, token in enumerate(prefix):
+        hidden = model.prelude(torch.tensor([token]))
+        for depth in range(4):
+            hidden, _ = model.recurrent(hidden, ["r"], [depth], [position], cache)
+    request = Request("r", prefix, SamplingParams(ignore_eos=True), generated_token_ids=[current])
+    seen, heads = {}, []
+    recurrent = model.recurrent_prepared
+
+    def record(hidden, kv, cache, **kwargs):
+        out, gate = recurrent(hidden, kv, cache, **kwargs)
+        for row, (_, depth, position) in enumerate(kv.rows):
+            seen[depth, position] = out[row].clone()
+        return out, gate
+
+    model.recurrent_prepared = record
+    hook = model.lm_head.register_forward_hook(
+        lambda module, inputs, output: heads.append(output.detach().clone())
+    )
+    try:
+        e.speculative_runner.submit(
+            SchedulerOutput(RequestPhase.SPECULATIVE, [ScheduledRequest(request, 3, 3)])
+        ).collect()
+    finally:
+        hook.remove()
+        model.recurrent_prepared = recurrent
+    assert e.reference_store.outstanding == 0
+    tokens = prefix + [current]
+    tokens.extend(int(model.coda(seen[draft - 1, pos]).argmax()) for pos in (3, 4))
+    oracle = make_cpu_cache(model.config)
+    assert oracle.allocate("r", 16)
+    store = make_reference_store(model)
+    for position, token in enumerate(tokens):
+        lease = store.reserve("r", 0, 1, generation=position)
+        hidden = model.prelude(torch.tensor([token]))
+        for depth in range(4):
+            kv = oracle._prepare_batch(["r"], [depth], [position])
+            mode = reference_mode(depth)
+            if position >= len(prefix) and mode != DENSE:
+                plan = store.build_plan([(lease, 0)], [mode], key_retention=0.5)
+                kv = replace(kv, reference_plan=plan)
+            hidden, _ = model.recurrent_prepared(hidden, kv, oracle, compute_gate=False)
+            if position >= len(prefix):
+                torch.testing.assert_close(seen[depth, position], hidden[0], atol=4e-5, rtol=4e-5)
+        if position >= len(prefix):
+            torch.testing.assert_close(
+                heads[-1][position - len(prefix)], model.coda(hidden)[0], atol=4e-5, rtol=4e-5
+            )
+        store.release(lease)
+    for depth in range(4):
+        for layer in range(model.config.num_hidden_layers):
+            for actual, expected in zip(
+                cache.read(layer, "r", depth, len(tokens)),
+                oracle.read(layer, "r", depth, len(tokens)),
+            ):
+                torch.testing.assert_close(actual, expected, atol=4e-5, rtol=4e-5)
+    cache.free("r")
+    oracle.free("r")
+    e.close()
 
 
 @pytest.mark.parametrize("draft", [1, 2])
