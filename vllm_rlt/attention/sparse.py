@@ -343,7 +343,17 @@ def _rowwise_product(equation, left, right):
     kernel. Its small error can cross a BF16 rounding boundary and change a
     greedy token, so batch the gathers/selection but retain row-wise products.
     """
-    return torch.stack([torch.einsum(equation, a, b) for a, b in zip(left, right)])
+    # Prepare the exact views einsum uses once for the group, instead of
+    # repeating its permutation/reshape bookkeeping for every row.
+    if equation == "hd,lhd->hl":
+        right = right.permute(0, 2, 3, 1)
+    elif equation == "hl,lhd->hd":
+        right = right.transpose(1, 2)
+    elif equation == "hd,hkd->hk":
+        right = right.transpose(-1, -2)
+    elif equation != "hk,hkd->hd":
+        raise ValueError(f"unsupported reference product {equation}")
+    return torch.stack([torch.bmm(a, b).squeeze(1) for a, b in zip(left.unsqueeze(-2), right)])
 
 
 def batched_paged_attention(
