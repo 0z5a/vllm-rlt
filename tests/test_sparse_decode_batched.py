@@ -40,12 +40,12 @@ def test_batched_ragged_gqa_matches_scalar_oracle(device, dtype, retention, ties
                 [(lease, row) for row in range(rows)], modes, key_retention=retention
             )
             results.append(implementation(queries, keys, values, tables, lengths, plan, layer=0))
-        torch.testing.assert_close(results[1], results[0], rtol=1e-5, atol=1e-6)
+        torch.testing.assert_close(results[1], results[0], rtol=0, atol=0)
         for name in ("selected", "counts", "valid", "uses"):
             assert torch.equal(getattr(stores[0], name), getattr(stores[1], name)), name
         for name in ("mass", "output", "contribution"):
             torch.testing.assert_close(
-                getattr(stores[0], name), getattr(stores[1], name), rtol=1e-5, atol=1e-6
+                getattr(stores[0], name), getattr(stores[1], name), rtol=0, atol=0
             )
         queries = queries + 0.25
         keys = keys + 0.125

@@ -313,6 +313,16 @@ def sparse_paged_attention(
     )
 
 
+def _rowwise_product(equation, left, right):
+    """Keep each row's cuBLAS problem shape equal to the scalar oracle.
+
+    Folding rows into the head dimension can choose a different FP32 reduction
+    kernel. Its small error can cross a BF16 rounding boundary and change a
+    greedy token, so batch the gathers/selection but retain row-wise products.
+    """
+    return torch.stack([torch.einsum(equation, a, b) for a, b in zip(left, right)])
+
+
 def batched_paged_attention(
     q, key_cache, value_cache, block_tables, context_lengths, plan, *, layer
 ):
@@ -366,9 +376,9 @@ def batched_paged_attention(
                 offsets = selected % block_size
                 keys = key_cache[blocks, offsets, kv_index].float()
                 values = value_cache[blocks, offsets, kv_index].float()
-                scores = torch.einsum("bhd,bhkd->bhk", queries, keys) * scale
+                scores = _rowwise_product("hd,hkd->hk", queries, keys) * scale
                 probabilities = torch.softmax(scores, dim=-1)
-                new = torch.einsum("bhk,bhkd->bhd", probabilities, values)
+                new = _rowwise_product("hk,hkd->hd", probabilities, values)
                 corrected = (
                     store.output[slots, layer]
                     - store.contribution[slots, layer]
@@ -382,9 +392,9 @@ def batched_paged_attention(
             offsets = positions % block_size
             keys = key_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
             values = value_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
-            scores = torch.einsum("bhd,blhd->bhl", queries, keys) * scale
+            scores = _rowwise_product("hd,lhd->hl", queries, keys) * scale
             probabilities = torch.softmax(scores, dim=-1)
-            reference = torch.einsum("bhl,blhd->bhd", probabilities, values)
+            reference = _rowwise_product("hl,lhd->hd", probabilities, values)
             output[row_ids] = reference.to(q.dtype)
             if mode == CAPTURE:
                 count = retained_count(extent, plan.key_retention)
@@ -397,7 +407,7 @@ def batched_paged_attention(
                 selected = order[..., :count].sort(dim=-1).values
                 gathered = probabilities.gather(-1, selected)
                 selected_values = values[batch_index, selected, head_index]
-                contribution = torch.einsum("bhk,bhkd->bhd", gathered, selected_values)
+                contribution = _rowwise_product("hk,hkd->hd", gathered, selected_values)
                 columns = torch.arange(count, device=q.device)[None, None, :]
                 # Explicit indices write only the live prefix, never gather the
                 # entire capacity-sized selected tensor to obtain a prefix view.
