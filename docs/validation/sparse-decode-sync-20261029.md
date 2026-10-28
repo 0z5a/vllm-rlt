@@ -1,5 +1,10 @@
 # Sparse decode: ordinary and synchronous integration validation
 
+This is the historical report for runtime `10373ab`. The subsequent
+[numerical diagnosis and regression report](sparse-decode-numerics-20261029.md)
+documents the backend-preserving fix and its separate validation. The timings
+and numerical limitation below describe the original implementation.
+
 This contribution extends the shared [#157](https://github.com/InferMatrixLab/vllm-rlt/pull/157) reference plan/store into ordinary synchronous decode and synchronous block self-speculation. It is a functional reference integration, with measured costs and an unresolved BF16 full-retention sequence difference. It does not claim an optimized sparse kernel or deployment quality.
 
 ## Source and checks

@@ -253,9 +253,12 @@ This path supports ordinary synchronous decode and synchronous/asynchronous
 block self-speculation with LAST_EXITED KV and refill scheduling. The Torch and
 Triton adapters declare sparse-reference support; `auto` selects a compatible
 adapter and explicit FlashAttention selection fails rather than silently
-replacing the requested backend. Sparse capture/correction itself currently
-uses the shared PyTorch reference implementation, even beside Triton dense
-attention. It has host readbacks and per-row launch costs; enabling it does not
+replacing the requested backend. Dense and capture rows preserve the selected
+backend's output and original packed batch geometry. Selection, retained mass
+and contributions, and partial-retention correction use the shared PyTorch
+reference implementation. The captured output is the value actually entering
+the recurrence, stored in FP32 after the backend's output-dtype conversion.
+It has host readbacks and per-row launch costs; enabling it does not
 promise faster serving. CUDA Graphs, token pipelines, mixed scheduling,
 preemption/recovery and ordinary asynchronous decode are rejected explicitly.
 
@@ -274,9 +277,12 @@ recurrent reader. Synchronous block references retire on the compute stream
 when every verification input has completed its final read; neither accepted
 nor rejected rows carry a reference into the next round. With draft depth 1,
 verification captures loop 2; with draft depth 2, drafting captures it.
-Full retention is a numerical control. Use declared tolerances and investigate
-any real-model token differences from dense execution; small-model equality
-does not establish equivalence at scale. Retention below 1 is approximate and
+Full retention uses the same dense backend at later loops as a control, while
+still validating and consuming the captured reference lifecycle. The standalone
+Torch arithmetic oracle is tested separately; different attention algorithms
+need not round to identical BF16 values. See the
+[numerical diagnosis and regression report](validation/sparse-decode-numerics-20261029.md).
+Retention below 1 is approximate and
 needs task-quality evaluation before a deployment recommendation.
 
 ## SHARED prefill semantics
