@@ -218,7 +218,7 @@ def gather_retained(
     return key_cache[blocks, offsets, kv_index], value_cache[blocks, offsets, kv_index]
 
 
-def sparse_paged_attention(
+def reference_paged_attention(
     q: torch.Tensor,
     key_cache: torch.Tensor,
     value_cache: torch.Tensor,
@@ -296,6 +296,139 @@ def sparse_paged_attention(
         scores = torch.einsum("hd,lhd->hl", q[row].float(), expanded_keys) * scale
         probabilities = torch.softmax(scores, dim=-1)
         output[row] = torch.einsum("hl,lhd->hd", probabilities, expanded_values).to(q.dtype)
+    if captured:
+        store.capture(plan, layer)
+    if consumed:
+        store.consume(plan, layer)
+    return output
+
+
+def sparse_paged_attention(
+    q, key_cache, value_cache, block_tables, context_lengths, plan, *, layer
+):
+    """Use bounded row batches on CUDA, retaining the scalar numerical oracle."""
+    implementation = batched_paged_attention if q.is_cuda else reference_paged_attention
+    return implementation(
+        q, key_cache, value_cache, block_tables, context_lengths, plan, layer=layer
+    )
+
+
+def _rowwise_product(equation, left, right):
+    """Keep each row's cuBLAS problem shape equal to the scalar oracle.
+
+    Folding rows into the head dimension can choose a different FP32 reduction
+    kernel. Its small error can cross a BF16 rounding boundary and change a
+    greedy token, so batch the gathers/selection but retain row-wise products.
+    """
+    # Prepare the exact views einsum uses once for the group, instead of
+    # repeating its permutation/reshape bookkeeping for every row.
+    if equation == "hd,lhd->hl":
+        right = right.permute(0, 2, 3, 1)
+    elif equation == "hl,lhd->hd":
+        right = right.transpose(1, 2)
+    elif equation == "hd,hkd->hk":
+        right = right.transpose(-1, -2)
+    elif equation != "hk,hkd->hd":
+        raise ValueError(f"unsupported reference product {equation}")
+    return torch.stack([torch.bmm(a, b).squeeze(1) for a, b in zip(left.unsqueeze(-2), right)])
+
+
+def batched_paged_attention(
+    q, key_cache, value_cache, block_tables, context_lengths, plan, *, layer
+):
+    """Batch equal-length rows without padding or changing retained-key selection.
+
+    Each head still uses the same FP32 matrix products, stable sort and softmax
+    as the scalar oracle. Grouping exact lengths avoids padded reductions and
+    bounds gather scratch independently of the reference pool's key capacity.
+    There is one count readback per layer, rather than one per consume row.
+    """
+    store = plan.store
+    if store is None:
+        raise ValueError("a sparse decode plan needs its reference store")
+    store._require_live(plan)
+    lengths = context_lengths.tolist()
+    consume_rows = [r for r, mode in enumerate(plan.modes) if mode == CONSUME and lengths[r]]
+    counts = {}
+    if consume_rows:
+        slots = plan.slot_ids[consume_rows]
+        counts = dict(zip(consume_rows, store.counts[slots, layer].amax(dim=-1).tolist()))
+        if any(count == 0 for count in counts.values()):
+            raise RuntimeError("a consume row has no captured reference")
+    grouped = {}
+    for row, length in enumerate(lengths):
+        if length:
+            mode = plan.modes[row]
+            extent = counts[row] if mode == CONSUME else length
+            grouped.setdefault((mode, extent), []).append(row)
+    output = torch.zeros_like(q)
+    heads, dim = q.shape[1:]
+    groups = heads // key_cache.shape[2]
+    block_size = key_cache.shape[1]
+    scale = 1.0 / math.sqrt(dim)
+    head_index = torch.arange(heads, device=q.device)[None, :, None]
+    kv_index = head_index // groups
+    captured = consumed = False
+    for (mode, extent), all_rows in grouped.items():
+        # At most 16M elements per gathered K/V tensor (or one very long row).
+        chunk = max(1, min(32, 16 * 1024 * 1024 // (extent * heads * dim)))
+        for start in range(0, len(all_rows), chunk):
+            rows = all_rows[start : start + chunk]
+            row_ids = torch.tensor(rows, dtype=torch.int64, device=q.device)
+            slots = plan.slot_ids[row_ids]
+            queries = q[row_ids].float()
+            tables = block_tables[row_ids]
+            batch_index = torch.arange(len(rows), device=q.device)[:, None, None]
+            if mode == CONSUME:
+                columns = torch.arange(extent, device=q.device)[None, None, :]
+                selected = store.selected[slots[:, None, None], layer, head_index, columns].long()
+                blocks = tables[batch_index, selected // block_size]
+                offsets = selected % block_size
+                keys = key_cache[blocks, offsets, kv_index].float()
+                values = value_cache[blocks, offsets, kv_index].float()
+                scores = _rowwise_product("hd,hkd->hk", queries, keys) * scale
+                probabilities = torch.softmax(scores, dim=-1)
+                new = _rowwise_product("hk,hkd->hd", probabilities, values)
+                corrected = (
+                    store.output[slots, layer]
+                    - store.contribution[slots, layer]
+                    + store.mass[slots, layer].unsqueeze(-1) * new
+                )
+                output[row_ids] = corrected.to(q.dtype)
+                consumed = True
+                continue
+            positions = torch.arange(extent, device=q.device)
+            blocks = tables[:, positions // block_size]
+            offsets = positions % block_size
+            keys = key_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
+            values = value_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
+            scores = _rowwise_product("hd,lhd->hl", queries, keys) * scale
+            probabilities = torch.softmax(scores, dim=-1)
+            reference = _rowwise_product("hl,lhd->hd", probabilities, values)
+            output[row_ids] = reference.to(q.dtype)
+            if mode == CAPTURE:
+                count = retained_count(extent, plan.key_retention)
+                capacity = store.selected.shape[-1]
+                if count > capacity:
+                    raise ValueError(
+                        f"reference capacity {capacity} cannot hold {count} retained keys"
+                    )
+                order = torch.argsort(probabilities, dim=-1, descending=True, stable=True)
+                selected = order[..., :count].sort(dim=-1).values
+                gathered = probabilities.gather(-1, selected)
+                selected_values = values[batch_index, selected, head_index]
+                contribution = _rowwise_product("hk,hkd->hd", gathered, selected_values)
+                columns = torch.arange(count, device=q.device)[None, None, :]
+                # Explicit indices write only the live prefix, never gather the
+                # entire capacity-sized selected tensor to obtain a prefix view.
+                store.selected[slots[:, None, None], layer, head_index, columns] = selected.to(
+                    torch.int32
+                )
+                store.counts[slots, layer] = count
+                store.mass[slots, layer] = gathered.sum(dim=-1)
+                store.output[slots, layer] = reference
+                store.contribution[slots, layer] = contribution
+                captured = True
     if captured:
         store.capture(plan, layer)
     if consumed:
