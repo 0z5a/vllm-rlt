@@ -174,15 +174,18 @@ def test_reserve_uses_one_slot_per_live_token():
     assert len(store.free) == 3
 
 
-def test_release_requires_owner_and_clears_payload():
+def test_release_requires_owner_and_retires_metadata():
     store = make_store()
     lease = store.reserve("r", 0, 2, generation=1)
     fill_payload(store, lease.slots)
     store.release(lease)
     for slot in lease.slots:
+        # Readers are gated by counts/mass/valid. The retained index, output and
+        # contribution buffers stay allocated and are overwritten by the next
+        # capture's used prefix, so retiring never writes the whole bucket.
+        assert int(store.counts[slot].sum()) == 0
         assert store.mass[slot].sum() == 0
-        assert store.output[slot].sum() == 0
-        assert store.selected[slot].sum() == 0
+        assert not bool(store.valid[slot].any())
     assert store.outstanding == 0
     # A retired lease cannot release its slots a second time.
     with pytest.raises(RuntimeError, match="different owner"):
@@ -196,12 +199,15 @@ def test_accept_invalidates_rejected_candidates_and_descendants():
     store.accept([lease], torch.tensor([1]))
     accepted, middle, rejected = lease.slots
     # Rows 0..1 survive the accepted prefix; the rejected candidate and every
-    # descendant lose the reference payload.
-    assert store.mass[accepted].sum() > 0 and store.mass[middle].sum() > 0
+    # descendant stop being readable.
+    assert int(store.counts[accepted].max()) > 0 and int(store.counts[middle].max()) > 0
+    assert int(store.counts[rejected].max()) == 0
     assert store.mass[rejected].sum() == 0
-    assert store.output[rejected].sum() == 0
-    assert store.selected[rejected].sum() == 0
+    assert not bool(store.valid[rejected].any())
     assert int(store.accepted[accepted]) == 1
+    rejected_plan = store.build_plan([(lease, 2)], [CONSUME], key_retention=0.5)
+    with pytest.raises(RuntimeError, match="no captured reference"):
+        store.read_reference(rejected_plan, layer=0, row=0)
 
 
 def test_accept_keeps_root_when_every_candidate_is_rejected():
@@ -269,6 +275,13 @@ def test_bytes_matches_layout():
     store = make_store(slots=3, layers=2, heads=2, head_dim=4, key_bucket=8)
     expected = 3 * 2 * 2 * (8 + 1 + 1 + 4 + 4) * 4 + 3 * 2 * (1 + 4) + 3 * (8 + 8 + 4)
     assert store.bytes == expected
+
+
+def test_sparse_config_validates_serving_context_bound():
+    assert SparseDecodeAttentionConfig(max_context_tokens=512).max_context_tokens == 512
+    assert SparseDecodeAttentionConfig().max_context_tokens is None
+    with pytest.raises(ValueError, match="max_context_tokens"):
+        SparseDecodeAttentionConfig(max_context_tokens=0)
 
 
 def test_device_metadata_carries_reference_plan():
@@ -576,6 +589,94 @@ def test_sparse_engine_matches_dense_tokens_at_full_retention():
     sparse, outstanding = run(SparseDecodeAttentionConfig(enabled=True, key_retention=1.0))
     assert sparse == dense
     assert outstanding == 0
+
+
+@pytest.mark.gpu
+def test_accept_and_retire_do_not_allocate_bucket_sized_temporaries():
+    # Reviewer-reported OOM: acceptance used to read-modify-write the retained
+    # index buffer, materialising a bucket-sized temporary per batch. Retirement
+    # must stay bounded by the rejected rows, not by slot count x bucket.
+    torch.cuda.empty_cache()
+    store = AttentionReferenceStore(
+        slots=16, layers=24, heads=16, head_dim=128, key_bucket=32768, device="cuda"
+    )
+    lease = store.reserve("r", 0, 16, generation=1)
+    store.counts[list(lease.slots)] = 1
+    store.mass[list(lease.slots)] = 1.0
+    store.output[list(lease.slots)] = 1.0
+    store.contribution[list(lease.slots)] = 1.0
+    torch.cuda.synchronize()
+    baseline = torch.cuda.memory_allocated()
+    torch.cuda.reset_peak_memory_stats()
+    store.accept([lease], torch.tensor([0], device="cuda"))
+    store.release(lease)
+    torch.cuda.synchronize()
+    peak = torch.cuda.max_memory_allocated()
+    bucket_bytes = 16 * 24 * 16 * 32768 * 4
+    assert bucket_bytes > 512 * 1024**2, "test needs a bucket large enough to detect the bug"
+    assert peak - baseline < bucket_bytes // 8, (
+        f"retirement allocated {(peak - baseline) / 1024**2:.1f} MiB "
+        f"for a {bucket_bytes / 1024**2:.1f} MiB bucket"
+    )
+
+
+@pytest.mark.gpu
+def test_sparse_engine_bounds_reference_pool_by_serving_context():
+    model = tiny("cuda")
+    e = make_speculative_engine(
+        model,
+        sparse=SparseDecodeAttentionConfig(enabled=True, key_retention=1.0, max_context_tokens=64),
+    )
+    # The pool follows the supported serving bound, not the model's 128-token
+    # positional limit.
+    assert e.reference_store.key_bucket == 64
+    e.close()
+
+
+@pytest.mark.gpu
+def test_sparse_engine_rejects_context_beyond_model_limit():
+    model = tiny("cuda")
+    with pytest.raises(ValueError, match="exceeds the model context"):
+        make_speculative_engine(
+            model, sparse=SparseDecodeAttentionConfig(enabled=True, max_context_tokens=4096)
+        )
+
+
+@pytest.mark.gpu
+def test_sparse_async_overlapping_rounds_keep_isolated_references():
+    # Reviewer-requested coverage: two submitted rounds of the same request are
+    # in flight at once. They must hold disjoint reference slots, and retiring
+    # the older round's rejected candidates must not disturb the newer round.
+    model = tiny("cuda")
+    e = make_speculative_engine(
+        model, sparse=SparseDecodeAttentionConfig(enabled=True, key_retention=0.5)
+    )
+    store = e.reference_store
+    bootstrap(e)
+    accepted_rounds = []
+    original = store.accept
+
+    def recording(leases, accepted):
+        accepted_rounds.append(tuple(lease.slots for lease in leases))
+        return original(leases, accepted)
+
+    store.accept = recording
+    e.step()
+    e.step()
+    assert len(e._pending_speculative) == 2, "expected two overlapping rounds"
+    assert len(accepted_rounds) >= 2
+    first, second = accepted_rounds[0][0], accepted_rounds[1][0]
+    assert first and second
+    assert not set(first) & set(second), "outstanding rounds share reference slots"
+    assert store.outstanding == len(first) + len(second)
+    e._collect_speculative()
+    # Only the older round retired; the newer round's references survive.
+    assert store.outstanding == len(second)
+    e.abort_request("r")
+    drain(e)
+    assert store.outstanding == 0
+    assert len(store.free) == store.slots
+    e.close()
 
 
 @pytest.mark.gpu

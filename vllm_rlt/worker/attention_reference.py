@@ -288,6 +288,13 @@ class AttentionReferenceStore:
         kept, and a rejected candidate invalidates its dependent descendants.
         The comparison stays on the device so that acceptance never requires a
         host readback.
+
+        Retirement is memory-bounded: it only clears the per-row metadata that
+        gates readers (``valid``, ``counts``, ``mass``), never the retained
+        index buffer. An indexed read-modify-write of ``selected`` would
+        materialise the whole bucket — at 24 layers, 16 heads and 65,536 keys
+        that is tens of GiB for one batch — while a zero ``count`` already makes
+        the payload unreadable, and a later capture overwrites the used prefix.
         """
         if isinstance(leases, ReferenceLease):
             leases = (leases,)
@@ -300,20 +307,22 @@ class AttentionReferenceStore:
             [torch.full_like(lease.row_index, lease.request_index) for lease in leases]
         )
         limit = accepted.to(device=self.device, dtype=rows.dtype).index_select(0, request)
-        keep = rows <= limit
-        keep_rows = keep.reshape(-1)
-        keep3 = keep_rows.view(-1, 1, 1)
-        keep4 = keep_rows.view(-1, 1, 1, 1)
         self.accepted[slot_ids] = limit.to(torch.int32)
-        self.valid[slot_ids] = self.valid[slot_ids] & keep_rows.view(-1, 1)
-        self.mass[slot_ids] = self.mass[slot_ids] * keep3
-        self.output[slot_ids] = self.output[slot_ids] * keep4
-        self.contribution[slot_ids] = self.contribution[slot_ids] * keep4
-        self.selected[slot_ids] = self.selected[slot_ids] * keep4.to(self.selected.dtype)
-        self.counts[slot_ids] = self.counts[slot_ids] * keep3.to(self.counts.dtype)
+        rejected = slot_ids[rows > limit]
+        if rejected.numel():
+            # Scalar fills touch only the rejected rows and allocate nothing.
+            self.valid[rejected] = False
+            self.counts[rejected] = 0
+            self.mass[rejected] = 0
 
     def _clear(self, slots: torch.Tensor) -> None:
-        """Zero the payload of the given slots, ordered on the owner stream."""
+        """Retire the metadata of the given slots, ordered on the owner stream.
+
+        Only the tensors that gate readers are cleared. The retained index,
+        output and contribution buffers stay allocated and are overwritten by
+        the next capture's used prefix, so retiring a slot never writes the
+        whole bucket (which would be tens of GiB per batch at full retention).
+        """
 
         def zero():
             self.valid[slots] = False
@@ -322,9 +331,6 @@ class AttentionReferenceStore:
             self.incarnation[slots] = 0
             self.position[slots] = 0
             self.mass[slots] = 0
-            self.output[slots] = 0
-            self.contribution[slots] = 0
-            self.selected[slots] = 0
             self.counts[slots] = 0
 
         if self.stream is not None:

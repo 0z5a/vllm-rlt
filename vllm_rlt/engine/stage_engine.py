@@ -3,6 +3,8 @@ import math
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, cast
 
+import torch
+
 from vllm_rlt.attention import BackendCapabilities, create_backend
 from vllm_rlt.config import (
     CacheConfig,
@@ -134,8 +136,16 @@ class StageEngine:
             if speculative_config.mode != "block":
                 raise ValueError("sparse decode attention currently requires block speculation")
             # The index buffer never truncates the algorithm: capacity must
-            # hold the worst-case retained count over the model context.
-            required_keys = math.ceil(config.max_position_embeddings * sparse_decode.key_retention)
+            # hold the worst-case retained count over the supported serving
+            # context, which the caller may bound explicitly instead of paying
+            # for the model's full positional limit.
+            context_bound = sparse_decode.max_context_tokens or config.max_position_embeddings
+            if context_bound > config.max_position_embeddings:
+                raise ValueError(
+                    f"max_context_tokens {context_bound} exceeds the model context "
+                    f"{config.max_position_embeddings}"
+                )
+            required_keys = math.ceil(context_bound * sparse_decode.key_retention)
             capacity = sparse_decode.key_bucket or required_keys
             if capacity < required_keys:
                 raise ValueError(
@@ -145,15 +155,45 @@ class StageEngine:
                 )
             # Two in-flight rounds may each hold every verification row, so the
             # pool covers both rounds' live tokens with room for slot reuse.
+            slots = (
+                2 * scheduler_config.max_num_seqs * (speculative_config.num_speculative_tokens + 1)
+            )
+            # Account for the reference pool before admitting any work: it is
+            # allocated up front, so a budget that cannot fit must fail here
+            # with an actionable message instead of OOM-ing mid-batch.
+            reference_bytes = (
+                slots
+                * config.num_hidden_layers
+                * config.num_attention_heads
+                * (capacity * 4 + 4 + 4 * 2 * config.head_dim + 8)
+            )
+            if parameter.device.type == "cuda":
+                free_bytes, _ = torch.cuda.mem_get_info(parameter.device)
+                if reference_bytes > free_bytes:
+                    raise ValueError(
+                        f"sparse decode attention reference pool needs "
+                        f"{reference_bytes / 1024**3:.1f} GiB but only "
+                        f"{free_bytes / 1024**3:.1f} GiB is free; lower "
+                        f"max_context_tokens, key_retention or num_speculative_tokens"
+                    )
             self.reference_store = AttentionReferenceStore(
-                slots=2
-                * scheduler_config.max_num_seqs
-                * (speculative_config.num_speculative_tokens + 1),
+                slots=slots,
                 layers=config.num_hidden_layers,
                 heads=config.num_attention_heads,
                 head_dim=config.head_dim,
                 key_bucket=capacity,
                 device=parameter.device,
+            )
+            logger.info(
+                "sparse decode attention: %d reference slots x %d keys x %d layers x %d heads "
+                "= %.2f GiB (context bound %d, retention %.2f)",
+                slots,
+                capacity,
+                config.num_hidden_layers,
+                config.num_attention_heads,
+                self.reference_store.bytes / 1024**3,
+                context_bound,
+                sparse_decode.key_retention,
             )
             scratch += self.reference_store.bytes
         if speculative_config is not None or self.reference_store is not None:
