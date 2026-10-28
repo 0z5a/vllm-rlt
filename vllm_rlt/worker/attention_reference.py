@@ -182,7 +182,14 @@ class AttentionReferenceStore:
         if len(owners) != len(modes):
             raise ValueError("a reference plan needs one mode per row")
         slots, incarnations = [], []
-        for lease, row in owners:
+        for owner, mode in zip(owners, modes):
+            if owner is None:
+                if mode != DENSE:
+                    raise ValueError("a sparse row needs a reference owner")
+                slots.append(-1)
+                incarnations.append(0)
+                continue
+            lease, row = owner
             slot = lease.slots[row]
             binding = self._bindings.get(slot)
             if binding is None or binding != (
@@ -207,7 +214,9 @@ class AttentionReferenceStore:
         """Reject a plan whose slots were recycled or superseded."""
         if plan.store is not self:
             raise RuntimeError("attention reference plan belongs to a different store")
-        for slot, incarnation in zip(plan.slots, plan.incarnations):
+        for slot, incarnation, mode in zip(plan.slots, plan.incarnations, plan.modes):
+            if slot == -1 and mode == DENSE:
+                continue
             binding = self._bindings.get(slot)
             if binding is None or binding[2] != incarnation:
                 raise RuntimeError("stale attention reference plan for a retired token")
@@ -238,7 +247,8 @@ class AttentionReferenceStore:
         self._require_live(plan)
         if positions.shape != plan.slot_ids.shape:
             raise ValueError("reference positions need one entry per plan row")
-        self.position[plan.slot_ids] = positions.to(torch.int64)
+        rows = [row for row, slot in enumerate(plan.slots) if slot >= 0]
+        self.position[plan.slot_ids[rows]] = positions[rows].to(torch.int64)
 
     def write_reference(
         self,
