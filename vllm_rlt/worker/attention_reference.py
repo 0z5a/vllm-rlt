@@ -240,6 +240,45 @@ class AttentionReferenceStore:
             raise ValueError("reference positions need one entry per plan row")
         self.position[plan.slot_ids] = positions.to(torch.int64)
 
+    def write_reference(
+        self,
+        plan: SparseDecodePlan,
+        layer: int,
+        row: int,
+        *,
+        selected,
+        counts,
+        mass,
+        output,
+        contribution,
+    ) -> None:
+        """Publish the retained state of one capture row (reference path)."""
+        self._require_live(plan)
+        slot = plan.slots[row]
+        count = selected.shape[-1]
+        capacity = self.selected.shape[-1]
+        if count > capacity:
+            raise ValueError(f"reference capacity {capacity} cannot hold {count} retained keys")
+        self.selected[slot, layer, :, :count] = selected.to(torch.int32)
+        self.counts[slot, layer] = counts.to(torch.int32)
+        self.mass[slot, layer] = mass
+        self.output[slot, layer] = output
+        self.contribution[slot, layer] = contribution
+
+    def read_reference(self, plan: SparseDecodePlan, layer: int, row: int):
+        """Borrow the retained state of one consume row (reference path)."""
+        self._require_live(plan)
+        slot = plan.slots[row]
+        count = int(self.counts[slot, layer].max())
+        if count == 0:
+            raise RuntimeError("a consume row has no captured reference")
+        return (
+            self.selected[slot, layer, :, :count].long(),
+            self.mass[slot, layer],
+            self.output[slot, layer],
+            self.contribution[slot, layer],
+        )
+
     def accept(self, leases, accepted: torch.Tensor) -> None:
         """Invalidate the references of rejected rows on the device.
 

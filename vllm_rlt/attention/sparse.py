@@ -195,3 +195,109 @@ def sparse_correction(
     probabilities = torch.softmax(scores, dim=-1)
     new_contribution = torch.einsum("hk,hkd->hd", probabilities, values.float())
     return output - contribution + mass.float().unsqueeze(-1) * new_contribution
+
+
+def gather_retained(
+    key_cache: torch.Tensor,
+    value_cache: torch.Tensor,
+    block_table: torch.Tensor,
+    selected: torch.Tensor,
+    block_size: int,
+    groups: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Gather each query head's retained keys and values from the paged cache.
+
+    ``selected`` holds absolute key positions per query head, so every head
+    reads its own retained set. Returns ``[heads, retained, dim]`` tensors.
+    """
+    index = selected.long()
+    blocks = block_table[index // block_size]
+    offsets = index % block_size
+    kv_index = (torch.arange(index.shape[0], device=index.device) // groups)[:, None]
+    kv_index = kv_index.expand_as(index)
+    return key_cache[blocks, offsets, kv_index], value_cache[blocks, offsets, kv_index]
+
+
+def sparse_paged_attention(
+    q: torch.Tensor,
+    key_cache: torch.Tensor,
+    value_cache: torch.Tensor,
+    block_tables: torch.Tensor,
+    context_lengths: torch.Tensor,
+    plan: SparseDecodePlan,
+    *,
+    layer: int,
+) -> torch.Tensor:
+    """Reference sparse decode attention over a paged KV cache (RFC #156 3.2).
+
+    This is the numerical oracle for the sparse decode column, not an optimized
+    kernel: it walks rows on the host, reads the same paged tensors the dense
+    path reads, and publishes or consumes the retained state through the plan's
+    store. Dense rows reproduce the ordinary attention path exactly.
+
+    ``key_cache``/``value_cache`` are one layer of
+    ``[physical block, token, KV head, dimension]``; ``block_tables`` and
+    ``context_lengths`` describe the submission rows exactly as the dense
+    backend receives them.
+    """
+    store = plan.store
+    if store is None:
+        raise ValueError("a sparse decode plan needs its reference store")
+    block_size = key_cache.shape[1]
+    heads = q.shape[1]
+    groups = heads // key_cache.shape[2]
+    scale = 1.0 / math.sqrt(q.shape[-1])
+    output = torch.empty_like(q)
+    captured = consumed = False
+    for row, length in enumerate(context_lengths.tolist()):
+        if length == 0:
+            output[row].zero_()
+            continue
+        positions = torch.arange(length, device=q.device)
+        blocks = block_tables[row, positions // block_size]
+        offsets = positions % block_size
+        mode = plan.modes[row]
+        if mode == CONSUME:
+            selected, mass, reference, contribution = store.read_reference(plan, layer, row)
+            keys, values = gather_retained(
+                key_cache, value_cache, block_tables[row], selected, block_size, groups
+            )
+            output[row] = sparse_correction(q[row], keys, values, mass, reference, contribution).to(
+                q.dtype
+            )
+            consumed = True
+            continue
+        keys = key_cache[blocks, offsets]
+        values = value_cache[blocks, offsets]
+        if mode == CAPTURE:
+            reference, contribution, mass, selected = reference_statistics(
+                q[row],
+                keys,
+                values,
+                key_retention=plan.key_retention,
+                key_bucket=store.key_bucket,
+            )
+            output[row] = reference.to(q.dtype)
+            store.write_reference(
+                plan,
+                layer,
+                row,
+                selected=selected,
+                counts=torch.full((heads,), selected.shape[-1], dtype=torch.int32, device=q.device),
+                mass=mass,
+                output=reference,
+                contribution=contribution,
+            )
+            captured = True
+            continue
+        # Dense row: the ordinary attention path.
+        expanded_keys = expand_kv(keys, groups).float()
+        expanded_values = expand_kv(values, groups).float()
+        scores = torch.einsum("hd,lhd->hl", q[row].float(), expanded_keys) * scale
+        probabilities = torch.softmax(scores, dim=-1)
+        output[row] = torch.einsum("hl,lhd->hd", probabilities, expanded_values).to(q.dtype)
+    if captured:
+        store.capture(plan, layer)
+    if consumed:
+        store.consume(plan, layer)
+    return output

@@ -23,6 +23,7 @@ from vllm_rlt.attention import (
     create_backend,
     validate_backend_name,
 )
+from vllm_rlt.attention.sparse import sparse_paged_attention
 from vllm_rlt.request import ExecutionBatch
 from vllm_rlt.worker.buffers import stage_metadata
 from vllm_rlt.worker.metadata import DeviceKVMetadata, KVMetadata, MetadataBuilder
@@ -719,6 +720,20 @@ class KVCacheManager:
         self._require_live_batch(batch)
         self._validate_tensor(q, len(batch.position_ids), "q", query=True)
         if isinstance(batch, DeviceKVMetadata):
+            plan = getattr(batch, "reference_plan", None)
+            if plan is not None and not plan.dense():
+                # Reference sparse decode path: it reads the same paged tensors
+                # and publishes/consumes retained state through the plan's
+                # store. Optimized kernels consume the same plan later.
+                return sparse_paged_attention(
+                    q,
+                    self.key_cache[:, layer],
+                    self.value_cache[:, layer],
+                    batch.block_tables,
+                    batch.context_lengths,
+                    plan,
+                    layer=layer,
+                )
             return self.attention(
                 q,
                 self.key_cache[:, layer],

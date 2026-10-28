@@ -12,8 +12,14 @@ import math
 import pytest
 import torch
 
-from tests.helpers import bootstrap_speculation, make_speculative_engine, tiny_ouro_model
+from tests.helpers import (
+    bootstrap_speculation,
+    make_cpu_cache,
+    make_speculative_engine,
+    tiny_ouro_model,
+)
 from vllm_rlt import SamplingParams, SparseDecodeAttentionConfig
+from vllm_rlt.attention import sparse as sparse_module
 from vllm_rlt.attention.sparse import (
     CAPTURE,
     CONSUME,
@@ -296,6 +302,139 @@ def test_device_metadata_carries_reference_plan():
 
 
 # ---------------------------------------------------------------------------
+# End-to-end decode through the model, the paged KV cache and attention
+# ---------------------------------------------------------------------------
+
+
+def step_metadata(cache, request_id, position, depth, plan=None):
+    """Device-style recurrent metadata for one token at one loop depth."""
+    allocation = cache._get_allocation(request_id)
+    page = position // cache.block_size
+    table = torch.tensor([allocation.block_tables[depth][: page + 1]], dtype=torch.int32)
+    return cache.metadata_builder.prepare_device(
+        allocations=((request_id, allocation),),
+        position_ids=torch.tensor([position], dtype=torch.int64),
+        write_blocks=table[:, page].long(),
+        write_offsets=torch.tensor([position % cache.block_size], dtype=torch.int64),
+        block_tables=table,
+        context_lengths=torch.tensor([position + 1], dtype=torch.int32),
+        reference_plan=plan,
+    )
+
+
+def decode(model, cache, request_id, tokens, *, store=None, lease=None, retention=1.0):
+    """Serial greedy decode: prelude, every loop depth, coda, next token."""
+    assert cache.allocate(request_id, len(tokens) + 1)
+    logits = []
+    for position, token in enumerate(tokens):
+        hidden = model.prelude(torch.tensor([token]))
+        for depth in range(model.config.total_ut_steps):
+            plan = None
+            mode = reference_mode(depth)
+            if store is not None and mode != DENSE:
+                plan = store.build_plan([(lease, 0)], [mode], key_retention=retention)
+            metadata = step_metadata(cache, request_id, position, depth, plan)
+            hidden, _ = model.recurrent_prepared(hidden, metadata, cache, compute_gate=False)
+        logits.append(model.coda(hidden))
+    return logits
+
+
+def make_reference_store(model, **overrides):
+    values = dict(
+        slots=1,
+        layers=model.config.num_hidden_layers,
+        heads=model.config.num_attention_heads,
+        head_dim=model.config.head_dim,
+        key_bucket=model.config.max_position_embeddings,
+        device="cpu",
+    )
+    values.update(overrides)
+    return AttentionReferenceStore(**values)
+
+
+def test_sparse_decode_matches_dense_through_model_and_kv():
+    # Full retention is the RFC's control: the corrected output must reproduce
+    # the dense path through the real model, paged KV cache and attention.
+    model = tiny_ouro_model()
+    tokens = [2, 3, 4, 5, 7]
+    dense = decode(model, make_cpu_cache(model.config), "dense", tokens)
+    store = make_reference_store(model)
+    lease = store.reserve("sparse", 0, 1, generation=1)
+    sparse = decode(
+        model,
+        make_cpu_cache(model.config),
+        "sparse",
+        tokens,
+        store=store,
+        lease=lease,
+        retention=1.0,
+    )
+    assert store.uses.sum() > 0, "the sparse path never consumed a reference"
+    for expected, actual in zip(dense, sparse):
+        assert torch.allclose(actual, expected, atol=1e-4), float((actual - expected).abs().max())
+
+
+def test_sparse_decode_diverges_as_retention_shrinks():
+    model = tiny_ouro_model()
+    tokens = [2, 3, 4, 5, 7, 9, 11]
+    dense = decode(model, make_cpu_cache(model.config), "dense", tokens)
+    errors = {}
+    for retention in (1.0, 0.5, 0.25):
+        store = make_reference_store(model)
+        lease = store.reserve("sparse", 0, 1, generation=1)
+        sparse = decode(
+            model,
+            make_cpu_cache(model.config),
+            "sparse",
+            tokens,
+            store=store,
+            lease=lease,
+            retention=retention,
+        )
+        errors[retention] = max(
+            float((actual - expected).abs().max()) for expected, actual in zip(dense, sparse)
+        )
+    assert errors[1.0] < 1e-4
+    assert errors[0.25] > errors[1.0]
+    assert errors[0.5] <= errors[0.25] * 4
+
+
+def test_sparse_consume_reads_only_retained_keys(monkeypatch):
+    model = tiny_ouro_model()
+    tokens = [2, 3, 4, 5]
+    read_counts = []
+    original = sparse_module.gather_retained
+
+    def recording(*args, **kwargs):
+        keys, values = original(*args, **kwargs)
+        read_counts.append(keys.shape[1])
+        return keys, values
+
+    monkeypatch.setattr(sparse_module, "gather_retained", recording)
+    store = make_reference_store(model)
+    lease = store.reserve("sparse", 0, 1, generation=1)
+    decode(
+        model,
+        make_cpu_cache(model.config),
+        "sparse",
+        tokens,
+        store=store,
+        lease=lease,
+        retention=0.5,
+    )
+    # Two consuming loops per token, each reading only the retained budget, and
+    # every layer gathers its own retained keys.
+    per_token = model.config.num_hidden_layers * 2
+    expected = [
+        retained_count(position + 1, 0.5)
+        for position in range(len(tokens))
+        for _ in range(per_token)
+    ]
+    assert read_counts == expected
+    assert max(read_counts) < len(tokens)
+
+
+# ---------------------------------------------------------------------------
 # Async speculative integration (GPU)
 # ---------------------------------------------------------------------------
 
@@ -408,6 +547,35 @@ def test_async_sparse_reference_incarnations_advance_across_rounds():
     e.abort_request("r")
     drain(e)
     assert store.outstanding == 0
+
+
+@pytest.mark.gpu
+def test_sparse_engine_matches_dense_tokens_at_full_retention():
+    # End-to-end through the serving engine: full retention must reproduce the
+    # dense engine's tokens exactly, including async speculative rounds.
+    def run(sparse):
+        model = tiny("cuda")
+        engine = make_speculative_engine(model, sparse=sparse)
+        prompts = [[2, 3, 4], [5, 6]]
+        for i, prompt in enumerate(prompts):
+            engine.add_request(
+                str(i), prompt, SamplingParams(max_tokens=12 - 4 * i, ignore_eos=True)
+            )
+        outputs = {}
+        for _ in range(1000):
+            if not engine.has_unfinished_requests():
+                break
+            for output in engine.step():
+                outputs[output.request_id] = output
+        tokens = [outputs[str(i)].token_ids for i in range(len(prompts))]
+        outstanding = engine.reference_store.outstanding if engine.reference_store else 0
+        engine.close()
+        return tokens, outstanding
+
+    dense, _ = run(None)
+    sparse, outstanding = run(SparseDecodeAttentionConfig(enabled=True, key_retention=1.0))
+    assert sparse == dense
+    assert outstanding == 0
 
 
 @pytest.mark.gpu
