@@ -732,6 +732,7 @@ class KVCacheManager:
                 batch.context_lengths,
                 plan,
                 layer=layer,
+                dense_attention=self.attention,
             )
         if isinstance(batch, DeviceKVMetadata):
             return self.attention(

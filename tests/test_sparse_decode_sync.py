@@ -155,6 +155,73 @@ def test_backend_explicitly_declares_sparse_reference_support():
     assert selected.capabilities.sparse_decode
 
 
+@pytest.mark.gpu
+@pytest.mark.parametrize("kv_heads", [2, 16])
+@pytest.mark.parametrize("retention", [0.1, 1.0])
+def test_cuda_sparse_preserves_dense_backend_outputs(kv_heads, retention):
+    from vllm_rlt.core.kv_cache_manager import KVCacheManager
+    from vllm_rlt.worker.attention_reference import AttentionReferenceStore
+
+    # BF16 rounding of Torch softmax and Triton split-KV can differ even for
+    # identical operands. Dense/capture rows and the full-retention control
+    # must preserve the configured backend, including in a mixed plan.
+    torch.manual_seed(157)
+    rows, heads, dim, length = 32, 16, 128, 130
+    cache = KVCacheManager(
+        1,
+        kv_heads,
+        dim,
+        rows * 9,
+        16,
+        1,
+        device="cuda",
+        dtype=torch.bfloat16,
+        backend="triton",
+    )
+    store = AttentionReferenceStore(
+        slots=rows, layers=1, heads=heads, head_dim=dim, key_bucket=length, device="cuda"
+    )
+    ids = [str(i) for i in range(rows)]
+    owners = []
+    for rid in ids:
+        assert cache.allocate(rid, length)
+        keys = torch.randn(length, kv_heads, dim, device="cuda", dtype=torch.bfloat16)
+        values = torch.randn_like(keys)
+        cache.write(0, [rid] * length, [0] * length, list(range(length)), keys, values)
+        lease = store.reserve(rid, 0, 1, generation=1)
+        owners.append((lease, 0))
+    batch = cache._prepare_batch(ids, [0] * rows, [length - 1] * rows)
+    q = torch.randn(rows, heads, dim, device="cuda", dtype=torch.bfloat16)
+    expected = cache._attend_prepared(0, batch, q)
+    modes = [DENSE] + [CAPTURE] * (rows - 1)
+    plan = store.build_plan(owners, modes, key_retention=retention)
+    actual = cache._attend_prepared(0, replace(batch, reference_plan=plan), q)
+    torch.testing.assert_close(actual, expected, atol=0, rtol=0)
+    for row in range(1, rows):
+        torch.testing.assert_close(
+            store.output[plan.slots[row], 0], expected[row].float(), atol=0, rtol=0
+        )
+    if retention == 1.0:
+        # Changed later-loop Q/K/V prevents an identity-only correction test.
+        q = torch.randn_like(q)
+        cache._write_prepared(
+            0, batch, torch.randn_like(keys[:rows]), torch.randn_like(keys[:rows])
+        )
+        expected = cache._attend_prepared(0, batch, q)
+        consume = store.build_plan(
+            owners, [DENSE] + [CONSUME] * (rows - 1), key_retention=retention
+        )
+        actual = cache._attend_prepared(0, replace(batch, reference_plan=consume), q)
+        torch.testing.assert_close(actual, expected, atol=0, rtol=0)
+        assert int(store.uses.sum()) == rows - 1
+    for lease, _ in owners:
+        store.release(lease)
+    for rid in ids:
+        cache.free(rid)
+    torch.cuda.synchronize()
+    assert store.outstanding == cache.num_used_blocks == 0
+
+
 @pytest.mark.parametrize("draft", [1, 2])
 def test_sparse_verification_matches_serial_same_input_hidden_logits_and_kv(draft):
     from tests.helpers import make_cpu_cache

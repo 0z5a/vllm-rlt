@@ -28,6 +28,7 @@ depends on a device readback.
 """
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import torch
@@ -227,6 +228,7 @@ def sparse_paged_attention(
     plan: SparseDecodePlan,
     *,
     layer: int,
+    dense_attention: Callable | None = None,
 ) -> torch.Tensor:
     """Reference sparse decode attention over a paged KV cache (RFC #156 3.2).
 
@@ -238,7 +240,10 @@ def sparse_paged_attention(
     ``key_cache``/``value_cache`` are one layer of
     ``[physical block, token, KV head, dimension]``; ``block_tables`` and
     ``context_lengths`` describe the submission rows exactly as the dense
-    backend receives them.
+    backend receives them. When supplied, ``dense_attention`` preserves that
+    backend's outputs for dense/capture rows and the full-retention control.
+    Omitting it forces the independent Torch arithmetic oracle, including the
+    full-retention correction; that path need not be bitwise equal to Triton.
     """
     store = plan.store
     if store is None:
@@ -248,6 +253,13 @@ def sparse_paged_attention(
     groups = heads // key_cache.shape[2]
     scale = 1.0 / math.sqrt(q.shape[-1])
     output = torch.empty_like(q)
+    dense_output = None
+    if dense_attention is not None and (
+        plan.key_retention == 1.0 or any(mode != CONSUME for mode in plan.modes)
+    ):
+        # Keep the original packed geometry: slicing rows can also change a
+        # backend's numerics. Only the rows needing dense output use this result.
+        dense_output = dense_attention(q, key_cache, value_cache, block_tables, context_lengths)
     captured = consumed = False
     for row, length in enumerate(context_lengths.tolist()):
         if length == 0:
@@ -259,6 +271,10 @@ def sparse_paged_attention(
         mode = plan.modes[row]
         if mode == CONSUME:
             selected, mass, reference, contribution = store.read_reference(plan, layer, row)
+            if dense_output is not None and plan.key_retention == 1.0:
+                output[row] = dense_output[row]
+                consumed = True
+                continue
             keys, values = gather_retained(
                 key_cache, value_cache, block_tables[row], selected, block_size, groups
             )
@@ -277,6 +293,10 @@ def sparse_paged_attention(
                 key_retention=plan.key_retention,
                 key_bucket=store.key_bucket,
             )
+            if dense_output is not None:
+                # O_ref is the output actually fed into the recurrence. Keep
+                # selector probabilities/contributions in the Torch FP32 oracle.
+                reference = dense_output[row].float()
             output[row] = reference.to(q.dtype)
             store.write_reference(
                 plan,
@@ -291,6 +311,9 @@ def sparse_paged_attention(
             captured = True
             continue
         # Dense row: the ordinary attention path.
+        if dense_output is not None:
+            output[row] = dense_output[row]
+            continue
         expanded_keys = expand_kv(keys, groups).float()
         expanded_values = expand_kv(values, groups).float()
         scores = torch.einsum("hd,lhd->hl", q[row].float(), expanded_keys) * scale

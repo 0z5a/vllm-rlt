@@ -30,6 +30,7 @@ from vllm_rlt.attention.sparse import (
     reference_statistics,
     retained_count,
     sparse_correction,
+    sparse_paged_attention,
 )
 from vllm_rlt.worker.attention_reference import AttentionReferenceStore
 from vllm_rlt.worker.metadata import MetadataBuilder
@@ -157,6 +158,29 @@ def test_full_retention_matches_dense_attention():
     assert positions.shape[1] == length
     assert torch.allclose(corrected, dense, atol=1e-5)
     assert torch.allclose(output, dense, atol=1e-5)
+
+
+@pytest.mark.parametrize("retention, expected", [(0.5, 23.5), (1.0, 40.0)])
+def test_paged_oracle_forces_correction_without_backend_shortcut(retention, expected):
+    store = make_store(slots=1, layers=1, heads=1, head_dim=1, key_bucket=3)
+    lease = store.reserve("r", 0, 1, generation=1)
+    q = torch.ones(1, 1, 1)
+    keys = torch.zeros(1, 4, 1, 1)
+    values = torch.zeros_like(keys)
+    keys[0, :3, 0, 0] = torch.log(torch.tensor([0.1, 0.3, 0.6]))
+    values[0, :3, 0, 0] = torch.tensor([10.0, 20.0, 30.0])
+    tables, lengths = torch.tensor([[0]], dtype=torch.int32), torch.tensor([3])
+    capture = store.build_plan([(lease, 0)], [CAPTURE], key_retention=retention)
+    # No dense callback: exercise the actual paged Torch oracle even at r=1.
+    output = sparse_paged_attention(q, keys, values, tables, lengths, capture, layer=0)
+    assert output.item() == pytest.approx(25.0)
+    keys[0, :3, 0, 0] = torch.log(torch.tensor([1.0, 3.0, 1.0]))
+    values[0, :3, 0, 0] = torch.tensor([100.0, 20.0, 40.0])
+    consume = store.build_plan([(lease, 0)], [CONSUME], key_retention=retention)
+    output = sparse_paged_attention(q, keys, values, tables, lengths, consume, layer=0)
+    assert output.item() == pytest.approx(expected)
+    assert store.uses.item() == 1
+    store.release(lease)
 
 
 # ---------------------------------------------------------------------------
