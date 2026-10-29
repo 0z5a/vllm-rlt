@@ -327,12 +327,27 @@ def reference_paged_attention(
 
 
 def sparse_paged_attention(
-    q, key_cache, value_cache, block_tables, context_lengths, plan, *, layer
+    q,
+    key_cache,
+    value_cache,
+    block_tables,
+    context_lengths,
+    plan,
+    *,
+    layer,
+    dense_attention: Callable | None = None,
 ):
     """Use bounded row batches on CUDA, retaining the scalar numerical oracle."""
     implementation = batched_paged_attention if q.is_cuda else reference_paged_attention
     return implementation(
-        q, key_cache, value_cache, block_tables, context_lengths, plan, layer=layer
+        q,
+        key_cache,
+        value_cache,
+        block_tables,
+        context_lengths,
+        plan,
+        layer=layer,
+        dense_attention=dense_attention,
     )
 
 
@@ -357,7 +372,15 @@ def _rowwise_product(equation, left, right):
 
 
 def batched_paged_attention(
-    q, key_cache, value_cache, block_tables, context_lengths, plan, *, layer
+    q,
+    key_cache,
+    value_cache,
+    block_tables,
+    context_lengths,
+    plan,
+    *,
+    layer,
+    dense_attention: Callable | None = None,
 ):
     """Batch equal-length rows without padding or changing retained-key selection.
 
@@ -365,12 +388,25 @@ def batched_paged_attention(
     as the scalar oracle. Grouping exact lengths avoids padded reductions and
     bounds gather scratch independently of the reference pool's key capacity.
     There is one count readback per layer, rather than one per consume row.
+
+    ``dense_attention`` keeps the numerical contract of the scalar path: dense
+    and capture rows publish the selected backend's output, the actually
+    rounded recurrence input becomes ``O_ref``, and a full-retention consume row
+    returns that same backend output as the control. Selector probabilities and
+    the retained contribution stay in the Torch FP32 oracle.
     """
     store = plan.store
     if store is None:
         raise ValueError("a sparse decode plan needs its reference store")
     store._require_live(plan)
     lengths = context_lengths.tolist()
+    dense_output = None
+    if dense_attention is not None and (
+        plan.key_retention == 1.0 or any(mode != CONSUME for mode in plan.modes)
+    ):
+        # Keep the original packed geometry: slicing rows can also change a
+        # backend's numerics.
+        dense_output = dense_attention(q, key_cache, value_cache, block_tables, context_lengths)
     consume_rows = [r for r, mode in enumerate(plan.modes) if mode == CONSUME and lengths[r]]
     counts = {}
     if consume_rows:
@@ -403,6 +439,11 @@ def batched_paged_attention(
             tables = block_tables[row_ids]
             batch_index = torch.arange(len(rows), device=q.device)[:, None, None]
             if mode == CONSUME:
+                if dense_output is not None and plan.key_retention == 1.0:
+                    # Full retention is the control: same backend as dense.
+                    output[row_ids] = dense_output[row_ids]
+                    consumed = True
+                    continue
                 columns = torch.arange(extent, device=q.device)[None, None, :]
                 selected = store.selected[slots[:, None, None], layer, head_index, columns].long()
                 blocks = tables[batch_index, selected // block_size]
@@ -423,11 +464,18 @@ def batched_paged_attention(
             positions = torch.arange(extent, device=q.device)
             blocks = tables[:, positions // block_size]
             offsets = positions % block_size
+            if mode == DENSE and dense_output is not None:
+                output[row_ids] = dense_output[row_ids]
+                continue
             keys = key_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
             values = value_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
             scores = _rowwise_product("hd,lhd->hl", queries, keys) * scale
             probabilities = torch.softmax(scores, dim=-1)
             reference = _rowwise_product("hl,lhd->hd", probabilities, values)
+            if dense_output is not None:
+                # O_ref is the output actually fed into the recurrence; the
+                # selector state below stays in the Torch FP32 oracle.
+                reference = dense_output[row_ids].float()
             output[row_ids] = reference.to(q.dtype)
             if mode == CAPTURE:
                 count = retained_count(extent, plan.key_retention)
