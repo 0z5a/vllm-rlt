@@ -955,11 +955,25 @@ class Scheduler:
         exporting = self.exports_request is not None and self.exports_request(request)
         return RequestPhase.TRANSFERRING if exporting else RequestPhase.CODA
 
-    def _apply_split_prefill_progress(
+    def _advance_prefill_depth_frontier(
         self,
         request: Request,
-        phase: RequestPhase,
+        *,
+        depth: int,
+        token_end: int,
+    ) -> bool:
+        """Advance one submitted prompt span through one recurrent depth."""
+        request.prefill_depth_ranges[depth][0] = token_end
+        if depth + 1 < self.total_ut_steps:
+            request.prefill_depth_ranges[depth + 1][1] = token_end
+            return False
+        request.num_prefilled_tokens = token_end
+        return True
+
+    def _apply_split_prefill_progress(
+        self,
         scheduled_request: ScheduledRequest,
+        phase: RequestPhase,
         *,
         loop_count: int | None = None,
         event=None,
@@ -969,6 +983,7 @@ class Scheduler:
         The device work may still be pending. The event orders prefix publication
         and consumers with that work; this transition does not wait for it.
         """
+        request = scheduled_request.request
         total_depths = self.total_ut_steps
         start = scheduled_request.token_start
         end = start + scheduled_request.token_count
@@ -990,19 +1005,19 @@ class Scheduler:
         boundaries = request.prefill_depth_ranges
         if depth + loop_count > total_depths:
             raise ValueError("prefill execution range exceeds model loop depth")
+        final_depth_reached = False
         for offset in range(loop_count):
             current_depth = depth + offset
             if phase == RequestPhase.PREFILLING_RECURRENT and (
                 boundaries[current_depth][0] != start or boundaries[current_depth][1] < end
             ):
                 raise RuntimeError("prefill execution range crosses an incomplete depth frontier")
-            boundaries[current_depth][0] = end
-            if current_depth + 1 < total_depths:
-                boundaries[current_depth + 1][1] = end
-            else:
-                request.num_prefilled_tokens = end
+            final_depth_reached = self._advance_prefill_depth_frontier(
+                request,
+                depth=current_depth,
+                token_end=end,
+            )
 
-        final_depth_reached = depth + loop_count == total_depths
         chunk_complete = final_depth_reached and end == request.num_preluded_tokens
         if not final_depth_reached or not chunk_complete:
             self.enqueue(request, RequestPhase.PREFILLING_RECURRENT)
@@ -1033,22 +1048,24 @@ class Scheduler:
         event=None,
     ) -> PrefillProgress:
         """One prompt frontier update for local and remotely consumed outputs."""
+        if phase != RequestPhase.PREFILL:
+            return self._apply_split_prefill_progress(
+                scheduled_request,
+                phase,
+                loop_count=loop_count,
+                event=event,
+            )
+
         request = scheduled_request.request
-        if phase == RequestPhase.PREFILL:
-            request.num_prefilled_tokens += scheduled_request.token_count
-            final = request.num_prefilled_tokens == len(request.prompt_token_ids)
-            self.cache_manager.publish_prefix(
-                request.request_id, request.prompt_token_ids, request.num_prefilled_tokens, event
-            )
-            if final:
-                request.loops_done = self.total_ut_steps
-            self.enqueue(
-                request, self._prompt_destination(request) if final else RequestPhase.PREFILL
-            )
-            return PrefillProgress(True, final)
-        return self._apply_split_prefill_progress(
-            request, phase, scheduled_request, loop_count=loop_count, event=event
+        request.num_prefilled_tokens += scheduled_request.token_count
+        final = request.num_prefilled_tokens == len(request.prompt_token_ids)
+        self.cache_manager.publish_prefix(
+            request.request_id, request.prompt_token_ids, request.num_prefilled_tokens, event
         )
+        if final:
+            request.loops_done = self.total_ut_steps
+        self.enqueue(request, self._prompt_destination(request) if final else RequestPhase.PREFILL)
+        return PrefillProgress(True, final)
 
     def _apply_wavefront_prefill_batch_progress(
         self,
@@ -1073,12 +1090,16 @@ class Scheduler:
 
         transfer_start = request.prefill_reclaimable_tokens
         if phase == RequestPhase.PREFILLING_PRELUDE:
-            frontier = request.num_preluded_tokens
-            for item in scheduled_requests:
-                if item.token_start != frontier:
-                    raise RuntimeError("wavefront prelude contains a prompt-range gap")
-                frontier += item.token_count
-            request.num_preluded_tokens = frontier
+            first = scheduled_requests[0]
+            if first.token_start != request.num_preluded_tokens:
+                raise RuntimeError("wavefront prelude contains a prompt-range gap")
+            if any(
+                previous.token_start + previous.token_count != current.token_start
+                for previous, current in zip(scheduled_requests, scheduled_requests[1:])
+            ):
+                raise RuntimeError("wavefront prelude contains a prompt-range gap")
+            last = scheduled_requests[-1]
+            request.num_preluded_tokens = last.token_start + last.token_count
             progress = PrefillProgress(False, False, transfer_start)
             representative = scheduled_requests[0]
             next_phase = (
@@ -1093,15 +1114,15 @@ class Scheduler:
                 depth = item.depth
                 start = item.token_start
                 end = start + item.token_count
-                boundaries = request.prefill_depth_ranges
-                if boundaries[depth][0] != start:
+                if request.prefill_depth_ranges[depth][0] != start:
                     raise RuntimeError("stale wavefront recurrent depth frontier")
-                boundaries[depth][0] = end
-                if depth + 1 < self.total_ut_steps:
-                    boundaries[depth + 1][1] = end
+                if not self._advance_prefill_depth_frontier(
+                    request,
+                    depth=depth,
+                    token_end=end,
+                ):
                     continue
 
-                request.num_prefilled_tokens = end
                 chunk_end = min(
                     len(request.prompt_token_ids),
                     item.chunk_start + self.config.prefill_chunk_size,
