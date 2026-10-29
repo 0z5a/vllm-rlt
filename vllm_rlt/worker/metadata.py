@@ -39,6 +39,7 @@ class KVMetadata:
     writable: bool
     cu_seqlens_q: torch.Tensor | None = None
     max_seqlen_q: int = 1
+    reference_plan: object | None = None
 
 
 @dataclass(frozen=True, eq=False)
