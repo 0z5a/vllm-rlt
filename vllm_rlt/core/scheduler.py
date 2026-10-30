@@ -898,9 +898,14 @@ class Scheduler:
             return True
 
         tasks = []
-        prelude_cursors = {
-            request.request_id: request.num_preluded_tokens for request in candidates
-        } if phase == RequestPhase.PREFILLING_PRELUDE else None
+        prelude_cursors = (
+            {
+              request.request_id: request.num_preluded_tokens 
+              for request in candidates
+            }
+            if phase == RequestPhase.PREFILLING_PRELUDE 
+            else None
+        )
         for depth in range(total_depths):
             for owner_index, request in enumerate(candidates):
                 request_id = request.request_id
