@@ -1097,16 +1097,12 @@ class Scheduler:
 
         transfer_start = request.prefill_reclaimable_tokens
         if phase == RequestPhase.PREFILLING_PRELUDE:
-            first = scheduled_requests[0]
-            if first.token_start != request.num_preluded_tokens:
-                raise RuntimeError("wavefront prelude contains a prompt-range gap")
-            if any(
-                previous.token_start + previous.token_count != current.token_start
-                for previous, current in zip(scheduled_requests, scheduled_requests[1:])
-            ):
-                raise RuntimeError("wavefront prelude contains a prompt-range gap")
-            last = scheduled_requests[-1]
-            request.num_preluded_tokens = last.token_start + last.token_count
+            frontier = request.num_preluded_tokens
+            for item in scheduled_requests:
+                if item.token_start != frontier:
+                    raise RuntimeError("wavefront prelude contains a prompt-range gap")
+                frontier += item.token_count
+            request.num_preluded_tokens = frontier
             progress = PrefillProgress(False, False, transfer_start)
             representative = scheduled_requests[0]
             next_phase = (
