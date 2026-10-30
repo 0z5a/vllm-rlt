@@ -899,11 +899,8 @@ class Scheduler:
 
         tasks = []
         prelude_cursors = (
-            {
-              request.request_id: request.num_preluded_tokens 
-              for request in candidates
-            }
-            if phase == RequestPhase.PREFILLING_PRELUDE 
+            {request.request_id: request.num_preluded_tokens for request in candidates}
+            if phase == RequestPhase.PREFILLING_PRELUDE
             else None
         )
         for depth in range(total_depths):
@@ -914,7 +911,7 @@ class Scheduler:
                 if request_id in blocked or request.phase != phase:
                     continue
                 if phase == RequestPhase.PREFILLING_PRELUDE:
-                    assert(prelude_cursors)
+                    assert prelude_cursors is not None
                     start, end = prelude_cursors[request_id], len(request.prompt_token_ids)
                 else:
                     start, end = request.prefill_depth_ranges[depth]
@@ -931,7 +928,7 @@ class Scheduler:
                 if scheduled_request is None or not accept_task(request, scheduled_request):
                     continue
                 if phase == RequestPhase.PREFILLING_PRELUDE:
-                    assert(prelude_cursors)
+                    assert prelude_cursors is not None
                     prelude_cursors[request_id] += scheduled_request.token_count
                 tasks.append((owner_index, scheduled_request))
         tasks.sort(key=lambda item: (item[0], item[1].token_start))
