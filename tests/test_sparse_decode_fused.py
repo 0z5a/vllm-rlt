@@ -109,6 +109,50 @@ def test_fast_launches_match_triton_dispatch_bit_for_bit(context, monkeypatch):
         assert torch.equal(a, b)
 
 
+@pytest.mark.gpu
+def test_consume_scratch_follows_the_head_dimension(monkeypatch):
+    """A stream's consume scratch must not be reused across head dimensions."""
+    from vllm_rlt.kernels import sparse_decode
+    from vllm_rlt.kernels.paged_attention import TritonPagedAttention
+
+    def consume(dim):
+        rows, heads, block_size, pages = 3, 4, 16, 5
+        q, keys, values, tables = _paged(rows, heads, 2, dim, pages, block_size, torch.float32, 4)
+        lengths = torch.tensor([7, 33, 80], device="cuda", dtype=torch.int32)
+        store = make_store(
+            slots=rows,
+            layers=1,
+            heads=heads,
+            head_dim=dim,
+            key_bucket=80,
+            device="cuda",
+            implementation="fused",
+        )
+        lease = store.reserve("r", 0, rows, generation=1)
+        owners = [(lease, row) for row in range(rows)]
+        for mode in (CAPTURE, CONSUME):
+            plan = store.build_plan(owners, [mode] * rows, key_retention=0.25)
+            output = sparse_decode.fused_paged_attention(
+                q,
+                keys,
+                values,
+                tables,
+                lengths,
+                plan,
+                layer=0,
+                dense_attention=TritonPagedAttention() if mode == CAPTURE else None,
+            )
+        torch.cuda.synchronize()
+        return output
+
+    monkeypatch.setattr(sparse_decode, "_CONSUME_WORKSPACE", {})
+    fresh = consume(128)
+    sparse_decode._CONSUME_WORKSPACE.clear()
+    consume(16)
+    # The same stream now holds 16-wide scratch; a 128-wide consume must regrow it.
+    assert torch.equal(consume(128), fresh)
+
+
 def _paged(rows, heads, kv_heads, dim, pages, block_size, dtype, seed):
     generator = torch.Generator(device="cuda").manual_seed(seed)
     tables = torch.randperm(rows * pages, device="cuda", generator=generator)

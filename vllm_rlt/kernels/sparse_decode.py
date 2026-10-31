@@ -1056,7 +1056,12 @@ def _consume_workspace(device, rows, heads, block_d):
     """Consume split parts, grown per stream and reused across layers."""
     stream = _current_stream(device)
     entry = _CONSUME_WORKSPACE.get((device, stream))
-    if entry is None or entry[0].shape[0] < rows or entry[0].shape[1] != heads:
+    if (
+        entry is None
+        or entry[0].shape[0] < rows
+        or entry[0].shape[1] != heads
+        or entry[2].shape[-1] != block_d
+    ):
         empty = lambda *size: torch.empty(size, device=device, dtype=torch.float32)  # noqa: E731
         entry = (
             empty(rows, heads, NUM_SPLITS),
