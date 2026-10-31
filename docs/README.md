@@ -7,6 +7,7 @@ an environment to receiving the first generated response. The
 | Guide | Topics |
 | --- | --- |
 | [Developer Must-Read](developer-guide.md) | Requirement understanding, correctness, performance analysis, refactoring rules, and completion criteria |
+| [Native kernel development](kernels.md) | Optional CUDA extension, operator layout, and SiLU-and-Mul reference contract |
 | [First-run user guide](launching.md) | Environment setup, model download, server startup, first request, CLI, Python API, and troubleshooting |
 | [Unified architecture](unified_execution.md) | Stage process boundaries, component responsibilities, shared resources and loop-level execution |
 | [Model and KV semantics](design.md) | PRELUDE/RECURRENT/CODA, request progress and depth-specific history |
