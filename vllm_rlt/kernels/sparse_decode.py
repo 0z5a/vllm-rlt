@@ -302,8 +302,7 @@ _LAUNCH_CHECK = False
 def _key_function(args, constexpr):
     """Compile the specialization key of one argument layout, as Triton's binder does.
 
-    The key keeps every argument's type, so a call with a different layout
-    misses and takes Triton's dispatch.
+    The layout is the arguments' types; each layout gets its own function.
     """
     terms = []
     for i, value in enumerate(args):
@@ -315,8 +314,10 @@ def _key_function(args, constexpr):
             terms.append(f"a[{i}] == 1, a[{i}] & 15 == 0, -2147483648 <= a[{i}] < 2147483648")
         elif type(value) is not float:
             return None
+    if not terms:
+        return lambda a: ()
     body = ", ".join(terms)
-    return eval(f"lambda a: (tuple(map(type, a)), {body})")  # noqa: S307 - built from indices only
+    return eval(f"lambda a: ({body},)")  # noqa: S307 - built from indices only
 
 
 class _Launcher:
@@ -333,7 +334,7 @@ class _Launcher:
         if not _FAST_LAUNCH:
             self.kernel[grid](*args, **meta)
             return
-        layout = (len(args), len(grid))
+        layout = (tuple(map(type, args)), len(grid))
         keyed = self.keys.get(layout)
         if keyed is None:
             keyed = self.keys[layout] = _key_function(args, self.constexpr)
@@ -341,7 +342,7 @@ class _Launcher:
             self.kernel[grid](*args, **meta)
             return
         device = _driver.active.get_current_device()
-        key = (device, keyed(args), tuple(meta.items()))
+        key = (device, layout, keyed(args), tuple(meta.items()))
         entry = self.compiled.get(key)
         if entry is None:
             compiled = self.kernel[grid](*args, **meta)
