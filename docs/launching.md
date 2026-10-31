@@ -62,6 +62,26 @@ python -c "import torch; print('PyTorch:', torch.__version__, 'CUDA:', torch.ver
 Use your allocated GPU ID in place of `0`. If your job scheduler already sets
 `CUDA_VISIBLE_DEVICES`, keep its value and skip the export.
 
+### Optional: build native CUDA kernels
+
+The ordinary installation above uses Torch for Ouro's SiLU-and-Mul operation.
+To enable the fused native CUDA implementation, also install a compatible CUDA
+toolkit with `nvcc` and a C++ compiler. The NVIDIA driver and PyTorch CUDA runtime
+alone do not provide the compiler. After the ordinary installation and GPU check,
+run from the repository root in the same environment:
+
+```bash
+uv pip install setuptools wheel ninja
+env VLLM_RLT_BUILD_CUDA=1 uv pip install --no-build-isolation -e .
+```
+
+This compiles and installs `vllm_rlt._C` using the environment's existing PyTorch.
+Ouro selects the native kernel automatically for CUDA inputs; no server flag is
+needed. Without the extension, it retains the Torch implementation. After changing
+CUDA or C++ sources, rerun the build command and restart the server or Python
+process. See [native kernel development](kernels.md#build-and-reference-checks)
+for wheel builds, target GPU architectures and GPU validation commands.
+
 ## 5. Download the model and tokenizer
 
 Download the pinned checkpoint once, including tokenizer files. This separates
