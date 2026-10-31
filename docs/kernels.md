@@ -75,14 +75,16 @@ CUDA Graph capture/replay.
 
 ## Build and reference checks
 
-Ordinary `pip install .` remains Python-only. To build the optional extension,
-use an environment with a compatible CUDA PyTorch and the CUDA toolkit (including
-`nvcc`) already installed. A driver alone is insufficient. Run these commands
-with the Python interpreter used for inference:
+The extension builds automatically when the build environment has CUDA-enabled
+PyTorch, a CUDA toolkit with `nvcc`, and a visible GPU. PyTorch locates the toolkit
+and detects the visible GPUs' target architectures. No project build switch or
+manual architecture setting is needed. A compatible C++ compiler is also required;
+a driver alone is insufficient. Run these commands with the Python interpreter
+used for inference, keeping your allocated GPU visible:
 
 ```bash
-python -m pip install setuptools wheel ninja
-VLLM_RLT_BUILD_CUDA=1 python -m pip install --no-build-isolation -e .
+python -m pip install "torch>=2.5" setuptools wheel ninja
+python -m pip install --no-build-isolation -e .
 python -m pytest tests/test_activation.py -q
 CUDA_VISIBLE_DEVICES=<allocated_gpu> python -m pytest \
   tests/test_activation.py --run-gpu -q
@@ -92,21 +94,26 @@ CUDA_VISIBLE_DEVICES=<allocated_gpu> python -m pytest \
 the C++ bindings and CUDA sources with the host compiler and `nvcc`, then installs
 `vllm_rlt._C`. `--no-build-isolation` uses the environment's existing PyTorch
 headers and libraries; it avoids a separate build environment with a potentially
-different Torch version. No runtime JIT compilation or CMake is required.
+different Torch version. An isolated build without PyTorch cannot build the
+extension and produces a Python-only package. Missing CUDA PyTorch, toolkit,
+`nvcc`, or a GPU target also produces a Python-only package with a skip message.
+Once native compilation is selected, compilation errors fail the installation.
+No runtime JIT compilation or CMake is required.
 
-For example, to build for Ampere SM80 and B300 SM103 without a visible GPU:
+For a wheel targeting the visible GPUs:
 
 ```bash
-TORCH_CUDA_ARCH_LIST="8.0;10.3" VLLM_RLT_BUILD_CUDA=1 MAX_JOBS=2 \
-  python -m pip wheel --no-build-isolation --no-deps . -w dist
+python -m pip wheel --no-build-isolation --no-deps . -w dist
 python -m pip install dist/vllm_rlt-*.whl
 ```
 
-Choose architectures supported by the target hardware and toolkit; the example
-wheel contains SM80 and SM103 code. A binary without code compatible with the
-device raises an error; there is no fallback after a native launch failure. A build without
-`VLLM_RLT_BUILD_CUDA=1` produces a Python-only distribution. GPU kernel tests and
-the benchmark require the native extension and fail if it is absent.
+Without a visible GPU, the deployment architecture cannot be detected. For
+cross-compilation, PyTorch's standard `TORCH_CUDA_ARCH_LIST` override remains
+available, for example `TORCH_CUDA_ARCH_LIST="8.0;10.3"` for SM80 and SM103.
+Choose targets supported by the deployment hardware and toolkit. An installed
+binary without compatible device code raises an error; there is no fallback
+after a native launch failure. GPU kernel tests and the benchmark require the
+native extension and fail if it is absent.
 
 Restart Python after rebuilding the library. A successful build or passing CPU
 reference tests establishes no CUDA compute correctness or speedup.
