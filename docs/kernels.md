@@ -129,9 +129,8 @@ matrix covers FP32/FP16/BF16, 1/16/128/1024/4096 rows, and widths 5632/5633.
 Latency is measured without profiling, with three repetitions and shuffled
 backend order. CUDA Graph timing amortizes replay over 32 calls; eager timing
 includes Python, allocation, launch and device completion. `vllm_prepacked`
-excludes concatenation and preallocates its output; `vllm_with_cat` includes
-concatenation and output allocation from the same separate inputs. These are
-distinct comparisons. None establishes full-model throughput or task quality.
+receives its packed input and preallocated output before timing. These operator
+comparisons do not establish full-model throughput or task quality.
 
 For a source-built standalone vLLM baseline, pass `--vllm-library <so>` and
 `--vllm-namespace <namespace>`, plus `--vllm-source <checkout>` to record its

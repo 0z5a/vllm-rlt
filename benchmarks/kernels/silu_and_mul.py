@@ -46,7 +46,7 @@ def errors(actual, expected):
 
 
 def make_functions(gate, up, vllm_op):
-    # Prepack outside the timed region only for the explicitly labelled baseline.
+    # vLLM receives prepacked input and a preallocated output outside timing.
     packed = torch.cat((gate, up), dim=-1)
     output = torch.empty_like(gate)
 
@@ -54,16 +54,10 @@ def make_functions(gate, up, vllm_op):
         vllm_op(output, packed)
         return output
 
-    def vllm_with_cat():
-        result = torch.empty_like(gate)
-        vllm_op(result, torch.cat((gate, up), dim=-1))
-        return result
-
     return {
         "torch_eager": lambda: F.silu(gate) * up,
         "rlt": lambda: silu_and_mul(gate, up),
         "vllm_prepacked": vllm_prepacked,
-        "vllm_with_cat": vllm_with_cat,
     }
 
 
