@@ -96,6 +96,10 @@ class AttentionReferenceStore:
         self.free = list(range(slots))
         self._bindings: dict[int, tuple[str, int, int]] = {}
         self._incarnations: dict[tuple[str, int], int] = {}
+        # Retained counts are host-known: the capture decides them before it
+        # submits. Keeping them here lets a reader size its gather without a
+        # device readback, which RFC #156 section 6.2 forbids.
+        self._counts_host: dict[tuple[int, int], int] = {}
 
     @property
     def bytes(self) -> int:
@@ -221,6 +225,18 @@ class AttentionReferenceStore:
             if binding is None or binding[2] != incarnation:
                 raise RuntimeError("stale attention reference plan for a retired token")
 
+    def note_count(self, slot: int, layer: int, count: int) -> None:
+        """Record the retained count of one capture row on the host.
+
+        The count is decided by the capture, so it never needs a device
+        readback; ``host_count`` is the reader-side counterpart.
+        """
+        self._counts_host[(slot, layer)] = count
+
+    def host_count(self, slot: int, layer: int) -> int | None:
+        """Retained keys of ``(slot, layer)``, or ``None`` before a capture."""
+        return self._counts_host.get((slot, layer))
+
     def capture(self, plan: SparseDecodePlan, layer: int) -> None:
         """Mark the captured rows source-ready for the given layer.
 
@@ -232,7 +248,11 @@ class AttentionReferenceStore:
         rows = plan.groups().get(CAPTURE)
         if not rows:
             return
-        self.valid[plan.slot_ids[rows], layer] = True
+        # Assign a tensor, not the Python scalar ``True``: a scalar store into
+        # a bool tensor through advanced indexing costs milliseconds per call
+        # (2.6 ms measured at 32 rows), while a tensor store is ~0.13 ms.
+        slots = plan.slot_ids[rows]
+        self.valid[slots, layer] = torch.ones(slots.numel(), dtype=torch.bool, device=self.device)
 
     def consume(self, plan: SparseDecodePlan, layer: int) -> None:
         """Record that the given layer consumed the reference rows."""
@@ -271,6 +291,7 @@ class AttentionReferenceStore:
             raise ValueError(f"reference capacity {capacity} cannot hold {count} retained keys")
         self.selected[slot, layer, :, :count] = selected.to(torch.int32)
         self.counts[slot, layer] = counts.to(torch.int32)
+        self.note_count(slot, layer, int(count))
         self.mass[slot, layer] = mass
         self.output[slot, layer] = output
         self.contribution[slot, layer] = contribution
@@ -279,8 +300,8 @@ class AttentionReferenceStore:
         """Borrow the retained state of one consume row (reference path)."""
         self._require_live(plan)
         slot = plan.slots[row]
-        count = int(self.counts[slot, layer].max())
-        if count == 0:
+        count = self.host_count(slot, layer)
+        if not count:
             raise RuntimeError("a consume row has no captured reference")
         return (
             self.selected[slot, layer, :, :count].long(),
@@ -324,6 +345,9 @@ class AttentionReferenceStore:
             self.valid[rejected] = False
             self.counts[rejected] = 0
             self.mass[rejected] = 0
+            for slot in rejected.tolist():
+                for layer in range(self.counts.shape[1]):
+                    self._counts_host.pop((slot, layer), None)
 
     def _clear(self, slots: torch.Tensor) -> None:
         """Retire the metadata of the given slots, ordered on the owner stream.
@@ -335,6 +359,9 @@ class AttentionReferenceStore:
         """
 
         def zero():
+            for slot in slots.tolist():
+                for layer in range(self.counts.shape[1]):
+                    self._counts_host.pop((slot, layer), None)
             self.valid[slots] = False
             self.uses[slots] = 0
             self.accepted[slots] = 0
@@ -354,6 +381,9 @@ class AttentionReferenceStore:
         if len(slots) == 0:
             return
         slots = torch.as_tensor(slots, dtype=torch.int64, device=self.device)
+        for slot in slots.tolist():
+            for layer in range(self.counts.shape[1]):
+                self._counts_host.pop((slot, layer), None)
         self.valid[slots] = False
         self.mass[slots] = 0
         self.output[slots] = 0

@@ -430,10 +430,14 @@ def batched_paged_attention(
     consume_rows = [r for r, mode in enumerate(plan.modes) if mode == CONSUME and lengths[r]]
     counts = {}
     if consume_rows:
-        slots = plan.slot_ids[consume_rows]
-        counts = dict(zip(consume_rows, store.counts[slots, layer].amax(dim=-1).tolist()))
-        if any(count == 0 for count in counts.values()):
-            raise RuntimeError("a consume row has no captured reference")
+        # The retained count is host-known from the capture. Reading it back
+        # from the device would sync every layer, which RFC #156 section 6.2
+        # forbids.
+        for row in consume_rows:
+            count = store.host_count(plan.slots[row], layer)
+            if not count:
+                raise RuntimeError("a consume row has no captured reference")
+            counts[row] = count
     grouped = {}
     for row, length in enumerate(lengths):
         if length:
@@ -459,7 +463,13 @@ def batched_paged_attention(
             chunk = max(1, min(32, 64 * 1024 * 1024 // (extent * heads * dim)))
         for start in range(0, len(all_rows), chunk):
             rows = all_rows[start : start + chunk]
-            row_ids = torch.tensor(rows, dtype=torch.int64, device=q.device)
+            # Building a device tensor from a Python list costs ~2.4 ms (a
+            # blocking host-to-device copy per call). Grouped rows are almost
+            # always contiguous, so derive them on the device instead.
+            if rows[0] + len(rows) == rows[-1] + 1:
+                row_ids = torch.arange(rows[0], rows[0] + len(rows), device=q.device)
+            else:
+                row_ids = torch.tensor(rows, dtype=torch.int64, device=q.device)
             slots = plan.slot_ids[row_ids]
             queries = q[row_ids].float()
             tables = block_tables[row_ids]
@@ -544,6 +554,8 @@ def batched_paged_attention(
                     torch.int32
                 )
                 store.counts[slots, layer] = count
+                for row in rows:
+                    store.note_count(plan.slots[row], layer, count)
                 store.mass[slots, layer] = gathered.sum(dim=-1)
                 store.output[slots, layer] = reference
                 store.contribution[slots, layer] = contribution
