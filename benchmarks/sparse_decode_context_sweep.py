@@ -22,8 +22,8 @@ import torch
 from vllm_rlt.attention.sparse import (
     CAPTURE,
     CONSUME,
-    batched_paged_attention,
     reference_paged_attention,
+    sparse_paged_attention,
 )
 from vllm_rlt.kernels.paged_attention import triton_paged_attention
 from vllm_rlt.worker.attention_reference import AttentionReferenceStore
@@ -106,7 +106,7 @@ def main():
             lease = store.reserve("r", 0, args.rows, generation=1)
             owners = [(lease, row) for row in range(args.rows)]
             seed = store.build_plan(owners, [CAPTURE] * args.rows, key_retention=args.retention)
-            batched_paged_attention(
+            sparse_paged_attention(
                 q, key, value, table, lengths, seed, layer=0, dense_attention=triton_paged_attention
             )
             capture_plan = store.build_plan(
@@ -121,7 +121,7 @@ def main():
                 device,
             )
             capture_ms = timed(
-                lambda: batched_paged_attention(
+                lambda: sparse_paged_attention(
                     q,
                     key,
                     value,
@@ -135,7 +135,7 @@ def main():
                 device,
             )
             consume_ms = timed(
-                lambda: batched_paged_attention(
+                lambda: sparse_paged_attention(
                     q, key, value, table, lengths, consume_plan, layer=0
                 ),
                 args.repeats,
@@ -163,7 +163,7 @@ def main():
                     sparse_over_dense=round(sparse_total / dense_total, 3),
                     capture_transient_mib=round(
                         transient_bytes(
-                            lambda: batched_paged_attention(
+                            lambda: sparse_paged_attention(
                                 q,
                                 key,
                                 value,
@@ -180,7 +180,7 @@ def main():
                     ),
                     consume_transient_mib=round(
                         transient_bytes(
-                            lambda: batched_paged_attention(
+                            lambda: sparse_paged_attention(
                                 q, key, value, table, lengths, consume_plan, layer=0
                             ),
                             device,

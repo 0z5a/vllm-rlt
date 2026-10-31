@@ -33,6 +33,8 @@ from dataclasses import dataclass
 
 import torch
 
+from vllm_rlt.kernels.sparse_capture import TRITON_AVAILABLE, fused_capture_scores
+
 # Row modes for one recurrent submission.
 DENSE = 0
 CAPTURE = 1
@@ -337,9 +339,25 @@ def sparse_paged_attention(
     layer,
     dense_attention: Callable | None = None,
 ):
-    """Use bounded row batches on CUDA, retaining the scalar numerical oracle."""
-    implementation = batched_paged_attention if q.is_cuda else reference_paged_attention
-    return implementation(
+    """Use bounded row batches on CUDA, retaining the scalar numerical oracle.
+
+    On CUDA with a dense backend available, the capture rows take the fused
+    paged score pass; the scalar oracle stays the definition of the arithmetic,
+    and ``batched_paged_attention`` without ``fused_scores`` still reproduces it
+    bit for bit.
+    """
+    if not q.is_cuda:
+        return reference_paged_attention(
+            q,
+            key_cache,
+            value_cache,
+            block_tables,
+            context_lengths,
+            plan,
+            layer=layer,
+            dense_attention=dense_attention,
+        )
+    return batched_paged_attention(
         q,
         key_cache,
         value_cache,
@@ -348,6 +366,7 @@ def sparse_paged_attention(
         plan,
         layer=layer,
         dense_attention=dense_attention,
+        fused_scores=TRITON_AVAILABLE and dense_attention is not None,
     )
 
 
@@ -381,6 +400,7 @@ def batched_paged_attention(
     *,
     layer,
     dense_attention: Callable | None = None,
+    fused_scores: bool = False,
 ):
     """Batch equal-length rows without padding or changing retained-key selection.
 
@@ -429,8 +449,14 @@ def batched_paged_attention(
     kv_index = head_index // groups
     captured = consumed = False
     for (mode, extent), all_rows in grouped.items():
-        # At most 16M elements per gathered K/V tensor (or one very long row).
-        chunk = max(1, min(32, 16 * 1024 * 1024 // (extent * heads * dim)))
+        # The fused path materialises only the score matrix, so its budget is
+        # the scores themselves; the expanded path budgets an FP32 K row. Both
+        # must allow the whole group at once, or a 32k row degenerates into one
+        # launch per row.
+        if fused_scores:
+            chunk = max(1, min(32, 512 * 1024 * 1024 // (heads * extent * 4)))
+        else:
+            chunk = max(1, min(32, 64 * 1024 * 1024 // (extent * heads * dim)))
         for start in range(0, len(all_rows), chunk):
             rows = all_rows[start : start + chunk]
             row_ids = torch.tensor(rows, dtype=torch.int64, device=q.device)
@@ -467,15 +493,30 @@ def batched_paged_attention(
             if mode == DENSE and dense_output is not None:
                 output[row_ids] = dense_output[row_ids]
                 continue
-            keys = key_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
-            values = value_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
-            scores = _rowwise_product("hd,lhd->hl", queries, keys) * scale
+            if fused_scores and dense_output is not None:
+                # One pass over the paged cache: no expanded FP32 K row, and
+                # no per-row cuBLAS. The dot product is still FP32; only the
+                # reduction order differs from the oracle.
+                scores = fused_capture_scores(
+                    q[row_ids],
+                    key_cache,
+                    tables,
+                    context_lengths[row_ids],
+                    layer=layer,
+                    block_size=block_size,
+                )
+                scores = scores * scale
+            else:
+                keys = key_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
+                scores = _rowwise_product("hd,lhd->hl", queries, keys) * scale
             probabilities = torch.softmax(scores, dim=-1)
-            reference = _rowwise_product("hl,lhd->hd", probabilities, values)
             if dense_output is not None:
                 # O_ref is the output actually fed into the recurrence; the
                 # selector state below stays in the Torch FP32 oracle.
                 reference = dense_output[row_ids].float()
+            else:
+                values = value_cache[blocks, offsets].repeat_interleave(groups, dim=2).float()
+                reference = _rowwise_product("hl,lhd->hd", probabilities, values)
             output[row_ids] = reference.to(q.dtype)
             if mode == CAPTURE:
                 count = retained_count(extent, plan.key_retention)
@@ -487,7 +528,14 @@ def batched_paged_attention(
                 order = torch.argsort(probabilities, dim=-1, descending=True, stable=True)
                 selected = order[..., :count].sort(dim=-1).values
                 gathered = probabilities.gather(-1, selected)
-                selected_values = values[batch_index, selected, head_index]
+                # Gather the retained values straight from the paged cache: the
+                # expanded fp32 copy would be the same bits (bf16 -> fp32 is
+                # exact) but reading it scatters through a row-length tensor.
+                selected_values = value_cache[
+                    tables[batch_index, selected // block_size],
+                    selected % block_size,
+                    kv_index,
+                ].float()
                 contribution = _rowwise_product("hk,hkd->hd", gathered, selected_values)
                 columns = torch.arange(count, device=q.device)[None, None, :]
                 # Explicit indices write only the live prefix, never gather the
