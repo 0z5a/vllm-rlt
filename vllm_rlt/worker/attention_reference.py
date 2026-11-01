@@ -195,12 +195,6 @@ class AttentionReferenceStore:
         host = torch.tensor(values, dtype=torch.int64, pin_memory=self.device.type == "cuda")
         return host.to(self.device, non_blocking=True)
 
-    def _slots_of(self, plan: SparseDecodePlan, rows) -> torch.Tensor:
-        """Device slot ids of the given plan rows; the whole plan needs no copy."""
-        if len(rows) == len(plan.slots):
-            return plan.slot_ids
-        return self._index([plan.slots[row] for row in rows])
-
     def reserve(self, request_id: str, request_index: int, rows: int, generation: int):
         """Take one slot per verification row of a request's submission."""
         if rows < 1:
@@ -323,6 +317,20 @@ class AttentionReferenceStore:
         """Retained keys of ``(slot, layer)``, or ``None`` before a capture."""
         return self._counts_host.get((slot, layer))
 
+    def _row_slots(self, plan: SparseDecodePlan, rows: list[int]) -> torch.Tensor:
+        """Slot ids of ``rows`` without a host-to-device copy of a Python list.
+
+        ``plan.slot_ids[rows]`` costs ~2.4 ms per call because the list becomes
+        a device tensor first; grouped rows are contiguous, so derive the index
+        on the device instead.
+        """
+        if len(rows) == len(plan.slots):
+            return plan.slot_ids
+        if rows[0] + len(rows) == rows[-1] + 1:
+            index = torch.arange(rows[0], rows[0] + len(rows), device=self.device)
+            return plan.slot_ids.index_select(0, index)
+        return self._index([plan.slots[row] for row in rows])
+
     def capture(self, plan: SparseDecodePlan, layer: int) -> None:
         """Mark the captured rows source-ready for the given layer.
 
@@ -334,9 +342,10 @@ class AttentionReferenceStore:
         rows = plan.groups().get(CAPTURE)
         if not rows:
             return
-        slots = self._slots_of(plan, rows)
+        slots = self._row_slots(plan, rows)
         # Assign a tensor, not the Python scalar ``True``: a scalar store into
         # a bool tensor through advanced indexing copies it from the host.
+        slots = self._row_slots(plan, rows)
         self.valid[slots, layer] = torch.ones(slots.numel(), dtype=torch.bool, device=self.device)
 
     def consume(self, plan: SparseDecodePlan, layer: int) -> None:
@@ -345,7 +354,7 @@ class AttentionReferenceStore:
         rows = plan.groups().get(CONSUME)
         if not rows:
             return
-        self.uses[self._slots_of(plan, rows), layer] += 1
+        self.uses[self._row_slots(plan, rows), layer] += 1
 
     def bind_positions(self, plan: SparseDecodePlan, positions: torch.Tensor) -> None:
         """Record the device-owned absolute positions of the plan's rows."""
@@ -355,7 +364,7 @@ class AttentionReferenceStore:
         rows = [row for row, slot in enumerate(plan.slots) if slot >= 0]
         if len(rows) < len(plan.slots):
             positions = positions[self._index(rows)]
-        self.position[self._slots_of(plan, rows)] = positions.to(torch.int64)
+        self.position[self._row_slots(plan, rows)] = positions.to(torch.int64)
 
     def write_reference(
         self,
