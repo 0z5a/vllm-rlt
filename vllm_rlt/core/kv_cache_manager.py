@@ -24,6 +24,7 @@ from vllm_rlt.attention import (
     validate_backend_name,
 )
 from vllm_rlt.attention.sparse import sparse_paged_attention
+from vllm_rlt.kernels import single_launch_ops
 from vllm_rlt.request import ExecutionBatch
 from vllm_rlt.worker.buffers import stage_metadata
 from vllm_rlt.worker.metadata import DeviceKVMetadata, KVMetadata, MetadataBuilder
@@ -675,8 +676,7 @@ class KVCacheManager:
 
                 masked_kv_store(self.key_cache[:, layer], self.value_cache[:, layer], k, v, batch)
             else:
-                self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k
-                self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v
+                self._store(layer, k, v, batch.write_blocks, batch.write_offsets, len(k))
             return
         if not batch.writable:
             raise ValueError("a read-only prepared KV batch cannot be written")
@@ -684,10 +684,24 @@ class KVCacheManager:
         self._validate_tensor(v, len(batch.position_ids), "v")
         if not batch.rows:
             return
-        self.key_cache[batch.write_blocks, layer, batch.write_offsets] = k[: len(batch.rows)]
-        self.value_cache[batch.write_blocks, layer, batch.write_offsets] = v[: len(batch.rows)]
+        self._store(layer, k, v, batch.write_blocks, batch.write_offsets, len(batch.rows))
         for allocation, depth, position in batch.rows:
             allocation.written[self._plane(depth)][layer].add(position)
+
+    def _store(self, layer, k, v, blocks, offsets, rows):
+        """``cache[blocks, layer, offsets] = x[:rows]`` for the keys and the values."""
+        if self.device.type == "cuda" and rows:
+            ops = single_launch_ops()
+            if (
+                ops
+                and blocks.stride(0) == 1
+                and offsets.stride(0) == 1
+                and ops.kv_store_supported(self.key_cache, self.value_cache, k, v)
+            ):
+                ops.kv_store(self.key_cache, self.value_cache, layer, k, v, blocks, offsets, rows)
+                return
+        self.key_cache[blocks, layer, offsets] = k[:rows]
+        self.value_cache[blocks, layer, offsets] = v[:rows]
 
     def _require_prefix(self, allocation, layer, depth, length):
         written = allocation.written[self._plane(depth)][layer]

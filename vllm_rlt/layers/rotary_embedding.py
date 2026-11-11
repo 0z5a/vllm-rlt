@@ -4,6 +4,8 @@
 import torch
 from torch import nn
 
+from vllm_rlt.kernels import single_launch_ops
+
 
 def rotate_half(value: torch.Tensor) -> torch.Tensor:
     """Rotate half the hidden dimensions of the input tensor."""
@@ -17,7 +19,31 @@ def apply_rotary_pos_emb(
     cos: torch.Tensor,
     sin: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Applies Rotary Position Embedding (RoPE) to Query and Key states."""
+    """Applies Rotary Position Embedding (RoPE) to Query and Key states.
+
+    CUDA inference on packed ``[rows, heads, head_dim]`` states in a 16-bit
+    dtype runs as one kernel launch with bit-identical results.
+    """
+    if q.is_cuda and q.ndim == 3 and k.ndim == 3 and not torch.is_grad_enabled():
+        ops = single_launch_ops()
+        rows, heads, dim = q.shape
+        tail = (dim, 1)
+        if (
+            ops
+            and q.dtype in ops.ROUNDED
+            and q.dtype == k.dtype == cos.dtype == sin.dtype
+            and k.shape[0] == rows
+            and k.shape[2] == dim
+            and cos.shape == sin.shape
+            and cos.shape in ((rows, 1, dim), (rows, dim))
+            and cos.is_contiguous()
+            and sin.is_contiguous()
+            and q.stride()[1:] == tail
+            and k.stride()[1:] == tail
+            and q.device == k.device == cos.device == sin.device
+            and ops.rope_supported(heads, k.shape[1], dim)
+        ):
+            return ops.rope_qk(q, k, cos, sin, q_heads=heads, k_heads=k.shape[1])
     q_embed = q * cos + rotate_half(q) * sin
     k_embed = k * cos + rotate_half(k) * sin
     return q_embed, k_embed

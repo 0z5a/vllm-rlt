@@ -18,8 +18,9 @@ from typing import TYPE_CHECKING, Any
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
-from vllm_rlt.kernels import silu_and_mul
+from vllm_rlt.kernels import silu_and_mul, single_launch_ops
 from vllm_rlt.layers import (
     RMSNorm,
     RotaryEmbedding,
@@ -150,6 +151,44 @@ OuroRotaryEmbedding = RotaryEmbedding
 _rotate_half = rotate_half
 
 
+class _StackedProjections:
+    """Bias-free projections of one input, stored as the rows of one matrix.
+
+    The projections' parameters become views of the stacked weight, so one
+    matrix product computes all of them without a second copy of the weights.
+    Stacking moves the weights and therefore happens once, when a checkpoint
+    is loaded; ``weight`` is ``None`` as soon as a projection's storage is no
+    longer the stacked rows (``Module.to``, a replaced parameter), and callers
+    then use the projections one by one.
+    """
+
+    __slots__ = ("_pointers", "_weight", "modules")
+
+    def __init__(self, *modules: nn.Linear) -> None:
+        self.modules = modules
+        self._weight = None
+        self._pointers = ()
+
+    def stack(self) -> None:
+        parameters = [module._parameters["weight"] for module in self.modules]
+        weight = torch.cat([parameter.data for parameter in parameters])
+        start = 0
+        for parameter in parameters:
+            stop = start + parameter.shape[0]
+            parameter.data = weight[start:stop]
+            start = stop
+        self._weight = weight
+        self._pointers = tuple(parameter.data_ptr() for parameter in parameters)
+
+    @property
+    def weight(self) -> torch.Tensor | None:
+        if self._weight is not None and self._pointers == tuple(
+            module._parameters["weight"].data_ptr() for module in self.modules
+        ):
+            return self._weight
+        return None
+
+
 class OuroAttention(nn.Module):
     def __init__(self, config: OuroConfig, layer_idx: int) -> None:
         super().__init__()
@@ -167,6 +206,28 @@ class OuroAttention(nn.Module):
         self.o_proj = nn.Linear(
             config.num_attention_heads * config.head_dim, config.hidden_size, bias=False
         )
+        self._qkv = _StackedProjections(self.q_proj, self.k_proj, self.v_proj)
+
+    def _single_launch(self, hidden, cos, sin, batch, cache, ops):
+        """``forward`` with one matrix product for q/k/v and one launch for RoPE."""
+        config = self.config
+        rows, dim = hidden.shape[0], config.head_dim
+        q_heads, k_heads = config.num_attention_heads, config.num_key_value_heads
+        weight = self._qkv.weight
+        if weight is None:
+            q = F.linear(hidden, self.q_proj.weight)
+            k = F.linear(hidden, self.k_proj.weight)
+            v = F.linear(hidden, self.v_proj.weight).view(rows, k_heads, dim)
+            q, k = ops.rope_qk(q, k, cos, sin, q_heads=q_heads, k_heads=k_heads)
+        else:
+            qkv = F.linear(hidden, weight)
+            q, k = ops.rope_qk(
+                qkv, qkv, cos, sin, q_heads=q_heads, k_heads=k_heads, k_offset=q_heads * dim
+            )
+            v = qkv.view(rows, -1, dim)[:, q_heads + k_heads :]
+        cache._write_prepared(self.layer_idx, batch, k, v)
+        output = cache._attend_prepared(self.layer_idx, batch, q)
+        return F.linear(output.reshape(rows, -1), self.o_proj.weight)
 
     def forward(
         self,
@@ -192,6 +253,14 @@ class OuroMLP(nn.Module):
         self.gate_proj = nn.Linear(config.hidden_size, config.intermediate_size, bias=False)
         self.up_proj = nn.Linear(config.hidden_size, config.intermediate_size, bias=False)
         self.down_proj = nn.Linear(config.intermediate_size, config.hidden_size, bias=False)
+        self._gate_up = _StackedProjections(self.gate_proj, self.up_proj)
+
+    def _single_launch(self, hidden, ops):
+        """``forward`` with one matrix product for gate/up and one launch for the gating."""
+        weight = self._gate_up.weight
+        if weight is None:
+            return self.forward(hidden)
+        return F.linear(ops.silu_mul(F.linear(hidden, weight)), self.down_proj.weight)
 
     def forward(self, hidden: torch.Tensor) -> torch.Tensor:
         return self.down_proj(silu_and_mul(self.gate_proj(hidden), self.up_proj(hidden)))
@@ -206,6 +275,34 @@ class OuroDecoderLayer(nn.Module):
         self.input_layernorm_2 = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm_2 = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+
+    def _single_launch(self, hidden, normed, following, cos, sin, batch, cache, ops):
+        """``forward`` given ``normed = input_layernorm(hidden)``.
+
+        Each residual sum also normalizes itself for its reader, so the block
+        launches two normalizations instead of four and two additions. Returns
+        the block's output and ``following(output)``, where ``following`` is
+        the RMSNorm that reads this block: the next block's input norm.
+        """
+        norm, after = self.input_layernorm_2, self.post_attention_layernorm
+        attention = self.self_attn._single_launch(normed, cos, sin, batch, cache, ops)
+        hidden, normed = ops.rms_norm_add(
+            attention,
+            norm.weight,
+            norm.variance_epsilon,
+            hidden,
+            after.weight,
+            after.variance_epsilon,
+        )
+        norm = self.post_attention_layernorm_2
+        return ops.rms_norm_add(
+            self.mlp._single_launch(normed, ops),
+            norm.weight,
+            norm.variance_epsilon,
+            hidden,
+            following.weight,
+            following.variance_epsilon,
+        )
 
     def forward(
         self,
@@ -254,6 +351,49 @@ class OuroForCausalLM(nn.Module):
                 with torch.no_grad():
                     module.weight[module.padding_idx].zero_()
 
+    @property
+    def _readers(self) -> list[RMSNorm]:
+        """The RMSNorm that reads each block's output: the next block's, then the final one."""
+        layers = self.model.layers
+        return [layer.input_layernorm for layer in list(layers)[1:]] + [self.model.norm]
+
+    def _single_launch_ops(self, hidden: torch.Tensor):
+        """``kernels.layer_ops`` when this traversal can run on it, else a false value."""
+        if (
+            not hidden.is_cuda
+            or hidden.ndim != 2
+            or torch.is_grad_enabled()
+            or not hidden.is_contiguous()
+        ):
+            return None
+        ops = single_launch_ops()
+        config = self.config
+        weight = self.model.norm.weight
+        if (
+            ops
+            and hidden.dtype in ops.ROUNDED
+            and weight.dtype == hidden.dtype
+            and weight.device == hidden.device
+            and hidden.shape[1] <= ops.MAX_WIDTH
+            and ops.rope_supported(
+                config.num_attention_heads, config.num_key_value_heads, config.head_dim
+            )
+        ):
+            return ops
+        return None
+
+    def stack_projections(self) -> None:
+        """Store each block's q/k/v and gate/up weights as one matrix each.
+
+        This moves those weights, so it must precede everything that keeps
+        their addresses, CUDA graph capture in particular; ``from_pretrained``
+        calls it once after loading. Parameter names, shapes and values are
+        unchanged.
+        """
+        for layer in self.model.layers:
+            layer.self_attn._qkv.stack()
+            layer.mlp._gate_up.stack()
+
     def prelude(self, token_ids: torch.Tensor) -> torch.Tensor:
         if token_ids.ndim != 1:
             raise ValueError("prelude expects packed token_ids with shape [N]")
@@ -283,11 +423,25 @@ class OuroForCausalLM(nn.Module):
     def recurrent_prepared(self, hidden, batch, cache, *, compute_gate=True):
         """Run core with runner-owned metadata, including inactive padding rows."""
         position_embeddings = self.model.rotary_emb(hidden, batch.position_ids)
-        for layer in self.model.layers:
-            hidden = layer(hidden, position_embeddings, batch, cache)
-        # Norm is inside the recurrence in Ouro; this normalized state is the
-        # next loop's input as well as the gate and LM head input.
-        hidden = self.model.norm(hidden)
+        ops = self._single_launch_ops(hidden)
+        if ops:
+            # The same traversal with each block's operators fused into single
+            # launches; the modules' forward methods are its reference.
+            cos, sin = position_embeddings
+            layers = self.model.layers
+            first = layers[0].input_layernorm
+            normed = ops.rms_norm(hidden, first.weight, first.variance_epsilon)
+            for layer, following in zip(layers, self._readers, strict=True):
+                hidden, normed = layer._single_launch(
+                    hidden, normed, following, cos, sin, batch, cache, ops
+                )
+            hidden = normed
+        else:
+            for layer in self.model.layers:
+                hidden = layer(hidden, position_embeddings, batch, cache)
+            # Norm is inside the recurrence in Ouro; this normalized state is the
+            # next loop's input as well as the gate and LM head input.
+            hidden = self.model.norm(hidden)
         return hidden, self.model.early_exit_gate(hidden).squeeze(-1) if compute_gate else None
 
     def coda(self, hidden: torch.Tensor) -> torch.Tensor:
@@ -372,4 +526,6 @@ class OuroForCausalLM(nn.Module):
                         nn.Parameter(tensor.to(device=device, dtype=dtype), requires_grad=False),
                     )
         model.model.rotary_emb.inv_freq = model.model.rotary_emb.frequencies(device=device)
+        if torch.device(device).type == "cuda":
+            model.stack_projections()
         return model.eval()

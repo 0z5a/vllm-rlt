@@ -142,17 +142,33 @@ def _paged_attention_merge_kernel(
     )
 
 
+_LAUNCH = None
+
+
+def _launcher():
+    """The fast launcher of ``sparse_decode``, which imports this module."""
+    global _LAUNCH
+    if _LAUNCH is None:
+        from vllm_rlt.kernels.sparse_decode import _launch
+
+        _LAUNCH = _launch
+    return _LAUNCH
+
+
 def paged_attention(q, key_cache, value_cache, block_tables, context_lengths):
     """Launch split-KV parts over [row, head, split], then merge per [row, head]."""
     output = torch.empty_like(q)
     if q.shape[0] == 0:
         return output
+    launch = _LAUNCH or _launcher()
     rows, heads = q.shape[0], q.shape[1]
     block_d = triton.next_power_of_2(q.shape[-1])
     part_m = torch.empty((rows, heads, NUM_SPLITS), device=q.device, dtype=torch.float32)
     part_l = torch.empty_like(part_m)
     part_o = torch.empty((rows, heads, NUM_SPLITS, block_d), device=q.device, dtype=torch.float32)
-    _paged_attention_kernel[(rows, heads, NUM_SPLITS)](
+    launch(
+        _paged_attention_kernel,
+        (rows, heads, NUM_SPLITS),
         q,
         key_cache,
         value_cache,
@@ -175,7 +191,9 @@ def paged_attention(q, key_cache, value_cache, block_tables, context_lengths):
         SPLITS=NUM_SPLITS,
         num_warps=4,
     )
-    _paged_attention_merge_kernel[(rows, heads)](
+    launch(
+        _paged_attention_merge_kernel,
+        (rows, heads),
         part_m,
         part_l,
         part_o,
