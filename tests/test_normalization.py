@@ -69,3 +69,47 @@ def test_rmsnorm_explicit_epsilon():
     # Variance of ones is 1.0; 1.0 / sqrt(1.0 + 1.0) = 1.0 / sqrt(2) ≈ 0.7071
     expected_large = 1.0 / (2.0**0.5)
     assert torch.allclose(out_large, torch.full_like(x, expected_large), atol=1e-4)
+
+
+@pytest.mark.gpu
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
+@pytest.mark.parametrize("shape", [(1, 64), (5, 2048), (3, 7, 1000), (0, 64)])
+def test_rmsnorm_cuda_single_launch_matches_reference(dtype, shape):
+    from vllm_rlt.kernels import rmsnorm
+
+    torch.manual_seed(7)
+    norm = RMSNorm(shape[-1], eps=1e-6).to("cuda", dtype)
+    with torch.no_grad():
+        norm.weight.copy_(torch.randn(shape[-1]))
+    x = (torch.randn(shape, device="cuda") * 3).to(dtype)
+    calls = []
+    original = rmsnorm.rms_norm
+    rmsnorm.rms_norm = lambda *args: calls.append(1) or original(*args)
+    try:
+        with torch.no_grad():
+            out = norm(x)
+        graded = norm(x)
+    finally:
+        rmsnorm.rms_norm = original
+    # Only the call without autograd takes the single launch.
+    assert len(calls) == 1 and graded.requires_grad
+    assert out.shape == x.shape and out.dtype == dtype and not out.requires_grad
+    with torch.no_grad():
+        ref = norm.reference(x)
+    # The reduction order differs, so the FP32 scale may differ in its last
+    # bits and move a rounding of the activation dtype by one unit.
+    ulp = {torch.float32: 2.0**-21, torch.float16: 2.0**-9, torch.bfloat16: 2.0**-6}[dtype]
+    assert torch.all((out.float() - ref.float()).abs() <= ulp * ref.float().abs().clamp_min(1e-30))
+    if out.numel() and dtype != torch.float32:
+        # FP32 keeps the last-bit difference of the scale; the 16-bit dtypes round it away.
+        assert (out == ref).float().mean().item() > 0.98
+
+
+@pytest.mark.gpu
+def test_rmsnorm_cuda_noncontiguous_and_mixed_dtype_use_reference():
+    norm = RMSNorm(32).to("cuda", torch.bfloat16)
+    x = torch.randn(4, 64, device="cuda", dtype=torch.bfloat16)
+    with torch.no_grad():
+        assert torch.equal(norm(x[:, ::2]), norm.reference(x[:, ::2]))
+        mixed = norm(x[:, :32].float())
+    assert mixed.dtype == torch.float32
